@@ -1,5 +1,5 @@
-//This script will verify if the value of the element(s) for assertions is/are equal to the value(s) in the specification.
-//This script was assembled by Claive Alvin P. Acedilla 
+//This script will verify if the value of the element(s) for assertions is/are equal to the value(s) in the specifications.
+//This script was assembled by Claive Alvin P. Acedilla.
 
 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
 import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
@@ -41,6 +41,7 @@ def currentURL = findTestData('Name of test data').getValue('URL data row header
 if (currentURL == 'specific URL') {
 def marketpracticetext = WebUI.getText(findTestObject('element path in Object Repository'))
  
+//Verify the value of the element with the value in the specifications with verifyMatch method.
 WebUI.verifyMatch(marketpracticetext, 'specific text for text assertion, true, FailureHandling.STOP_ON_FAILURE)
 }
 
