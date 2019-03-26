@@ -1,3 +1,6 @@
+//This script will verify if the value of the element(s) for assertions is/are equal to the value(s) in the specification.
+//This script was assembled by Claive Alvin P. Acedilla 
+
 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
 import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
 import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
@@ -41,7 +44,7 @@ def marketpracticetext = WebUI.getText(findTestObject('element path in Object Re
 WebUI.verifyMatch(marketpracticetext, 'specific text for text assertion, true, FailureHandling.STOP_ON_FAILURE)
 }
 
-'…More page elements assertions here using the if condition and verifyMatch verifications…'
+'â€¦More page elements assertions here using the if condition and verifyMatch verificationsâ€¦'
 
 'Maximize window'
 WebUI.maximizeWindow()
