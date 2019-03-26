@@ -1,55 +1,60 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
 "http://www.w3.org/TR/html4/strict.dtd">
 <html>
-    <head>
-        <meta http-equiv="refresh" content="35">
-        <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>Send Pomodoro alarm</title>
-    </head>
-    <body>
-        <p>Send NBT Productivity</p>
-        <script>
-	//This code will alert a message for a pomodoro breaktime and back to work time
-	//This is a simple pomodoro alarm web page in Javascript where time entries are placed in array variables.
-	//Please see the instructions and specifications in https://github.com/cabpacedilla/boyet/blob/docs/index.md/Instructions%20for%20Pomodoro.txt file for more details.
-	//This code was assembled by Claive Alvin P. Acedilla
 
-	//Pomodoro times input
-	var pomodoroTime = ["8:25 AM", "8:55 AM", "9:23 AM", "9:55 AM", "10:25 AM", "10:55 AM", "11:25 AM", "11:55 AM", "1:25 PM", "1:55 PM", "2:25 PM", "2:55 PM", "3:25 PM", "3:55 PM", "4:25 PM", "4:55 PM"];
+<head>
+    <meta http-equiv="refresh" content="35">
+    <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Send Pomodoro alarm</title>
+</head>
+
+<body>
+
+<p>Send NBT Productivity</p>
+
+<script>
+//This code will alert a message for a pomodoro breaktime and back to work time
+//This is a simple pomodoro alarm web page in Javascript where time entries are placed in array variables.
+//Please see the instructions and specifications in https://github.com/cabpacedilla/boyet/blob/docs/index.md/Instructions%20for%20Pomodoro.txt file for more details.
+//This code was assembled by Claive Alvin P. Acedilla
+
+//Pomodoro times input
+var pomodoroTime = ["8:25 AM", "8:55 AM", "9:23 AM", "9:55 AM", "10:25 AM", "10:55 AM", "11:25 AM", "11:55 AM", "1:25 PM", "1:55 PM", "2:25 PM", "2:55 PM", "3:25 PM", "3:55 PM", "4:25 PM", "4:55 PM"];
 	
-	//Back to work times input
-	var backToWork = ["8:30 AM", "9:00 AM", "9:24 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"]
+//Back to work times input
+var backToWork = ["8:30 AM", "9:00 AM", "9:24 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"]
 		
-	//Convert time to string in hour and minute.		
-	var currentTime = String(new Date().toLocaleTimeString('en-US', { hour12: true, hour: "numeric", minute: "numeric"}));     
+//Convert time to string in hour and minute.		
+var currentTime = String(new Date().toLocaleTimeString('en-US', { hour12: true, hour: "numeric", minute: "numeric"}));     
 
-	var loop = 0;
+var loop = 0;
 
-	//Loop the arrays while pomodoroTime is not equal to currentTime or backToWork is not equal to currentTime
-	while (pomodoroTime[loop] !== currentTime || backToWork[loop] !== currentTime) {	
+//Loop the arrays while pomodoroTime is not equal to currentTime or backToWork is not equal to currentTime
+while (pomodoroTime[loop] !== currentTime || backToWork[loop] !== currentTime) {	
 			 
-    		//if pomodoro time is equal to current time, alarm for pomodoro with pop-up message
-		if (pomodoroTime[loop] === currentTime) {
-       			alert(`It is break time because it is already ${pomodoroTime[loop]}. Unwind to relax yourself. Just be back after five minutes. :)`);
-       			break;
-    		}
+    //if pomodoro time is equal to current time, alarm for pomodoro with pop-up message
+    if (pomodoroTime[loop] === currentTime) {
+        alert(`It is break time because it is already ${pomodoroTime[loop]}. Unwind to relax yourself. Just be back after five minutes. :)`);
+        break;
+    }
 
-		//if back to work time is equal to current time, alarm for back to work with pop-up message    			
-		if (backToWork[loop] === currentTime) {
-        		alert(`Let us go back to work because it is already ${backToWork[loop]}. Review your work then proceed your task update.`);
-        		break;
-    		}
+    //if back to work time is equal to current time, alarm for back to work with pop-up message    			
+    if (backToWork[loop] === currentTime) {
+        alert(`Let us go back to work because it is already ${backToWork[loop]}. Review your work then proceed your task update.`);
+        break;
+    }
     			
-		//break from the loop if the iteration reach the last elements of the pomodoro and back to work time arrays
-		if (pomodoroTime[loop] === pomodoroTime[pomodoroTime.length] && backToWork[loop] === backToWork[backToWork.length]) {     
-        		break;
-    		}
+    //break from the loop if the iteration reach the last elements of the pomodoro and back to work time arrays
+    if (pomodoroTime[loop] === pomodoroTime[pomodoroTime.length] && backToWork[loop] === backToWork[backToWork.length]) {     
+        break;
+    }
     		
-		//increment loop count
-		loop = loop + 1;    
-	}
-	</script>
-    </body>
+    //increment loop count
+    loop = loop + 1;    
+}
+</script>
+
+</body>
 </html>
 
