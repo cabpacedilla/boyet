@@ -10,3 +10,5 @@ Specifications
 3. The current values of Pomodoro time in the script are: "8:25 AM", "8:55 AM", "9:25 AM", "9:55 AM", "10:25 AM", "10:55 AM", "11:25 AM", "11:55 AM", "1:25 PM", "1:55 PM", "2:25 PM", "2:55 PM", "3:25 PM", "3:55 PM", "4:25 PM", "4:55 PM"
 4. The current values of back to work time in the script are: "8:30 AM", "9:00 AM", "9:30 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"
 5. The page will auto refresh in every 35 seconds to check the pomodoro and back to work times with the current time.
+
+by Claive Alvin P. Acedilla
