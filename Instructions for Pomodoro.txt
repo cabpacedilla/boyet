@@ -1,7 +1,8 @@
 Instructions
 =============
-1. Open the Pomodoro alarm web page in Google Chrome if you want to run the script.
-2. Open the Pomodoro alarm file in Notepad if you want to see the code of the script. 
+1. Copy and paste the Pomodoro alarm html file in notepad: https://github.com/cabpacedilla/boyet/blob/master/Portfolio%20-%20Simple%20Pomodoro%20Alarm%20in%20javascript.htmlin 
+2. Save the file with an html file extension.
+3. Open the file in Google Chrome web browser.
 
 Specifications
 ==============
