@@ -1,4 +1,4 @@
-//This script will verify if the value of the element(s) for assertions is/are equal to the value(s) in the specifications.
+//This script will verify if the value of the page element(s) for assertion(s) is/are equal to the value(s) in the specifications.
 //This script was assembled by Claive Alvin P. Acedilla.
 
 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
