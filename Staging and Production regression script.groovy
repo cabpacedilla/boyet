@@ -19,47 +19,47 @@ import org.openqa.selenium.Keys as Keys
 import com.kms.katalon.core.webui.driver.DriverFactory as DF
 'Import driverfactory to get name of test browser'
 
- 'Loop data in Excel by row'
+'Loop data in Excel by row'
 for (def row = 1; row <= findTestData('Name of test data').getRowNumbers(); row++) {
+    
+    'Define variable for the screenshot filename'
+    def filename = findTestData('Name of test data').getValue('file name data row header', row)
+ 
+    'Define browsername variable to get name of test browser'
+    def browsername = DF.getWebDriver().getCapabilities().getBrowserName()
+ 
+    'Define variable for data verification for assertion'
+    def currentURL = findTestData('Name of test data').getValue('URL data row header', row)
+    
+    'Open browser'
+    WebUI.openBrowser('')
 
-'Open browser'
-WebUI.openBrowser('')
+    'Navigate to URL in row value'
+    WebUI.navigateToUrl(findTestData('Name of test data').getValue('URL data row header', row))
 
-'Navigate to URL in row value'
-WebUI.navigateToUrl(findTestData('Name of test data').getValue('URL data row header', row))
+    'Assert page element object of URL with verifyMatch to variable'
+    if (currentURL == 'specific URL') {
+        def marketpracticetext = WebUI.getText(findTestObject('element path in Object Repository'))
+ 
+      'Verify the value of the element with the value in the specifications with verifyMatch method.'
+       WebUI.verifyMatch(marketpracticetext, 'specific text for text assertion, true, FailureHandling.STOP_ON_FAILURE)
+    }
 
-'Define variables for the screenshot filename'
-def filename = findTestData('Name of test data').getValue('file name data row header', row)
- 
-'Get browsername by variable for name of test browser'
-def browsername = DF.getWebDriver().getCapabilities().getBrowserName()
- 
-'Define variable for data verification for assertion'
-def currentURL = findTestData('Name of test data').getValue('URL data row header', row)
+    '…More page elements assertions here using the if condition and verifyMatch verifications…'
 
-'Assert page element object of URL with verifyMatch to variable'
-if (currentURL == 'specific URL') {
-def marketpracticetext = WebUI.getText(findTestObject('element path in Object Repository'))
+    'Maximize window'
+    WebUI.maximizeWindow()
  
-'Verify the value of the element with the value in the specifications with verifyMatch method.'
-WebUI.verifyMatch(marketpracticetext, 'specific text for text assertion, true, FailureHandling.STOP_ON_FAILURE)
-}
-
-'…More page elements assertions here using the if condition and verifyMatch verifications…'
-
-'Maximize window'
-WebUI.maximizeWindow()
+    'Zoom page to 30% to view entire page including long pages'
+    WebUI.executeJavaScript('document.body.style.zoom=\'30%\'', null)
  
-'Zoom page to 30% to view entire page including long pages'
-WebUI.executeJavaScript('document.body.style.zoom=\'30%\'', null)
+    'Wait for the page to load'
+    WebUI.waitForPageLoad(5)
  
-'Wait for the page to load'
-WebUI.waitForPageLoad(5)
+    'Take screenshot and save as png using the filename variables'
+    WebUI.takeScreenshot(("$filename" + " $browsername") + '.png')
  
-'Take screenshot and save as png using the filename variables'
-WebUI.takeScreenshot(("$filename" + " $browsername") + '.png')
- 
-'Close web browser'
-WebUI.closeBrowser()
+    'Close web browser'
+    WebUI.closeBrowser()
 }
 
