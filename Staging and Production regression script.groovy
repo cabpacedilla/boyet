@@ -19,17 +19,19 @@ import org.openqa.selenium.Keys as Keys
 import com.kms.katalon.core.webui.driver.DriverFactory as DF
 'Import driverfactory to get name of test browser'
 
+'Variable declarations'
+
+'Define variable for the screenshot filename'
+def filename = findTestData('Name of test data').getValue('file name data row header', row)
+ 
+'Define browsername variable to get name of test browser'
+def browsername = DF.getWebDriver().getCapabilities().getBrowserName()
+ 
+'Define variable for data verification for assertion'
+def currentURL = findTestData('Name of test data').getValue('URL data row header', row)
+
 'Loop data in Excel by row'
 for (def row = 1; row <= findTestData('Name of test data').getRowNumbers(); row++) {
-    
-    'Define variable for the screenshot filename'
-    def filename = findTestData('Name of test data').getValue('file name data row header', row)
- 
-    'Define browsername variable to get name of test browser'
-    def browsername = DF.getWebDriver().getCapabilities().getBrowserName()
- 
-    'Define variable for data verification for assertion'
-    def currentURL = findTestData('Name of test data').getValue('URL data row header', row)
     
     'Open browser'
     WebUI.openBrowser('')
