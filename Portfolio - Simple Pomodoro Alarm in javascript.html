@@ -3,7 +3,7 @@
 <html>
 
 <head>
-    <meta http-equiv="refresh" content="35">
+    <meta http-equiv="refresh" content="5">
     <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
         <title>Send Pomodoro alarm</title>
@@ -19,27 +19,24 @@
 //Please see the instructions and specifications at
 //https://github.com/cabpacedilla/boyet/blob/docs/index.md/Instructions%20for%20Pomodoro.txt for more details.
 //This code was assembled by Claive Alvin P. Acedilla
-
 //Pomodoro times input
 var pomodoroTime = ["8:25 AM", "8:55 AM", "9:25 AM", "9:55 AM", "10:25 AM", "10:55 AM", "11:25 AM", "11:55 AM", "1:25 PM", "1:55 PM", "2:25 PM", "2:55 PM", "3:25 PM", "3:55 PM", "4:25 PM", "4:55 PM"];
 	
 //Back to work times input
-var backToWork = ["8:30 AM", "9:00 AM", "9:30 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"]
+var backToWork = ["8:30 AM", "9:00 AM", "9:30 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "6:45 PM"]
 		
 //Convert time to string in hour and minute.		
-var currentTime = String(new Date().toLocaleTimeString('en-US', { hour12: true, hour: "numeric", minute: "numeric"}));     
-
+var currentTime = String(new Date().toLocaleTimeString('en-US', { hour12: true, hour: "numeric", minute: "numeric"}));  
+   
 var loop = 0;
-
 //Loop the arrays while pomodoroTime is not equal to currentTime or backToWork is not equal to currentTime
 while (pomodoroTime[loop] !== currentTime || backToWork[loop] !== currentTime) {	
 			 
     //if pomodoro time is equal to current time, alarm for pomodoro with pop-up message
     if (pomodoroTime[loop] === currentTime) {
-        alert(`It is break time because it is already ${pomodoroTime[loop]}. Unwind to relax yourself. Just be back after five minutes.`);
+        alert(`It is break time because it is already ${pomodoroTime[loop]}. Unwind to relax yourself. Just be back after five minutes. :)`);
         break;
     }
-
     //if back to work time is equal to current time, alarm for back to work with pop-up message    			
     if (backToWork[loop] === currentTime) {
         alert(`Let us go back to work because it is already ${backToWork[loop]}. Review your work then proceed your task update.`);
@@ -58,4 +55,3 @@ while (pomodoroTime[loop] !== currentTime || backToWork[loop] !== currentTime) {
 
 </body>
 </html>
-
