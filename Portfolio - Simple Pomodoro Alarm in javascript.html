@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    
+
 <h1>Pomodoro work life balance</h1>
 
 <p>Add your break and resume times in "0:00 AM/PM" format like "10:00 AM".<br>
@@ -84,11 +84,16 @@ function looparray(){
     //Convert time to string in hour and minute.		
     var currentTime = String(new Date().toLocaleTimeString('en-US', { hour12: true, hour: "numeric", minute: "numeric"}));     
 
+    //alert(currentTime);
+
     var loop = 0;
 
     //Loop the arrays while pomodoroTime is not equal to currentTime or backToWork is not equal to currentTime
     while (pomodoroTime[loop] !== currentTime || backToWork[loop] !== currentTime) {	
 
+    //alert(pomodoroTime[loop]);
+    //alert(backToWork[loop]);
+    
     //if pomodoro time is equal to current time, alarm for pomodoro with pop-up message
     if (pomodoroTime[loop] === currentTime) {
         alert(`It is break time because it is already ${pomodoroTime[loop]}. Unwind to relax yourself. Just be back on your resume time.`);
