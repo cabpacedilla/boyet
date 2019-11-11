@@ -1,0 +1,303 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		<meta http-equiv="refresh" content="50">
+		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Send Pomodoro alarm</title>
+	</head>
+
+	<body>
+		<h1>Pomodoro work life balance</h1>
+
+		<p>
+		Add your break and resume to work times in "0:00 AM/PM" format like "10:00 AM".<br>
+		You may add multiple break and resume times separated by commas like 10:00 AM, 10:20 AM, 10:40 AM...
+		</p>
+	
+		<form>
+			<p> Break time:
+			<br> 
+			<input type="text" id="pomodoroInputField"> 
+			<input type="button" value="Add" onclick="addPomodoroTimes()">
+			
+			<p> Resume to work:
+			<br> 
+			<input type="text" id="backToWorkInputField">
+			<input type="button" value="Add" onclick="addbackToWorkTimes()">
+			<br> 
+			<br>
+			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
+			<H2>Or you may add your resume and break times by intervals</H2>
+			<p> Enter a resume to work interval in minutes:
+			<br> 
+			<input type="text" id="backToWorkInterval">
+			 <p> Enter a break interval in minutes:
+			<br> 
+			<input type="text" id="breakInterval"> 
+			 <p> Enter the number repetitions of resume and break time intervals:
+			<br> 
+			<input type="text" id="repetition"> 
+			<br>
+			<br>
+			<input type="button" value="Add resume and break intervals" onclick="addResumeBreakIntervals()">
+			<br> 
+			<br> 			
+			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
+			<br> 
+			<br> 
+			<p> Delete a specific break time:
+			<p> Enter the number of nth break time starting from the left in the break times list. The first item is number zero.
+			<br> 
+			<input type="text" id="breakTimeIndex"> 
+			<input type="button" value="Update" onclick="deletePomodoroTime()">
+			
+			<p> Delete a specific time: 
+			<p> Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.
+			<br> 
+			<input type="text" id="resumeTimeIndex">
+			<input type="button" value="Update" onclick="deleteBackToWorkTime()">
+			<br> 
+			<br> 
+			<input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
+		
+		</form>
+	
+		<script type='text/javascript'>
+			//This code will alert a message for a pomodoro breaktime and back to work time
+			//This is a simple pomodoro alarm web page in Javascript where time entries are placed in array variables.
+			//This code was assembled by Claive Alvin P. Acedilla
+	
+			var pomodoroArray = [];
+			var backToWorkArray = [];
+			var pomodoroTimes;
+			var backToWorkTimes;
+			
+			//Convert time to string in hour and minute.		
+			var currentTime = String(new Date().toLocaleTimeString('en-US', 
+				{
+					hour12 : true,
+					hour : "numeric",
+					minute : "numeric"
+				}));
+			
+			//alert(currentTime); 
+	
+			if (sessionStorage.getItem('pomodoroTimes') == null || sessionStorage.getItem('backToWorkTimes') == null) 
+				{
+					pomodoroArray = [];
+					backToWorkArray = [];
+				} 
+			else 
+				{
+					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));
+					backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
+					loopArray();
+				}
+					
+			function addPomodoroTimes() 
+				{
+					pomodoroTimes = document.getElementById('pomodoroInputField').value;
+					
+					if (pomodoroTimes == "") 
+						{
+							alert(`Please enter a break time in 0:00 AM or PM format.`);
+						} 
+					else 
+						{
+							pomodoroArray = pomodoroTimes.split(","); 
+							//pomodoroArray.push(pomodoroTimes);
+							sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
+							alert(`${pomodoroTimes} break time was added.`);
+						}
+				}
+	
+			function addbackToWorkTimes() 
+				{
+					backToWorkTimes = document.getElementById('backToWorkInputField').value;
+					if (backToWorkTimes == "") 
+						{
+							alert(`Please enter a break time in 0:00 AM or PM format.`);
+						} 
+					else 
+						{
+							backToWorkArray = backToWorkTimes.split(","); 
+							//backToWorkArray.push(backToWorkTimes);
+							sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));
+							alert(`${backToWorkTimes} resume time was added.`);
+						}
+				}
+	
+			function showBreakTimes() 
+				{
+					alert(pomodoroArray);
+				}
+
+			function showResumeTimes() 
+				{
+					alert(backToWorkArray);
+				}
+			
+			
+			function addResumeBreakIntervals()				
+				{
+					var resumeInterval = document.getElementById('backToWorkInterval').value;
+					var resumeDuration = parseFloat(resumeInterval);
+					var breakInterval = document.getElementById('breakInterval').value;
+					var breakDuration = parseFloat(breakInterval);
+					var ctr = document.getElementById('repitition').value;
+					var repeat = parseFloat(ctr);
+					var resumeTime = new Date();
+					var resumeHours = resumeTime.getHours();
+					var resumeMinutes = resumeTime.getminutes();
+					var breakTime = new Date();
+					var breakHours = breakTime.gethours();
+					var breakMinutes = breakTime.getminutes();
+					var timeNow = new Date();
+					var hoursNow = timeNow.getHours();
+					var minutesNow = timeNow.minutes();
+					while (repeat != 0)
+						{
+							resumeMinutes  = minutesNow + resumeDuration;
+							if (resumeMinutes > 60)
+								{
+									resumeHours = resumeHours + 1;
+									if (resumeHours > 12 || resumeHours > 24)
+										{
+											resumeHours = 0;
+										}
+								}
+							
+							breakMinutes = breakMinutes + breakDuration;
+							if (breakMinutes > 60)
+								{
+									breakHours = breakHours + 1;
+									if (breakHours > 12 || breakHours > 24)
+										{
+										breakHours = 0;
+										}
+								}
+							
+							breakTimeString = String(breakTime.toLocaleTimeString('en-US', 
+									{
+										hour12 : true,
+										hour : "numeric",
+										minute : "numeric"
+									}));
+							
+							resumeTimeString = String(resumeTime.toLocaleTimeString('en-US', 
+									{
+										hour12 : true,
+										hour : "numeric",
+										minute : "numeric"
+									}));
+								 
+							pomodoroArray.push(breakTimeString);
+							sessionStorage.setItem('breakTimeString', JSON.stringify(pomodoroArray));
+							backToWorkArray.push(resumeTimeString);
+							sessionStorage.setItem('resumeTimeString', JSON.stringify(pomodoroArray));
+							repeat = repeat - 1;
+						}
+							
+				}
+			
+		
+			function deletePomodoroTime()
+				{
+					var ctr = document.getElementById('breakTimeIndex').value;
+					if (ctr == "")
+						{
+							alert(`Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.`);
+						}
+					else
+						{
+							var index = parseFloat(ctr);
+							pomodoroArray.splice(index, 1);					
+							alert(`Break time was cleared.`);
+						}
+					
+				}
+			
+			function deleteBackToWorkTime()
+				{
+					var ctr = document.getElementById('resumeTimeIndex').value;
+					if (ctr == "")
+						{
+							alert(`Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.`);
+						}
+					else
+						{
+							var index = parseFloat(ctr);
+							backToWorkArray.splice(index, 1);					
+							alert(`Resume time was cleared.`);
+						}
+					
+				}
+			
+			function clearBreakTimes()
+				{
+					while (pomodoroArray.length > 0)
+						{
+							pomodoroArray = sessionStorage.clear();
+							document.location.reload();
+							alert(`Break times were cleared.`);	
+							
+						}
+					if (pomodoroArray.length == 0)
+						{
+							alert(`Break times are clear.`)
+						}				
+				}
+			
+			function clearResumeTimes()
+				{
+					while (backToWorkArray.length > 0)
+						{
+							backToWorkArray = sessionStorage.clear();
+							document.location.reload();
+							alert(`Resume times were cleared.`);
+						}
+					
+					if (backToWorkArray.length == 0)
+						{
+							alert(`Resume times are clear.`)
+						}
+				}
+			
+			function loopArray() 
+				{						
+					var ctr = 0;
+		
+					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
+					while (pomodoroArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
+						{	
+							 //alert(pomodoroArray[ctr]);
+							 //alert(backToWorkArray[ctr]);
+			
+							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
+							if (pomodoroArray[ctr] === currentTime) 
+								{
+									alert(`Time for a break because it is now ${pomodoroArray[ctr]}.`);
+									break;
+								}
+							
+							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
+							if (backToWorkArray[ctr] === currentTime) 
+								{
+									alert(`Time to resume to work because it is now ${backToWorkArray[ctr]}.`);
+									break;
+								}
+			
+							//break from the ctr if the iteration reach the last elements of the pomodoro and back to work time arrays
+							if (pomodoroArray[ctr] === pomodoroArray[pomodoroArray.length] && backToWorkArray[ctr] === backToWorkArray[backToWorkArray.length]) 
+								{
+									break;
+								}
+			
+							//increment ctr count
+							ctr = ctr + 1;
+						}
+				}
+		</script>
+	</body>
+</html>
