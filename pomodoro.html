@@ -79,9 +79,7 @@
 					hour12 : true,
 					hour : "numeric",
 					minute : "numeric"
-				}));
-			
-			//alert(currentTime); 
+				}));			
 	
 			if (sessionStorage.getItem('pomodoroTimes') == null || sessionStorage.getItem('backToWorkTimes') == null) 
 				{
@@ -91,10 +89,12 @@
 			else 
 				{
 					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));
+					//pomodoroArray = JSON.parse(sessionStorage.getItem('breakTimeString'));
 					backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
+					//backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
 					loopArray();
 				}
-					
+			
 			function addPomodoroTimes() 
 				{
 					pomodoroTimes = document.getElementById('pomodoroInputField').value;
@@ -105,13 +105,13 @@
 						} 
 					else 
 						{
-							pomodoroArray = pomodoroTimes.split(","); 
-							//pomodoroArray.push(pomodoroTimes);
+							//pomodoroArray = pomodoroTimes.split(","); 
+							pomodoroArray.push(pomodoroTimes);							
 							sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
 							alert(`${pomodoroTimes} break time was added.`);
 						}
 				}
-	
+
 			function addbackToWorkTimes() 
 				{
 					backToWorkTimes = document.getElementById('backToWorkInputField').value;
@@ -121,84 +121,101 @@
 						} 
 					else 
 						{
-							backToWorkArray = backToWorkTimes.split(","); 
-							//backToWorkArray.push(backToWorkTimes);
+							//backToWorkArray = backToWorkTimes.split(","); 
+							backToWorkArray.push(backToWorkTimes);
 							sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));
 							alert(`${backToWorkTimes} resume time was added.`);
 						}
 				}
-	
+			
+			
+					
 			function showBreakTimes() 
 				{
-					alert(pomodoroArray);
+					if (pomodoroArray.length == 0)
+						{
+							alert(`Break times is empty. Please add break times.`);
+						}
+					else
+						{
+							alert(pomodoroArray);
+						}
+					
 				}
 
 			function showResumeTimes() 
 				{
-					alert(backToWorkArray);
+					if (backToWorkArray.length == 0)
+						{
+							alert(`Resume times is empty. Please add resume times`);
+						}
+					else
+						{
+							alert(backToWorkArray);
+						}
+					
 				}
 			
+			function timeIntervals(dateObj)
+				{
+					return dateObj.toLocaleTimeString("en-US", 
+							{
+							    hour12: true,
+							     hour: "numeric",
+							     minute: "numeric"
+							 });
+				}
 			
-			function addResumeBreakIntervals()				
+ 			function addResumeBreakIntervals()				
 				{
 					var resumeInterval = document.getElementById('backToWorkInterval').value;
 					var resumeDuration = parseFloat(resumeInterval);
 					var breakInterval = document.getElementById('breakInterval').value;
 					var breakDuration = parseFloat(breakInterval);
-					var ctr = document.getElementById('repitition').value;
+					var ctr = document.getElementById('repetition').value;
 					var repeat = parseFloat(ctr);
 					var resumeTime = new Date();
 					var resumeHours = resumeTime.getHours();
-					var resumeMinutes = resumeTime.getminutes();
+					var resumeMinutes = resumeTime.getMinutes();
 					var breakTime = new Date();
-					var breakHours = breakTime.gethours();
-					var breakMinutes = breakTime.getminutes();
-					var timeNow = new Date();
-					var hoursNow = timeNow.getHours();
-					var minutesNow = timeNow.minutes();
+					var breakHours = breakTime.getHours();
+					var breakMinutes = breakTime.getMinutes();
 					while (repeat != 0)
 						{
-							resumeMinutes  = minutesNow + resumeDuration;
+							resumeMinutes  = resumeMinutes + resumeDuration;
 							if (resumeMinutes > 60)
 								{
 									resumeHours = resumeHours + 1;
-									if (resumeHours > 12 || resumeHours > 24)
+									if (resumeHours > 12)
 										{
 											resumeHours = 0;
 										}
 								}
+							resumeTime.setHours(resumeHours, resumeMinutes);
 							
 							breakMinutes = breakMinutes + breakDuration;
 							if (breakMinutes > 60)
 								{
 									breakHours = breakHours + 1;
-									if (breakHours > 12 || breakHours > 24)
+									if (breakHours > 12)
 										{
 										breakHours = 0;
 										}
 								}
-							
-							breakTimeString = String(breakTime.toLocaleTimeString('en-US', 
-									{
-										hour12 : true,
-										hour : "numeric",
-										minute : "numeric"
-									}));
-							
-							resumeTimeString = String(resumeTime.toLocaleTimeString('en-US', 
-									{
-										hour12 : true,
-										hour : "numeric",
-										minute : "numeric"
-									}));
+							breakTime.setHours(breakHours, breakMinutes);
 								 
+							var breakTimeString = timeIntervals(breakTime);
 							pomodoroArray.push(breakTimeString);
+							//alert(pomodoroArray);
 							sessionStorage.setItem('breakTimeString', JSON.stringify(pomodoroArray));
+							var resumeTimeString = timeIntervals(resumeTime);
+							//alert(backToWorkArray);
 							backToWorkArray.push(resumeTimeString);
-							sessionStorage.setItem('resumeTimeString', JSON.stringify(pomodoroArray));
+							sessionStorage.setItem('resumeTimeString', JSON.stringify(backToWorkArray));	
 							repeat = repeat - 1;
 						}
 							
+					alert(`Resume and break intervals were added.`);
 				}
 			
 		
@@ -245,7 +262,7 @@
 						}
 					if (pomodoroArray.length == 0)
 						{
-							alert(`Break times are clear.`)
+							alert(`Break times is empty. Please add break times`)
 						}				
 				}
 			
@@ -260,7 +277,7 @@
 					
 					if (backToWorkArray.length == 0)
 						{
-							alert(`Resume times are clear.`)
+							alert(`Resume times is empty. Please add resume times.`)
 						}
 				}
 			
