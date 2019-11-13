@@ -29,12 +29,12 @@
 			<br>
 			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
 			<H2>Or you may add your resume and break times by intervals</H2>
+			<p> Enter a break interval in minutes:
+			<br> 
+			<input type="text" id="breakInterval"> 
 			<p> Enter a resume to work interval in minutes:
 			<br> 
 			<input type="text" id="backToWorkInterval">
-			 <p> Enter a break interval in minutes:
-			<br> 
-			<input type="text" id="breakInterval"> 
 			 <p> Enter the number repetitions of resume and break time intervals:
 			<br> 
 			<input type="text" id="repetition"> 
@@ -72,29 +72,53 @@
 			var backToWorkArray = [];
 			var pomodoroTimes;
 			var backToWorkTimes;
-			
+			var breakTimeString;
+			var resumeTimeString;
+
 			//Convert time to string in hour and minute.		
 			var currentTime = String(new Date().toLocaleTimeString('en-US', 
 				{
 					hour12 : true,
 					hour : "numeric",
 					minute : "numeric"
-				}));			
-	
-			if (sessionStorage.getItem('pomodoroTimes') == null || sessionStorage.getItem('backToWorkTimes') == null) 
-				{
-					pomodoroArray = [];
-					backToWorkArray = [];
-				} 
-			else 
-				{
-					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));
-					//pomodoroArray = JSON.parse(sessionStorage.getItem('breakTimeString'));
-					backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
-					//backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
-					loopArray();
-				}
+				}));	
 			
+					if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') == null)
+						{
+							pomodoroArray = [];	
+						} 
+					if (sessionStorage.getItem('pomodoroTimes') != null && sessionStorage.getItem('breakTimeString') == null)
+						{
+							pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));
+						}
+					if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') != null)
+						{
+							pomodoroArray = JSON.parse(sessionStorage.getItem('breakTimeString'));
+						}
+				
+					if (sessionStorage.getItem('backToWorkTimes') == null && sessionStorage.getItem('resumeTimeString') == null)
+						{
+							backToWorkArray = [];
+						}
+					if (sessionStorage.getItem('backToWorkTimes') != null && sessionStorage.getItem('resumeTimeString') == null)
+						{
+							backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
+						}
+					if (sessionStorage.getItem('backToWorkTimes') == null && sessionStorage.getItem('resumeTimeString') != null)
+						{
+							backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
+						}
+					if (sessionStorage.getItem('pomodoroTimes') != null && sessionStorage.getItem('breakTimeString') != null) 
+						{
+							pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes')) + ', ' + JSON.parse(sessionStorage.getItem('breakTimeString'));
+						}
+					if (sessionStorage.getItem('backToWorkTimes') != null && sessionStorage.getItem('resumeTimeString') != null)
+						{
+							backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes')) + ', ' + JSON.parse(sessionStorage.getItem('resumeTimeString'));
+						}	
+					
+					loopArray();
+
 			function addPomodoroTimes() 
 				{
 					pomodoroTimes = document.getElementById('pomodoroInputField').value;
@@ -127,9 +151,7 @@
 							alert(`${backToWorkTimes} resume time was added.`);
 						}
 				}
-			
-			
-					
+								
 			function showBreakTimes() 
 				{
 					if (pomodoroArray.length == 0)
@@ -167,32 +189,21 @@
 				}
 			
  			function addResumeBreakIntervals()				
-				{
+				{				 				 				
 					var resumeInterval = document.getElementById('backToWorkInterval').value;
 					var resumeDuration = parseFloat(resumeInterval);
 					var breakInterval = document.getElementById('breakInterval').value;
 					var breakDuration = parseFloat(breakInterval);
 					var ctr = document.getElementById('repetition').value;
 					var repeat = parseFloat(ctr);
-					var resumeTime = new Date();
-					var resumeHours = resumeTime.getHours();
-					var resumeMinutes = resumeTime.getMinutes();
 					var breakTime = new Date();
 					var breakHours = breakTime.getHours();
 					var breakMinutes = breakTime.getMinutes();
+					var resumeTime = new Date();
+					var resumeHours = resumeTime.getHours();
+					var resumeMinutes = resumeTime.getMinutes();					
 					while (repeat != 0)
 						{
-							resumeMinutes  = resumeMinutes + resumeDuration;
-							if (resumeMinutes > 60)
-								{
-									resumeHours = resumeHours + 1;
-									if (resumeHours > 12)
-										{
-											resumeHours = 0;
-										}
-								}
-							resumeTime.setHours(resumeHours, resumeMinutes);
-							
 							breakMinutes = breakMinutes + breakDuration;
 							if (breakMinutes > 60)
 								{
@@ -203,18 +214,29 @@
 										}
 								}
 							breakTime.setHours(breakHours, breakMinutes);
-								 
-							var breakTimeString = timeIntervals(breakTime);
+							
+							resumeMinutes  = breakMinutes + resumeDuration;
+							if (resumeMinutes > 60)
+								{
+									resumeHours = resumeHours + 1;
+									if (resumeHours > 12)
+										{
+											resumeHours = 0;
+										}
+								}
+							resumeTime.setHours(resumeHours, resumeMinutes);
+														 
+							breakTimeString = timeIntervals(breakTime);
+							//alert('breakTimeString is ' + breakTimeString);
 							pomodoroArray.push(breakTimeString);
-							//alert(pomodoroArray);
-							sessionStorage.setItem('breakTimeString', JSON.stringify(pomodoroArray));
-							var resumeTimeString = timeIntervals(resumeTime);
-							//alert(backToWorkArray);
-							backToWorkArray.push(resumeTimeString);
-							sessionStorage.setItem('resumeTimeString', JSON.stringify(backToWorkArray));	
+							
+							resumeTimeString = timeIntervals(resumeTime);
+							backToWorkArray.push(resumeTimeString);						
+							
 							repeat = repeat - 1;
 						}
-							
+					sessionStorage.setItem('breakTimeString', JSON.stringify(pomodoroArray));
+					sessionStorage.setItem('resumeTimeString', JSON.stringify(backToWorkArray));
 					alert(`Resume and break intervals were added.`);
 				}
 			
