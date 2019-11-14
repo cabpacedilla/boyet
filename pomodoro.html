@@ -93,7 +93,7 @@
 				}
 			if (sessionStorage.getItem('pomodoroTimes') != null)
 				{
-					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));					
+					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));						
 				}
 			if (sessionStorage.getItem('backToWorkTimes') != null)
 				{
@@ -106,11 +106,9 @@
 			if (sessionStorage.getItem('resumeTimeString') != null)
 				{
 					backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
-				}						
+				}	 			
 			loopArray();
 				
-					
-
 			function addPomodoroTimes() 
 				{
 					pomodoroTimes = document.getElementById('pomodoroInputField').value;
@@ -121,11 +119,11 @@
 						} 
 					else 
 						{
-							//pomodoroArray = pomodoroTimes.split(","); 
-							pomodoroArray.push(pomodoroTimes);							
+							pomodoroArray.push(pomodoroTimes);		
 							sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
 							alert(`${pomodoroTimes} break time was added.`);
 						}
+
 				}
 
 			function addbackToWorkTimes() 
@@ -137,11 +135,11 @@
 						} 
 					else 
 						{
-							//backToWorkArray = backToWorkTimes.split(","); 
 							backToWorkArray.push(backToWorkTimes);
-							sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));
+							sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));	
 							alert(`${backToWorkTimes} resume time was added.`);
 						}
+
 				}
 								
 			function showBreakTimes() 
@@ -245,8 +243,7 @@
 							var index = parseFloat(ctr);
 							pomodoroArray.splice(index, 1);					
 							alert(`Break time was cleared.`);
-						}
-					
+						}					
 				}
 			
 			function deleteBackToWorkTime()
@@ -261,31 +258,41 @@
 							var index = parseFloat(ctr);
 							backToWorkArray.splice(index, 1);					
 							alert(`Resume time was cleared.`);
-						}
-					
+						}					
 				}
 			
 			function clearBreakTimes()
 				{
-					while (pomodoroArray.length > 0)
+					while (pomodoroArray.length)
 						{
-							pomodoroArray = [];
+							while (pomodoroArray.length > 0)
+								{
+									sessionStorage.removeItem('pomodoroTimes');
+									sessionStorage.removeItem('breakTimeString');
+									pomodoroArray = [];
+								}
+							
 							alert(`Break times were cleared.`);	
-							return;
 						}
+					
 					if (pomodoroArray.length == 0)
 						{
-							alert(`Break times is empty. Please add break times`)
+							alert(`Break times is empty. Please add resume times.`)
 						}				
 				}
 			
 			function clearResumeTimes()
 				{
-					while (backToWorkArray.length > 0)
+					while (backToWorkArray.length)
 						{
-							backToWorkArray = [];
+							while (backToWorkArray.length > 0)
+								{
+									sessionStorage.removeItem('backToWorkTimes');
+									sessionStorage.removeItem('resumeTimeString');
+									backToWorkArray = [];
+								}
+							
 							alert(`Resume times were cleared.`);
-							return;
 						}
 					
 					if (backToWorkArray.length == 0)
