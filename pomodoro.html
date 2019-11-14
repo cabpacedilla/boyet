@@ -269,10 +269,9 @@
 				{
 					while (pomodoroArray.length > 0)
 						{
-							pomodoroArray = sessionStorage.clear();
-							document.location.reload();
+							pomodoroArray = [];
 							alert(`Break times were cleared.`);	
-							
+							return;
 						}
 					if (pomodoroArray.length == 0)
 						{
@@ -284,9 +283,9 @@
 				{
 					while (backToWorkArray.length > 0)
 						{
-							backToWorkArray = sessionStorage.clear();
-							document.location.reload();
+							backToWorkArray = [];
 							alert(`Resume times were cleared.`);
+							return;
 						}
 					
 					if (backToWorkArray.length == 0)
