@@ -84,40 +84,30 @@
 				}));	
 			
 					if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') == null)
-						{
-							pomodoroArray = [];	
-						} 
-					if (sessionStorage.getItem('pomodoroTimes') != null && sessionStorage.getItem('breakTimeString') == null)
-						{
-							pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));
-						}
-					if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') != null)
-						{
-							pomodoroArray = JSON.parse(sessionStorage.getItem('breakTimeString'));
-						}
-				
-					if (sessionStorage.getItem('backToWorkTimes') == null && sessionStorage.getItem('resumeTimeString') == null)
-						{
-							backToWorkArray = [];
-						}
-					if (sessionStorage.getItem('backToWorkTimes') != null && sessionStorage.getItem('resumeTimeString') == null)
-						{
-							backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
-						}
-					if (sessionStorage.getItem('backToWorkTimes') == null && sessionStorage.getItem('resumeTimeString') != null)
-						{
-							backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
-						}
-					if (sessionStorage.getItem('pomodoroTimes') != null && sessionStorage.getItem('breakTimeString') != null) 
-						{
-							pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes')) + ', ' + JSON.parse(sessionStorage.getItem('breakTimeString'));
-						}
-					if (sessionStorage.getItem('backToWorkTimes') != null && sessionStorage.getItem('resumeTimeString') != null)
-						{
-							backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes')) + ', ' + JSON.parse(sessionStorage.getItem('resumeTimeString'));
-						}	
-					
-					loopArray();
+				{
+					pomodoroArray = [];	
+				} 
+			if (sessionStorage.getItem('backToWorkTimes') == null && sessionStorage.getItem('resumeTimeString') == null)
+				{
+					backToWorkArray = [];
+				}
+			if (sessionStorage.getItem('pomodoroTimes') != null)
+				{
+					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));					
+				}
+			if (sessionStorage.getItem('backToWorkTimes') != null)
+				{
+					backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
+				}
+			if (sessionStorage.getItem('breakTimeString') != null)
+				{
+					pomodoroArray = JSON.parse(sessionStorage.getItem('breakTimeString'));
+				}
+			if (sessionStorage.getItem('resumeTimeString') != null)
+				{
+					backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
+				}						
+			loopArray();
 				
 					
 
