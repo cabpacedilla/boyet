@@ -83,7 +83,7 @@
 					minute : "numeric"
 				}));	
 			
-					if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') == null)
+			if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') == null)
 				{
 					pomodoroArray = [];	
 				} 
@@ -229,7 +229,7 @@
 						}
 					sessionStorage.setItem('breakTimeString', JSON.stringify(pomodoroArray));
 					sessionStorage.setItem('resumeTimeString', JSON.stringify(backToWorkArray));
-					alert(`Resume and break intervals were added.`);
+					alert(`Resume times and break intervals were added.`);
 				}
 			
 		
