@@ -10,10 +10,26 @@
 	<body>
 		<h1>Pomodoro work life balance</h1>
 
-		<p>
-		Add your break and resume to work times in "0:00 AM/PM" format like "10:00 AM".<br>
-		You may add multiple break and resume times separated by commas like 10:00 AM, 10:20 AM, 10:40 AM...
-		</p>
+		<H2>Add your resume and break times by time intervals</H2>
+		<p> Enter a break interval in minutes:
+		<br> 
+		<input type="text" id="breakInterval"> 
+		<p> Enter a resume to work interval in minutes:
+		<br> 
+		<input type="text" id="backToWorkInterval">
+		<p> Enter the number repetitions of resume and break time intervals:
+		<br> 
+		<input type="text" id="repetition"> 
+		<br>
+		<br>
+		<input type="button" value="Add resume and break intervals" onclick="addResumeBreakIntervals()">
+		<br> 
+		<br> 			
+		<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
+		<br> 
+		<H3> Or you may add your break and resume to work times in "0:00 AM/PM" format like "10:00 AM".<br>
+		You may also add multiple break and resume times separated by commas like 10:00 AM, 10:20 AM, 10:40 AM...
+		</H3>
 	
 		<form>
 			<p> Break time:
@@ -28,35 +44,19 @@
 			<br> 
 			<br>
 			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
-			<H2>Or you may add your resume and break times by intervals</H2>
-			<p> Enter a break interval in minutes:
-			<br> 
-			<input type="text" id="breakInterval"> 
-			<p> Enter a resume to work interval in minutes:
-			<br> 
-			<input type="text" id="backToWorkInterval">
-			 <p> Enter the number repetitions of resume and break time intervals:
-			<br> 
-			<input type="text" id="repetition"> 
-			<br>
-			<br>
-			<input type="button" value="Add resume and break intervals" onclick="addResumeBreakIntervals()">
-			<br> 
-			<br> 			
-			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
-			<br> 
-			<br> 
-			<p> Delete a specific break time:
+			
+			
+			<H4> Delete a specific break time:</H4>
 			<p> Enter the number of nth break time starting from the left in the break times list. The first item is number zero.
 			<br> 
 			<input type="text" id="breakTimeIndex"> 
-			<input type="button" value="Update" onclick="deletePomodoroTime()">
+			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			
 			<p> Delete a specific time: 
 			<p> Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.
 			<br> 
 			<input type="text" id="resumeTimeIndex">
-			<input type="button" value="Update" onclick="deleteBackToWorkTime()">
+			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 			<br> 
 			<br> 
 			<input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
@@ -83,14 +83,15 @@
 					minute : "numeric"
 				}));	
 			
-			if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') == null)
+			/* if (sessionStorage.getItem('pomodoroTimes') == null && sessionStorage.getItem('breakTimeString') == null)
 				{
 					pomodoroArray = [];	
 				} 
 			if (sessionStorage.getItem('backToWorkTimes') == null && sessionStorage.getItem('resumeTimeString') == null)
 				{
 					backToWorkArray = [];
-				}
+				} */
+				
 			if (sessionStorage.getItem('pomodoroTimes') != null)
 				{
 					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));						
@@ -107,12 +108,13 @@
 				{
 					backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
 				}	 			
+			
 			loopArray();
 				
+			
 			function addPomodoroTimes() 
 				{
 					pomodoroTimes = document.getElementById('pomodoroInputField').value;
-					
 					if (pomodoroTimes == "") 
 						{
 							alert(`Please enter a break time in 0:00 AM or PM format.`);
@@ -120,10 +122,9 @@
 					else 
 						{
 							pomodoroArray.push(pomodoroTimes);		
-							sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
-							alert(`${pomodoroTimes} break time was added.`);
 						}
-
+					sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
+					alert(`${pomodoroTimes} break time was added.`);
 				}
 
 			function addbackToWorkTimes() 
@@ -136,10 +137,9 @@
 					else 
 						{
 							backToWorkArray.push(backToWorkTimes);
-							sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));	
-							alert(`${backToWorkTimes} resume time was added.`);
 						}
-
+					sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));	
+					alert(`${backToWorkTimes} resume time was added.`);
 				}
 								
 			function showBreakTimes() 
@@ -168,15 +168,15 @@
 					
 				}
 			
-			function timeIntervals(dateObj)
-				{
-					return dateObj.toLocaleTimeString("en-US", 
-							{
-							    hour12: true,
-							     hour: "numeric",
-							     minute: "numeric"
-							 });
-				}
+			function toTimeString(dateObj)
+			{
+				return dateObj.toLocaleTimeString("en-US", 
+						{
+						    hour12: true,
+						     hour: "numeric",
+						     minute: "numeric"
+						 });
+			}
 			
  			function addResumeBreakIntervals()				
 				{				 				 				
@@ -216,11 +216,11 @@
 								}
 							resumeTime.setHours(resumeHours, resumeMinutes);
 														 
-							breakTimeString = timeIntervals(breakTime);
+							breakTimeString = toTimeString(breakTime);
 							//alert('breakTimeString is ' + breakTimeString);
 							pomodoroArray.push(breakTimeString);
 							
-							resumeTimeString = timeIntervals(resumeTime);
+							resumeTimeString = toTimeString(resumeTime);
 							backToWorkArray.push(resumeTimeString);						
 							
 							repeat = repeat - 1;
