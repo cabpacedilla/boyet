@@ -53,7 +53,7 @@
 			<input type="text" id="breakTimeIndex"> 
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			
-			<p> Delete a specific time: 
+			<H4> Delete a specific resume time: </H4>
 			<p> Enter the number of nth resume time to delete starting from the left in the resume times list. <BR>
 			The number of the resume times starts with zero. So the second resume time number is 1.
 			<br> 
@@ -92,15 +92,7 @@
 			if (sessionStorage.getItem('backToWorkTimes') != null)
 				{
 					backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
-				}
-			if (sessionStorage.getItem('breakTimeString') != null)
-				{
-					pomodoroArray = JSON.parse(sessionStorage.getItem('breakTimeString'));
-				}
-			if (sessionStorage.getItem('resumeTimeString') != null)
-				{
-					backToWorkArray = JSON.parse(sessionStorage.getItem('resumeTimeString'));
-				}	 			
+				}	
 			
 			loopArray();
 				
@@ -210,16 +202,18 @@
 							resumeTime.setHours(resumeHours, resumeMinutes);
 														 
 							breakTimeString = toTimeString(breakTime);
+							pomodoroTimes = breakTimeString;
 							//alert('breakTimeString is ' + breakTimeString);
-							pomodoroArray.push(breakTimeString);
+							pomodoroArray.push(pomodoroTimes);
 							
 							resumeTimeString = toTimeString(resumeTime);
-							backToWorkArray.push(resumeTimeString);						
+							backToWorkTimes = resumeTimeString;
+							backToWorkArray.push(backToWorkTimes);						
 							
 							repeat = repeat - 1;
 						}
-					sessionStorage.setItem('breakTimeString', JSON.stringify(pomodoroArray));
-					sessionStorage.setItem('resumeTimeString', JSON.stringify(backToWorkArray));
+					sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
+					sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));
 					alert(`Resume times and break intervals were added.`);
 				}
 			
@@ -266,6 +260,7 @@
 								}
 							
 							alert(`Break times were cleared.`);	
+							return;
 						}
 					
 					if (pomodoroArray.length == 0)
@@ -286,6 +281,7 @@
 								}
 							
 							alert(`Resume times were cleared.`);
+							return;
 						}
 					
 					if (backToWorkArray.length == 0)
