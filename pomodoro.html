@@ -138,17 +138,13 @@
 									{
 										breakMinutes = breakMinutes - 60;
 									}
-								
-								if (breakHours == 12)
-									{
-										breakHours = 0;
-										breakHours = breakHours + 1;
-									}
-								
-								if (breakHours > 12)
-									{
-										breakHours = breakHours - 12;
-									}
+							}
+						
+						if (breakHours == 12)
+							{	
+								breakHours = 13;
+								breakMinutes = 0;
+								breakMinutes = breakMinutes +  breakDuration;
 							}
 						breakTime.setHours(breakHours, breakMinutes);
 						
@@ -157,20 +153,14 @@
 							{
 								resumeMinutes = 0;
 								resumeHours = resumeHours + 1;
-								if (resumeMinutes> 60)
+								if (resumeMinutes > 60)
 									{
 										resumeMinutes = resumeMinutes - 60;
 									}
-								
-								if (resumeHours == 12)
-									{
-										resumeHours = 0;
-										resumeHours = resumeHours + 1;
-									}
-								if (resumeHours > 12)
-									{
-										resumeHours = resumeHours - 12;
-									}
+							}
+						if (resumeHours == 12)
+							{	
+								resumeHours = 13;
 							}
 						resumeTime.setHours(resumeHours, resumeMinutes);
 													 
