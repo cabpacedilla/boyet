@@ -13,13 +13,13 @@
 		<H2>Add your resume and break time intervals and the number of resume and break times.</H2>
 		<p> Enter a break interval in minutes:
 		<br> 
-		<input type="text" id="breakInterval"> 
+		<input type="text" id="breakInterval" size="2" maxlenght="2"> 
 		<p> Enter a resume to work interval in minutes:
 		<br> 
-		<input type="text" id="backToWorkInterval">
+		<input type="text" id="backToWorkInterval" size="2" maxlenght="2">
 		<p> Enter the number resume and break time intervals:
 		<br> 
-		<input type="text" id="repetition"> 
+		<input type="text" id="repetition" size="2" maxlenght="2"> 
 		<br>
 		<br>
 		<input type="button" value="Add resume and break intervals" onclick="addResumeBreakIntervals()">
@@ -50,14 +50,14 @@
 			<p> Enter the number of nth break time that you want to delete starting from the left in the break times list. <BR>
 			The number of the break times starts with zero. So second break time number is 1.
 			<br> 
-			<input type="text" id="breakTimeIndex"> 
+			<input type="text" id="breakTimeIndex" size="2" maxlenght="2"> 
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			
 			<H4> Delete a specific resume time: </H4>
 			<p> Enter the number of nth resume time that you want to delete starting from the left in the resume times list. <BR>
 			The number of the resume times starts with zero. So the second resume time number is 1.
 			<br> 
-			<input type="text" id="resumeTimeIndex">
+			<input type="text" id="resumeTimeIndex" size="2" maxlenght="2">
 			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 			<br> 
 			<br> 
