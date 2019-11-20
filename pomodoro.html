@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="refresh" content="50">
+		<meta http-equiv="refresh" content="30">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Send Pomodoro alarm</title>
@@ -76,6 +76,11 @@
 			var backToWorkTimes;
 			var breakTimeString;
 			var resumeTimeString;
+			var alarmWindow;
+			var breakAlertArray;
+			var resumeAlertArray;
+			var breakMessage;
+			var resumeMessage;
 
 			//Convert time to string in hour and minute.		
 			var currentTime = String(new Date().toLocaleTimeString('en-US', 
@@ -319,6 +324,7 @@
 		
 					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
 					while (pomodoroArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
+						
 						{	
 							 //alert(pomodoroArray[ctr]);
 							 //alert(backToWorkArray[ctr]);
@@ -326,14 +332,20 @@
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
 								{
-									alert(`Time for a break because it is now ${pomodoroArray[ctr]}.`);
+									alarmWindow = window.open("", "MsgWindow", "width=200,height=100");
+									breakAlertArray = pomodoroArray[ctr] + "</p>";
+									breakMessage = "<p>Time for a break because it is now ";
+									alarmWindow.document.write(breakMessage + breakAlertArray);
 									break;
 								}
 							
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
 							if (backToWorkArray[ctr] === currentTime) 
 								{
-									alert(`Time to resume to work because it is now ${backToWorkArray[ctr]}.`);
+									alarmWindow = window.open("", "MsgWindow", "width=200,height=100");
+									resumeAlertArray = backToWorkArray[ctr] + "</p>";
+									resumeMessage = "<p>Time to resume to work because it is now ";
+									alarmWindow.document.write(resumeMessage + resumeAlertArray);
 									break;
 								}
 			
