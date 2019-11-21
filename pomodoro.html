@@ -333,7 +333,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 							if (pomodoroArray[ctr] === currentTime) 
 								{
 									alarmWindow = window.open("", "BreakTime", "width=300,height=50");
-									breakAlertArray = pomodoroArray[ctr] + "</p>" + " .";
+									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
 									alarmWindow.document.write(breakMessage + breakAlertArray);
 									break;
@@ -343,7 +343,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 							if (backToWorkArray[ctr] === currentTime) 
 								{
 									alarmWindow = window.open("", "ResumeToWork", "width=350,height=50");
-									resumeAlertArray = backToWorkArray[ctr] + "</p>" + " .";
+									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
 									alarmWindow.document.write(resumeMessage + resumeAlertArray);
 									break;
