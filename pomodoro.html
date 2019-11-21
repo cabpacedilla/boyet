@@ -1,5 +1,7 @@
-<!-- This webpage alert a message for a pomodoro breaktimes and back to work times.
-		This webpage code was assembled and written by Claive Alvin P. Acedilla -->
+<!-- 
+This webpage alert a message for a pomodoro breaktimes and back to work times.
+This webpage code was assembled and written by Claive Alvin P. Acedilla.
+-->
 		
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
@@ -13,7 +15,7 @@
 	<body>
 		<h1>Pomodoro work life balance</h1>
 
-		<H2>Add your resume and break time intervals and the number of resume and break times.</H2>
+		<b>Add your resume and break time intervals and the number of resume and break times.</b>
 		<p> Enter a break interval in minutes: <input type="number" id="breakInterval" size="1" min="1" max="99"> 
 		<p> Enter a resume to work interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
 		<p> Enter the number resume and break time intervals: <input type="number" id="repetition" size="1" min="1" max="99"> 
@@ -24,9 +26,10 @@
 		<br> 			
 		<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
 		<br> 
-		<H2> Or you may add your break and resume to work times in "0:00 AM/PM" format like "10:00 AM".<br>
+		<br> 
+		<b> You may also add your break and resume to work times in "0:00 AM/PM" format like "10:00 AM".<br>
 		You may also add multiple break and resume times separated by commas like 10:00 AM, 10:20 AM, 10:40 AM...
-		</H2>
+		</b>
 	
 		<form>
 			<p> Break time:
@@ -40,20 +43,23 @@
 			<input type="button" value="Add" onclick="addbackToWorkTimes()">
 			<br> 
 			<br>
-			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
-			
-			
-			<H4> Delete a specific break time:</H4>
+			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">		
+			<br>
+			<br>
+			<b> Delete an unneeded break time:</b>
 			<p> Enter the number of nth break time that you want to delete starting from the left in the break times list. <BR>
 			The number of the break times starts with zero. So second break time number is 1.
 			<br> 
+			<br> 
 			<input type="text" id="breakTimeIndex" size="2" maxlenght="2"> 
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
-			
-			<H4> Delete a specific resume time: </H4>
+			<br>
+			<br>
+			<b> Delete an unneeded  resume time: </b>
 			<p> Enter the number of nth resume time that you want to delete starting from the left in the resume times list. <BR>
 			The number of the resume times starts with zero. So the second resume time number is 1.
 			<br> 
+			<br>
 			<input type="text" id="resumeTimeIndex" size="2" maxlenght="2">
 			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 			<br> 
@@ -327,7 +333,7 @@
 							if (pomodoroArray[ctr] === currentTime) 
 								{
 									alarmWindow = window.open("", "BreakTime", "width=300,height=50");
-									breakAlertArray = pomodoroArray[ctr] + "</p>";
+									breakAlertArray = pomodoroArray[ctr] + "</p>" + " .";
 									breakMessage = "<p>Time for a break because it is now ";
 									alarmWindow.document.write(breakMessage + breakAlertArray);
 									break;
@@ -337,7 +343,7 @@
 							if (backToWorkArray[ctr] === currentTime) 
 								{
 									alarmWindow = window.open("", "ResumeToWork", "width=350,height=50");
-									resumeAlertArray = backToWorkArray[ctr] + "</p>";
+									resumeAlertArray = backToWorkArray[ctr] + "</p>" + " .";
 									resumeMessage = "<p>Time to resume to work because it is now ";
 									alarmWindow.document.write(resumeMessage + resumeAlertArray);
 									break;
