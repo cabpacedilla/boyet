@@ -1,7 +1,10 @@
+<!-- This webpage alert a message for a pomodoro breaktimes and back to work times.
+		This webpage code was assembled and written by Claive Alvin P. Acedilla -->
+		
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="refresh" content="30">
+		<meta http-equiv="refresh" content="50">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Send Pomodoro alarm</title>
@@ -13,13 +16,13 @@
 		<H2>Add your resume and break time intervals and the number of resume and break times.</H2>
 		<p> Enter a break interval in minutes:
 		<br> 
-		<input type="text" id="breakInterval" size="2" maxlenght="2"> 
+		<input type="number" id="breakInterval" size="1" min="1" max="99"> 
 		<p> Enter a resume to work interval in minutes:
 		<br> 
-		<input type="text" id="backToWorkInterval" size="2" maxlenght="2">
+		<input type="number" id="backToWorkInterval" size="1" min="1" max="99">
 		<p> Enter the number resume and break time intervals:
 		<br> 
-		<input type="text" id="repetition" size="2" maxlenght="2"> 
+		<input type="number" id="repetition" size="1" min="1" max="99"> 
 		<br>
 		<br>
 		<input type="button" value="Add resume and break intervals" onclick="addResumeBreakIntervals()">
@@ -65,10 +68,7 @@
 		
 		</form>
 	
-		<script type='text/javascript'>
-			//This code will alert a message for a pomodoro breaktime and back to work time
-			//This code was assembled by Claive Alvin P. Acedilla
-	
+		<script type='text/javascript'>		
 			var pomodoroArray = [];
 			var backToWorkArray = [];
 			var pomodoroTimes;
@@ -80,9 +80,10 @@
 			var resumeAlertArray;
 			var breakMessage;
 			var resumeMessage;
+			var currentTime;
 
 			//Convert time to string in hour and minute.		
-			var currentTime = String(new Date().toLocaleTimeString('en-US', 
+			currentTime = String(new Date().toLocaleTimeString('en-US', 
 				{
 					hour12 : true,
 					hour : "numeric",
@@ -331,7 +332,7 @@
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
 								{
-									alarmWindow = window.open("", "MsgWindow", "width=200,height=100");
+									alarmWindow = window.open("", "BreakTime", "width=300,height=50");
 									breakAlertArray = pomodoroArray[ctr] + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
 									alarmWindow.document.write(breakMessage + breakAlertArray);
@@ -341,7 +342,7 @@
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
 							if (backToWorkArray[ctr] === currentTime) 
 								{
-									alarmWindow = window.open("", "MsgWindow", "width=200,height=100");
+									alarmWindow = window.open("", "ResumeToWork", "width=350,height=50");
 									resumeAlertArray = backToWorkArray[ctr] + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
 									alarmWindow.document.write(resumeMessage + resumeAlertArray);
