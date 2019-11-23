@@ -130,7 +130,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 				
 				if (resumeInterval == "" || breakInterval == "" || ctr == "")
 					{
-						window.alert("Please enter a break, resume and number intervals.");
+						alert("Please enter a break, resume and number intervals.");
 						return;
 					}
 				
@@ -173,7 +173,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 													 
 						breakTimeString = toTimeString(breakTime);
 						pomodoroTimes = breakTimeString;
-						//window.alert("breakTimeString is " + breakTimeString);
+						//alert("breakTimeString is " + breakTimeString);
 						pomodoroArray.push(pomodoroTimes);
 						
 						resumeTimeString = toTimeString(resumeTime);
@@ -185,7 +185,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 				
 				sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 				sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
-				window.alert("Break and resume times intervals were added.");
+				alert("Break and resume times intervals were added.");
 			}
 			
 			function addPomodoroTimes() 
@@ -193,7 +193,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					pomodoroTimes = document.getElementById("pomodoroInputField").value;
 					if (pomodoroTimes == "") 
 						{
-							window.alert("Please enter a break time in 0:00 AM or PM format.");
+							alert("Please enter a break time in 0:00 AM or PM format.");
 						} 
 					else 
 						{
@@ -202,7 +202,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					
 					
 					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
-					window.alert("${pomodoroTimes} break time was added.");
+					alert("${pomodoroTimes} break time was added.");
 				}
 
 			function addbackToWorkTimes() 
@@ -210,7 +210,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					backToWorkTimes = document.getElementById("backToWorkInputField").value;
 					if (backToWorkTimes == "") 
 						{
-							window.alert("Please enter a break time in 0:00 AM or PM format.");
+							alert("Please enter a break time in 0:00 AM or PM format.");
 						} 
 					else 
 						{
@@ -219,18 +219,18 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					
 					
 					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
-					window.alert("${backToWorkTimes} resume time was added.");
+					alert("${backToWorkTimes} resume time was added.");
 				}
 								
 			function showBreakTimes() 
 				{
 					if (pomodoroArray.length == 0)
 						{
-							window.alert("Break times is empty. Please add break times.");
+							alert("Break times is empty. Please add break times.");
 						}
 					else
 						{
-							window.alert(pomodoroArray);
+							alert(pomodoroArray);
 						}
 					
 				}
@@ -239,11 +239,11 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 				{
 					if (backToWorkArray.length == 0)
 						{
-							window.alert("Resume times is empty. Please add resume times");
+							alert("Resume times is empty. Please add resume times");
 						}
 					else
 						{
-							window.alert(backToWorkArray);
+							alert(backToWorkArray);
 						}
 					
 				}
@@ -253,13 +253,13 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					var ctr = document.getElementById("breakTimeIndex").value;
 					if (ctr == "")
 						{
-							window.alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
+							alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
 						}
 					else
 						{
 							var index = parseFloat(ctr);
 							pomodoroArray.splice(index, 1);					
-							window.alert("Break time was cleared.");
+							alert("Break time was cleared.");
 						}					
 				}
 			
@@ -268,13 +268,13 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					var ctr = document.getElementById("resumeTimeIndex").value;
 					if (ctr == "")
 						{
-							window.alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
+							alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
 						}
 					else
 						{
 							var index = parseFloat(ctr);
 							backToWorkArray.splice(index, 1);					
-							window.alert("Resume time was cleared.");
+							alert("Resume time was cleared.");
 						}					
 				}
 			
@@ -289,13 +289,13 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 									pomodoroArray = [];
 								}
 							
-							window.alert("Break times were cleared.");	
+							alert("Break times were cleared.");	
 							return;
 						}
 					
 					if (pomodoroArray.length == 0)
 						{
-							window.alert("Break times is empty. Please add resume times.")
+							alert("Break times is empty. Please add resume times.")
 						}				
 				}
 			
@@ -310,13 +310,13 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 									backToWorkArray = [];
 								}
 							
-							window.alert("Resume times were cleared.");
+							alert("Resume times were cleared.");
 							return;
 						}
 					
 					if (backToWorkArray.length == 0)
 						{
-							window.alert("Resume times is empty. Please add resume times.")
+							alert("Resume times is empty. Please add resume times.")
 						}
 				}
 			
@@ -328,8 +328,8 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					while (pomodoroArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
 						
 						{	
-							 //window.alert(pomodoroArray[ctr]);
-							 //window.alert(backToWorkArray[ctr]);
+							 //alert(pomodoroArray[ctr]);
+							 //alert(backToWorkArray[ctr]);
 			
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
