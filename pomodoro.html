@@ -6,7 +6,8 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="refresh" content="50">
+		
+		<meta http-equiv="refresh" content="35">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Send Pomodoro alarm</title>
@@ -21,7 +22,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 		<p> Enter the number resume and break time intervals: <input type="number" id="repetition" size="1" min="1" max="99"> 
 		<br>
 		<br>
-		<input type="button" value="Add resume and break intervals" onclick="addResumeBreakIntervals()">
+		<input type="button" value="Add break and resume intervals" onclick="addResumeBreakIntervals()">
 		<br> 
 		<br> 			
 		<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
@@ -47,7 +48,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			<br>
 			<br>
 			<b> Delete an unneeded break time:</b>
-			<p> Enter the number of nth break time that you want to delete starting from the left in the break times list. <BR>
+			<p> Enter the number of nth break time that you want to delete starting from the left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>
 			The number of the break times starts with zero. So second break time number is 1.
 			<br> 
 			<br> 
@@ -56,7 +57,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			<br>
 			<br>
 			<b> Delete an unneeded  resume time: </b>
-			<p> Enter the number of nth resume time that you want to delete starting from the left in the resume times list. <BR>
+			<p> Enter the number of nth resume time that you want to delete starting from the left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>
 			The number of the resume times starts with zero. So the second resume time number is 1.
 			<br> 
 			<br>
@@ -68,7 +69,8 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 		
 		</form>
 	
-		<script type='text/javascript'>		
+		<script type="text/javascript">	
+		
 			var pomodoroArray = [];
 			var backToWorkArray = [];
 			var pomodoroTimes;
@@ -83,20 +85,20 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			var currentTime;
 
 			//Convert time to string in hour and minute.		
-			currentTime = String(new Date().toLocaleTimeString('en-US', 
+			currentTime = String(new Date().toLocaleTimeString("en-US", 
 				{
 					hour12 : true,
 					hour : "numeric",
 					minute : "numeric"
 				}));	
 			
-			if (sessionStorage.getItem('pomodoroTimes') != null)
+			if (sessionStorage.getItem("pomodoroTimes") != null)
 				{
-					pomodoroArray = JSON.parse(sessionStorage.getItem('pomodoroTimes'));						
+					pomodoroArray = JSON.parse(sessionStorage.getItem("pomodoroTimes"));						
 				}
-			if (sessionStorage.getItem('backToWorkTimes') != null)
+			if (sessionStorage.getItem("backToWorkTimes") != null)
 				{
-					backToWorkArray = JSON.parse(sessionStorage.getItem('backToWorkTimes'));
+					backToWorkArray = JSON.parse(sessionStorage.getItem("backToWorkTimes"));
 				}	
 			
 			loopArray();
@@ -113,11 +115,11 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			
 			function addResumeBreakIntervals()				
 			{				 				 				
-				var resumeInterval = document.getElementById('backToWorkInterval').value;
+				var resumeInterval = document.getElementById("backToWorkInterval").value;
 				var resumeDuration = parseFloat(resumeInterval);
-				var breakInterval = document.getElementById('breakInterval').value;
+				var breakInterval = document.getElementById("breakInterval").value;
 				var breakDuration = parseFloat(breakInterval);
-				var ctr = document.getElementById('repetition').value;
+				var ctr = document.getElementById("repetition").value;
 				var repeat = parseFloat(ctr);
 				var breakTime = new Date();
 				var breakHours = breakTime.getHours();
@@ -128,7 +130,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 				
 				if (resumeInterval == "" || breakInterval == "" || ctr == "")
 					{
-						alert(`Please enter a break, resume and number intervals.`);
+						window.alert("Please enter a break, resume and number intervals.");
 						return;
 					}
 				
@@ -171,7 +173,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 													 
 						breakTimeString = toTimeString(breakTime);
 						pomodoroTimes = breakTimeString;
-						//alert('breakTimeString is ' + breakTimeString);
+						//window.alert("breakTimeString is " + breakTimeString);
 						pomodoroArray.push(pomodoroTimes);
 						
 						resumeTimeString = toTimeString(resumeTime);
@@ -181,17 +183,17 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 						repeat = repeat - 1;
 					}
 				
-				sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
-				sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));
-				alert(`Resume times and break intervals were added.`);
+				sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
+				sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+				window.alert("Break and resume times intervals were added.");
 			}
 			
 			function addPomodoroTimes() 
 				{
-					pomodoroTimes = document.getElementById('pomodoroInputField').value;
+					pomodoroTimes = document.getElementById("pomodoroInputField").value;
 					if (pomodoroTimes == "") 
 						{
-							alert(`Please enter a break time in 0:00 AM or PM format.`);
+							window.alert("Please enter a break time in 0:00 AM or PM format.");
 						} 
 					else 
 						{
@@ -199,16 +201,16 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 						}
 					
 					
-					sessionStorage.setItem('pomodoroTimes', JSON.stringify(pomodoroArray));
-					alert(`${pomodoroTimes} break time was added.`);
+					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
+					window.alert("${pomodoroTimes} break time was added.");
 				}
 
 			function addbackToWorkTimes() 
 				{
-					backToWorkTimes = document.getElementById('backToWorkInputField').value;
+					backToWorkTimes = document.getElementById("backToWorkInputField").value;
 					if (backToWorkTimes == "") 
 						{
-							alert(`Please enter a break time in 0:00 AM or PM format.`);
+							window.alert("Please enter a break time in 0:00 AM or PM format.");
 						} 
 					else 
 						{
@@ -216,19 +218,19 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 						}
 					
 					
-					sessionStorage.setItem('backToWorkTimes', JSON.stringify(backToWorkArray));	
-					alert(`${backToWorkTimes} resume time was added.`);
+					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
+					window.alert("${backToWorkTimes} resume time was added.");
 				}
 								
 			function showBreakTimes() 
 				{
 					if (pomodoroArray.length == 0)
 						{
-							alert(`Break times is empty. Please add break times.`);
+							window.alert("Break times is empty. Please add break times.");
 						}
 					else
 						{
-							alert(pomodoroArray);
+							window.alert(pomodoroArray);
 						}
 					
 				}
@@ -237,42 +239,42 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 				{
 					if (backToWorkArray.length == 0)
 						{
-							alert(`Resume times is empty. Please add resume times`);
+							window.alert("Resume times is empty. Please add resume times");
 						}
 					else
 						{
-							alert(backToWorkArray);
+							window.alert(backToWorkArray);
 						}
 					
 				}
 			
 			function deletePomodoroTime()
 				{
-					var ctr = document.getElementById('breakTimeIndex').value;
+					var ctr = document.getElementById("breakTimeIndex").value;
 					if (ctr == "")
 						{
-							alert(`Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.`);
+							window.alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
 						}
 					else
 						{
 							var index = parseFloat(ctr);
 							pomodoroArray.splice(index, 1);					
-							alert(`Break time was cleared.`);
+							window.alert("Break time was cleared.");
 						}					
 				}
 			
 			function deleteBackToWorkTime()
 				{
-					var ctr = document.getElementById('resumeTimeIndex').value;
+					var ctr = document.getElementById("resumeTimeIndex").value;
 					if (ctr == "")
 						{
-							alert(`Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.`);
+							window.alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
 						}
 					else
 						{
 							var index = parseFloat(ctr);
 							backToWorkArray.splice(index, 1);					
-							alert(`Resume time was cleared.`);
+							window.alert("Resume time was cleared.");
 						}					
 				}
 			
@@ -282,18 +284,18 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 						{
 							while (pomodoroArray.length > 0)
 								{
-									sessionStorage.removeItem('pomodoroTimes');
-									sessionStorage.removeItem('breakTimeString');
+									sessionStorage.removeItem("pomodoroTimes");
+									sessionStorage.removeItem("breakTimeString");
 									pomodoroArray = [];
 								}
 							
-							alert(`Break times were cleared.`);	
+							window.alert("Break times were cleared.");	
 							return;
 						}
 					
 					if (pomodoroArray.length == 0)
 						{
-							alert(`Break times is empty. Please add resume times.`)
+							window.alert("Break times is empty. Please add resume times.")
 						}				
 				}
 			
@@ -303,18 +305,18 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 						{
 							while (backToWorkArray.length > 0)
 								{
-									sessionStorage.removeItem('backToWorkTimes');
-									sessionStorage.removeItem('resumeTimeString');
+									sessionStorage.removeItem("backToWorkTimes");
+									sessionStorage.removeItem("resumeTimeString");
 									backToWorkArray = [];
 								}
 							
-							alert(`Resume times were cleared.`);
+							window.alert("Resume times were cleared.");
 							return;
 						}
 					
 					if (backToWorkArray.length == 0)
 						{
-							alert(`Resume times is empty. Please add resume times.`)
+							window.alert("Resume times is empty. Please add resume times.")
 						}
 				}
 			
@@ -326,13 +328,14 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					while (pomodoroArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
 						
 						{	
-							 //alert(pomodoroArray[ctr]);
-							 //alert(backToWorkArray[ctr]);
+							 //window.alert(pomodoroArray[ctr]);
+							 //window.alert(backToWorkArray[ctr]);
 			
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
 								{
-									alarmWindow = window.open("", "BreakTime", "width=300,height=50");
+									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
+									alarmWindow.focus();
 									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
 									alarmWindow.document.write(breakMessage + breakAlertArray);
@@ -342,7 +345,8 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
 							if (backToWorkArray[ctr] === currentTime) 
 								{
-									alarmWindow = window.open("", "ResumeToWork", "width=350,height=50");
+									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
+									alarmWindow.focus();
 									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
 									alarmWindow.document.write(resumeMessage + resumeAlertArray);
