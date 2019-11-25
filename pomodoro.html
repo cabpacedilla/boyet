@@ -7,7 +7,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 <html>
 	<head>
 		
-		<meta http-equiv="refresh" content="35">
+		<meta http-equiv="refresh" content="40">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Send Pomodoro alarm</title>
@@ -35,12 +35,12 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 		<form>
 			<p> Break time:
 			<br> 
-			<input type="text" id="pomodoroInputField"> 
+			<input type="text" id="pomodoroInputField" size="25"> 
 			<input type="button" value="Add" onclick="addPomodoroTimes()">
 			
 			<p> Resume to work:
 			<br> 
-			<input type="text" id="backToWorkInputField">
+			<input type="text" id="backToWorkInputField" size="25">
 			<input type="button" value="Add" onclick="addbackToWorkTimes()">
 			<br> 
 			<br>
@@ -48,8 +48,8 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			<br>
 			<br>
 			<b> Delete an unneeded break time:</b>
-			<p> Enter the number of nth break time that you want to delete starting from the left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>
-			The number of the break times starts with zero. So second break time number is 1.
+			<p> Enter the number of nth break time that you want to delete starting from the topmost left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>
+			The number of the break time items in the list starts with zero. So the second break time item number is 1.
 			<br> 
 			<br> 
 			<input type="text" id="breakTimeIndex" size="2" maxlenght="2"> 
@@ -57,8 +57,8 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			<br>
 			<br>
 			<b> Delete an unneeded  resume time: </b>
-			<p> Enter the number of nth resume time that you want to delete starting from the left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>
-			The number of the resume times starts with zero. So the second resume time number is 1.
+			<p> Enter the number of nth resume time that you want to delete starting from the topmost left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>
+			The number of the resume time items in the list starts with zero. So the second resume time item number is 1.
 			<br> 
 			<br>
 			<input type="text" id="resumeTimeIndex" size="2" maxlenght="2">
@@ -104,89 +104,89 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 			loopArray();
 			
 			function toTimeString(dateObj)
-			{
-				return dateObj.toLocaleTimeString("en-US", 
-						{
-						    hour12: true,
-						     hour: "numeric",
-						     minute: "numeric"
-						 });
-			}
+				{
+					return dateObj.toLocaleTimeString("en-US", 
+							{
+							    hour12: true,
+							     hour: "numeric",
+							     minute: "numeric"
+							 });
+				}
 			
 			function addResumeBreakIntervals()				
-			{				 				 				
-				var resumeInterval = document.getElementById("backToWorkInterval").value;
-				var resumeDuration = parseFloat(resumeInterval);
-				var breakInterval = document.getElementById("breakInterval").value;
-				var breakDuration = parseFloat(breakInterval);
-				var ctr = document.getElementById("repetition").value;
-				var repeat = parseFloat(ctr);
-				var breakTime = new Date();
-				var breakHours = breakTime.getHours();
-				var breakMinutes = breakTime.getMinutes();
-				var resumeTime = new Date();
-				var resumeHours = resumeTime.getHours();
-				var resumeMinutes = resumeTime.getMinutes();
-				
-				if (resumeInterval == "" || breakInterval == "" || ctr == "")
-					{
-						alert("Please enter a break, resume and number intervals.");
-						return;
-					}
-				
-				while (repeat != 0)
-					{
-						breakMinutes = resumeMinutes + breakDuration;
-						if (breakMinutes == 60)
-							{
-								breakMinutes = 0;
-								breakHours = breakHours + 1;
-								if (breakMinutes > 60)
-									{
-										breakMinutes = breakMinutes - 60;
-									}
-							}
-						
-						if (breakHours == 12)
-							{	
-								breakHours = 13;
-								breakMinutes = 0;
-								breakMinutes = breakMinutes +  breakDuration;
-							}
-						breakTime.setHours(breakHours, breakMinutes);
-						
-						resumeMinutes  = breakMinutes + resumeDuration;
-						if (resumeMinutes == 60)
-							{
-								resumeMinutes = 0;
-								resumeHours = resumeHours + 1;
-								if (resumeMinutes > 60)
-									{
-										resumeMinutes = resumeMinutes - 60;
-									}
-							}
-						if (resumeHours == 12)
-							{	
-								resumeHours = 13;
-							}
-						resumeTime.setHours(resumeHours, resumeMinutes);
-													 
-						breakTimeString = toTimeString(breakTime);
-						pomodoroTimes = breakTimeString;
-						//alert("breakTimeString is " + breakTimeString);
-						pomodoroArray.push(pomodoroTimes);
-						
-						resumeTimeString = toTimeString(resumeTime);
-						backToWorkTimes = resumeTimeString;
-						backToWorkArray.push(backToWorkTimes);	
-						
-						repeat = repeat - 1;
-					}
-				
-				sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
-				sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
-				alert("Break and resume times intervals were added.");
-			}
+				{				 				 				
+					var resumeInterval = document.getElementById("backToWorkInterval").value;
+					var resumeDuration = parseFloat(resumeInterval);
+					var breakInterval = document.getElementById("breakInterval").value;
+					var breakDuration = parseFloat(breakInterval);
+					var ctr = document.getElementById("repetition").value;
+					var repeat = parseFloat(ctr);
+					var breakTime = new Date();
+					var breakHours = breakTime.getHours();
+					var breakMinutes = breakTime.getMinutes();
+					var resumeTime = new Date();
+					var resumeHours = resumeTime.getHours();
+					var resumeMinutes = resumeTime.getMinutes();
+					
+					if (resumeInterval == "" || breakInterval == "" || ctr == "")
+						{
+							alert("Please enter a break, resume and number intervals.");
+							return;
+						}
+					
+					while (repeat != 0)
+						{
+							breakMinutes = resumeMinutes + breakDuration;
+							if (breakMinutes == 60)
+								{
+									breakMinutes = 0;
+									breakHours = breakHours + 1;
+									if (breakMinutes > 60)
+										{
+											breakMinutes = breakMinutes - 60;
+										}
+								}
+							
+							if (breakHours == 12)
+								{	
+									breakHours = 13;
+									breakMinutes = 0;
+									breakMinutes = breakMinutes +  breakDuration;
+								}
+							breakTime.setHours(breakHours, breakMinutes);
+							
+							resumeMinutes  = breakMinutes + resumeDuration;
+							if (resumeMinutes == 60)
+								{
+									resumeMinutes = 0;
+									resumeHours = resumeHours + 1;
+									if (resumeMinutes > 60)
+										{
+											resumeMinutes = resumeMinutes - 60;
+										}
+								}
+							if (resumeHours == 12)
+								{	
+									resumeHours = 13;
+								}
+							resumeTime.setHours(resumeHours, resumeMinutes);
+														 
+							breakTimeString = toTimeString(breakTime);
+							pomodoroTimes = breakTimeString;
+							//alert("breakTimeString is " + breakTimeString);
+							pomodoroArray.push(pomodoroTimes);
+							
+							resumeTimeString = toTimeString(resumeTime);
+							backToWorkTimes = resumeTimeString;
+							backToWorkArray.push(backToWorkTimes);	
+							
+							repeat = repeat - 1;
+						}
+					
+					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
+					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+					alert("Break and resume time intervals were added.");
+				}
 			
 			function addPomodoroTimes() 
 				{
@@ -198,8 +198,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					else 
 						{
 							pomodoroArray.push(pomodoroTimes);		
-						}
-					
+						}					
 					
 					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 					alert("${pomodoroTimes} break time was added.");
@@ -215,8 +214,7 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 					else 
 						{
 							backToWorkArray.push(backToWorkTimes);
-						}
-					
+						}					
 					
 					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
 					alert("${backToWorkTimes} resume time was added.");
