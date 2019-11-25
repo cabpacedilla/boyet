@@ -153,6 +153,13 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 									breakMinutes = 0;
 									breakMinutes = breakMinutes +  breakDuration;
 								}
+							
+							if (breakHours == 18)
+							{	
+								breakHours = 19;
+								breakMinutes = 0;
+								breakMinutes = breakMinutes +  breakDuration;
+							}
 							breakTime.setHours(breakHours, breakMinutes);
 							
 							resumeMinutes  = breakMinutes + resumeDuration;
@@ -169,6 +176,11 @@ This webpage code was assembled and written by Claive Alvin P. Acedilla.
 								{	
 									resumeHours = 13;
 								}
+							
+							if (resumeHours == 18)
+							{	
+								resumeHours = 19;
+							}
 							resumeTime.setHours(resumeHours, resumeMinutes);
 														 
 							breakTimeString = toTimeString(breakTime);
