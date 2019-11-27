@@ -147,7 +147,8 @@ November 2019
 											breakMinutes = breakMinutes - 60;
 										}
 								}
-							
+						
+							// Skip lunch time
 							if (breakHours == 12)
 								{	
 									breakHours = 13;
@@ -155,6 +156,7 @@ November 2019
 									breakMinutes = breakMinutes +  breakDuration;
 								}
 							
+							// Skip dinner time
 							if (breakHours == 18)
 							{	
 								breakHours = 19;
