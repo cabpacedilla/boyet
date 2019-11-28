@@ -8,7 +8,7 @@ November 2019
 <html>
 	<head>
 		
-		<meta http-equiv="refresh" content="40">
+		<meta http-equiv="refresh" content="50">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Send Pomodoro alarm</title>
@@ -213,11 +213,10 @@ November 2019
 						} 
 					else 
 						{
-							pomodoroArray.push(pomodoroTimes);		
-						}					
-					
-					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
-					alert("${pomodoroTimes} break time was added.");
+							pomodoroArray.push(pomodoroTimes);
+							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
+							alert("Break time was added.");
+						}									
 				}
 
 			function addbackToWorkTimes() 
@@ -230,10 +229,9 @@ November 2019
 					else 
 						{
 							backToWorkArray.push(backToWorkTimes);
-						}					
-					
-					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
-					alert("${backToWorkTimes} resume time was added.");
+							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
+							alert("Resume time was added.");
+						}										
 				}
 								
 			function showBreakTimes() 
@@ -344,26 +342,28 @@ November 2019
 						{	
 							 //alert(pomodoroArray[ctr]);
 							 //alert(backToWorkArray[ctr]);
-			
+							var breakAlarmWindow;
+							var resumeAlarmWindow;
+							
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
 								{
-									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
-									alarmWindow.focus();
+									breakAlarmWindow = window.open("", "BreakTime", "width=350,height=50");
 									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
-									alarmWindow.document.write(breakMessage + breakAlertArray);
+									breakAlarmWindow.document.write(breakMessage + breakAlertArray);
+									setTimeout(function(){ breakAlarmWindow.close(); }, 10000);
 									break;
 								}
 							
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
 							if (backToWorkArray[ctr] === currentTime) 
 								{
-									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
-									alarmWindow.focus();
+									resumeAlarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
 									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
-									alarmWindow.document.write(resumeMessage + resumeAlertArray);
+									resumeAlarmWindow.document.write(resumeMessage + resumeAlertArray);
+									setTimeout(function(){ resumeAlarmWindow.close(); }, 10000);
 									break;
 								}
 			
