@@ -8,7 +8,7 @@ November 2019
 <html>
 	<head>
 		
-		<meta http-equiv="refresh" content="50">
+		<meta http-equiv="refresh" content="55">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
 		<title>Send Pomodoro alarm</title>
@@ -18,6 +18,7 @@ November 2019
 		<h1>Pomodoro work life balance</h1>
 
 		<b>Add your resume and break time intervals and the number of resume and break times.</b>
+		<!-- <p> Enter a start time in in "0:00 AM/PM" format like "10:00 AM": <input type="text" id="startTime" size="10" min="1" max="99"> -->
 		<p> Enter a break interval in minutes: <input type="number" id="breakInterval" size="1" min="1" max="99"> 
 		<p> Enter a resume to work interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
 		<p> Enter the number resume and break time intervals: <input type="number" id="repetition" size="1" min="1" max="99"> 
@@ -49,20 +50,16 @@ November 2019
 			<br>
 			<br>
 			<b> Delete an unneeded break time:</b>
-			<p> Enter the number of nth break time that you want to delete starting from the topmost left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>
-			The number of the break time items in the list starts with zero. So the second break time item number is 1.
-			<br> 
-			<br> 
-			<input type="text" id="breakTimeIndex" size="2" maxlenght="2"> 
+			<p> Enter the number of nth break time that you want to delete starting from the topmost left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>.
+			<br>  
+			<input type="number" id="breakTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			<br>
 			<br>
 			<b> Delete an unneeded  resume time: </b>
-			<p> Enter the number of nth resume time that you want to delete starting from the topmost left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>
-			The number of the resume time items in the list starts with zero. So the second resume time item number is 1.
+			<p> Enter the number of nth resume time that you want to delete starting from the topmost left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>.
 			<br> 
-			<br>
-			<input type="text" id="resumeTimeIndex" size="2" maxlenght="2">
+			<input type="number" id="resumeTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 			<br> 
 			<br> 
@@ -83,6 +80,7 @@ November 2019
 			var resumeAlertArray;
 			var breakMessage;
 			var resumeMessage;
+			//var startTime;
 			var currentTime;
 
 			//Convert time to string in hour and minute.		
@@ -128,13 +126,22 @@ November 2019
 					var resumeTime = new Date();
 					var resumeHours = resumeTime.getHours();
 					var resumeMinutes = resumeTime.getMinutes();
+					//var startTimeObject = new Date();
 					
-					if (resumeInterval == "" || breakInterval == "" || ctr == "")
+					if (startTime = "" || resumeInterval == "" || breakInterval == "" || ctr == "")
 						{
-							alert("Please enter a break, resume and number intervals.");
+							alert("Please enter a start time, break time, resume time and the number intervals.");
 							return;
 						}
 					
+/*  					startTime = document.getElementById("startTime").value;
+					startTime = startTime.substring(0, 4);
+					startTime = startTime.split(":");	
+					startTimeObject.setHours(startTime[0], startTime[1]);
+					breakTime = startTimeObject;
+					breakMinutes = breakTime.getMinutes();					
+					breakHours = breakTime.getHours();  */
+							
 					while (repeat != 0)
 						{
 							breakMinutes = resumeMinutes + breakDuration;
@@ -147,7 +154,8 @@ November 2019
 											breakMinutes = breakMinutes - 60;
 										}
 								}
-						
+							
+							// Skip lunch time
 							if (breakHours == 12)
 								{	
 									breakHours = 13;
@@ -155,6 +163,7 @@ November 2019
 									breakMinutes = breakMinutes +  breakDuration;
 								}
 							
+							// Skip dinner time
 							if (breakHours == 18)
 							{	
 								breakHours = 19;
@@ -213,10 +222,12 @@ November 2019
 						} 
 					else 
 						{
-							pomodoroArray.push(pomodoroTimes);
+							pomodoroArray.push(pomodoroTimes);		
 							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 							alert("Break time was added.");
-						}									
+						}					
+					
+					
 				}
 
 			function addbackToWorkTimes() 
@@ -231,7 +242,8 @@ November 2019
 							backToWorkArray.push(backToWorkTimes);
 							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
 							alert("Resume time was added.");
-						}										
+						}					
+					
 				}
 								
 			function showBreakTimes() 
@@ -263,14 +275,20 @@ November 2019
 			function deletePomodoroTime()
 				{
 					var ctr = document.getElementById("breakTimeIndex").value;
+					
+					if (pomodoroArray.length == 0)
+						{
+							alert("Break times is empty");
+						}
+					
 					if (ctr == "")
 						{
-							alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
+							alert("Enter the number of nth resume time starting from the top left in the resume times list.");
 						}
 					else
 						{
 							var index = parseFloat(ctr);
-							pomodoroArray.splice(index, 1);					
+							pomodoroArray.splice(index - 1, 1);					
 							alert("Break time was cleared.");
 						}					
 				}
@@ -278,14 +296,20 @@ November 2019
 			function deleteBackToWorkTime()
 				{
 					var ctr = document.getElementById("resumeTimeIndex").value;
+					
+					if (backToWorkArray.length == 0)
+					{
+						alert("Break times is empty");
+					}
+					
 					if (ctr == "")
 						{
-							alert("Enter the number of nth resume time starting from the left in the resume times list. The first item is number zero.");
+							alert("Enter the number of nth resume time starting from the top left in the resume times list.");
 						}
 					else
 						{
 							var index = parseFloat(ctr);
-							backToWorkArray.splice(index, 1);					
+							backToWorkArray.splice(index - 1, 1);					
 							alert("Resume time was cleared.");
 						}					
 				}
@@ -342,28 +366,57 @@ November 2019
 						{	
 							 //alert(pomodoroArray[ctr]);
 							 //alert(backToWorkArray[ctr]);
-							var breakAlarmWindow;
-							var resumeAlarmWindow;
+							/* var pomodoroArrayString = pomodoroArray[ctr];
+							pomodoroArrayString = pomodoroArrayString.substring(0, 4);
+							pomodoroArrayString = pomodoroArrayString.split(":");
+							var pomodoroArrayDate = new Date();
+							pomodoroArrayDate.setHours(pomodoroArrayString[0], pomodoroArrayString[1]);
+							var pomodoroArrayMs = new Date();
+							pomodoroArrayMs = pomodoroArrayDate.valueOf();
+							var backToWorkArrayString = backToWorkArray[ctr];
+							backToWorkArrayString = backToWorkArrayString.substring(0, 4);
+							backToWorkArrayString = backToWorkArrayString.split(":");
+							var backToWorkArrayDate = new Date();
+							backToWorkArrayDate.setHours(backToWorkArrayString[0], backToWorkArrayString[1]);
+							var backToWorkArrayMs = new Date();
+							backToWorkMs = backToWorkArrayDate.valueOf();
+							var alarmWindow; */
+							//alert(backToWorkArrayMs);
+							//alert(pomodoroArrayMs);
+							
 							
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
 								{
-									breakAlarmWindow = window.open("", "BreakTime", "width=350,height=50");
+									/* var breakToResumeDiff = new Date;
+									breakToResumeDiff  = (backToWorkArrayMs - pomodoroArrayMs) - 30000;
+									alert(breakToResumeDiff); */
+									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
+									alarmWindow.focus();
 									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
-									breakAlarmWindow.document.write(breakMessage + breakAlertArray);
-									setTimeout(function(){ breakAlarmWindow.close(); }, 20000);
+									alarmWindow.document.write(breakMessage + breakAlertArray);
+									setTimeout(function(){ alarmWindow.close(); }, 50000);
 									break;
 								}
 							
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
 							if (backToWorkArray[ctr] === currentTime) 
 								{
-									resumeAlarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
+									/* pomodoroArrayString = pomodoroArray[ctr + 1];
+									pomodoroArrayString = pomodoroArrayString.substring(0, 4);
+									pomodoroArrayString = pomodoroArrayString.split(":");
+									pomodoroArrayDate.setHours(pomodoroArrayString[0], pomodoroArrayString[1]);
+									pomodoroArrayMs = pomodoroArrayDate.valueOf();
+									var resumeToBreakDiff = new Date;
+									resumeToBreakDiff  = (pomodoroArrayMs - backToWorkArrayMs) - 30000;
+									alert(resumeToBreakDiff); */
+									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
+									alarmWindow.focus();
 									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
-									resumeAlarmWindow.document.write(resumeMessage + resumeAlertArray);
-									setTimeout(function(){ resumeAlarmWindow.close(); }, 20000);
+									alarmWindow.document.write(resumeMessage + resumeAlertArray);
+									setTimeout(function(){ alarmWindow.close(); }, 50000);
 									break;
 								}
 			
