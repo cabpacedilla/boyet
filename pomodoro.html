@@ -18,7 +18,6 @@ November 2019
 		<h1>Pomodoro work life balance</h1>
 
 		<b>Add your resume and break time intervals and the number of resume and break times.</b>
-		<!-- <p> Enter a start time in in "0:00 AM/PM" format like "10:00 AM": <input type="text" id="startTime" size="10" min="1" max="99"> -->
 		<p> Enter a break interval in minutes: <input type="number" id="breakInterval" size="1" min="1" max="99"> 
 		<p> Enter a resume to work interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
 		<p> Enter the number resume and break time intervals: <input type="number" id="repetition" size="1" min="1" max="99"> 
@@ -126,7 +125,6 @@ November 2019
 					var resumeTime = new Date();
 					var resumeHours = resumeTime.getHours();
 					var resumeMinutes = resumeTime.getMinutes();
-					//var startTimeObject = new Date();
 					
 					if (startTime = "" || resumeInterval == "" || breakInterval == "" || ctr == "")
 						{
@@ -134,14 +132,6 @@ November 2019
 							return;
 						}
 					
-/*  					startTime = document.getElementById("startTime").value;
-					startTime = startTime.substring(0, 4);
-					startTime = startTime.split(":");	
-					startTimeObject.setHours(startTime[0], startTime[1]);
-					breakTime = startTimeObject;
-					breakMinutes = breakTime.getMinutes();					
-					breakHours = breakTime.getHours();  */
-							
 					while (repeat != 0)
 						{
 							breakMinutes = resumeMinutes + breakDuration;
@@ -360,34 +350,11 @@ November 2019
 					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
 					while (pomodoroArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
 						
-						{	
-							 //alert(pomodoroArray[ctr]);
-							 //alert(backToWorkArray[ctr]);
-							/* var pomodoroArrayString = pomodoroArray[ctr];
-							pomodoroArrayString = pomodoroArrayString.substring(0, 4);
-							pomodoroArrayString = pomodoroArrayString.split(":");
-							var pomodoroArrayDate = new Date();
-							pomodoroArrayDate.setHours(pomodoroArrayString[0], pomodoroArrayString[1]);
-							var pomodoroArrayMs = new Date();
-							pomodoroArrayMs = pomodoroArrayDate.valueOf();
-							var backToWorkArrayString = backToWorkArray[ctr];
-							backToWorkArrayString = backToWorkArrayString.substring(0, 4);
-							backToWorkArrayString = backToWorkArrayString.split(":");
-							var backToWorkArrayDate = new Date();
-							backToWorkArrayDate.setHours(backToWorkArrayString[0], backToWorkArrayString[1]);
-							var backToWorkArrayMs = new Date();
-							backToWorkMs = backToWorkArrayDate.valueOf();
-							var alarmWindow; */
-							//alert(backToWorkArrayMs);
-							//alert(pomodoroArrayMs);
-							
+						{							
 							
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] === currentTime) 
 								{
-									/* var breakToResumeDiff = new Date;
-									breakToResumeDiff  = (backToWorkArrayMs - pomodoroArrayMs) - 30000;
-									alert(breakToResumeDiff); */
 									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
 									alarmWindow.focus();
 									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
@@ -400,14 +367,6 @@ November 2019
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
 							if (backToWorkArray[ctr] === currentTime) 
 								{
-									/* pomodoroArrayString = pomodoroArray[ctr + 1];
-									pomodoroArrayString = pomodoroArrayString.substring(0, 4);
-									pomodoroArrayString = pomodoroArrayString.split(":");
-									pomodoroArrayDate.setHours(pomodoroArrayString[0], pomodoroArrayString[1]);
-									pomodoroArrayMs = pomodoroArrayDate.valueOf();
-									var resumeToBreakDiff = new Date;
-									resumeToBreakDiff  = (pomodoroArrayMs - backToWorkArrayMs) - 30000;
-									alert(resumeToBreakDiff); */
 									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
 									alarmWindow.focus();
 									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
