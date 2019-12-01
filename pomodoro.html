@@ -147,18 +147,18 @@ November 2019
 							
 							// Skip lunch time
 							if (breakHours == 12)
-								{	
-									breakHours = 13;
+								{
 									breakMinutes = 0;
 									breakMinutes = breakMinutes +  breakDuration;
+									breakHours = breakHours + 1
 								}
 							
 							// Skip dinner time
 							if (breakHours == 18)
 							{	
-								breakHours = 19;
 								breakMinutes = 0;
 								breakMinutes = breakMinutes +  breakDuration;
+								breakHours = breakHours + 1
 							}
 							breakTime.setHours(breakHours, breakMinutes);
 							
@@ -176,13 +176,13 @@ November 2019
 							// Skip lunch time
 							if (resumeHours == 12)
 								{	
-									resumeHours = 13;
+									resumeHours = resumeHours + 1;
 								}
 							
 							// Skip dinner time
 							if (resumeHours == 18)
 							{	
-								resumeHours = 19;
+								resumeHours = resumeHours + 1;
 							}
 							resumeTime.setHours(resumeHours, resumeMinutes);
 														 
