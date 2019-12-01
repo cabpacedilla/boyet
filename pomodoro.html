@@ -50,14 +50,14 @@ November 2019
 			<br>
 			<br>
 			<b> Delete an unneeded break time:</b>
-			<p> Enter the number of nth break time that you want to delete starting from the topmost left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>.
+			<p> Enter the number of nth break time that you want to delete starting from the top left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><BR>.
 			<br>  
 			<input type="number" id="breakTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			<br>
 			<br>
 			<b> Delete an unneeded  resume time: </b>
-			<p> Enter the number of nth resume time that you want to delete starting from the topmost left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>.
+			<p> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><BR>.
 			<br> 
 			<input type="number" id="resumeTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
@@ -225,9 +225,7 @@ November 2019
 							pomodoroArray.push(pomodoroTimes);		
 							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 							alert("Break time was added.");
-						}					
-					
-					
+						}				
 				}
 
 			function addbackToWorkTimes() 
@@ -242,8 +240,7 @@ November 2019
 							backToWorkArray.push(backToWorkTimes);
 							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
 							alert("Resume time was added.");
-						}					
-					
+						}							
 				}
 								
 			function showBreakTimes() 
