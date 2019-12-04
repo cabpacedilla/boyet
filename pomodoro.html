@@ -79,9 +79,8 @@ November 2019
 			var resumeAlertArray;
 			var breakMessage;
 			var resumeMessage;
-			//var startTime;
 			var currentTime;
-
+			
 			//Convert time to string in hour and minute.		
 			currentTime = String(new Date().toLocaleTimeString("en-US", 
 				{
@@ -135,60 +134,17 @@ November 2019
 					while (repeat != 0)
 						{
 							breakMinutes = resumeMinutes + breakDuration;
-							if (breakMinutes == 60)
+							if (breakMinutes == 0)
 								{
-									breakMinutes = 0;
-									breakHours = breakHours + 1;
-									if (breakMinutes > 60)
-										{
-											breakMinutes = breakMinutes - 60;
-										}
-								}
-							
-							// Skip lunch time
-							if (breakHours == 12)
-								{
-									breakMinutes = 0;
-									breakMinutes = breakMinutes +  breakDuration;
-									breakHours = breakHours + 1
-								}
-							
-							// Skip dinner time
-							if (breakHours == 18)
-							{	
-								breakMinutes = 0;
-								breakMinutes = breakMinutes +  breakDuration;
-								breakHours = breakHours + 1
-							}
+									breakMinutes = resumeMinutes + breakDuration;					
+								}	
 							breakTime.setHours(breakHours, breakMinutes);
-							
-							resumeMinutes  = breakMinutes + resumeDuration;
-							if (resumeMinutes == 60)
-								{
-									resumeMinutes = 0;
-									resumeHours = resumeHours + 1;
-									if (resumeMinutes > 60)
-										{
-											resumeMinutes = resumeMinutes - 60;
-										}
-								}
-							
-							// Skip lunch time
-							if (resumeHours == 12)
-								{	
-									resumeHours = resumeHours + 1;
-								}
-							
-							// Skip dinner time
-							if (resumeHours == 18)
-							{	
-								resumeHours = resumeHours + 1;
-							}
+			
+							resumeMinutes  = breakMinutes + resumeDuration;	
 							resumeTime.setHours(resumeHours, resumeMinutes);
-														 
+							
 							breakTimeString = toTimeString(breakTime);
 							pomodoroTimes = breakTimeString;
-							//alert("breakTimeString is " + breakTimeString);
 							pomodoroArray.push(pomodoroTimes);
 							
 							resumeTimeString = toTimeString(resumeTime);
@@ -217,7 +173,6 @@ November 2019
 							alert("Break time was added.");
 						}				
 				}
-
 			function addbackToWorkTimes() 
 				{
 					backToWorkTimes = document.getElementById("backToWorkInputField").value;
@@ -245,7 +200,6 @@ November 2019
 						}
 					
 				}
-
 			function showResumeTimes() 
 				{
 					if (backToWorkArray.length == 0)
@@ -285,9 +239,9 @@ November 2019
 					var ctr = document.getElementById("resumeTimeIndex").value;
 					
 					if (backToWorkArray.length == 0)
-					{
-						alert("Break times is empty");
-					}
+						{
+							alert("Break times is empty");
+						}
 					
 					if (ctr == "")
 						{
