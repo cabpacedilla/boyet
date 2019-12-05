@@ -19,7 +19,8 @@ November 2019
 		<h1>Pomodoro work life balance</h1>
 
 		<b>Add your resume and break time intervals and the number of resume and break times.</b>
-		<p> Enter a start time in in "0:00 AM/PM" format like "10:00 AM": <input type="text" id="startTime" size="10" min="1" max="99">
+		<p> Enter a start time in a 24-hour format like "8:00" for 8:00 AM: <input type="text" id="startTime" size="10" min="1" max="99">
+		<p> Enter a stop time in a 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="10" min="1" max="99">	
 		<p> Enter a break interval in minutes: <input type="number" id="breakInterval" size="1" min="1" max="99"> 
 		<p> Enter a resume to work interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
 		<p> Enter the number resume and break time intervals: <input type="number" id="repetition" size="1" min="1" max="99"> 
@@ -128,28 +129,39 @@ November 2019
 					var resumeMinutes = resumeTime.getMinutes();
 					var startTime;
 					var startTimeObject = new Date();
+					var stopTime;
+					var stopTimeObject = new Date();
 					
-					if (resumeInterval == "" || breakInterval == "" || ctr == "")
+					
+					if (resumeInterval == "" || breakInterval == "")
 						{
 							alert("Please enter a break time, resume time and the number intervals.");
 							return;
 						}
 					
 					startTime = document.getElementById("startTime").value;
+					stopTime = document.getElementById("stopTime").value;
 					
-					if (startTime != "")
+					if (startTime != "" && stopTime != "")
 						{
 							startTime = startTime.substring(0, 4);
 							startTime = startTime.split(":");	
 							startTimeObject.setHours(startTime[0], startTime[1]);
 							breakMinutes = startTimeObject.getMinutes();
 							breakHours = startTimeObject.getHours();
+							breakTime.setHours(breakHours, breakMinutes);
 							resumeHours = startTimeObject.getHours();
 							resumeMinutes = startTimeObject.getMinutes();
-							alert(resumeMinutes);
+							resumeTime.setHours(resumeHours, resumeMinutes);
+							//alert(resumeMinutes);
+							
+							stopTime = stopTime.substring(0, 4);
+							stopTime = stopTime.split(":");	
+							stopTimeObject.setHours(stopTime[0], stopTime[1]);
 						}
 					
-					while (repeat != 0)
+					
+					while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
 						{
 							breakMinutes = resumeMinutes + breakDuration;
 							/* if (breakMinutes == 0)
@@ -168,9 +180,36 @@ November 2019
 							resumeTimeString = toTimeString(resumeTime);
 							backToWorkTimes = resumeTimeString;
 							backToWorkArray.push(backToWorkTimes);	
+						
+							//repeat = repeat - 1;
+						}
+					
+					if (ctr != "")
+					{
+						while (repeat != 0)
+						{
+							breakMinutes = resumeMinutes + breakDuration;
+							/* if (breakMinutes == 0)
+								{
+									breakMinutes = resumeMinutes + breakDuration;					
+								}	 */
+							breakTime.setHours(breakHours, breakMinutes);
+			
+							resumeMinutes  = breakMinutes + resumeDuration;	
+							resumeTime.setHours(resumeHours, resumeMinutes);
 							
+							breakTimeString = toTimeString(breakTime);
+							pomodoroTimes = breakTimeString;
+							pomodoroArray.push(pomodoroTimes);
+							
+							resumeTimeString = toTimeString(resumeTime);
+							backToWorkTimes = resumeTimeString;
+							backToWorkArray.push(backToWorkTimes);	
+						
 							repeat = repeat - 1;
 						}
+					}
+					
 					
 					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
