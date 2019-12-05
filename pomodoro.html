@@ -1,3 +1,4 @@
+ 
 <!-- 
 This webpage will alert a message when added pomodoro breaktimes and back to work times is equal to the system time.
 This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
@@ -319,36 +320,36 @@ November 2019
 					var ctr = 0;
 		
 					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
-					while (pomodoroArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
+					while (pomodoroArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
 						
 						{							
 							
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
-							if (pomodoroArray[ctr] === currentTime) 
+							if (pomodoroArray[ctr] == currentTime) 
 								{
 									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
 									alarmWindow.focus();
 									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
 									alarmWindow.document.write(breakMessage + breakAlertArray);
-									setTimeout(function(){ alarmWindow.close(); }, 20000);
+									setTimeout(function(){ alarmWindow.close(); }, 50000);
 									break;
 								}
 							
 							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
-							if (backToWorkArray[ctr] === currentTime) 
+							if (backToWorkArray[ctr] == currentTime) 
 								{
 									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
 									alarmWindow.focus();
 									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
 									alarmWindow.document.write(resumeMessage + resumeAlertArray);
-									setTimeout(function(){ alarmWindow.close(); }, 20000);
+									setTimeout(function(){ alarmWindow.close(); }, 50000);
 									break;
 								}
 			
 							//break from the ctr if the iteration reach the last elements of the pomodoro and back to work time arrays
-							if (pomodoroArray[ctr] === pomodoroArray[pomodoroArray.length] && backToWorkArray[ctr] === backToWorkArray[backToWorkArray.length]) 
+							if (pomodoroArray[ctr] == pomodoroArray[pomodoroArray.length] && backToWorkArray[ctr] == backToWorkArray[backToWorkArray.length]) 
 								{
 									break;
 								}
@@ -360,3 +361,4 @@ November 2019
 		</script>
 	</body>
 </html>
+
