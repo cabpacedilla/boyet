@@ -28,7 +28,7 @@ November 2019
 		<p> Enter a resume to work interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
 		<br>
 		<br>
-		<input type="button" value="Add break and resume intervals" onclick="addResumeBreakIntervals()">
+		<input type="button" value="Add break and resume time intervals" onclick="addResumeBreakIntervals()">
 		<br> 
 		<br> 			
 		<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
@@ -39,12 +39,12 @@ November 2019
 		</b>
 	
 		<form>
-			<p> Break time:
+			<p> Break from work time:
 			<br> 
 			<input type="text" id="pomodoroInputField" size="25"> 
 			<input type="button" value="Add" onclick="addPomodoroTimes()">
 			
-			<p> Resume to work:
+			<p> Resume to work time:
 			<br> 
 			<input type="text" id="backToWorkInputField" size="25">
 			<input type="button" value="Add" onclick="addbackToWorkTimes()">
@@ -53,14 +53,14 @@ November 2019
 			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">		
 			<br>
 			<br>
-			<b> Delete an unneeded break time:</b>
+			<b> Delete an unneeded break from work time:</b>
 			<p> Enter the number of nth break time that you want to delete starting from the top left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><br>.
 			<br>  
 			<input type="number" id="breakTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			<br>
 			<br>
-			<b> Delete an unneeded  resume time: </b>
+			<b> Delete an unneeded  resume to work time: </b>
 			<p> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><br>.
 			<br> 
 			<input type="number" id="resumeTimeIndex" size="1" min="1" max="99">
