@@ -122,45 +122,38 @@ November 2019
 					var breakInterval = document.getElementById("breakInterval").value;
 					var breakDuration = parseFloat(breakInterval);
 					var breakTime = new Date();
-					var breakHours = breakTime.getHours();
-					var breakMinutes = breakTime.getMinutes();
+					var breakHours;
+					var breakMinutes;
 					var resumeTime = new Date();
-					var resumeHours = resumeTime.getHours();
-					var resumeMinutes = resumeTime.getMinutes();
+					var resumeHours;
+					var resumeMinutes;
 					var startTime;
 					var startTimeObject = new Date();
 					var stopTime;
 					var stopTimeObject = new Date();
 					
-					
-					if (resumeInterval == "" || breakInterval == "")
-						{
-							alert("Please enter a break time, resume time and the number intervals.");
-							return;
-						}
-					
 					startTime = document.getElementById("startTime").value;
-					stopTime = document.getElementById("stopTime").value;
+					stopTime = document.getElementById("stopTime").value;	
 					
-					if (startTime != "" && stopTime != "")
+					if (startTime == "" || stopTime == "" || resumeInterval == "" || breakInterval == "")
 						{
-							startTime = startTime.substring(0, 4);
-							startTime = startTime.split(":");	
-							startTimeObject.setHours(startTime[0], startTime[1]);
-							breakMinutes = startTimeObject.getMinutes();
-							breakHours = startTimeObject.getHours();
-							breakTime.setHours(breakHours, breakMinutes);
-							resumeHours = startTimeObject.getHours();
-							resumeMinutes = startTimeObject.getMinutes();
-							resumeTime.setHours(resumeHours, resumeMinutes);
-							//alert(resumeMinutes);
-							
-							stopTime = stopTime.substring(0, 4);
-							stopTime = stopTime.split(":");	
-							stopTimeObject.setHours(stopTime[0], stopTime[1]);
+						alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
+						return;
 						}
 					
-					
+					startTime = startTime.substring(0, 4);
+					startTime = startTime.split(":");	
+					startTimeObject.setHours(startTime[0], startTime[1]);
+					breakMinutes = startTimeObject.getMinutes();
+					breakHours = startTimeObject.getHours();
+					breakTime.setHours(breakHours, breakMinutes);
+					resumeHours = startTimeObject.getHours();
+					resumeMinutes = startTimeObject.getMinutes();
+					resumeTime.setHours(resumeHours, resumeMinutes);
+					stopTime = stopTime.substring(0, 4);
+					stopTime = stopTime.split(":");	
+					stopTimeObject.setHours(stopTime[0], stopTime[1]);
+										
 					while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
 						{
 							breakMinutes = resumeMinutes + breakDuration;
