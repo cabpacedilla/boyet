@@ -79,11 +79,6 @@ November 2019
 			var backToWorkTimes;
 			var breakTimeString;
 			var resumeTimeString;
-			var alarmWindow;
-			var breakAlertArray;
-			var resumeAlertArray;
-			var breakMessage;
-			var resumeMessage;
 			var currentTime;
 			
 			//Convert time to string in hour and minute.		
@@ -319,9 +314,14 @@ November 2019
 				}
 			
 			function loopArray() 
-				{						
+				{	
+					var alarmWindow;
+					var breakAlertArray;
+					var resumeAlertArray;
+					var breakMessage;
+					var resumeMessage;
 					var ctr = 0;
-		
+					
 					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
 					while (pomodoroArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
 						
