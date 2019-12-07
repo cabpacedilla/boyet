@@ -23,10 +23,9 @@ November 2019
 		<p> Enter a stop time in a 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="10" min="1" max="99">
 		<br>
 		<br>	
-		<b>...then add your resume and break time intervals and the number of resume and break times.</b>	
+		<b>...then add your resume and break time intervals.</b>	
 		<p> Enter a break interval in minutes: <input type="number" id="breakInterval" size="1" min="1" max="99"> 
 		<p> Enter a resume to work interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
-		<p> Enter the number resume and break time intervals: <input type="number" id="repetition" size="1" min="1" max="99"> 
 		<br>
 		<br>
 		<input type="button" value="Add break and resume intervals" onclick="addResumeBreakIntervals()">
@@ -122,8 +121,6 @@ November 2019
 					var resumeDuration = parseFloat(resumeInterval);
 					var breakInterval = document.getElementById("breakInterval").value;
 					var breakDuration = parseFloat(breakInterval);
-					var ctr = document.getElementById("repetition").value;
-					var repeat = parseFloat(ctr);
 					var breakTime = new Date();
 					var breakHours = breakTime.getHours();
 					var breakMinutes = breakTime.getMinutes();
@@ -173,7 +170,7 @@ November 2019
 							}	 */						
 							breakTime.setHours(breakHours, breakMinutes);
 			
-							resumeMinutes  = breakMinutes + resumeDuration;	
+							resumeMinutes = breakMinutes + resumeDuration;	
 							resumeTime.setHours(resumeHours, resumeMinutes);
 							
 							breakTimeString = toTimeString(breakTime);
@@ -184,36 +181,7 @@ November 2019
 							backToWorkTimes = resumeTimeString;
 							backToWorkArray.push(backToWorkTimes);	
 						}
-					
-					if (ctr != "")
-					{
-						while (repeat != 0)
-						{
-							breakMinutes = resumeMinutes + breakDuration;
-							/* if (breakMinutes == 0)
-							{
-								breakMinutes = resumeMinutes + breakDuration;					
-							}	 */						
-							breakTime.setHours(breakHours, breakMinutes);
-							
-							breakHours = breakTime.getHours();
-							resumeHours = resumeTime.getHours();
-			
-							resumeMinutes  = breakMinutes + resumeDuration;	
-							resumeTime.setHours(resumeHours, resumeMinutes);							
-							
-							breakTimeString = toTimeString(breakTime);
-							pomodoroTimes = breakTimeString;
-							pomodoroArray.push(pomodoroTimes);
-							
-							resumeTimeString = toTimeString(resumeTime);
-							backToWorkTimes = resumeTimeString;
-							backToWorkArray.push(backToWorkTimes);	
 						
-							repeat = repeat - 1;
-						}
-					}
-					
 					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
 					alert("Break and resume time intervals were added.");
