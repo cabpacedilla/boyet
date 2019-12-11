@@ -75,10 +75,10 @@ November 2019
 		
 			var pomodoroArray = [];
 			var backToWorkArray = [];
-			var pomodoroTimes;
-			var backToWorkTimes;
-			var breakTimeString;
-			var resumeTimeString;
+			var pomodoroTimes;				// Break from work times input	
+			var backToWorkTimes;			//  Resume to work times input
+			var breakTimeString;			// Convert breakTime to string to compare to currentTime
+			var resumeTimeString;			// Convert resumeTime to string to compare to currentTime
 			var currentTime;
 			
 			//Convert time to string in hour and minute.		
@@ -136,7 +136,7 @@ November 2019
 						return;
 						}
 					
-					startTime = startTime.substring(0, 4);
+					startTime = startTime.substring(0, 5);
 					startTime = startTime.split(":");	
 					startTimeObject.setHours(startTime[0], startTime[1]);
 					breakMinutes = startTimeObject.getMinutes();
@@ -145,20 +145,21 @@ November 2019
 					resumeHours = startTimeObject.getHours();
 					resumeMinutes = startTimeObject.getMinutes();
 					resumeTime.setHours(resumeHours, resumeMinutes);
-					stopTime = stopTime.substring(0, 4);
+					stopTime = stopTime.substring(0, 5);
 					stopTime = stopTime.split(":");	
 					stopTimeObject.setHours(stopTime[0], stopTime[1]);
 										
 					while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
 						{
+													
 							breakMinutes = resumeMinutes + breakDuration;
 							/* if (breakMinutes == 0)
 							{
 								breakMinutes = resumeMinutes + breakDuration;					
-							}	 */						
-							breakTime.setHours(breakHours, breakMinutes);
+							}	 */									
+							breakTime.setHours(breakHours, breakMinutes);							
 			
-							resumeMinutes = breakMinutes + resumeDuration;	
+							resumeMinutes = breakMinutes + resumeDuration;							
 							resumeTime.setHours(resumeHours, resumeMinutes);
 							
 							breakTimeString = toTimeString(breakTime);
@@ -213,9 +214,9 @@ November 2019
 					else
 						{
 							alert(pomodoroArray);
-						}
-					
+						}			
 				}
+			
 			function showResumeTimes() 
 				{
 					if (backToWorkArray.length == 0)
@@ -225,8 +226,7 @@ November 2019
 					else
 						{
 							alert(backToWorkArray);
-						}
-					
+						}			
 				}
 			
 			function deletePomodoroTime()
@@ -278,7 +278,7 @@ November 2019
 							while (pomodoroArray.length > 0)
 								{
 									sessionStorage.removeItem("pomodoroTimes");
-									sessionStorage.removeItem("breakTimeString");
+									//sessionStorage.removeItem("breakTimeString");
 									pomodoroArray = [];
 								}
 							
@@ -299,7 +299,7 @@ November 2019
 							while (backToWorkArray.length > 0)
 								{
 									sessionStorage.removeItem("backToWorkTimes");
-									sessionStorage.removeItem("resumeTimeString");
+									//sessionStorage.removeItem("resumeTimeString");
 									backToWorkArray = [];
 								}
 							
@@ -324,9 +324,7 @@ November 2019
 					
 					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
 					while (pomodoroArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
-						
 						{							
-							
 							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
 							if (pomodoroArray[ctr] == currentTime) 
 								{
