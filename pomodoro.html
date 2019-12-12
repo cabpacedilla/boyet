@@ -244,8 +244,12 @@ November 2019
 						}
 					else
 						{
-							var index = parseFloat(ctr);
-							pomodoroArray.splice(index - 1, 1);					
+							
+							
+							var index = parseFloat(ctr);		
+							pomodoroArray.splice(index - 1, 1);
+							pomodoroTimes = pomodoroArray;
+							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));	
 							alert("Break time was cleared.");
 						}					
 				}
@@ -266,8 +270,12 @@ November 2019
 					else
 						{
 							var index = parseFloat(ctr);
-							backToWorkArray.splice(index - 1, 1);					
+							backToWorkArray.splice(index - 1, 1)
+							backToWorkTimes = backToWorkArray;
+							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
 							alert("Resume time was cleared.");
+						
+							
 						}					
 				}
 			
