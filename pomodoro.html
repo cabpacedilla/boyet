@@ -132,8 +132,8 @@ November 2019
 					
 					if (startTime == "" || stopTime == "" || resumeInterval == "" || breakInterval == "")
 						{
-						alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
-						return;
+							alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
+							return;
 						}
 					
 					startTime = startTime.substring(0, 5);
@@ -150,8 +150,7 @@ November 2019
 					stopTimeObject.setHours(stopTime[0], stopTime[1]);
 										
 					while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
-						{
-													
+						{													
 							breakMinutes = resumeMinutes + breakDuration;
 							/* if (breakMinutes == 0)
 							{
@@ -170,7 +169,6 @@ November 2019
 							backToWorkTimes = resumeTimeString;
 							backToWorkArray.push(backToWorkTimes);	
 						}
-						
 					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
 					alert("Break and resume time intervals were added.");
@@ -193,7 +191,6 @@ November 2019
 									pomodoroArray.push(pomodoroTimes[ctr - 1]);	
 									ctr = ctr - 1;
 								}		
-
 							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 							alert("Break time was added.");
 						}				
