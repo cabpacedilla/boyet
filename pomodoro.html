@@ -185,11 +185,20 @@ November 2019
 						} 
 					else 
 						{
-							pomodoroArray.push(pomodoroTimes);		
+							var ctr;
+							pomodoroTimes = pomodoroTimes.split(",");	
+							ctr = pomodoroTimes.length;
+							while (ctr > 0)
+								{
+									pomodoroArray.push(pomodoroTimes[ctr - 1]);	
+									ctr = ctr - 1;
+								}		
+
 							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 							alert("Break time was added.");
 						}				
 				}
+			
 			function addbackToWorkTimes() 
 				{
 					backToWorkTimes = document.getElementById("backToWorkInputField").value;
@@ -199,7 +208,15 @@ November 2019
 						} 
 					else 
 						{
-							backToWorkArray.push(backToWorkTimes);
+							var ctr;
+							backToWorkTimes = backToWorkTimes.split(",");
+							ctr = backToWorkTimes.length;
+							while (ctr > 0)
+								{
+									backToWorkArray.push(backToWorkTimes[ctr - 1]);
+									ctr = ctr - 1;
+								}
+						
 							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
 							alert("Resume time was added.");
 						}							
@@ -244,14 +261,12 @@ November 2019
 						}
 					else
 						{
-							
-							
 							var index = parseFloat(ctr);		
 							pomodoroArray.splice(index - 1, 1);
 							pomodoroTimes = pomodoroArray;
 							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));	
-							alert("Break time was cleared.");
-						}					
+							alert("Break time was cleared.");	
+						}
 				}
 			
 			function deleteBackToWorkTime()
@@ -273,10 +288,9 @@ November 2019
 							backToWorkArray.splice(index - 1, 1)
 							backToWorkTimes = backToWorkArray;
 							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
-							alert("Resume time was cleared.");
+							alert("Resume time was cleared.");					
+						}
 						
-							
-						}					
 				}
 			
 			function clearBreakTimes()
