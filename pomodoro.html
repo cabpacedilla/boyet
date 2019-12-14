@@ -183,13 +183,12 @@ November 2019
 						} 
 					else 
 						{
-							var ctr;
-							pomodoroTimes = pomodoroTimes.split(",");	
-							ctr = pomodoroTimes.length;
-							while (ctr > 0)
+							var ctr = 0;
+							pomodoroTimes = pomodoroTimes.split(", ");	
+							while (ctr < pomodoroTimes.length)
 								{
-									pomodoroArray.push(pomodoroTimes[ctr - 1]);	
-									ctr = ctr - 1;
+									pomodoroArray.push(pomodoroTimes[ctr]);	
+									ctr = ctr + 1;
 								}		
 							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
 							alert("Break time was added.");
@@ -205,13 +204,12 @@ November 2019
 						} 
 					else 
 						{
-							var ctr;
-							backToWorkTimes = backToWorkTimes.split(",");
-							ctr = backToWorkTimes.length;
-							while (ctr > 0)
+							var ctr = 0;
+							backToWorkTimes = backToWorkTimes.split(", ");
+							while (ctr < backToWorkTimes.length)
 								{
-									backToWorkArray.push(backToWorkTimes[ctr - 1]);
-									ctr = ctr - 1;
+									backToWorkArray.push(backToWorkTimes[ctr]);
+									ctr = ctr + 1;
 								}
 						
 							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
@@ -349,7 +347,7 @@ November 2019
 								{
 									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
 									alarmWindow.focus();
-									breakAlertArray = pomodoroArray[ctr] + " ." + "</p>";
+									breakAlertArray = pomodoroArray[ctr] + "." + "</p>";
 									breakMessage = "<p>Time for a break because it is now ";
 									alarmWindow.document.write(breakMessage + breakAlertArray);
 									setTimeout(function(){ alarmWindow.close(); }, 50000);
@@ -361,7 +359,7 @@ November 2019
 								{
 									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
 									alarmWindow.focus();
-									resumeAlertArray = backToWorkArray[ctr] + " ." + "</p>";
+									resumeAlertArray = backToWorkArray[ctr] + "." + "</p>";
 									resumeMessage = "<p>Time to resume to work because it is now ";
 									alarmWindow.document.write(resumeMessage + resumeAlertArray);
 									setTimeout(function(){ alarmWindow.close(); }, 50000);
