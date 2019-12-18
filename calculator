@@ -1,0 +1,138 @@
+ 
+<!-- 
+This webpage is a basic calculator.
+This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+November 2019
+-->
+		
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+	<head>
+		
+		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Basic Calculator</title>
+	</head>
+
+	<body>
+		<h1>Basic Calculator</h1>
+
+		<input type="text" id="txtEquationExpression"><br>
+		<input type="text" id="txtInputAndResult"><br>
+		<input type="button" id="btnMC" value="MC" onclick="memoryClear()"><input type="button" id="btnMR" value="MR" width="5" onclick="memoryRecall()"><input type="button" id="btnM-"value="M-" width="5" onclick="memorySubstraction()"><input type="button" id="btnM+"value="M+" width="5" onclick="memoryAddition()"><br>
+		<input type="button" id="btnAC"value="AC"><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"><input type="button" id="btnPercent" value="%" onclick="computePercent()"><br>
+		<input type="button" id="btnSeven" value="7" onclick="displayInput(this)"><input type="button" id="btnEight" value="8" onclick="displayInput(this)"><input type="button" id="btnNine" value="9" onclick="displayInput(this)"><input type="button" id="btnDivision" value=" / " onclick="displayInput(this)"><br>
+		<input type="button" id="btnFour" value="4" onclick="displayInput(this)"><input type="button" id="btnFive" value="5" onclick="displayInput(this)"><input type="button" id="btnSix"  value="6" onclick="displayInput(this)"><input type="button" id="btnMultiplication" value=" x " onclick="displayInput(this)"><br>
+		<input type="button" id="btnOne" value="1" onclick="displayInput(this)"><input type="button" id="btnTwo" value="2" onclick="displayInput(this)"><input type="button" id="btnThree" value="3" onclick="displayInput(this)"><input type="button" id="btnSubtraction"  value=" - " onclick="displayInput(this)"><br>
+		<input type="button" id="btnZero" value="0" onclick="displayInput(this)"><input type="button" id="btnDecimal" value="." onclick="displayInput(this)"><input type="button" id="btnEquals" value=" = " onclick="displayInput(this)"><input type="button" id="btnAddition" value=" + " onclick="displayInput(this)"><br>
+	
+		<script type="text/javascript">	
+		
+		function displayInput(element) 
+			{
+				var inputString;
+				var elementValue;
+				
+				elementValue = element.value;
+				inputString = document.getElementById("txtInputAndResult").value
+				inputString = inputString + elementValue;			
+				document.getElementById("txtInputAndResult").value = inputString;
+				
+				//alert(inputNum);
+				
+				//var divide = document.getElementById("btnDivision").value;
+				/*var multiply = document.getElementById("btnMultiplication").value;
+				var plus = document.getElementById("btnAddition").value;
+				var minus = document.getElementById("btnSubtraction").value;*/
+				var equals = document.getElementById("btnEquals").value;
+				
+				if (elementValue == equals)
+					{
+						var ctr = 0;
+						var result;
+						
+						inputString = inputString.split(" ");
+						
+						result= inputString[0];								
+						result = parseFloat(result);
+						//alert(inputString);
+						while (ctr < inputString.length)
+							{
+								var operand;
+								var operator;
+								
+								operator = inputString[ctr + 1];
+								//alert(operator);
+								operand = inputString[ctr + 2];
+								operand = parseFloat(operand);
+								//alert(operand);
+								
+								if (operator == "/")
+									{
+										result = result / operand;
+										//result = parseFloat(result);
+									}
+										
+								if (operator == "x")
+									{
+										result = result * operand;
+										//result = parseFloat(result);
+									}
+								
+								if (operator == "-")
+									{
+										result = result - operand;
+										//result = parseFloat(result);
+									}
+								
+								if (operator == "+")
+								{
+									result = result + operand;
+									//result = parseFloat(result);
+								}
+								
+								ctr = ctr + 2;
+
+							}
+						
+						document.getElementById("txtInputAndResult").value = result;
+						
+					/*	operand1 = inputString[ctr];								
+						operand1 = parseFloat(operand1);
+						//alert(operand1);
+						operator = inputString[ctr + 1];
+						//alert(operator);
+						operand2 = inputString[ctr + 2];
+						operand2 = parseFloat(operand2);
+						//alert(operand2);
+						
+						if (operator == "/")
+							{
+								alert(operator);
+								alert(divide);
+								result = operand1 / operand2;
+								//result = parseFloat(result);
+							}
+						
+						document.getElementById("txtInputAndResult").value = result;*/
+						
+						/*operand1 = inputString[0];
+						alert(operand1);
+						operand1 = parseFloat(operand1);
+						operand2 = inputString[2];
+						alert(operand2);
+						operand2 = parseFloat(operand2);
+						result = operand1 / operand2;
+						//quotient = parseFloat(quotient);
+						document.getElementById("txtInputAndResult").value = result;		*/
+					
+					}
+				
+			}
+		
+		</script>	
+
+		
+	</body>
+</html>
+
