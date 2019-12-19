@@ -19,16 +19,16 @@ November 2019
 		<h1>Pomodoro work life balance</h1>
 
 		<b>Enter a start time and stop time...</b>
-		<p> Enter a start time in a 24-hour format like "8:00" for 8:00 AM: <input type="text" id="startTime" size="5" min="1" max="99">
-		<p> Enter a stop time in a 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="5" min="1" max="99">
+		<p> Enter a start time in 24-hour format like "8:00" for 8:00 AM: <input type="text" id="startTime" size="5" min="1" max="99">
+		<p> Enter a stop time in 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="5" min="1" max="99">
 		<br>
 		<br>	
 		<b>...then add your break and resume to work time intervals.</b>	
-		<p> Enter a 'break from work' interval in minutes: <input type="number" id="breakInterval" size="1" min="1" max="99"> 
-		<p> Enter a 'resume to work' interval in minutes: <input type="number" id="backToWorkInterval" size="1" min="1" max="99">
+		<p> Enter work interval minutes: <input type="number" id="workInterval" size="1" min="1" max="99"> 
+		<p> Enter break interval minutes: <input type="number" id="breakInterval" size="1" min="1" max="99">
 		<br>
 		<br>
-		<input type="button" value="Add break and resume time intervals" onclick="addResumeBreakIntervals()">
+		<input type="button" value="Add work and break intervals" onclick="addBreakResumeTimes()">
 		<br> 
 		<br> 			
 		<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
@@ -53,21 +53,19 @@ November 2019
 			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">		
 			<br>
 			<br>
-			<b> Delete an unneeded break from work time:</b>
-			<p> Enter the number of nth break time that you want to delete starting from the top left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><br>
+			<b> Delete an unneeded 'break from work' time:</b> Enter the number of nth break time that you want to delete starting from the top left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><br>
 			<br>  
 			<input type="number" id="breakTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deletePomodoroTime()">
 			<br>
 			<br>
-			<b> Delete an unneeded  resume to work time: </b>
-			<p> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><br>
+			<b> Delete an unneeded 'resume to work' time:</b> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><br>
 			<br> 
 			<input type="number" id="resumeTimeIndex" size="1" min="1" max="99">
 			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 			<br> 
 			<br> 
-			<input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
+			<b>Clear all break and resume times:</b> <input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
 		
 		</form>
 	
@@ -110,12 +108,12 @@ November 2019
 							 });
 				}
 			
-			function addResumeBreakIntervals()				
+			function addBreakResumeTimes()				
 				{				 				 				
-					var resumeInterval = document.getElementById("backToWorkInterval").value;
+					var resumeInterval = document.getElementById("breakInterval").value;
 					var resumeDuration = parseFloat(resumeInterval);
-					var breakInterval = document.getElementById("breakInterval").value;
-					var breakDuration = parseFloat(breakInterval);
+					var workInterval = document.getElementById("workInterval").value;
+					var breakDuration = parseFloat(workInterval);
 					var breakTime = new Date();
 					var breakHours;
 					var breakMinutes;
@@ -130,7 +128,7 @@ November 2019
 					startTime = document.getElementById("startTime").value;
 					stopTime = document.getElementById("stopTime").value;	
 					
-					if (startTime == "" || stopTime == "" || resumeInterval == "" || breakInterval == "")
+					if (startTime == "" || stopTime == "" || resumeInterval == "" || workInterval == "")
 						{
 							alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
 							return;
