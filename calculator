@@ -17,6 +17,14 @@ November 2019
 	<body>
 		<h1>Basic Calculator</h1>
 
+		<!-- <TABLE WIDTH=40%>
+		<TR><TD WIDTH=20%><B>Personal Particulars</B></TD></TR>
+		<TR><TD><B>Age</B></TD><TD WIDTH=45%>27 years</TD><TD WIDTH=20%><B>Date of Birth</B></TD><TD>30 Oct 1977</TD></TR>
+		<TR><TD><B>Nationality</B></TD><TD>Filipino</TD><TD><B>Gender</B></TD><TD>Male</TD></TR>
+		<TR><TD><B>Marital Status</B></TD><TD>Single</TD><TD><B>Social Card No.</B></TD><TD>919-696-637</TD></TR>
+		<TR><TD><B>Permanent Residence</B></TD><TD>Zone 1, Lower Guadalupe, Baybay, Leyte</TD></TR>
+		</TABLE> -->
+		
 		<input type="text" id="txtInputAndResult">
 		<br>
 		<br>
@@ -89,8 +97,24 @@ November 2019
 				lastNumber = inputString[inputString.length - 1];
 				lastNumber = parseFloat(lastNumber);
 				lastNumber = lastNumber / 100;	
-				document.getElementById("txtInputAndResult").value = result;
+				inputString = inputString.join(" ");
+				inputString = inputString.substring(0, inputString.length - 2);
+				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;
 			}
+		
+		function memoryRecall()
+			{
+				var inputString;
+				var lastNumber;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 3];
+				lastNumber = parseFloat(lastNumber);
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;				
+			}
+		
 		
 		function displayInput(element) 
 			{
