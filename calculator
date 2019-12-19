@@ -21,16 +21,14 @@ November 2019
 		<br>
 		<br>
 		<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" width="5" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" width="5" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" width="5" onclick="memoryAddition()"><br>
-		<input type="button" id="btnClear" value="C" onclick="Clear()"><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"><input type="button" id="btnPercent" value="%" onclick="computePercent()"><br>
+		<input type="button" id="btnClear" value="C" onclick="Clear()"><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"><input type="button" id="btnSquareRoot" value="SQRT" onclick="computeSquareRoot()"><input type="button" id="btnPercentage" value="%" onclick="computePercentage()"><br>
 		<input type="button" id="btnSeven" value="7" onclick="displayInput(this)"><input type="button" id="btnEight" value="8" onclick="displayInput(this)"><input type="button" id="btnNine" value="9" onclick="displayInput(this)"><input type="button" id="btnDivision" value=" / " onclick="displayInput(this)"><br>
 		<input type="button" id="btnFour" value="4" onclick="displayInput(this)"><input type="button" id="btnFive" value="5" onclick="displayInput(this)"><input type="button" id="btnSix"  value="6" onclick="displayInput(this)"><input type="button" id="btnMultiplication" value=" x " onclick="displayInput(this)"><br>
 		<input type="button" id="btnOne" value="1" onclick="displayInput(this)"><input type="button" id="btnTwo" value="2" onclick="displayInput(this)"><input type="button" id="btnThree" value="3" onclick="displayInput(this)"><input type="button" id="btnSubtraction"  value=" - " onclick="displayInput(this)"><br>
 		<input type="button" id="btnZero" value="0" onclick="displayInput(this)"><input type="button" id="btnDecimal" value="." onclick="displayInput(this)"><input type="button" id="btnEquals" value=" = " onclick="displayInput(this)"><input type="button" id="btnAddition" value=" + " onclick="displayInput(this)"><br>
 	
 		<script type="text/javascript">	
-		
-		
-		
+	
 		function memoryClear()
 			{
 				document.getElementById("txtInputAndResult").value = "";
@@ -42,6 +40,56 @@ November 2019
 				inputString = document.getElementById("txtInputAndResult").value				
 				inputString = inputString.substring(0, inputString.length - 2);
 				document.getElementById("txtInputAndResult").value = inputString;
+			}
+		
+		function memorySubstraction()
+			{
+				var inputString;
+				var result;
+				var lastResult;
+				var subtrahend;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastResult = inputString[inputString.length - 1] 
+				lastResult = parseFloat(lastResult);
+				subtrahend = inputString[inputString.length - 3]
+				subtrahend = parseFloat(subtrahend);
+				result = lastResult - subtrahend;
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + " - " + subtrahend + " = " + result;			
+			}
+		
+		function memoryAddition()
+			{
+				var inputString;
+				var result;
+				var lastResult;
+				var addend;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastResult = inputString[inputString.length - 1] 
+				lastResult = parseFloat(lastResult);
+				addend = inputString[inputString.length - 3]
+				addend = parseFloat(addend);
+				result = lastResult + addend;
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + " + " + addend + " = " + result;			
+			}
+		
+		function computePercentage()
+			{	
+				var inputString;
+				var lastNumber;
+				var result;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);
+				lastNumber = lastNumber / 100;	
+				document.getElementById("txtInputAndResult").value = result;
 			}
 		
 		function displayInput(element) 
