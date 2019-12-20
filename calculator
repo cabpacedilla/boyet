@@ -17,12 +17,10 @@ November 2019
 	<body>
 		<h1>Basic Calculator</h1>
 
-		<!-- <TABLE WIDTH=40%>
-		<TR><TD WIDTH=20%><B>Personal Particulars</B></TD></TR>
-		<TR><TD><B>Age</B></TD><TD WIDTH=45%>27 years</TD><TD WIDTH=20%><B>Date of Birth</B></TD><TD>30 Oct 1977</TD></TR>
-		<TR><TD><B>Nationality</B></TD><TD>Filipino</TD><TD><B>Gender</B></TD><TD>Male</TD></TR>
-		<TR><TD><B>Marital Status</B></TD><TD>Single</TD><TD><B>Social Card No.</B></TD><TD>919-696-637</TD></TR>
-		<TR><TD><B>Permanent Residence</B></TD><TD>Zone 1, Lower Guadalupe, Baybay, Leyte</TD></TR>
+	<!-- <TABLE WIDTH=40%>
+		<TR><TD COLSPAN="4"><input type="text" id="txtInputAndResult"></TD></TR>
+		<TR><TD WIDTH=10%><input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"></TD><TD WIDTH=10%><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"></TD><TD WIDTH=10%><input type="button" id="btnMemorySubtraction"value="M-" width="5" onclick="memorySubstraction()"></TD><TD WIDTH=10%><input type="button" id="btnMemoryAddition"value="M+" width="5" onclick="memoryAddition()"></TD></TR>
+		<TR><TD><input type="button" id="btnClear" value="C" onclick="Clear()"></TD><TD><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"></TD><TD><input type="button" id="btnSquareRoot" value="SQRT" onclick="computeSquareRoot()"></TD><TD><input type="button" id="btnPercentage" value="%" onclick="computePercentage()"></TD></TR>
 		</TABLE> -->
 		
 		<input type="text" id="txtInputAndResult">
@@ -37,6 +35,143 @@ November 2019
 	
 		<script type="text/javascript">	
 		
+		var input = document.getElementById("txtInputAndResult");
+		var inputString = document.getElementById("txtInputAndResult").value
+
+		// Execute a function when the user releases a key on the keyboard
+		input.addEventListener("keyup", function(event) 
+			{
+			  // Number 13 is the "Enter" key on the keyboard
+			  if (event.keyCode === 13) 
+				  {
+				    // Cancel the default action, if needed
+				    event.preventDefault();
+				    // Trigger the button element with a click
+				    document.getElementById("btnEquals").click();
+				  }
+			  
+			  if (event.keyCode === 48 || event.keyCode === 96) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnZero").click();
+				}
+			  
+			  if (event.keyCode === 49 || event.keyCode === 97) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnOne").click();
+				}
+			  
+			  if (event.keyCode === 50 || event.keyCode === 98) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnTwo").click();
+				}
+			  
+			  if (event.keyCode === 51 || event.keyCode === 99) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnThree").click();
+				}
+			  
+			  if (event.keyCode === 52 || event.keyCode === 100) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnFour").click();
+				}
+			  
+			  if (event.keyCode === 53 || event.keyCode === 101) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnFive").click();
+				}
+			  
+			  if (event.keyCode === 54 || event.keyCode === 102) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnSix").click();
+				}
+			  
+			  if (event.keyCode === 55 || event.keyCode === 103) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnSeven").click();
+				}
+			  
+			  if (event.keyCode === 56 || event.keyCode === 104) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnEight").click();
+				}
+			  
+			  if (event.keyCode === 57 || event.keyCode === 105) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnNine").click();
+				}
+			  
+			  if (event.keyCode === 191 || event.keyCode === 111) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnDivision").click();
+				  }
+			  
+			  if (event.keyCode === 88 || event.keyCode === 106) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnMultiplication").click();
+				  }
+			 
+			  if (event.keyCode === 189 || event.keyCode === 109) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnSubtraction").click();
+				  }
+			  
+			  if (event.keyCode === 43 || event.keyCode === 107) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnAddition").click();
+				  }
+			  
+			  if (event.keyCode === 190) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnDecimal").click();
+				  }
+			});
+		
+		
 		/*var inputString;
 		
 		inputString = document.getElementById("txtInputAndResult").value
@@ -47,7 +182,8 @@ November 2019
 				var ctr = 0;
 				var result;
 				
-				inputString = inputString.split();
+				inputString = inputString.split("");
+				alert(inputString);
 				
 				result= inputString[0];								
 				result = parseFloat(result);
