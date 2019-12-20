@@ -36,7 +36,63 @@ November 2019
 		<input type="button" id="btnZero" value="0" onclick="displayInput(this)"><input type="button" id="btnDecimal" value="." onclick="displayInput(this)"><input type="button" id="btnEquals" value=" = " onclick="displayInput(this)"><input type="button" id="btnAddition" value=" + " onclick="displayInput(this)"><br>
 	
 		<script type="text/javascript">	
-	
+		
+		/*var inputString;
+		
+		inputString = document.getElementById("txtInputAndResult").value
+			
+		document.getElementById("txtInputAndResult").value = inputString;
+		
+		
+				var ctr = 0;
+				var result;
+				
+				inputString = inputString.split();
+				
+				result= inputString[0];								
+				result = parseFloat(result);
+				//alert(inputString);
+				while (ctr < inputString.length)
+					{
+						var operand;
+						var operator;
+						
+						operator = inputString[ctr + 1];
+						//alert(operator);
+						operand = inputString[ctr + 2];
+						operand = parseFloat(operand);
+						//alert(operand);
+						
+						if (operator == "/")
+							{
+								result = result / operand;
+								//result = parseFloat(result);
+							}
+								
+						if (operator == "x")
+							{
+								result = result * operand;
+								//result = parseFloat(result);
+							}
+						
+						if (operator == "-")
+							{
+								result = result - operand;
+								//result = parseFloat(result);
+							}
+						
+						if (operator == "+")
+						{
+							result = result + operand;
+							//result = parseFloat(result);
+						}
+						
+						ctr = ctr + 2;
+
+					}
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + result;	*/
+				
 		function memoryClear()
 			{
 				document.getElementById("txtInputAndResult").value = "";
@@ -108,13 +164,13 @@ November 2019
 				var lastNumber;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.substring(0, inputString.length - 6);
 				inputString = inputString.split(" ");
-				lastNumber = inputString[inputString.length - 3];
+				lastNumber = inputString[inputString.length - 2];
 				lastNumber = parseFloat(lastNumber);
-				inputString = inputString.join(" ");
-				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;				
+				inputString = document.getElementById("txtInputAndResult").value;
+				document.getElementById("txtInputAndResult").value = inputString + lastNumber;	
 			}
-		
 		
 		function displayInput(element) 
 			{
