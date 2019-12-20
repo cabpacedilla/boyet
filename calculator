@@ -16,17 +16,11 @@ November 2019
 
 	<body>
 		<h1>Basic Calculator</h1>
-
-	<!-- <TABLE WIDTH=40%>
-		<TR><TD COLSPAN="4"><input type="text" id="txtInputAndResult"></TD></TR>
-		<TR><TD WIDTH=10%><input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"></TD><TD WIDTH=10%><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"></TD><TD WIDTH=10%><input type="button" id="btnMemorySubtraction"value="M-" width="5" onclick="memorySubstraction()"></TD><TD WIDTH=10%><input type="button" id="btnMemoryAddition"value="M+" width="5" onclick="memoryAddition()"></TD></TR>
-		<TR><TD><input type="button" id="btnClear" value="C" onclick="Clear()"></TD><TD><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"></TD><TD><input type="button" id="btnSquareRoot" value="SQRT" onclick="computeSquareRoot()"></TD><TD><input type="button" id="btnPercentage" value="%" onclick="computePercentage()"></TD></TR>
-		</TABLE> -->
 		
 		<input type="text" id="txtInputAndResult">
 		<br>
 		<br>
-		<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" width="5" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" width="5" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" width="5" onclick="memoryAddition()"><br>
+		<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" onclick="memoryAddition()"><br>
 		<input type="button" id="btnClear" value="C" onclick="Clear()"><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"><input type="button" id="btnSquareRoot" value="SQRT" onclick="computeSquareRoot()"><input type="button" id="btnPercentage" value="%" onclick="computePercentage()"><br>
 		<input type="button" id="btnSeven" value="7" onclick="displayInput(this)"><input type="button" id="btnEight" value="8" onclick="displayInput(this)"><input type="button" id="btnNine" value="9" onclick="displayInput(this)"><input type="button" id="btnDivision" value=" / " onclick="displayInput(this)"><br>
 		<input type="button" id="btnFour" value="4" onclick="displayInput(this)"><input type="button" id="btnFive" value="5" onclick="displayInput(this)"><input type="button" id="btnSix"  value="6" onclick="displayInput(this)"><input type="button" id="btnMultiplication" value=" x " onclick="displayInput(this)"><br>
@@ -154,7 +148,7 @@ November 2019
 					document.getElementById("btnSubtraction").click();
 				  }
 			  
-			  if (event.keyCode === 43 || event.keyCode === 107) 
+			  if (event.keyCode === 187) 
 				  {
 				  	inputString = document.getElementById("txtInputAndResult").value; 
 					inputString = inputString.substring(0, inputString.length - 1);
@@ -182,6 +176,31 @@ November 2019
 				inputString = document.getElementById("txtInputAndResult").value				
 				inputString = inputString.substring(0, inputString.length - 2);
 				document.getElementById("txtInputAndResult").value = inputString;
+			}
+		
+		function changeSign()
+			{
+				var inputString;
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);
+				lastNumber = lastNumber * -1;    
+				inputString = inputString.join(" ");
+				inputString = inputString.substring(0, inputString.length - 1);
+				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+			}
+		
+		function computeSquareRoot()
+			{
+				var inputString;
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);
+				lastNumber = Math.sqrt(lastNumber);
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = lastNumber;
 			}
 		
 		function memorySubstraction()
@@ -242,12 +261,17 @@ November 2019
 				var lastNumber;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
-				inputString = inputString.substring(0, inputString.length - 6);
+				inputString = inputString.substring(0, inputString.length - 4);
 				inputString = inputString.split(" ");
-				lastNumber = inputString[inputString.length - 2];
+				lastNumber = inputString[inputString.length - 1];
 				lastNumber = parseFloat(lastNumber);
 				inputString = document.getElementById("txtInputAndResult").value;
-				document.getElementById("txtInputAndResult").value = inputString + lastNumber;	
+				document.getElementById("txtInputAndResult").value = inputString + lastNumber;								
+				if (Number.isNaN(lastNumber))
+					{
+						alert("Please enter a complete calculation before doing a memory recall for the last number of the equation.");
+						document.getElementById("txtInputAndResult").value = inputString;
+					}
 			}
 		
 		function displayInput(element) 
