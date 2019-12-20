@@ -1,6 +1,6 @@
  
 <!-- 
-This webpage will alert a message when added pomodoro breaktimes and back to work times is equal to the system time.
+This webpage is a basic calculator.
 This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 November 2019
 -->
@@ -9,372 +9,320 @@ November 2019
 <html>
 	<head>
 		
-		<meta http-equiv="refresh" content="55">
 		<meta http-equiv="Content-type" content="text/html; charset=UTF-8">
 		<meta name="viewport" content="width=device-width,initial-scale=1">
-		<title>Send Pomodoro alarm</title>
+		<title>Basic Calculator</title>
 	</head>
 
 	<body>
-		<h1>Pomodoro work life balance</h1>
-
-		<b>Enter a start time and stop time...</b>
-		<p> Enter a start time in 24-hour format like "8:00" for 8:00 AM: <input type="text" id="startTime" size="5" min="1" max="99">
-		<p> Enter a stop time in 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="5" min="1" max="99">
-		<br>
-		<br>	
-		<b>...then add your break and resume to work time intervals.</b>	
-		<p> Enter work interval minutes: <input type="number" id="workInterval" size="1" min="1" max="99"> 
-		<p> Enter break interval minutes: <input type="number" id="breakInterval" size="1" min="1" max="99">
-		<br>
-		<br>
-		<input type="button" value="Add work and break intervals" onclick="addBreakResumeTimes()">
-		<br> 
-		<br> 			
-		<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
-		<br> 
-		<br> 
-		<b> You may also add your break and resume to work times one by one in a 12-hour format like "8:25 AM".<br>
-		Or you may also add multiple break and resume times in a 12-hour format separated by commas like "8:25 AM, 8:30 AM, ..., 1:25 PM, 1:30 PM, ..."
-		</b>
-	
-		<form>
-			<p> Break from work time:
-			<br> 
-			<input type="text" id="pomodoroInputField" size="25"> 
-			<input type="button" value="Add" onclick="addPomodoroTimes()">
-			
-			<p> Resume to work time:
-			<br> 
-			<input type="text" id="backToWorkInputField" size="25">
-			<input type="button" value="Add" onclick="addbackToWorkTimes()">
-			<br> 
-			<br>
-			<input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">		
-			<br>
-			<br>
-			<b> Delete an unneeded 'break from work' time:</b> Enter the number of nth break time that you want to delete starting from the top left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()"><br>
-			<br>  
-			<input type="number" id="breakTimeIndex" size="1" min="1" max="99">
-			<input type="button" value="Delete" onclick="deletePomodoroTime()">
-			<br>
-			<br>
-			<b> Delete an unneeded 'resume to work' time:</b> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()"><br>
-			<br> 
-			<input type="number" id="resumeTimeIndex" size="1" min="1" max="99">
-			<input type="button" value="Delete" onclick="deleteBackToWorkTime()">
-			<br> 
-			<br> 
-			<b>Clear all break and resume times:</b> <input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
+		<h1>Basic Calculator</h1>
 		
-		</form>
+		<input type="text" id="txtInputAndResult">
+		<br>
+		<br>
+		<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" width="5" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" width="5" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" width="5" onclick="memoryAddition()"><br>
+		<input type="button" id="btnClear" value="C" onclick="clear()"><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"><input type="button" id="btnSquareRoot" value="SQRT" onclick="computeSquareRoot()"><input type="button" id="btnPercentage" value="%" onclick="computePercentage()"><br>
+		<input type="button" id="btnSeven" value="7" onclick="displayInput(this)"><input type="button" id="btnEight" value="8" onclick="displayInput(this)"><input type="button" id="btnNine" value="9" onclick="displayInput(this)"><input type="button" id="btnDivision" value=" / " onclick="displayInput(this)"><br>
+		<input type="button" id="btnFour" value="4" onclick="displayInput(this)"><input type="button" id="btnFive" value="5" onclick="displayInput(this)"><input type="button" id="btnSix"  value="6" onclick="displayInput(this)"><input type="button" id="btnMultiplication" value=" x " onclick="displayInput(this)"><br>
+		<input type="button" id="btnOne" value="1" onclick="displayInput(this)"><input type="button" id="btnTwo" value="2" onclick="displayInput(this)"><input type="button" id="btnThree" value="3" onclick="displayInput(this)"><input type="button" id="btnSubtraction"  value=" - " onclick="displayInput(this)"><br>
+		<input type="button" id="btnZero" value="0" onclick="displayInput(this)"><input type="button" id="btnDecimal" value="." onclick="displayInput(this)"><input type="button" id="btnEquals" value=" = " onclick="displayInput(this)"><input type="button" id="btnAddition" value=" + " onclick="displayInput(this)"><br>
 	
 		<script type="text/javascript">	
 		
-			var pomodoroArray = [];
-			var backToWorkArray = [];
-			var pomodoroTimes;				// Break from work times input	
-			var backToWorkTimes;			//  Resume to work times input
-			var breakTimeString;			// Convert breakTime to string to compare to currentTime
-			var resumeTimeString;			// Convert resumeTime to string to compare to currentTime
-			var currentTime;
-			
-			//Convert time to string in hour and minute.		
-			currentTime = String(new Date().toLocaleTimeString("en-US", 
-				{
-					hour12 : true,
-					hour : "numeric",
-					minute : "numeric"
-				}));	
-			
-			if (sessionStorage.getItem("pomodoroTimes") != null)
-				{
-					pomodoroArray = JSON.parse(sessionStorage.getItem("pomodoroTimes"));						
+		var input = document.getElementById("txtInputAndResult");
+		var inputString = document.getElementById("txtInputAndResult").value
+
+		// Execute a function when the user releases a key on the keyboard
+		input.addEventListener("keyup", function(event) 
+			{
+			  // Number 13 is the "Enter" key on the keyboard
+			  if (event.keyCode === 13) 
+				  {
+				    // Cancel the default action, if needed
+				    event.preventDefault();
+				    // Trigger the button element with a click
+				    document.getElementById("btnEquals").click();
+				  }
+			  
+			  if (event.keyCode === 48 || event.keyCode === 96) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnZero").click();
 				}
-			if (sessionStorage.getItem("backToWorkTimes") != null)
-				{
-					backToWorkArray = JSON.parse(sessionStorage.getItem("backToWorkTimes"));
-				}	
-			
-			loopArray();
-			
-			function toTimeString(dateObj)
-				{
-					return dateObj.toLocaleTimeString("en-US", 
-							{
-							    hour12: true,
-							     hour: "numeric",
-							     minute: "numeric"
-							 });
+			  
+			  if (event.keyCode === 49 || event.keyCode === 97) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnOne").click();
 				}
-			
-			function addBreakResumeTimes()				
-				{				 				 				
-					var resumeInterval = document.getElementById("breakInterval").value;
-					var resumeDuration = parseFloat(resumeInterval);
-					var workInterval = document.getElementById("workInterval").value;
-					var breakDuration = parseFloat(workInterval);
-					var breakTime = new Date();
-					var breakHours;
-					var breakMinutes;
-					var resumeTime = new Date();
-					var resumeHours;
-					var resumeMinutes;
-					var startTime;
-					var startTimeObject = new Date();
-					var stopTime;
-					var stopTimeObject = new Date();
+			  
+			  if (event.keyCode === 50 || event.keyCode === 98) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnTwo").click();
+				}
+			  
+			  if (event.keyCode === 51 || event.keyCode === 99) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnThree").click();
+				}
+			  
+			  if (event.keyCode === 52 || event.keyCode === 100) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnFour").click();
+				}
+			  
+			  if (event.keyCode === 53 || event.keyCode === 101) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnFive").click();
+				}
+			  
+			  if (event.keyCode === 54 || event.keyCode === 102) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnSix").click();
+				}
+			  
+			  if (event.keyCode === 55 || event.keyCode === 103) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnSeven").click();
+				}
+			  
+			  if (event.keyCode === 56 || event.keyCode === 104) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnEight").click();
+				}
+			  
+			  if (event.keyCode === 57 || event.keyCode === 105) 
+			  	{
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+				  	document.getElementById("btnNine").click();
+				}
+			  
+			  if (event.keyCode === 191 || event.keyCode === 111) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnDivision").click();
+				  }
+			  
+			  if (event.keyCode === 88 || event.keyCode === 106) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnMultiplication").click();
+				  }
+			 
+			  if (event.keyCode === 189 || event.keyCode === 109) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnSubtraction").click();
+				  }
+			  
+			  if (event.keyCode === 187) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnAddition").click();
+				  }
+			  
+			  if (event.keyCode === 190) 
+				  {
+				  	inputString = document.getElementById("txtInputAndResult").value; 
+					inputString = inputString.substring(0, inputString.length - 1);
+					document.getElementById("txtInputAndResult").value = inputString;
+					document.getElementById("btnDecimal").click();
+				  }
+			});
+				
+		function memoryClear()
+			{
+				document.getElementById("txtInputAndResult").value = "";
+			}
+		
+		function clear()
+			{
+				var inputString;
+				inputString = document.getElementById("txtInputAndResult").value				
+				inputString = inputString.substring(0, inputString.length - 2);
+				document.getElementById("txtInputAndResult").value = inputString;
+			}
+		
+		function changeSign()
+			{
+				var inputString;
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);
+				lastNumber = lastNumber * -1;    
+				inputString = inputString.join(" ");
+				inputString = inputString.substring(0, inputString.length - 1);
+				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+			}
+		
+		function memorySubstraction()
+			{
+				var inputString;
+				var result;
+				var lastResult;
+				var subtrahend;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastResult = inputString[inputString.length - 1] 
+				lastResult = parseFloat(lastResult);
+				subtrahend = inputString[inputString.length - 3]
+				subtrahend = parseFloat(subtrahend);
+				result = lastResult - subtrahend;
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + " - " + subtrahend + " = " + result;			
+			}
+		
+		function memoryAddition()
+			{
+				var inputString;
+				var result;
+				var lastResult;
+				var addend;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastResult = inputString[inputString.length - 1] 
+				lastResult = parseFloat(lastResult);
+				addend = inputString[inputString.length - 3]
+				addend = parseFloat(addend);
+				result = lastResult + addend;
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + " + " + addend + " = " + result;			
+			}
+		
+		function computePercentage()
+			{	
+				var inputString;
+				var lastNumber;
+				var result;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);
+				lastNumber = lastNumber / 100;	
+				inputString = inputString.join(" ");
+				inputString = inputString.substring(0, inputString.length - 2);
+				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;
+			}
+		
+		function memoryRecall()
+			{
+				var inputString;
+				var lastNumber;
+				
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.substring(0, inputString.length - 6);
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 2];
+				lastNumber = parseFloat(lastNumber);
+				inputString = document.getElementById("txtInputAndResult").value;
+				document.getElementById("txtInputAndResult").value = inputString + lastNumber;	
+			}
+		
+		function displayInput(element) 
+			{
+				var inputString;
+				var elementValue;
+				
+				elementValue = element.value;
+				inputString = document.getElementById("txtInputAndResult").value
+				inputString = inputString + elementValue;
 					
-					startTime = document.getElementById("startTime").value;
-					stopTime = document.getElementById("stopTime").value;	
-					
-					if (startTime == "" || stopTime == "" || resumeInterval == "" || workInterval == "")
-						{
-							alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
-							return;
-						}
-					
-					startTime = startTime.substring(0, 5);
-					startTime = startTime.split(":");	
-					startTimeObject.setHours(startTime[0], startTime[1]);
-					breakMinutes = startTimeObject.getMinutes();
-					breakHours = startTimeObject.getHours();
-					breakTime.setHours(breakHours, breakMinutes);
-					resumeHours = startTimeObject.getHours();
-					resumeMinutes = startTimeObject.getMinutes();
-					resumeTime.setHours(resumeHours, resumeMinutes);
-					stopTime = stopTime.substring(0, 5);
-					stopTime = stopTime.split(":");	
-					stopTimeObject.setHours(stopTime[0], stopTime[1]);
-										
-					while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
-						{													
-							breakMinutes = resumeMinutes + breakDuration;
-							/* if (breakMinutes == 0)
-							{
-								breakMinutes = resumeMinutes + breakDuration;					
-							}	 */									
-							breakTime.setHours(breakHours, breakMinutes);							
+				document.getElementById("txtInputAndResult").value = inputString;
 			
-							resumeMinutes = breakMinutes + resumeDuration;							
-							resumeTime.setHours(resumeHours, resumeMinutes);
-							
-							breakTimeString = toTimeString(breakTime);
-							pomodoroTimes = breakTimeString;
-							pomodoroArray.push(pomodoroTimes);
-							
-							resumeTimeString = toTimeString(resumeTime);
-							backToWorkTimes = resumeTimeString;
-							backToWorkArray.push(backToWorkTimes);	
-						}
-					sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
-					sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
-					alert("Break and resume time intervals were added.");
-				}
-			
-			function addPomodoroTimes() 
-				{
-					pomodoroTimes = document.getElementById("pomodoroInputField").value;
-					if (pomodoroTimes == "") 
-						{
-							alert("Please enter a break time in 0:00 AM or PM format.");
-						} 
-					else 
-						{
-							var ctr = 0;
-							pomodoroTimes = pomodoroTimes.split(", ");	
-							while (ctr < pomodoroTimes.length)
-								{
-									pomodoroArray.push(pomodoroTimes[ctr]);	
-									ctr = ctr + 1;
-								}		
-							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));
-							alert("Break time was added.");
-						}				
-				}
-			
-			function addbackToWorkTimes() 
-				{
-					backToWorkTimes = document.getElementById("backToWorkInputField").value;
-					if (backToWorkTimes == "") 
-						{
-							alert("Please enter a break time in 0:00 AM or PM format.");
-						} 
-					else 
-						{
-							var ctr = 0;
-							backToWorkTimes = backToWorkTimes.split(", ");
-							while (ctr < backToWorkTimes.length)
-								{
-									backToWorkArray.push(backToWorkTimes[ctr]);
-									ctr = ctr + 1;
-								}
+				var equals = document.getElementById("btnEquals").value;
+				
+				if (elementValue == equals)
+					{
+						var ctr = 0;
+						var result;
 						
-							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
-							alert("Resume time was added.");
-						}							
-				}
+						inputString = inputString.split(" ");
+						
+						result= inputString[0];								
+						result = parseFloat(result);
+						//alert(inputString);
+						while (ctr < inputString.length)
+							{
+								var operand;
+								var operator;
 								
-			function showBreakTimes() 
-				{
-					if (pomodoroArray.length == 0)
-						{
-							alert("Break times is empty. Please add break times.");
-						}
-					else
-						{
-							alert(pomodoroArray);
-						}			
-				}
-			
-			function showResumeTimes() 
-				{
-					if (backToWorkArray.length == 0)
-						{
-							alert("Resume times is empty. Please add resume times");
-						}
-					else
-						{
-							alert(backToWorkArray);
-						}			
-				}
-			
-			function deletePomodoroTime()
-				{
-					var ctr = document.getElementById("breakTimeIndex").value;
-					
-					if (pomodoroArray.length == 0)
-						{
-							alert("Break times is empty");
-						}
-					
-					if (ctr == "")
-						{
-							alert("Enter the number of nth resume time starting from the top left in the resume times list.");
-						}
-					else
-						{
-							var index = parseFloat(ctr);		
-							pomodoroArray.splice(index - 1, 1);
-							pomodoroTimes = pomodoroArray;
-							sessionStorage.setItem("pomodoroTimes", JSON.stringify(pomodoroArray));	
-							alert("Break time was cleared.");	
-						}
-				}
-			
-			function deleteBackToWorkTime()
-				{
-					var ctr = document.getElementById("resumeTimeIndex").value;
-					
-					if (backToWorkArray.length == 0)
-						{
-							alert("Break times is empty");
-						}
-					
-					if (ctr == "")
-						{
-							alert("Enter the number of nth resume time starting from the top left in the resume times list.");
-						}
-					else
-						{
-							var index = parseFloat(ctr);
-							backToWorkArray.splice(index - 1, 1)
-							backToWorkTimes = backToWorkArray;
-							sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));	
-							alert("Resume time was cleared.");					
-						}
-						
-				}
-			
-			function clearBreakTimes()
-				{
-					while (pomodoroArray.length)
-						{
-							while (pomodoroArray.length > 0)
+								operator = inputString[ctr + 1];
+								//alert(operator);
+								operand = inputString[ctr + 2];
+								operand = parseFloat(operand);
+								//alert(operand);
+								
+								if (operator == "/")
+									{
+										result = result / operand;
+										//result = parseFloat(result);
+									}
+										
+								if (operator == "x")
+									{
+										result = result * operand;
+										//result = parseFloat(result);
+									}
+								
+								if (operator == "-")
+									{
+										result = result - operand;
+										//result = parseFloat(result);
+									}
+								
+								if (operator == "+")
 								{
-									sessionStorage.removeItem("pomodoroTimes");
-									//sessionStorage.removeItem("breakTimeString");
-									pomodoroArray = [];
+									result = result + operand;
+									//result = parseFloat(result);
 								}
-							
-							alert("Break times were cleared.");	
-							return;
-						}
-					
-					if (pomodoroArray.length == 0)
-						{
-							alert("Break times is empty. Please add resume times.")
-						}				
-				}
-			
-			function clearResumeTimes()
-				{
-					while (backToWorkArray.length)
-						{
-							while (backToWorkArray.length > 0)
-								{
-									sessionStorage.removeItem("backToWorkTimes");
-									//sessionStorage.removeItem("resumeTimeString");
-									backToWorkArray = [];
-								}
-							
-							alert("Resume times were cleared.");
-							return;
-						}
-					
-					if (backToWorkArray.length == 0)
-						{
-							alert("Resume times is empty. Please add resume times.")
-						}
-				}
-			
-			function loopArray() 
-				{	
-					var alarmWindow;
-					var breakAlertArray;
-					var resumeAlertArray;
-					var breakMessage;
-					var resumeMessage;
-					var ctr = 0;
-					
-					//Loop the arrays while pomodoroArray is not equal to currentTime or backToWorkArray is not equal to currentTime
-					while (pomodoroArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
-						{							
-							// If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
-							if (pomodoroArray[ctr] == currentTime) 
-								{
-									alarmWindow = window.open("", "BreakTime", "width=350,height=50");
-									alarmWindow.focus();
-									breakAlertArray = pomodoroArray[ctr] + "." + "</p>";
-									breakMessage = "<p>Time for a break because it is now ";
-									alarmWindow.document.write(breakMessage + breakAlertArray);
-									setTimeout(function(){ alarmWindow.close(); }, 50000);
-									break;
-								}
-							
-							// If back to work time is equal to current time, alarm for back to work with pop-up message    			
-							if (backToWorkArray[ctr] == currentTime) 
-								{
-									alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
-									alarmWindow.focus();
-									resumeAlertArray = backToWorkArray[ctr] + "." + "</p>";
-									resumeMessage = "<p>Time to resume to work because it is now ";
-									alarmWindow.document.write(resumeMessage + resumeAlertArray);
-									setTimeout(function(){ alarmWindow.close(); }, 50000);
-									break;
-								}
-			
-							//break from the ctr if the iteration reach the last elements of the pomodoro and back to work time arrays
-							if (pomodoroArray[ctr] == pomodoroArray[pomodoroArray.length] && backToWorkArray[ctr] == backToWorkArray[backToWorkArray.length]) 
-								{
-									break;
-								}
-			
-							//increment ctr count
-							ctr = ctr + 1;
-						}
-				}
-		</script>
+								
+								ctr = ctr + 2;
+
+							}
+						inputString = inputString.join(" ");
+						document.getElementById("txtInputAndResult").value = inputString + result;					
+					}				
+			}
+		</script>		
 	</body>
 </html>
 
