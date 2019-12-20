@@ -170,64 +170,6 @@ November 2019
 					document.getElementById("btnDecimal").click();
 				  }
 			});
-		
-		
-		/*var inputString;
-		
-		inputString = document.getElementById("txtInputAndResult").value
-			
-		document.getElementById("txtInputAndResult").value = inputString;
-		
-		
-				var ctr = 0;
-				var result;
-				
-				inputString = inputString.split("");
-				alert(inputString);
-				
-				result= inputString[0];								
-				result = parseFloat(result);
-				//alert(inputString);
-				while (ctr < inputString.length)
-					{
-						var operand;
-						var operator;
-						
-						operator = inputString[ctr + 1];
-						//alert(operator);
-						operand = inputString[ctr + 2];
-						operand = parseFloat(operand);
-						//alert(operand);
-						
-						if (operator == "/")
-							{
-								result = result / operand;
-								//result = parseFloat(result);
-							}
-								
-						if (operator == "x")
-							{
-								result = result * operand;
-								//result = parseFloat(result);
-							}
-						
-						if (operator == "-")
-							{
-								result = result - operand;
-								//result = parseFloat(result);
-							}
-						
-						if (operator == "+")
-						{
-							result = result + operand;
-							//result = parseFloat(result);
-						}
-						
-						ctr = ctr + 2;
-
-					}
-				inputString = inputString.join(" ");
-				document.getElementById("txtInputAndResult").value = inputString + result;	*/
 				
 		function memoryClear()
 			{
@@ -371,15 +313,9 @@ November 2019
 							}
 						inputString = inputString.join(" ");
 						document.getElementById("txtInputAndResult").value = inputString + result;					
-					}
-				
-				
-				
+					}				
 			}
-		
-		</script>	
-
-		
+		</script>		
 	</body>
 </html>
 
