@@ -261,17 +261,11 @@ November 2019
 				var lastNumber;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
-				inputString = inputString.substring(0, inputString.length - 4);
 				inputString = inputString.split(" ");
-				lastNumber = inputString[inputString.length - 1];
+				lastNumber = inputString[inputString.length - 3];
 				lastNumber = parseFloat(lastNumber);
 				inputString = document.getElementById("txtInputAndResult").value;
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;								
-				if (Number.isNaN(lastNumber))
-					{
-						alert("Please enter a complete calculation before doing a memory recall for the last number of the equation.");
-						document.getElementById("txtInputAndResult").value = inputString;
-					}
 			}
 		
 		function displayInput(element) 
@@ -342,4 +336,3 @@ November 2019
 		</script>		
 	</body>
 </html>
-
