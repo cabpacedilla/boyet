@@ -191,6 +191,18 @@ November 2019
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 			}
 		
+		function computeSquareRoot()
+			{
+				var inputString;
+				inputString = document.getElementById("txtInputAndResult").value;
+				inputString = inputString.split(" ");
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);
+				lastNumber = Math.sqrt(lastNumber);
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = lastNumber;
+			}
+		
 		function memorySubstraction()
 			{
 				var inputString;
