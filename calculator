@@ -262,9 +262,14 @@ November 2019
 				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
-				lastNumber = inputString[inputString.length - 3];
-				lastNumber = parseFloat(lastNumber);
-				inputString = document.getElementById("txtInputAndResult").value;
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);				
+				if (Number.isNaN(lastNumber))
+					{
+						lastNumber = inputString[inputString.length - 3];
+						lastNumber = parseFloat(lastNumber);
+					}
+				inputString = inputString.join(" ");				
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;								
 			}
 		
@@ -336,3 +341,4 @@ November 2019
 		</script>		
 	</body>
 </html>
+
