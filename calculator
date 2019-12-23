@@ -32,7 +32,7 @@ November 2019
 		var input = document.getElementById("txtInputAndResult");
 		var inputString = document.getElementById("txtInputAndResult").value;
 
-		// Execute a function when the user releases a key on the keyboard
+		// Execute button onClick function after releasing a key input
 		input.addEventListener("keyup", function(event) 
 			{
 			  // Number 13 is the "Enter" key on the keyboard
