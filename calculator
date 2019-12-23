@@ -30,7 +30,7 @@ November 2019
 		<script type="text/javascript">	
 		
 		var input = document.getElementById("txtInputAndResult");
-		var inputString = document.getElementById("txtInputAndResult").value
+		var inputString = document.getElementById("txtInputAndResult").value;
 
 		// Execute a function when the user releases a key on the keyboard
 		input.addEventListener("keyup", function(event) 
@@ -249,10 +249,10 @@ November 2019
 				inputString = inputString.split(" ");
 				lastNumber = inputString[inputString.length - 1];
 				lastNumber = parseFloat(lastNumber);
-				lastNumber = lastNumber / 100;	
+				lastNumber = lastNumber / 100;
 				inputString = inputString.join(" ");
 				inputString = inputString.substring(0, inputString.length - 2);
-				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;
+				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 			}
 		
 		function memoryRecall()
@@ -282,8 +282,8 @@ November 2019
 				elementValue = element.value;
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString + elementValue;
+				equals = document.getElementById("btnEquals").value;
 				document.getElementById("txtInputAndResult").value = inputString;
-				equals = document.getElementById("btnEquals").value;	
 				
 				if (elementValue == equals)
 					{
