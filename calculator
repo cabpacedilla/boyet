@@ -277,14 +277,13 @@ November 2019
 			{
 				var inputString;
 				var elementValue;
+				var equals;
 				
 				elementValue = element.value;
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString + elementValue;
-					
 				document.getElementById("txtInputAndResult").value = inputString;
-			
-				var equals = document.getElementById("btnEquals").value;
+				equals = document.getElementById("btnEquals").value;	
 				
 				if (elementValue == equals)
 					{
@@ -292,59 +291,43 @@ November 2019
 						var result;
 						
 						inputString = inputString.split(" ");
-						
 						result= inputString[0];								
 						result = parseFloat(result);
-						//alert(inputString);
+						
 						while (ctr < inputString.length)
 							{
 								var operand;
 								var operator;
 								
 								operator = inputString[ctr + 1];
-								//alert(operator);
 								operand = inputString[ctr + 2];
-								operand = parseFloat(operand);
-								//alert(operand);
+								operand = parseFloat(operand);		
 								
 								if (Number.isNaN(result))
 									{
 										result = 0;
-									}
+									}	
 								
-								if (Number.isNaN(operand))
-									{
-										result = result;
-									}
-										
 								if (operator == "/")
 									{
-										if (Number.isNaN(result))
-											{
-												result = operand;
-											}
-										
 										result = result / operand;
 									}
-										
+								
 								if (operator == "x")
 									{
 										result = result * operand;
-										//result = parseFloat(result);
 									}
 								
 								if (operator == "-")
 									{
 										result = result - operand;
-										//result = parseFloat(result);
 									}
 								
 								if (operator == "+")
-								{
-									result = result + operand;
-									//result = parseFloat(result);
-								}
-								
+									{
+										result = result + operand;
+									}
+									
 								ctr = ctr + 2;
 
 							}
