@@ -279,7 +279,7 @@ November 2019
 				var elementValue;
 				
 				elementValue = element.value;
-				inputString = document.getElementById("txtInputAndResult").value
+				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString + elementValue;
 					
 				document.getElementById("txtInputAndResult").value = inputString;
@@ -307,10 +307,24 @@ November 2019
 								operand = parseFloat(operand);
 								//alert(operand);
 								
+								if (Number.isNaN(result))
+									{
+										result = 0;
+									}
+								
+								if (Number.isNaN(operand))
+									{
+										result = result;
+									}
+										
 								if (operator == "/")
 									{
+										if (Number.isNaN(result))
+											{
+												result = operand;
+											}
+										
 										result = result / operand;
-										//result = parseFloat(result);
 									}
 										
 								if (operator == "x")
