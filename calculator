@@ -301,11 +301,16 @@ November 2019
 								
 								operator = inputString[ctr + 1];
 								operand = inputString[ctr + 2];
-								operand = parseFloat(operand);		
+								operand = parseFloat(operand);	
 								
 								if (Number.isNaN(result))
 									{
 										result = 0;
+									}	
+								
+								if (Number.isNaN(operand))
+									{
+										operand = 0;
 									}	
 								
 								if (operator == "/")
