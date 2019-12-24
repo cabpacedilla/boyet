@@ -206,37 +206,39 @@ November 2019
 		function memorySubstraction()
 			{
 				var inputString;
+				var lastNumber;
 				var result;
-				var lastResult;
-				var subtrahend;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
-				lastResult = inputString[inputString.length - 1] 
-				lastResult = parseFloat(lastResult);
-				subtrahend = inputString[inputString.length - 3]
-				subtrahend = parseFloat(subtrahend);
-				result = lastResult - subtrahend;
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);				
+				if (Number.isNaN(lastNumber))
+					{
+						lastNumber = inputString[inputString.length - 3];
+						lastNumber = parseFloat(lastNumber);
+					}
 				inputString = inputString.join(" ");
-				document.getElementById("txtInputAndResult").value = inputString + " - " + subtrahend + " = " + result;			
+				document.getElementById("txtInputAndResult").value = inputString + " - " + lastNumber;	
 			}
 		
 		function memoryAddition()
 			{
 				var inputString;
+				var lastNumber;
 				var result;
-				var lastResult;
-				var addend;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
-				lastResult = inputString[inputString.length - 1] 
-				lastResult = parseFloat(lastResult);
-				addend = inputString[inputString.length - 3]
-				addend = parseFloat(addend);
-				result = lastResult + addend;
+				lastNumber = inputString[inputString.length - 1];
+				lastNumber = parseFloat(lastNumber);				
+				if (Number.isNaN(lastNumber))
+					{
+						lastNumber = inputString[inputString.length - 3];
+						lastNumber = parseFloat(lastNumber);
+					}
 				inputString = inputString.join(" ");
-				document.getElementById("txtInputAndResult").value = inputString + " + " + addend + " = " + result;			
+				document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;			
 			}
 		
 		function computePercentage()
