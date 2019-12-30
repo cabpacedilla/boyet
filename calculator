@@ -28,11 +28,11 @@ November 2019
 	
 		<script type="text/javascript">	
 		
-		var input = document.getElementById("txtInputAndResult");
+		var key = document.getElementById("txtInputAndResult");
 		var inputString = document.getElementById("txtInputAndResult").value;
 
 		// Execute button onClick function after releasing a key input
-		input.addEventListener("keyup", function(event) 
+		key.addEventListener("keyup", function(event) 
 			{
 			  // Number 13 is the "Enter" key on the keyboard
 			  if (event.keyCode === 13) 
@@ -279,16 +279,19 @@ November 2019
 				var inputString;
 				var elementValue;
 				var equals;
+				var ctr = 0;
+				var operand;
+				var operator;
 				
 				elementValue = element.value;
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString + elementValue;
-				equals = document.getElementById("btnEquals").value;
 				document.getElementById("txtInputAndResult").value = inputString;
+				equals = document.getElementById("btnEquals").value;
 				
 				if (elementValue == equals)
 					{
-						var ctr = 0;
+						
 						var result;
 						
 						inputString = inputString.split(" ");
@@ -297,21 +300,21 @@ November 2019
 						
 						while (ctr < inputString.length)
 							{
-								var operand;
-								var operator;
-								
+															
 								operator = inputString[ctr + 1];
 								operand = inputString[ctr + 2];
-								operand = parseFloat(operand);	
+								operand = parseFloat(operand);
 								
 								if (Number.isNaN(result))
 									{
 										result = 0;
 									}	
 								
-								if (Number.isNaN(operand))
-									{
-										operand = 0;
+								while (Number.isNaN(operand))
+									{	
+										
+										operator = inputString[ctr + 2];
+										operand = inputString[ctr + 3];
 									}	
 								
 								if (operator == "/")
