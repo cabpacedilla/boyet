@@ -252,7 +252,7 @@ November 2019
 				lastNumber = parseFloat(lastNumber);
 				lastNumber = lastNumber / 100;
 				inputString = inputString.join(" ");
-				inputString = inputString.substring(0, inputString.length - 2);
+				inputString = inputString.substring(0, inputString.length - 1);
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 			}
 		
@@ -279,9 +279,6 @@ November 2019
 				var inputString;
 				var elementValue;
 				var equals;
-				var ctr = 0;
-				var operand;
-				var operator;
 				
 				elementValue = element.value;
 				inputString = document.getElementById("txtInputAndResult").value;
@@ -293,14 +290,18 @@ November 2019
 					{
 						
 						var result;
+						var ctr;
 						
+						ctr = 0;		
 						inputString = inputString.split(" ");
 						result= inputString[0];								
 						result = parseFloat(result);
 						
 						while (ctr < inputString.length)
 							{
-															
+								var operand;
+								var operator;
+							
 								operator = inputString[ctr + 1];
 								operand = inputString[ctr + 2];
 								operand = parseFloat(operand);
@@ -314,7 +315,7 @@ November 2019
 									{	
 										
 										operator = inputString[ctr + 2];
-										operand = inputString[ctr + 3];
+										operand = inputString[ctr + 3];	
 									}	
 								
 								if (operator == "/")
