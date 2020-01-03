@@ -28,8 +28,12 @@ November 2019
 	
 		<script type="text/javascript">	
 		
-		var key = document.getElementById("txtInputAndResult");
-		var inputString = document.getElementById("txtInputAndResult").value;
+		var key;
+		var inputString;
+		
+		key = document.getElementById("txtInputAndResult");
+		document.getElementById("txtInputAndResult").value = "0";
+		inputString = document.getElementById("txtInputAndResult").value;
 
 		// Execute button onClick function after releasing a key input
 		key.addEventListener("keyup", function(event) 
@@ -167,6 +171,7 @@ November 2019
 		function memoryClear()
 			{
 				document.getElementById("txtInputAndResult").value = "";
+				document.getElementById("txtInputAndResult").value = "0";
 			}
 		
 		function Clear()
@@ -175,6 +180,10 @@ November 2019
 				inputString = document.getElementById("txtInputAndResult").value				
 				inputString = inputString.substring(0, inputString.length - 2);
 				document.getElementById("txtInputAndResult").value = inputString;
+				if (inputString == "")
+					{
+						document.getElementById("txtInputAndResult").value = "0";
+					}
 			}
 		
 		function changeSign()
@@ -282,7 +291,20 @@ November 2019
 				
 				elementValue = element.value;
 				inputString = document.getElementById("txtInputAndResult").value;
-				inputString = inputString + elementValue;
+				inputString = inputString.split(" ");
+				if (inputString[0] == "0")
+					{
+						inputString = inputString.join(" ");
+						inputString = inputString.substring(0, inputString.length - 1);
+						inputString = elementValue;
+					}
+				else
+					{
+						inputString = inputString.join(" ");
+						inputString = inputString + elementValue;
+					}
+				
+			
 				document.getElementById("txtInputAndResult").value = inputString;
 				equals = document.getElementById("btnEquals").value;
 				
@@ -313,7 +335,6 @@ November 2019
 								
 								while (Number.isNaN(operand))
 									{	
-										
 										operator = inputString[ctr + 2];
 										operand = inputString[ctr + 3];	
 									}	
