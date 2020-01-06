@@ -20,13 +20,13 @@ November 2019
 
 		<form>
 			<h2>Enter a start time and stop time...</h2>
-			<P> Enter a start time in 24-hour format like "8:00" for 8:00 AM: <input type="text" id="startTime" size="5" value="0:00" onclick="startTimeInput()" min="1" max="99">
-			<P> Enter a stop time in 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="5" value="0:00" onclick="stopTimeInput()" min="1" max="99">
+			<P> Enter a start time in 24-hour format like "8:00" for 8:00 AM: <input type="text" id="startTime" size="5" value="8:00" onclick="startTimeInput()" min="1" max="99">
+			<P> Enter a stop time in 24-hour format like "17:00" for 5:00 PM: <input type="text" id="stopTime" size="5" value="17:00" onclick="stopTimeInput()" min="1" max="99">
 			<br>
 			<br>	
 			<h2>...then add your break and resume to work time intervals.</h2>	
-			<P> Enter work interval minutes: <input type="number" id="workInterval" size="1" value="0" onclick="workIntervalInput()" min="1" max="99"> 
-			<P> Enter break interval minutes: <input type="number" id="breakInterval" size="1" value="0" onclick="breakIntervalInput()" min="1" max="99">
+			<P> Enter work interval minutes: <input type="number" id="workInterval" size="1" value="25" onclick="workIntervalInput()" min="1" max="99"> 
+			<P> Enter break interval minutes: <input type="number" id="breakInterval" size="1" value="5" onclick="breakIntervalInput()" min="1" max="99">
 			<br>
 			<br>
 			<input type="button" value="Add work and break intervals" onclick="addBreakResumeTimes()">
@@ -40,11 +40,11 @@ November 2019
 			</h3>
 			
 			<h4> Break from work time:</h4>
-			<input type="text" id="breakInputField" size="25" value="0:00 AM" onclick="breakInputFieldClick()"> 
+			<input type="text" id="breakInputField" size="25" value="8:25 AM" onclick="breakInputFieldClick()"> 
 			<input type="button" value="Add" onclick="addBreakFromWorkTimes()">
 			
 			<h4> Resume to work time:</h4>
-			<input type="text" id="backToWorkInputField" size="25" value="0:00 AM" onclick="backToWorkInputFieldClick()"> 
+			<input type="text" id="backToWorkInputField" size="25" value="8:30 AM" onclick="backToWorkInputFieldClick()"> 
 			<input type="button" value="Add" onclick="addbackToWorkTimes()">
 			<br> 
 			<br>
