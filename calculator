@@ -16,6 +16,7 @@ November 2019
 	<body>
 		<h1>Basic Calculator</h1>
 		
+		<i>Enter equation by keypad:</i><br>
 		<input type="text" id="txtInputAndResult">
 		<br>
 		<br>
@@ -32,10 +33,9 @@ November 2019
 		var inputString;
 		
 		key = document.getElementById("txtInputAndResult");
-		document.getElementById("txtInputAndResult").value = "0";
 		inputString = document.getElementById("txtInputAndResult").value;
 
-		// Execute button onClick function after releasing a key input
+		// Input typing catches
 		key.addEventListener("keyup", function(event) 
 			{
 			  // Number 13 is the "Enter" key on the keyboard
@@ -171,7 +171,6 @@ November 2019
 		function memoryClear()
 			{
 				document.getElementById("txtInputAndResult").value = "";
-				document.getElementById("txtInputAndResult").value = "0";
 			}
 		
 		function Clear()
@@ -180,10 +179,10 @@ November 2019
 				inputString = document.getElementById("txtInputAndResult").value				
 				inputString = inputString.substring(0, inputString.length - 2);
 				document.getElementById("txtInputAndResult").value = inputString;
-				if (inputString == "")
+			/*	if (inputString == "")
 					{
 						document.getElementById("txtInputAndResult").value = "0";
-					}
+					}*/
 			}
 		
 		function changeSign()
@@ -288,27 +287,37 @@ November 2019
 				var inputString;
 				var elementValue;
 				var equals;
+				var division;
+				var multiplication;
+				var addition;
+				var subtraction;
+				var lastOperator;
 
 				elementValue = element.value;
+				division = document.getElementById("btnDivision").value;
+				multiplication = document.getElementById("btnMultiplication").value;
+				subtraction = document.getElementById("btnSubtraction").value;
+				addition = document.getElementById("btnAddition").value;
 				inputString = document.getElementById("txtInputAndResult").value;
-				inputString = inputString.split(" ");
-				
-				if (inputString[0] == "0")
-					{
-						inputString = inputString.join(" ");
-						inputString = inputString.substring(0, inputString.length - 1);
-						inputString = elementValue;
+				inputString = inputString.split(" ");	
+				inputString = inputString.join(" ");
+				lastOperator = inputString[inputString.length - 2];
+						
+				if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+					{	
+						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
+							{
+								inputString = inputString.substring(0, inputString.length - 3);
+								document.getElementById("txtInputAndResult").value = inputString + elementValue;
+							}
 					}
-
-				else
-					{
-						inputString = inputString.join(" ");
-						inputString = inputString + elementValue;
-					}				
-				
+						
+				inputString = inputString + elementValue;	
+					
 				document.getElementById("txtInputAndResult").value = inputString;
 				equals = document.getElementById("btnEquals").value;
 				
+				// Calculate when input is the equals character " = "
 				if (elementValue == equals)
 					{						
 						var result;
@@ -316,8 +325,9 @@ November 2019
 						
 						ctr = 0;		
 						inputString = inputString.split(" ");
-						result= inputString[0];								
-						result = parseFloat(result);						
+						// Parse equation from the left	
+						result= inputString[0];	
+						result = parseFloat(result);												
 						
 						while (ctr < inputString.length)
 							{
@@ -326,19 +336,18 @@ November 2019
 
 								operator = inputString[ctr + 1];
 								operand = inputString[ctr + 2];
-								operand = parseFloat(operand);
-		
+								operand = parseFloat(operand);								
+								
 								if (Number.isNaN(result))
 									{
 										result = 0;
 									}	
-			
-								while (Number.isNaN(operand))
+		
+								if (Number.isNaN(operand))
 									{	
-										operator = inputString[ctr + 2];
-										operand = inputString[ctr + 3];	
+										operand = 0;	
 									}	
-
+								
 								if (operator == "/")
 									{
 										result = result / operand;
