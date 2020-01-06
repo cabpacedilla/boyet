@@ -16,7 +16,9 @@ November 2019
 	<body>
 		<h1>Basic Calculator</h1>
 		
-		<i>Enter equation by keypad:</i><br>
+		<i>Enter equation by keypad:</i>
+		<br>
+		<br>
 		<input type="text" id="txtInputAndResult">
 		<br>
 		<br>
