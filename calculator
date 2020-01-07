@@ -284,7 +284,64 @@ November 2019
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;								
 			}
 		
-		function displayInput(element) 
+		function calculate(inputString)
+			{
+				var result;
+				var ctr;
+				
+				ctr = 0;		
+				inputString = inputString.split(" ");
+				// Parse equation from the left	
+				result= inputString[0];	
+				result = parseFloat(result);												
+				
+				while (ctr < inputString.length)
+					{
+						var operand;
+						var operator;
+	
+						operator = inputString[ctr + 1];
+						operand = inputString[ctr + 2];
+						operand = parseFloat(operand);								
+						
+						if (Number.isNaN(result))
+							{
+								result = 0;
+							}	
+	
+						if (Number.isNaN(operand))
+							{	
+								operand = 0;	
+							}	
+						
+						if (operator == "/")
+							{
+								result = result / operand;
+							}
+						
+						if (operator == "x")
+							{
+								result = result * operand;
+							}
+						
+						if (operator == "-")
+							{
+								result = result - operand;
+							}
+						
+						if (operator == "+")
+							{
+								result = result + operand;
+							}
+							
+						ctr = ctr + 2;
+					}
+				
+				inputString = inputString.join(" ");
+				document.getElementById("txtInputAndResult").value = inputString + result;					
+			}				
+		
+		function displayCalculation(element) 
 			{
 				var inputString;
 				var elementValue;
@@ -301,8 +358,9 @@ November 2019
 				subtraction = document.getElementById("btnSubtraction").value;
 				addition = document.getElementById("btnAddition").value;
 				inputString = document.getElementById("txtInputAndResult").value;
-				inputString = inputString.split(" ");	
-				inputString = inputString.join(" ");
+				inputString = inputString.split(" ");				
+				
+			`	inputString = inputString.join(" ");
 				lastOperator = inputString[inputString.length - 2];
 						
 				if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
@@ -315,69 +373,15 @@ November 2019
 					}
 						
 				inputString = inputString + elementValue;	
-					
 				document.getElementById("txtInputAndResult").value = inputString;
 				equals = document.getElementById("btnEquals").value;
 				
 				// Calculate when input is the equals character " = "
 				if (elementValue == equals)
-					{						
-						var result;
-						var ctr;
-						
-						ctr = 0;		
-						inputString = inputString.split(" ");
-						// Parse equation from the left	
-						result= inputString[0];	
-						result = parseFloat(result);												
-						
-						while (ctr < inputString.length)
-							{
-								var operand;
-								var operator;
-
-								operator = inputString[ctr + 1];
-								operand = inputString[ctr + 2];
-								operand = parseFloat(operand);								
-								
-								if (Number.isNaN(result))
-									{
-										result = 0;
-									}	
-		
-								if (Number.isNaN(operand))
-									{	
-										operand = 0;	
-									}	
-								
-								if (operator == "/")
-									{
-										result = result / operand;
-									}
-								
-								if (operator == "x")
-									{
-										result = result * operand;
-									}
-								
-								if (operator == "-")
-									{
-										result = result - operand;
-									}
-								
-								if (operator == "+")
-									{
-										result = result + operand;
-									}
-									
-								ctr = ctr + 2;
-
-							}
-						inputString = inputString.join(" ");
-						document.getElementById("txtInputAndResult").value = inputString + result;					
-					}				
+					{			
+						calculate(inputString);
+					}					
 			}
 		</script>		
 	</body>
 </html>
-
