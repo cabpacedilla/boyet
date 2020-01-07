@@ -24,10 +24,10 @@ November 2019
 		<br>
 		<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" onclick="memoryAddition()"><br>
 		<input type="button" id="btnClear" value="C" onclick="Clear()"><input type="button" id="btnChangeSign" value="+/-" onclick="changeSign()"><input type="button" id="btnSquareRoot" value="SQRT" onclick="computeSquareRoot()"><input type="button" id="btnPercentage" value="%" onclick="computePercentage()"><br>
-		<input type="button" id="btnSeven" value="7" onclick="displayInput(this)"><input type="button" id="btnEight" value="8" onclick="displayInput(this)"><input type="button" id="btnNine" value="9" onclick="displayInput(this)"><input type="button" id="btnDivision" value=" / " onclick="displayInput(this)"><br>
-		<input type="button" id="btnFour" value="4" onclick="displayInput(this)"><input type="button" id="btnFive" value="5" onclick="displayInput(this)"><input type="button" id="btnSix"  value="6" onclick="displayInput(this)"><input type="button" id="btnMultiplication" value=" x " onclick="displayInput(this)"><br>
-		<input type="button" id="btnOne" value="1" onclick="displayInput(this)"><input type="button" id="btnTwo" value="2" onclick="displayInput(this)"><input type="button" id="btnThree" value="3" onclick="displayInput(this)"><input type="button" id="btnSubtraction"  value=" - " onclick="displayInput(this)"><br>
-		<input type="button" id="btnZero" value="0" onclick="displayInput(this)"><input type="button" id="btnDecimal" value="." onclick="displayInput(this)"><input type="button" id="btnEquals" value=" = " onclick="displayInput(this)"><input type="button" id="btnAddition" value=" + " onclick="displayInput(this)"><br>
+		<input type="button" id="btnSeven" value="7" onclick="displayCalculation(this)"><input type="button" id="btnEight" value="8" onclick="displayCalculation(this)"><input type="button" id="btnNine" value="9" onclick="displayCalculation(this)"><input type="button" id="btnDivision" value=" / " onclick="displayCalculation(this)"><br>
+		<input type="button" id="btnFour" value="4" onclick="displayCalculation(this)"><input type="button" id="btnFive" value="5" onclick="displayCalculation(this)"><input type="button" id="btnSix"  value="6" onclick="displayCalculation(this)"><input type="button" id="btnMultiplication" value=" x " onclick="displayCalculation(this)"><br>
+		<input type="button" id="btnOne" value="1" onclick="displayCalculation(this)"><input type="button" id="btnTwo" value="2" onclick="displayCalculation(this)"><input type="button" id="btnThree" value="3" onclick="displayCalculation(this)"><input type="button" id="btnSubtraction"  value=" - " onclick="displayCalculation(this)"><br>
+		<input type="button" id="btnZero" value="0" onclick="displayCalculation(this)"><input type="button" id="btnDecimal" value="." onclick="displayCalculation(this)"><input type="button" id="btnEquals" value=" = " onclick="displayCalculation(this)"><input type="button" id="btnAddition" value=" + " onclick="displayCalculation(this)"><br>
 	
 		<script type="text/javascript">	
 		
@@ -360,19 +360,55 @@ November 2019
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");				
 				
-			`	inputString = inputString.join(" ");
-				lastOperator = inputString[inputString.length - 2];
-						
-				if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+				/*if (inputString[0] == "0")
 					{	
+									
 						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
 							{
-								inputString = inputString.substring(0, inputString.length - 3);
-								document.getElementById("txtInputAndResult").value = inputString + elementValue;
+								inputString = inputString.join(" ");
+								
+								//alert(inputString);
+								lastOperator = inputString[inputString.length - 2];
+								
+								alert(lastOperator);
+								if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+									{	
+										
+										inputString = inputString.substring(0, inputString.length - 3);	
+										document.getElementById("txtInputAndResult").value = inputString + elementValue;
+									}
+								inputString = inputString + elementValue;		
 							}
-					}
 						
-				inputString = inputString + elementValue;	
+						if (inputString[1] != "0")
+						{
+							inputString = inputString.join(" ");
+							inputString = inputString.substring(0, inputString.length - 1);
+							inputString = elementValue;
+						}
+					}
+				
+				else
+					{*/
+					
+						inputString = inputString.join(" ");
+						lastOperator = inputString[inputString.length - 2];
+						
+						if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+							{	
+								if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
+									{
+										inputString = inputString.substring(0, inputString.length - 3);
+										document.getElementById("txtInputAndResult").value = inputString + elementValue;
+									}
+							}
+						
+						inputString = inputString + elementValue;	
+						
+						
+			//		}
+				
+				
 				document.getElementById("txtInputAndResult").value = inputString;
 				equals = document.getElementById("btnEquals").value;
 				
@@ -385,3 +421,4 @@ November 2019
 		</script>		
 	</body>
 </html>
+
