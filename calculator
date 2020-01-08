@@ -194,7 +194,17 @@ November 2019
 				inputString = inputString.split(" ");
 				lastNumber = inputString[inputString.length - 1];
 				lastNumber = parseFloat(lastNumber);
-				lastNumber = lastNumber * -1;    
+				if (Math.sign(lastNumber) == -1)
+					{
+						lastNumber = lastNumber * -1;
+						inputString = inputString.join(" ");
+						inputString = inputString.substring(0, inputString.length - 2);
+						document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+					}
+				else
+					{
+						lastNumber = lastNumber * -1;
+					}  
 				inputString = inputString.join(" ");
 				inputString = inputString.substring(0, inputString.length - 1);
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
@@ -338,7 +348,7 @@ November 2019
 					}
 				
 				inputString = inputString.join(" ");
-				document.getElementById("txtInputAndResult").value = inputString + result;					
+				document.getElementById("txtInputAndResult").value = inputString + result;			
 			}				
 		
 		function displayCalculation(element) 
@@ -358,9 +368,9 @@ November 2019
 				subtraction = document.getElementById("btnSubtraction").value;
 				addition = document.getElementById("btnAddition").value;
 				inputString = document.getElementById("txtInputAndResult").value;
-				inputString = inputString.split(" ");				
+				/*inputString = inputString.split(" ");				
 				
-				/*if (inputString[0] == "0")
+				if (inputString[0] == "0")
 					{	
 									
 						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
@@ -389,33 +399,29 @@ November 2019
 					}
 				
 				else
-					{*/
+					{
 					
-						inputString = inputString.join(" ");
-						lastOperator = inputString[inputString.length - 2];
+				inputString = inputString.join(" ");
+				lastOperator = inputString[inputString.length - 2];
 						
-						if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
-							{	
-								if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
-									{
-										inputString = inputString.substring(0, inputString.length - 3);
-										document.getElementById("txtInputAndResult").value = inputString + elementValue;
-									}
+				if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+					{	
+						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
+							{
+								inputString = inputString.substring(0, inputString.length - 3);
+								document.getElementById("txtInputAndResult").value = inputString + elementValue;
 							}
+					}*/
 						
-						inputString = inputString + elementValue;	
-						
-						
-			//		}
-				
+				inputString = inputString + elementValue;				
 				
 				document.getElementById("txtInputAndResult").value = inputString;
 				equals = document.getElementById("btnEquals").value;
 				
-				// Calculate when input is the equals character " = "
+				// Call calculate function when input is the equals character " = "
 				if (elementValue == equals)
 					{			
-						calculate(inputString);
+						calculate(inputString);	
 					}					
 			}
 		</script>		
