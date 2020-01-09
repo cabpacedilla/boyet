@@ -178,8 +178,19 @@ November 2019
 		function Clear()
 			{
 				var inputString;
-				inputString = document.getElementById("txtInputAndResult").value				
-				inputString = inputString.substring(0, inputString.length - 2);
+				var lastNumber;
+				
+				inputString = document.getElementById("txtInputAndResult").value
+				lastNumber = inputString[inputString.length - 1];
+				if (lastNumber == " ")
+					{
+						inputString = inputString.substring(0, inputString.length - 3);
+					}
+				else
+					{
+						inputString = inputString.substring(0, inputString.length - 1);
+					}	
+				
 				document.getElementById("txtInputAndResult").value = inputString;
 			/*	if (inputString == "")
 					{
@@ -190,6 +201,8 @@ November 2019
 		function changeSign()
 			{
 				var inputString;
+				var lastNumber;
+				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
 				lastNumber = inputString[inputString.length - 1];
@@ -363,14 +376,16 @@ November 2019
 				var lastOperator;
 
 				elementValue = element.value;
+				inputString = document.getElementById("txtInputAndResult").value;
+				
 				division = document.getElementById("btnDivision").value;
 				multiplication = document.getElementById("btnMultiplication").value;
 				subtraction = document.getElementById("btnSubtraction").value;
 				addition = document.getElementById("btnAddition").value;
-				inputString = document.getElementById("txtInputAndResult").value;
-				/*inputString = inputString.split(" ");				
+				/*inputString = inputString.split(" ");	
+				//alert(inputString);
 				
-				if (inputString[0] == "0")
+				/*if (inputString[0] == "0")
 					{	
 									
 						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
@@ -401,9 +416,14 @@ November 2019
 				else
 					{
 					
-				inputString = inputString.join(" ");
-				lastOperator = inputString[inputString.length - 2];
-						
+				inputString = inputString.join(" ");*/
+				lastOperator = inputString[inputString.length - 1];
+				//alert(lastOperator);
+				if (lastOperator == " ")
+					{
+						lastOperator = inputString[inputString.length - 2];
+					}
+				
 				if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
 					{	
 						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
@@ -411,7 +431,8 @@ November 2019
 								inputString = inputString.substring(0, inputString.length - 3);
 								document.getElementById("txtInputAndResult").value = inputString + elementValue;
 							}
-					}*/
+					}
+					
 						
 				inputString = inputString + elementValue;				
 				
