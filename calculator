@@ -192,6 +192,7 @@ November 2019
 					}	
 				
 				document.getElementById("txtInputAndResult").value = inputString;
+			}
 		
 		function changeSign()
 			{
