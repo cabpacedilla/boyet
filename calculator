@@ -192,11 +192,6 @@ November 2019
 					}	
 				
 				document.getElementById("txtInputAndResult").value = inputString;
-			/*	if (inputString == "")
-					{
-						document.getElementById("txtInputAndResult").value = "0";
-					}*/
-			}
 		
 		function changeSign()
 			{
@@ -382,41 +377,7 @@ November 2019
 				multiplication = document.getElementById("btnMultiplication").value;
 				subtraction = document.getElementById("btnSubtraction").value;
 				addition = document.getElementById("btnAddition").value;
-				/*inputString = inputString.split(" ");	
-				//alert(inputString);
 				
-				/*if (inputString[0] == "0")
-					{	
-									
-						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
-							{
-								inputString = inputString.join(" ");
-								
-								//alert(inputString);
-								lastOperator = inputString[inputString.length - 2];
-								
-								alert(lastOperator);
-								if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
-									{	
-										
-										inputString = inputString.substring(0, inputString.length - 3);	
-										document.getElementById("txtInputAndResult").value = inputString + elementValue;
-									}
-								inputString = inputString + elementValue;		
-							}
-						
-						if (inputString[1] != "0")
-						{
-							inputString = inputString.join(" ");
-							inputString = inputString.substring(0, inputString.length - 1);
-							inputString = elementValue;
-						}
-					}
-				
-				else
-					{
-					
-				inputString = inputString.join(" ");*/
 				lastOperator = inputString[inputString.length - 1];
 				//alert(lastOperator);
 				if (lastOperator == " ")
