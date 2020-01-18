@@ -180,7 +180,7 @@ November 2019
 				var inputString;
 				var lastNumber;
 				
-				inputString = document.getElementById("txtInputAndResult").value
+				inputString = document.getElementById("txtInputAndResult").value;
 				lastNumber = inputString[inputString.length - 1];
 				if (lastNumber == " ")
 					{
@@ -222,6 +222,8 @@ November 2019
 		function computeSquareRoot()
 			{
 				var inputString;
+        var lastNumber;
+        
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
 				lastNumber = inputString[inputString.length - 1];
@@ -235,7 +237,6 @@ November 2019
 			{
 				var inputString;
 				var lastNumber;
-				var result;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
@@ -254,7 +255,6 @@ November 2019
 			{
 				var inputString;
 				var lastNumber;
-				var result;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
@@ -273,7 +273,6 @@ November 2019
 			{	
 				var inputString;
 				var lastNumber;
-				var result;
 				
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
@@ -371,32 +370,30 @@ November 2019
 				var subtraction;
 				var lastOperator;
 
-				elementValue = element.value;
-				inputString = document.getElementById("txtInputAndResult").value;
-				
 				division = document.getElementById("btnDivision").value;
 				multiplication = document.getElementById("btnMultiplication").value;
 				subtraction = document.getElementById("btnSubtraction").value;
 				addition = document.getElementById("btnAddition").value;
-				
+			
+				elementValue = element.value;
+				inputString = document.getElementById("txtInputAndResult").value;
+								
 				lastOperator = inputString[inputString.length - 1];
-				//alert(lastOperator);
 				if (lastOperator == " ")
 					{
 						lastOperator = inputString[inputString.length - 2];
 					}
-				
+						
 				if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
 					{	
 						if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
 							{
 								inputString = inputString.substring(0, inputString.length - 3);
-								document.getElementById("txtInputAndResult").value = inputString + elementValue;
 							}
-					}
-					
 						
-				inputString = inputString + elementValue;				
+					}		
+				
+				inputString = inputString + elementValue;
 				
 				document.getElementById("txtInputAndResult").value = inputString;
 				equals = document.getElementById("btnEquals").value;
