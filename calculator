@@ -222,7 +222,7 @@ November 2019
 		function computeSquareRoot()
 			{
 				var inputString;
-        var lastNumber;
+        			var lastNumber;
         
 				inputString = document.getElementById("txtInputAndResult").value;
 				inputString = inputString.split(" ");
