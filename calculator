@@ -34,6 +34,8 @@ November 2019
 		var key;
 		var inputString;
 		
+		document.getElementById("txtInputAndResult").select();
+		
 		key = document.getElementById("txtInputAndResult");
 		inputString = document.getElementById("txtInputAndResult").value;
 
