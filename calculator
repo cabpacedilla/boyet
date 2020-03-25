@@ -19,7 +19,7 @@ November 2019
 		<i>Enter equation by keypad:</i>
 		<br>
 		<br>
-		<input type="text" id="txtInputAndResult">
+		<input type="text" id="txtInputAndResult" onkeypress="return RestrictSpace()">
 		<br>
 		<br>
 		<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" onclick="memoryAddition()"><br>
@@ -34,12 +34,12 @@ November 2019
 		var key;
 		var inputString;
 		
-		document.getElementById("txtInputAndResult").select();
-		
 		key = document.getElementById("txtInputAndResult");
 		inputString = document.getElementById("txtInputAndResult").value;
+		
+		document.getElementById("txtInputAndResult").select();
 
-		// Input typing catches
+		// Input typing catches		
 		key.addEventListener("keyup", function(event) 
 			{
 			  // Number 13 is the "Enter" key on the keyboard
@@ -172,9 +172,18 @@ November 2019
 				  }
 			});
 				
+		function RestrictSpace() 
+		{
+			if ((event.keyCode > 64 && event.keyCode < 91) || (event.keyCode > 96 && event.keyCode < 123) || event.keyCode === 32) 
+				{
+			  		return false;
+			    }
+		}
+		
 		function memoryClear()
 			{
 				document.getElementById("txtInputAndResult").value = "";
+				document.getElementById("txtInputAndResult").select();
 			}
 		
 		function Clear()
@@ -187,10 +196,12 @@ November 2019
 				if (lastNumber == " ")
 					{
 						inputString = inputString.substring(0, inputString.length - 3);
+						document.getElementById("txtInputAndResult").select();
 					}
 				else
 					{
 						inputString = inputString.substring(0, inputString.length - 1);
+						document.getElementById("txtInputAndResult").select();
 					}	
 				
 				document.getElementById("txtInputAndResult").value = inputString;
@@ -219,6 +230,18 @@ November 2019
 				inputString = inputString.join(" ");
 				inputString = inputString.substring(0, inputString.length - 1);
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+				/*if (Number.isNaN(lastNumber))
+					{
+						if (document.getElementById("txtInputAndResult").value == " ")
+							{
+								document.getElementById("txtInputAndResult").value = inputString.substring(0, inputString.length - 2);
+								alert("Please enter a number first.");
+							}
+						else
+							{
+								document.getElementById("txtInputAndResult").value = inputString + " ";	
+							}
+					}*/
 			}
 		
 		function computeSquareRoot()
@@ -378,6 +401,7 @@ November 2019
 				addition = document.getElementById("btnAddition").value;
 			
 				elementValue = element.value;
+				document.getElementById("txtInputAndResult").select();
 				inputString = document.getElementById("txtInputAndResult").value;
 								
 				lastOperator = inputString[inputString.length - 1];
