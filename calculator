@@ -206,7 +206,7 @@ November 2019
 				
 				document.getElementById("txtInputAndResult").value = inputString;
 			}
-		
+			
 		function changeSign()
 			{
 				var inputString;
@@ -219,17 +219,36 @@ November 2019
 				if (Math.sign(lastNumber) == -1)
 					{
 						lastNumber = lastNumber * -1;
+						lastNumSlice = lastNumber.toString().length;
+						lastNumSlice - parseFloat(lastNumSlice);
 						inputString = inputString.join(" ");
-						inputString = inputString.substring(0, inputString.length - 2);
+						//alert(lastNumSlice);
+						
+						inputString = inputString.substring(0, inputString.length - lastNumSlice);
 						document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+						
 					}
 				else
-					{
-						lastNumber = lastNumber * -1;
-					}  
-				inputString = inputString.join(" ");
-				inputString = inputString.substring(0, inputString.length - 1);
-				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+					{						
+						if (lastNumber !== parseFloat(inputString[0]))
+							{
+								lastNumber = lastNumber * -1;
+								lastNumSlice = lastNumber.toString().length;
+								lastNumSlice = parseFloat(lastNumSlice);
+								inputString = inputString.join(" ");					
+								inputString = inputString.substring(0, inputString.length - lastNumSlice);
+								document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;
+							}
+						else	
+							{
+								lastNumber = lastNumber * -1;
+								lastNumSlice = lastNumber.toString().length;
+								lastNumSlice = parseFloat(lastNumSlice);
+								inputString = inputString.join(" ");					
+								inputString = inputString.substring(0, inputString.length - lastNumSlice);
+								document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+							}
+					}
 				/*if (Number.isNaN(lastNumber))
 					{
 						if (document.getElementById("txtInputAndResult").value == " ")
