@@ -181,20 +181,16 @@ November 2019
 
 				if (breakTime > stopTimeObject && resumeTime > stopTimeObject)
 					{		
-						var oldStopTimeObject = new Date();
-						var oldStartTimeObject = new Date();
-						
-						oldStopTimeObject = stopTimeObject;
-						oldStartTimeObject = startTimeObject;
-
-						startTimeObject.setHours(1, 0);
-						breakMinutes = startTimeObject.getMinutes();
-						breakHours = startTimeObject.getHours();
+						var newStartTimeObject = new Date();
+										                
+						newStartTimeObject.setHours(1, 0);
+						breakMinutes = newStartTimeObject.getMinutes();
+						breakHours = newStartTimeObject.getHours();
 						breakTime.setHours(breakHours, breakMinutes);
-						resumeHours = startTimeObject.getHours();
-						resumeMinutes = startTimeObject.getMinutes();
+						resumeHours = newStartTimeObject.getHours();
+						resumeMinutes = newStartTimeObject.getMinutes();
 						resumeTime.setHours(resumeHours, resumeMinutes);
-						while (breakTime < oldStopTimeObject && resumeTime < oldStopTimeObject)
+						while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
 							{													
 								breakMinutes = resumeMinutes + breakDuration;			
 									
@@ -218,12 +214,12 @@ November 2019
 						sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
 						sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
 						alert("Break and resume time intervals were added.");	
-
-						breakMinutes = oldStartTimeObject.getMinutes();
-						breakHours = oldStartTimeObject.getHours();
+						
+						breakMinutes = startTimeObject.getMinutes();
+						breakHours = startTimeObject.getHours();
 						breakTime.setHours(breakHours, breakMinutes);
-						resumeHours = oldStartTimeObject.getHours();
-						resumeMinutes = oldStartTimeObject.getMinutes();
+						resumeHours = startTimeObject.getHours();
+						resumeMinutes = startTimeObject.getMinutes();
 						resumeTime.setHours(resumeHours, resumeMinutes);
 						stopTimeObject.setHours(23,59);	
 						while (breakTime < stopTimeObject && resumeTime < stopTimeObject)
