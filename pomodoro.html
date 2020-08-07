@@ -46,12 +46,18 @@ November 2019
 <input type="button" value="Show break times" onclick="showBreakTimes()"> <input type="button" value="Show resume times" onclick="showResumeTimes()">
 <br> 
 <br> 
-<p>Note:<br> When the first entered time arrives, a 'pop-up is blocked' notification will appear on the right corner of the address bar. Click on the notification and select 'Always allow..'. Click the Ok button. The break and resume time pop-up notification alert message will be displayed.             every time a break or resume time arrives.
+	
+<p>Note:<br> When the first entered time arrives, a 'pop-up is blocked' notification will appear on the right corner of the address bar. 
+Click on the notification and select 'Always allow..'. Click the Ok button. The break and resume time pop-up notification alert message will be displayed 
+every time a break or resume time arrives.
+<p>
+	
 <br>
-<br>
+<p>
 You may also add your break and resume to work times one by one in a 12-hour format like "8:25 AM".<br>
 Or you may also add multiple break and resume times in a 12-hour format separated by commas like "8:25 AM, 8:55 AM, 9:25 AM, ... 8:30 AM, 9:00 AM, 9:30 AM, ...,"
-</p>            
+</p>
+	
 <h3> Break from work time:</h3>
 <input type="text" id="breakInputField" size="70" value="8:25 AM, 8:55 AM, 9:25 AM, ...," onclick="breakInputFieldClick()"> 
 <input type="button" value="Add" onclick="addBreakFromWorkTimes()">
@@ -72,6 +78,7 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 <input type="button" value="Delete" onclick="deletePomodoroTime()">
 <br>
 <br>
+	
 <h4> Delete an unneeded 'resume to work' time:</h4> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()">
 <br>
 <br> 
@@ -79,6 +86,7 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 <input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 <br> 
 <br> 
+	
 <h4>Clear all break and resume times:</h4> <input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
     
 <script type="text/javascript">			
@@ -92,11 +100,12 @@ let resumeTimeString; // Convert resumeTime to string to compare to currentTime
 let currentTime;
 
 //Convert time to string in hour and minute.		
-currentTime = String(new Date().toLocaleTimeString("en-US", {
-    hour12: true,
-    hour: "numeric",
-    minute: "numeric"
-}));
+currentTime = String(new Date().toLocaleTimeString("en-US", 
+	{
+	    hour12: true,
+	    hour: "numeric",
+	    minute: "numeric"
+	}));
 
 if (sessionStorage.getItem("breakFromWorkTimes") != null) {
     breakFromWorkArray = JSON.parse(sessionStorage.getItem("breakFromWorkTimes"));
