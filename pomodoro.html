@@ -21,6 +21,7 @@ November 2019
 <div>
   <label for="startTime">Start time:</label>
   <input type="time" id="startTime" value="08:00:00" required />
+  <input type="button" value="Current time" onclick="populateStartTimeCurrentTime()" />
 </div>
   <br>
 <div>
@@ -127,16 +128,26 @@ function toTimeString(dateObj)
 		});
 	}
 
-function startTimeInput() 
+function populateStartTimeCurrentTime()
 	{
-		document.getElementById("startTime").value = "";
+		//alert(document.getElementById("startTime").value);
+		let newDate = new Date();
+		let currentTimeStartTime = new Date();
+		let currentTimeStartTimeString;
+		let currentHours;
+		let currentMinutes;
+		
+		currrentHours = newDate.getHours();
+		currentMinutes = newDate.getMinutes();
+		currentTimeStartTime.setHours(currrentHours,currentMinutes);
+		currentTimeStartTimeString = currentTimeStartTime.toTimeString();
+		currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
+		currentTimeStartTimeString = currentTimeStartTimeString[0];
+		currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
+		//alert(currentTimeStartTimeString);
+		document.getElementById("startTime").value = currentTimeStartTimeString;
 	}
 
-function stopTimeInput() 
-	{
-		document.getElementById("stopTime").value = "";
-	}
-	
 function addBreakResumeTimes() 
 	{
 		let resumeInterval = document.getElementById("breakInterval").value;
@@ -271,7 +282,6 @@ function addBreakResumeTimes()
 				alert("Break and resume time intervals were added.");
 			}
 	}
-
 
 
 function addBreakFromWorkTimes() 
