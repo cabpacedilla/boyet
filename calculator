@@ -19,7 +19,7 @@
 	<i>Enter equation by keypad:</i>
 	<br>
 	<br>
-	<input type="text" id="txtInputAndResult" onkeypress="return RestrictSpace()">
+	<input type="text" id="txtInputAndResult" onkeypress="return restrictAlphaSymbols()">
 	<br>
 	<br>
 	<input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" onclick="memoryAddition()"><br>
@@ -162,12 +162,12 @@
 		
 	});
 
-	function RestrictSpace() {
-		if ((event.keyCode > 64 && event.keyCode < 91) || (event.keyCode > 96 && event.keyCode < 123) || event.keyCode == 32) {
+	function restrictAlphaSymbols()
+		if ((event.keyCode > 64 && event.keyCode < 91) || (event.keyCode > 96 && event.keyCode < 123) || event.keyCode === 32) {
 			return false;
 		}
 	}
-
+	
 	function memoryClear() {
 		document.getElementById("txtInputAndResult").value = "";
 		document.getElementById("txtInputAndResult").select();
@@ -376,27 +376,36 @@
 		var multiplication;
 		var addition;
 		var subtraction;
+		var decimal;
 		var lastOperator;
+		var lasNum;
 
 		division = document.getElementById("btnDivision").value;
 		multiplication = document.getElementById("btnMultiplication").value;
 		subtraction = document.getElementById("btnSubtraction").value;
 		addition = document.getElementById("btnAddition").value;
+		decimal = document.getElementById("btnDecimal").value;
 
 		elementValue = element.value;
 		document.getElementById("txtInputAndResult").select();
 		inputString = document.getElementById("txtInputAndResult").value;
 
 		lastOperator = inputString[inputString.length - 1];
+		
+		if (lastOperator == decimal) {
+			if (elementValue == decimal) {
+				inputString = inputString.substring(0, inputString.length - 1);
+			}
+		}
+		
 		if (lastOperator == " ") {
 			lastOperator = inputString[inputString.length - 2];
 		}
-
+		
 		if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+") {
 			if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition) {
 				inputString = inputString.substring(0, inputString.length - 3);
 			}
-
 		}
 
 		inputString = inputString + elementValue;
