@@ -171,7 +171,7 @@
 			document.getElementById("btnAddition").click();
 		}
 
-		if (event.keyCode == 190) 
+		if (event.keyCode == 190 || event.keyCode == 110) 
 		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
@@ -442,14 +442,29 @@
 		inputString = document.getElementById("txtInputAndResult").value;
 
 		lastOperator = inputString[inputString.length - 1];
-		
-		if (lastOperator == decimal) 
+
+		if (elementValue == decimal)
 		{
-			if (elementValue == decimal) 
+			inputString = inputString.split(" ");
+			lastNumber = inputString[inputString.length - 1];
+			lastNumber = parseFloat(lastNumber);
+			if (Number.isNaN(lastNumber))
 			{
-				inputString = inputString.substring(0, inputString.length - 1);
-			} 
-		}
+				inputString = inputString.join(" ");
+				lastNumber = "0";
+				inputString = inputString + lastNumber;
+			}	
+			else
+			{
+				inputString = inputString.join(" ");
+			}
+
+			if (lastOperator == decimal) 
+			{
+				inputString = inputString.substring(0, inputString.length - 1);	
+			}
+			
+		}		
 		
 		if (lastOperator == " ") 
 		{
