@@ -27,6 +27,8 @@ November 2019
 <div>
   <label for="endTime">End time:</label>
   <input type="time" id="stopTime" value="17:00:00"  required />
+  <input type="button" value="Current time" onclick="populateStopTimeCurrentTime()" />
+
 </div>
 <br>
 <div>
@@ -106,17 +108,20 @@ currentTime = String(new Date().toLocaleTimeString("en-US", {
   minute: "numeric"
 }));
 
-if (sessionStorage.getItem("breakFromWorkTimes") !== null) {
+if (sessionStorage.getItem("breakFromWorkTimes") !== null)
+{
   breakFromWorkArray = JSON.parse(sessionStorage.getItem("breakFromWorkTimes"));
 }
 
-if (sessionStorage.getItem("backToWorkTimes") !== null) {
+if (sessionStorage.getItem("backToWorkTimes") !== null) 
+{
   backToWorkArray = JSON.parse(sessionStorage.getItem("backToWorkTimes"));
 }
 
 loopArray();
 
-function toTimeString(dateObj) {
+function toTimeString(dateObj) 
+{
   return dateObj.toLocaleTimeString("en-US", {
     hour12: true,
     hour: "numeric",
@@ -124,7 +129,8 @@ function toTimeString(dateObj) {
   });
 }
 
-function populateStartTimeCurrentTime() {
+function populateStartTimeCurrentTime() 
+{
   //alert(document.getElementById("startTime").value);
   let newDate = new Date();
   let currentTimeStartTime = new Date();
@@ -143,7 +149,28 @@ function populateStartTimeCurrentTime() {
   document.getElementById("startTime").value = currentTimeStartTimeString;
 }
 
-function addBreakResumeTimes() {
+function populateStopTimeCurrentTime() 
+{
+  //alert(document.getElementById("startTime").value);
+  let newDate = new Date();
+  let currentTimeStartTime = new Date();
+  let currentTimeStartTimeString;
+  let currentHours;
+  let currentMinutes;
+
+  currrentHours = newDate.getHours();
+  currentMinutes = newDate.getMinutes();
+  currentTimeStartTime.setHours(currrentHours, currentMinutes);
+  currentTimeStartTimeString = currentTimeStartTime.toTimeString();
+  currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
+  currentTimeStartTimeString = currentTimeStartTimeString[0];
+  currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
+  //alert(currentTimeStartTimeString);
+  document.getElementById("stopTime").value = currentTimeStartTimeString;
+}
+
+function addBreakResumeTimes() 
+{
   let resumeInterval = document.getElementById("breakInterval").value;
   let resumeDuration = parseFloat(resumeInterval);
   let workInterval = document.getElementById("workInterval").value;
@@ -162,7 +189,8 @@ function addBreakResumeTimes() {
   startTime = document.getElementById("startTime").value;
   stopTime = document.getElementById("stopTime").value;
 
-  if (startTime === "" || stopTime === "" || resumeInterval === "" || workInterval === "") {
+  if (startTime == "" || stopTime == "" || resumeInterval == "" || workInterval == "") 
+  {
     alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
     return;
   }
@@ -180,7 +208,8 @@ function addBreakResumeTimes() {
   stopTime = stopTime.split(":");
   stopTimeObject.setHours(stopTime[0], stopTime[1]);
 
-  if (breakTime > stopTimeObject && resumeTime > stopTimeObject) {
+  if (breakTime > stopTimeObject && resumeTime > stopTimeObject) 
+  {
     let newStartTimeObject = new Date();
 
     newStartTimeObject.setHours(1, 0);
@@ -190,10 +219,11 @@ function addBreakResumeTimes() {
     resumeHours = newStartTimeObject.getHours();
     resumeMinutes = newStartTimeObject.getMinutes();
     resumeTime.setHours(resumeHours, resumeMinutes);
-    while (breakTime < stopTimeObject && resumeTime < stopTimeObject) {
+    while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
+    {
       breakMinutes = resumeMinutes + breakDuration;
 
-      /* if (breakMinutes === 0)
+      /* if (breakMinutes == 0)
       {
       	breakMinutes = resumeMinutes + breakDuration;					
       }	 */
@@ -221,10 +251,10 @@ function addBreakResumeTimes() {
     resumeMinutes = startTimeObject.getMinutes();
     resumeTime.setHours(resumeHours, resumeMinutes);
     stopTimeObject.setHours(23, 59);
-    while (breakTime < stopTimeObject && resumeTime < stopTimeObject) {
-
+    while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
+    {
       breakMinutes = resumeMinutes + breakDuration;
-      /* if (breakMinutes === 0)
+      /* if (breakMinutes == 0)
       	{
       		breakMinutes = resumeMinutes + breakDuration;					
       	}	 */
@@ -244,11 +274,13 @@ function addBreakResumeTimes() {
     sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
-  } else {
-    while (breakTime < stopTimeObject && resumeTime < stopTimeObject) {
-
+  } 
+  else 
+  {
+    while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
+    {
       breakMinutes = resumeMinutes + breakDuration;
-      /* if (breakMinutes === 0)
+      /* if (breakMinutes == 0)
       {
       	breakMinutes = resumeMinutes + breakDuration;					
       }	 */
@@ -271,22 +303,29 @@ function addBreakResumeTimes() {
   }
 }
 
-
-function addBreakFromWorkTimes() {
+function addBreakFromWorkTimes() 
+{
   breakFromWorkTimes = document.getElementById("breakInputField").value;
-  if (breakFromWorkTimes === "") {
+  if (breakFromWorkTimes == "") 
+  {
     alert("Please enter a break time in 0:00 AM or PM format.");
-  } else {
+  } 
+  else 
+  {
     let ctr = 0;
     breakFromWorkTimes = breakFromWorkTimes.split(", ");
-    while (ctr < breakFromWorkTimes.length) {
+    while (ctr < breakFromWorkTimes.length) 
+    {
       breakFromWorkArray.push(breakFromWorkTimes[ctr]);
       ctr = ctr + 1;
     }
 
-    if (ctr === 1)
+    if (ctr == 1)
+    {
       alert("Break time was added.");
-    else if (ctr > 1) {
+    }
+    else if (ctr > 1) 
+    {
       alert("Break times were added.");
       sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
 
@@ -294,55 +333,76 @@ function addBreakFromWorkTimes() {
   }
 }
 
-function addbackToWorkTimes() {
+function addbackToWorkTimes() 
+{
   backToWorkTimes = document.getElementById("backToWorkInputField").value;
-  if (backToWorkTimes === "") {
+  if (backToWorkTimes == "") 
+  {
     alert("Please enter a break time in 0:00 AM or PM format.");
-  } else {
+  } 
+  else 
+  {
     let ctr = 0;
     backToWorkTimes = backToWorkTimes.split(", ");
-    while (ctr < backToWorkTimes.length) {
+    while (ctr < backToWorkTimes.length) 
+    {
       backToWorkArray.push(backToWorkTimes[ctr]);
       ctr = ctr + 1;
     }
 
     if (ctr > 1)
+    {
       alert("Resume times were added.");
-    else if (ctr === 1) {
+    }
+    else if (ctr == 1) 
+    {
       alert("Resume time was added.");
       sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     }
   }
 }
 
-function showBreakTimes() {
-  if (breakFromWorkArray.length === 0) {
+function showBreakTimes() 
+{
+  if (breakFromWorkArray.length == 0) 
+  {
     alert("Break times is empty. Please add break times.");
-  } else {
+  } 
+  else 
+  {
     alert(breakFromWorkArray);
   }
 }
 
-function showResumeTimes() {
-  if (backToWorkArray.length === 0) {
+function showResumeTimes() 
+{
+  if (backToWorkArray.length == 0) 
+  {
     alert("Resume times is empty. Please add resume times");
-  } else {
+  } 
+  else 
+  {
     alert(backToWorkArray);
   }
 }
 
-function deletePomodoroTime() {
+function deletePomodoroTime() 
+{
   let ctr = document.getElementById("breakTimeIndex").value;
 
-  if (breakFromWorkArray.length === 0) {
+  if (breakFromWorkArray.length == 0) 
+  {
     alert("Break times is empty");
     return;
   }
 
-  if (ctr === "") {
+  if (ctr == "") 
+  {
     alert("Enter the number of nth resume time starting from the top left in the resume times list.");
 
-  } else {
+  } 
+  else 
+  {
     let index = parseFloat(ctr);
     breakFromWorkArray.splice(index - 1, 1);
     breakFromWorkTimes = breakFromWorkArray;
@@ -351,17 +411,22 @@ function deletePomodoroTime() {
   }
 }
 
-function deleteBackToWorkTime() {
+function deleteBackToWorkTime() 
+{
   let ctr = document.getElementById("resumeTimeIndex").value;
 
-  if (backToWorkArray.length === 0) {
+  if (backToWorkArray.length == 0) 
+  {
     alert("Break times is empty");
     return;
   }
 
-  if (ctr === "") {
+  if (ctr == "") 
+  {
     alert("Enter the number of nth resume time starting from the top left in the resume times list.");
-  } else {
+  } 
+  else 
+  {
     let index = parseFloat(ctr);
     backToWorkArray.splice(index - 1, 1);
     backToWorkTimes = backToWorkArray;
@@ -371,9 +436,12 @@ function deleteBackToWorkTime() {
 
 }
 
-function clearBreakTimes() {
-  while (breakFromWorkArray.length) {
-    while (breakFromWorkArray.length > 0) {
+function clearBreakTimes() 
+{
+  while (breakFromWorkArray.length) 
+  {
+    while (breakFromWorkArray.length > 0) 
+    {
       sessionStorage.removeItem("breakFromWorkTimes");
       breakFromWorkArray = [];
     }
@@ -382,14 +450,18 @@ function clearBreakTimes() {
     return;
   }
 
-  if (breakFromWorkArray.length === 0) {
+  if (breakFromWorkArray.length == 0) 
+  {
     alert("Break times is empty. Please add resume times.");
   }
 }
 
-function clearResumeTimes() {
-  while (backToWorkArray.length) {
-    while (backToWorkArray.length > 0) {
+function clearResumeTimes() 
+{
+  while (backToWorkArray.length) 
+  {
+    while (backToWorkArray.length > 0) 
+    {
       sessionStorage.removeItem("backToWorkTimes");
       backToWorkArray = [];
     }
@@ -398,12 +470,14 @@ function clearResumeTimes() {
     return;
   }
 
-  if (backToWorkArray.length === 0) {
+  if (backToWorkArray.length == 0) 
+  {
     alert("Resume times is empty. Please add resume times.");
   }
 }
 
-function loopArray() {
+function loopArray() 
+{
   let alarmWindow;
   let breakAlertArray;
   let resumeAlertArray;
@@ -412,11 +486,13 @@ function loopArray() {
   let ctr = 0;
 
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
-  while (breakFromWorkArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) {
+  while (breakFromWorkArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
+  {
     // If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
     //alert(breakFromWorkArray[ctr]);
     //alert(currentTime);
-    if (breakFromWorkArray[ctr] === currentTime) {
+    if (breakFromWorkArray[ctr] == currentTime) 
+    {
       //alert(breakFromWorkArray[ctr]);
       alarmWindow = window.open("", "BreakTime", "width=350,height=50");
       alarmWindow.focus();
@@ -430,7 +506,8 @@ function loopArray() {
     }
 
     // If back to work time is equal to current time, alarm for back to work with pop-up message    			
-    if (backToWorkArray[ctr] === currentTime) {
+    if (backToWorkArray[ctr] == currentTime) 
+    {
       alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
       alarmWindow.focus();
       resumeAlertArray = backToWorkArray[ctr] + "." + "</p>";
@@ -443,7 +520,8 @@ function loopArray() {
     }
 
     //break from the ctr if the iteration reach the last elements of the pomodoro and back to work time arrays
-    if (breakFromWorkArray[ctr] === breakFromWorkArray[breakFromWorkArray.length] && backToWorkArray[ctr] === backToWorkArray[backToWorkArray.length]) {
+    if (breakFromWorkArray[ctr] == breakFromWorkArray[breakFromWorkArray.length] && backToWorkArray[ctr] == backToWorkArray[backToWorkArray.length]) 
+    {
       break;
     }
 
