@@ -38,151 +38,176 @@
 	//inputString = document.getElementById("txtInputAndResult").value;
 	document.getElementById("txtInputAndResult").select();
 
-	key.addEventListener ("keydown", function(event) {
-		if (event.keyCode == 8) {
+	key.addEventListener ("keydown", function(event) 
+	{
+		if (event.keyCode == 8) 
+		{
 			event.preventDefault();
 			document.getElementById("btnClear").click();
 		}
 	});
-	
+
 	// Input typing catches		
-	key.addEventListener ("keyup", function(event) {
+	key.addEventListener ("keyup", function(event) 
+	{
 		// Number 13 is the "Enter" key on the keyboard
-		if (event.keyCode == 13) {
+		if (event.keyCode == 13) 
+		{
 			// Cancel the default action, if needed
 			event.preventDefault();
 			// Trigger the button element with a click
 			document.getElementById("btnEquals").click();
 		}		
 		
-		if (event.keyCode == 48 || event.keyCode == 96) {
+		if (event.keyCode == 48 || event.keyCode == 96) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnZero").click();
 		}
 
-		if (event.keyCode == 49 || event.keyCode == 97) {
+		if (event.keyCode == 49 || event.keyCode == 97) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnOne").click();
 		}
 		
-		if (event.keyCode == 50 || event.keyCode == 98) {
+		if (event.keyCode == 50 || event.keyCode == 98) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnTwo").click();
 		}
 
-		if (event.keyCode == 51 || event.keyCode == 99) {
+		if (event.keyCode == 51 || event.keyCode == 99) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnThree").click();
 		}
 
-		if (event.keyCode == 52 || event.keyCode == 100) {
+		if (event.keyCode == 52 || event.keyCode == 100) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnFour").click();
 		}
 
-		if (event.keyCode == 53 || event.keyCode == 101) {
+		if (event.keyCode == 53 || event.keyCode == 101) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnFive").click();
 		}
 
-		if (event.keyCode == 54 || event.keyCode == 102) {
+		if (event.keyCode == 54 || event.keyCode == 102) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnSix").click();
 		}
 
-		if (event.keyCode == 55 || event.keyCode == 103) {
+		if (event.keyCode == 55 || event.keyCode == 103) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnSeven").click();
 		}
 
-		if (event.keyCode == 56 || event.keyCode == 104) {
+		if (event.keyCode == 56 || event.keyCode == 104) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnEight").click();
 		}
 
-		if (event.keyCode == 57 || event.keyCode == 105) {
+		if (event.keyCode == 57 || event.keyCode == 105) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnNine").click();
 		}
 
-		if (event.keyCode == 191 || event.keyCode == 111) {
+		if (event.keyCode == 191 || event.keyCode == 111) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnDivision").click();
 		}
 
-		if (event.keyCode == 88 || event.keyCode == 106) {
+		if (event.keyCode == 88 || event.keyCode == 106) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnMultiplication").click();
 		}
 
-		if (event.keyCode == 189 || event.keyCode == 109) {
+		if (event.keyCode == 189 || event.keyCode == 109) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnSubtraction").click();
 		}
 
-		if (event.keyCode == 187) {
+		if (event.keyCode == 187) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnAddition").click();
 		}
 
-		if (event.keyCode == 190) {
+		if (event.keyCode == 190) 
+		{
 			inputString = document.getElementById("txtInputAndResult").value;
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").value = inputString;
 			document.getElementById("btnDecimal").click();
 		}
-		
 	});
 
-	function restrictAlphaSymbols() {
-		if ((event.keyCode > 64 && event.keyCode < 91) || (event.keyCode > 96 && event.keyCode < 123) || event.keyCode == 32 || event.keyCode == 44 || event.keyCode == 60 || event.keyCode == 34 || event.keyCode == 39 || (event.keyCode > 57 && event.keyCode < 60) || (event.keyCode > 90 && event.keyCode < 94) || (event.keyCode > 122 && event.keyCode < 126)) {
+	function restrictAlphaSymbols() 
+	{
+		if ((event.keyCode > 64 && event.keyCode < 91) || (event.keyCode > 96 && event.keyCode < 123) || event.keyCode == 32 || event.keyCode == 44 || event.keyCode == 60 || event.keyCode == 34 || event.keyCode == 39 || (event.keyCode > 57 && event.keyCode < 60) || (event.keyCode > 90 && event.keyCode < 94) || (event.keyCode > 122 && event.keyCode < 126)) 
+		{
 			return false;
 		}
 	}
 
-	function memoryClear() {
+	function memoryClear() 
+	{
 		document.getElementById("txtInputAndResult").value = "";
 		document.getElementById("txtInputAndResult").select();
 	}
 
-	function Clear() {
+	function Clear() 
+	{
 		var inputString;
 		var lastNumber;
 
 		inputString = document.getElementById("txtInputAndResult").value;
 		lastNumber = inputString[inputString.length - 1];
-		if (lastNumber == " ") {
+		if (lastNumber == " ") 
+		{
 			inputString = inputString.substring(0, inputString.length - 3);
 			document.getElementById("txtInputAndResult").select();
-		} else {
+		} 
+		else 
+		{
 			inputString = inputString.substring(0, inputString.length - 1);
 			document.getElementById("txtInputAndResult").select();
 		}
@@ -195,7 +220,8 @@
 		document.getElementById("txtInputAndResult").value = inputString;
 	}
 
-	function changeSign() {
+	function changeSign() 
+	{
 		var inputString;
 		var lastNumber;
 
@@ -203,7 +229,8 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Math.sign(lastNumber) == -1) {
+		if (Math.sign(lastNumber) == -1) 
+		{
 			lastNumber = lastNumber * -1;
 			lastNumSlice = lastNumber.toString().length;
 			lastNumSlice - parseFloat(lastNumSlice);
@@ -213,15 +240,19 @@
 			inputString = inputString.substring(0, inputString.length - lastNumSlice - 1);
 			document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 
-		} else {
-			if (lastNumber !== parseFloat(inputString[0])) {
+		} else 
+		{
+			if (lastNumber !== parseFloat(inputString[0])) 
+			{
 				lastNumber = lastNumber * -1;
 				lastNumSlice = lastNumber.toString().length;
 				lastNumSlice = parseFloat(lastNumSlice);
 				inputString = inputString.join(" ");
 				inputString = inputString.substring(0, inputString.length - lastNumSlice);
 				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;
-			} else {
+			} 
+			else 
+			{
 				lastNumber = lastNumber * -1;
 				lastNumSlice = lastNumber.toString().length;
 				lastNumSlice = parseFloat(lastNumSlice);
@@ -244,7 +275,8 @@
 			}*/
 	}
 
-	function computeSquareRoot() {
+	function computeSquareRoot() 
+	{
 		var inputString;
 		var lastNumber;
 
@@ -257,7 +289,8 @@
 		document.getElementById("txtInputAndResult").value = lastNumber;
 	}
 
-	function memorySubstraction() {
+	function memorySubstraction() 
+	{
 		var inputString;
 		var lastNumber;
 
@@ -265,7 +298,8 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Number.isNaN(lastNumber)) {
+		if (Number.isNaN(lastNumber)) 
+		{
 			lastNumber = inputString[inputString.length - 3];
 			lastNumber = parseFloat(lastNumber);
 		}
@@ -273,7 +307,8 @@
 		document.getElementById("txtInputAndResult").value = inputString + " - " + lastNumber;
 	}
 
-	function memoryAddition() {
+	function memoryAddition() 
+	{
 		var inputString;
 		var lastNumber;
 
@@ -281,7 +316,8 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Number.isNaN(lastNumber)) {
+		if (Number.isNaN(lastNumber)) 
+		{
 			lastNumber = inputString[inputString.length - 3];
 			lastNumber = parseFloat(lastNumber);
 		}
@@ -289,7 +325,8 @@
 		document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;
 	}
 
-	function computePercentage() {
+	function computePercentage() 
+	{
 		var inputString;
 		var lastNumber;
 
@@ -303,7 +340,8 @@
 		document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 	}
 
-	function memoryRecall() {
+	function memoryRecall() 
+	{
 		var inputString;
 		var lastNumber;
 
@@ -311,7 +349,8 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Number.isNaN(lastNumber)) {
+		if (Number.isNaN(lastNumber)) 
+		{
 			lastNumber = inputString[inputString.length - 3];
 			lastNumber = parseFloat(lastNumber);
 		}
@@ -319,7 +358,8 @@
 		document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 	}
 
-	function calculate(inputString) {
+	function calculate(inputString) 
+	{
 		var result;
 		var ctr;
 
@@ -329,7 +369,8 @@
 		result = inputString[0];
 		result = parseFloat(result);
 
-		while (ctr < inputString.length) {
+		while (ctr < inputString.length) 
+		{
 			var operand;
 			var operator;
 
@@ -337,27 +378,33 @@
 			operand = inputString[ctr + 2];
 			operand = parseFloat(operand);
 
-			if (Number.isNaN(result)) {
+			if (Number.isNaN(result)) 
+			{
 				result = 0;
 			}
 
-			if (Number.isNaN(operand)) {
+			if (Number.isNaN(operand)) 
+			{
 				operand = 0;
 			}
 
-			if (operator == "/") {
+			if (operator == "/") 
+			{
 				result = result / operand;
 			}
 
-			if (operator == "x") {
+			if (operator == "x") 
+			{
 				result = result * operand;
 			}
 
-			if (operator == "-") {
+			if (operator == "-") 
+			{
 				result = result - operand;
 			}
 
-			if (operator == "+") {
+			if (operator == "+") 
+			{
 				result = result + operand;
 			}
 
@@ -368,7 +415,8 @@
 		document.getElementById("txtInputAndResult").value = inputString + result;
 	}
 
-	function displayCalculation(element) {
+	function displayCalculation(element) 
+	{
 		var inputString;
 		var elementValue;
 		var equals;
@@ -379,6 +427,9 @@
 		var decimal;
 		var lastOperator;
 		var lasNum;
+		var key;
+		
+		key = document.getElementById("txtInputAndResult");
 
 		division = document.getElementById("btnDivision").value;
 		multiplication = document.getElementById("btnMultiplication").value;
@@ -392,18 +443,23 @@
 
 		lastOperator = inputString[inputString.length - 1];
 		
-		if (lastOperator == decimal) {
-			if (elementValue == decimal) {
+		if (lastOperator == decimal) 
+		{
+			if (elementValue == decimal) 
+			{
 				inputString = inputString.substring(0, inputString.length - 1);
-			}
+			} 
 		}
 		
-		if (lastOperator == " ") {
+		if (lastOperator == " ") 
+		{
 			lastOperator = inputString[inputString.length - 2];
 		}
 		
-		if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+") {
-			if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition) {
+		if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+") 
+		{
+			if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition) 
+			{
 				inputString = inputString.substring(0, inputString.length - 3);
 			}
 		}
@@ -414,7 +470,8 @@
 		equals = document.getElementById("btnEquals").value;
 
 		// Call calculate function when input is the equals character " = "
-		if (elementValue == equals) {
+		if (elementValue == equals) 
+		{
 			calculate(inputString);
 		}
 	}
