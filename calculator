@@ -224,12 +224,13 @@
 	{
 		var inputString;
 		var lastNumber;
+    var lastNumSlice;
 
 		inputString = document.getElementById("txtInputAndResult").value;
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Math.sign(lastNumber) == -1) 
+    if (Math.sign(lastNumber) == -1) 
 		{
 			lastNumber = lastNumber * -1;
 			lastNumSlice = lastNumber.toString().length;
@@ -240,27 +241,17 @@
 			inputString = inputString.substring(0, inputString.length - lastNumSlice - 1);
 			document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 
-		} else 
+		} 
+    else 
 		{
-			if (lastNumber !== parseFloat(inputString[0])) 
-			{
 				lastNumber = lastNumber * -1;
 				lastNumSlice = lastNumber.toString().length;
 				lastNumSlice = parseFloat(lastNumSlice);
 				inputString = inputString.join(" ");
-				inputString = inputString.substring(0, inputString.length - lastNumSlice);
-				document.getElementById("txtInputAndResult").value = inputString + " " + lastNumber;
-			} 
-			else 
-			{
-				lastNumber = lastNumber * -1;
-				lastNumSlice = lastNumber.toString().length;
-				lastNumSlice = parseFloat(lastNumSlice);
-				inputString = inputString.join(" ");
-				inputString = inputString.substring(0, inputString.length - lastNumSlice);
+				inputString = inputString.substring(0, inputString.length - lastNumSlice + 1);
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
-			}
 		}
+  
 		/*if (Number.isNaN(lastNumber))
 			{
 				if (document.getElementById("txtInputAndResult").value == " ")
@@ -462,6 +453,15 @@
 			if (lastOperator == decimal) 
 			{
 				inputString = inputString.substring(0, inputString.length - 1);	
+			}
+      
+      if (lastNumber % 1 != 0)
+			{
+        inputString = inputString.join(" ");
+        if (event.keyCode == 190 || event.keyCode == 110)
+        {
+          return false;
+        }
 			}
 			
 		}		
