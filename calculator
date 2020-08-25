@@ -225,11 +225,21 @@
 		var inputString;
 		var lastNumber;
     var lastNumSlice;
+    var enterNumber;
 
 		inputString = document.getElementById("txtInputAndResult").value;
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
+    if (Number.isNaN(lastNumber))
+    {
+      lastNumber = "";
+      inputString = inputString.join(" ");
+   		inputString = document.getElementById("txtInputAndResult").value;
+      document.getElementById("txtInputAndResult").value = inputString;
+      alert("Please enter a number first.");
+    }
+    
     if (Math.sign(lastNumber) == -1) 
 		{
 			lastNumber = lastNumber * -1;
@@ -251,19 +261,6 @@
 				inputString = inputString.substring(0, inputString.length - lastNumSlice + 1);
 				document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 		}
-  
-		/*if (Number.isNaN(lastNumber))
-			{
-				if (document.getElementById("txtInputAndResult").value == " ")
-					{
-						document.getElementById("txtInputAndResult").value = inputString.substring(0, inputString.length - 2);
-						alert("Please enter a number first.");
-					}
-				else
-					{
-						document.getElementById("txtInputAndResult").value = inputString + " ";	
-					}
-			}*/
 	}
 
 	function computeSquareRoot() 
@@ -275,11 +272,53 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
+    if (Number.isNaN(lastNumber))
+    {
+      lastNumber = "";
+      inputString = inputString.join(" ");
+   		inputString = document.getElementById("txtInputAndResult").value;
+      document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+      alert("Please enter a number first.");
+    }
+    
 		lastNumber = Math.sqrt(lastNumber);
 		inputString = inputString.join(" ");
 		document.getElementById("txtInputAndResult").value = lastNumber;
 	}
 
+
+	function memoryRecall() 
+	{
+		var inputString;
+		var lastNumber;
+    var lastOperator;
+
+		inputString = document.getElementById("txtInputAndResult").value;
+		inputString = inputString.split(" ");
+		lastNumber = inputString[inputString.length - 1];
+    lastOperator = inputString[inputString.length - 2];
+		lastNumber = parseFloat(lastNumber);
+    if (Number.isNaN(lastNumber))
+    {
+      if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+") 
+      {
+        lastNumber = inputString[inputString.length - 3];
+        lastNumber = parseFloat(lastNumber);
+      }
+      else
+      {
+        lastNumber = "";
+        inputString = inputString.join(" ");
+        inputString = document.getElementById("txtInputAndResult").value;
+        document.getElementById("txtInputAndResult").value = inputString;
+        alert("Please enter a number first.");
+      }
+    }
+    
+		inputString = inputString.join(" ");
+		document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+	}
+  
 	function memorySubstraction() 
 	{
 		var inputString;
@@ -289,11 +328,17 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Number.isNaN(lastNumber)) 
-		{
-			lastNumber = inputString[inputString.length - 3];
+		if (Number.isNaN(lastNumber))
+    {
+      lastNumber = "";
+      inputString = inputString.join(" ");
+   		inputString = document.getElementById("txtInputAndResult").value;
+      document.getElementById("txtInputAndResult").value = inputString;
+      lastNumber = inputString[inputString.length - 3];
 			lastNumber = parseFloat(lastNumber);
-		}
+      alert("Please enter a number first.");
+    }
+    
 		inputString = inputString.join(" ");
 		document.getElementById("txtInputAndResult").value = inputString + " - " + lastNumber;
 	}
@@ -307,11 +352,17 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
-		if (Number.isNaN(lastNumber)) 
-		{
-			lastNumber = inputString[inputString.length - 3];
+    if (Number.isNaN(lastNumber))
+    {
+      lastNumber = "";
+      inputString = inputString.join(" ");
+   		inputString = document.getElementById("txtInputAndResult").value;
+      document.getElementById("txtInputAndResult").value = inputString;
+      lastNumber = inputString[inputString.length - 3];
 			lastNumber = parseFloat(lastNumber);
-		}
+      alert("Please enter a number first.");
+    }
+    
 		inputString = inputString.join(" ");
 		document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;
 	}
@@ -325,27 +376,18 @@
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
 		lastNumber = parseFloat(lastNumber);
+    if (Number.isNaN(lastNumber))
+    {
+      lastNumber = "";
+      inputString = inputString.join(" ");
+   		inputString = document.getElementById("txtInputAndResult").value;
+      document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+      alert("Please enter a number first.");
+    }
+    
 		lastNumber = lastNumber / 100;
 		inputString = inputString.join(" ");
 		inputString = inputString.substring(0, inputString.length - 1);
-		document.getElementById("txtInputAndResult").value = inputString + lastNumber;
-	}
-
-	function memoryRecall() 
-	{
-		var inputString;
-		var lastNumber;
-
-		inputString = document.getElementById("txtInputAndResult").value;
-		inputString = inputString.split(" ");
-		lastNumber = inputString[inputString.length - 1];
-		lastNumber = parseFloat(lastNumber);
-		if (Number.isNaN(lastNumber)) 
-		{
-			lastNumber = inputString[inputString.length - 3];
-			lastNumber = parseFloat(lastNumber);
-		}
-		inputString = inputString.join(" ");
 		document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 	}
 
