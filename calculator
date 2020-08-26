@@ -222,6 +222,7 @@ function changeSign()
     document.getElementById("txtInputAndResult").value = inputString;
     alert("Please enter a number first.");
   }
+	
   if (Math.sign(lastNumber) == -1)
   {
     lastNumber = lastNumber * -1;
