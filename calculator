@@ -228,7 +228,6 @@ function changeSign()
     lastNumSlice = lastNumber.toString().length;
     lastNumSlice - parseFloat(lastNumSlice);
     inputString = inputString.join(" ");
-    //alert(lastNumSlice);
     inputString = inputString.substring(0, inputString.length - lastNumSlice - 1);
     document.getElementById("txtInputAndResult").value = inputString + lastNumber;
   }
@@ -339,7 +338,6 @@ function memoryAddition()
   }
 	inputString = inputString.join(" ");
 	document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;
-
 }
 
 function computeSquareRoot()
