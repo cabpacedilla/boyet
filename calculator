@@ -209,7 +209,7 @@ function changeSign()
   var inputString;
   var lastNumber;
   var lastNumSlice;
-  var enterNumber;
+	
   inputString = document.getElementById("txtInputAndResult").value;
   inputString = inputString.split(" ");
   lastNumber = inputString[inputString.length - 1];
@@ -241,27 +241,6 @@ function changeSign()
     inputString = inputString.substring(0, inputString.length - lastNumSlice + 1);
     document.getElementById("txtInputAndResult").value = inputString + lastNumber;
   }
-}
-
-function computeSquareRoot()
-{
-  var inputString;
-  var lastNumber;
-  inputString = document.getElementById("txtInputAndResult").value;
-  inputString = inputString.split(" ");
-  lastNumber = inputString[inputString.length - 1];
-  lastNumber = parseFloat(lastNumber);
-  if (Number.isNaN(lastNumber))
-  {
-    lastNumber = "";
-    inputString = inputString.join(" ");
-    inputString = document.getElementById("txtInputAndResult").value;
-    document.getElementById("txtInputAndResult").value = inputString + lastNumber;
-    alert("Please enter a number first.");
-  }
-  lastNumber = Math.sqrt(lastNumber);
-  inputString = inputString.join(" ");
-  document.getElementById("txtInputAndResult").value = lastNumber;
 }
 
 function memoryRecall()
@@ -301,19 +280,31 @@ function memorySubstraction()
   inputString = document.getElementById("txtInputAndResult").value;
   inputString = inputString.split(" ");
   lastNumber = inputString[inputString.length - 1];
+	lastOperator = inputString[inputString.length - 2];
   lastNumber = parseFloat(lastNumber);
   if (Number.isNaN(lastNumber))
   {
-    lastNumber = "";
-    inputString = inputString.join(" ");
-    inputString = document.getElementById("txtInputAndResult").value;
-    document.getElementById("txtInputAndResult").value = inputString;
-    lastNumber = inputString[inputString.length - 3];
-    lastNumber = parseFloat(lastNumber);
-    alert("Please enter a number first.");
+		if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+    {
+      lastNumber = inputString[inputString.length - 3];
+      lastNumber = parseFloat(lastNumber);
+			inputString = inputString.join(" ");
+			inputString = inputString.substring(0, inputString.length - 3);
+			document.getElementById("txtInputAndResult").value = inputString + " - " + lastNumber;
+		}
+		else
+		{
+			lastNumber = "";
+			inputString = inputString.join(" ");
+			inputString = document.getElementById("txtInputAndResult").value;
+			document.getElementById("txtInputAndResult").value = inputString;
+			lastNumber = inputString[inputString.length - 3];
+			lastNumber = parseFloat(lastNumber);
+			alert("Please enter a number first.");
+		}
   }
-  inputString = inputString.join(" ");
-  document.getElementById("txtInputAndResult").value = inputString + " - " + lastNumber;
+	inputString = inputString.join(" ");
+	document.getElementById("txtInputAndResult").value = inputString + " - " + lastNumber;
 }
 
 function memoryAddition()
@@ -323,25 +314,39 @@ function memoryAddition()
   inputString = document.getElementById("txtInputAndResult").value;
   inputString = inputString.split(" ");
   lastNumber = inputString[inputString.length - 1];
+	lastOperator = inputString[inputString.length - 2];
   lastNumber = parseFloat(lastNumber);
   if (Number.isNaN(lastNumber))
   {
-    lastNumber = "";
-    inputString = inputString.join(" ");
-    inputString = document.getElementById("txtInputAndResult").value;
-    document.getElementById("txtInputAndResult").value = inputString;
-    lastNumber = inputString[inputString.length - 3];
-    lastNumber = parseFloat(lastNumber);
-    alert("Please enter a number first.");
+		if (lastOperator == "/" || lastOperator == "x" || lastOperator == "-" || lastOperator == "+")
+		{
+			lastNumber = inputString[inputString.length - 3];
+			lastNumber = parseFloat(lastNumber);
+			inputString = inputString.join(" ");
+			inputString = inputString.substring(0, inputString.length - 3);
+			document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;
+		}
+		else
+		{
+			lastNumber = "";
+			inputString = inputString.join(" ");
+			inputString = document.getElementById("txtInputAndResult").value;
+			document.getElementById("txtInputAndResult").value = inputString;
+			lastNumber = inputString[inputString.length - 3];
+			lastNumber = parseFloat(lastNumber);
+			alert("Please enter a number first.");
+		}
   }
-  inputString = inputString.join(" ");
-  document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;
+	inputString = inputString.join(" ");
+	document.getElementById("txtInputAndResult").value = inputString + " + " + lastNumber;
+
 }
 
-function computePercentage()
+function computeSquareRoot()
 {
   var inputString;
   var lastNumber;
+	
   inputString = document.getElementById("txtInputAndResult").value;
   inputString = inputString.split(" ");
   lastNumber = inputString[inputString.length - 1];
@@ -354,10 +359,36 @@ function computePercentage()
     document.getElementById("txtInputAndResult").value = inputString + lastNumber;
     alert("Please enter a number first.");
   }
-  lastNumber = lastNumber / 100;
+  lastNumber = Math.sqrt(lastNumber);
   inputString = inputString.join(" ");
-  inputString = inputString.substring(0, inputString.length - 1);
-  document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+  document.getElementById("txtInputAndResult").value = lastNumber;
+}
+
+function computePercentage()
+{
+  var inputString;
+  var lastNumber;
+	var lastNumSlice;
+	
+  inputString = document.getElementById("txtInputAndResult").value;
+  inputString = inputString.split(" ");
+  lastNumber = inputString[inputString.length - 1];
+  lastNumber = parseFloat(lastNumber);
+  if (Number.isNaN(lastNumber))
+  {
+    lastNumber = "";
+    inputString = inputString.join(" ");
+    inputString = document.getElementById("txtInputAndResult").value;
+    document.getElementById("txtInputAndResult").value = inputString + lastNumber;
+    alert("Please enter a number first.");
+  }
+	
+	lastNumSlice = lastNumber.toString().length;
+  lastNumSlice - parseFloat(lastNumSlice);
+	lastNumber = lastNumber / 100;
+	inputString = inputString.join(" ");
+	inputString = inputString.substring(0, inputString.length - lastNumSlice - 1);
+	document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 }
 
 function calculate(inputString)
