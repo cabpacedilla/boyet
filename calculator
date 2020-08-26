@@ -356,9 +356,20 @@ function computeSquareRoot()
     lastNumber = "";
     inputString = inputString.join(" ");
     inputString = document.getElementById("txtInputAndResult").value;
-    document.getElementById("txtInputAndResult").value = inputString + lastNumber;
     alert("Please enter a number first.");
+		document.getElementById("txtInputAndResult").value = inputString + lastNumber;
   }
+	
+	if (Math.sign(lastNumber) == -1)
+  {
+		lastNumSlice = lastNumber.toString().length;
+		alert("Please enter a positive number.");
+    lastNumSlice - parseFloat(lastNumSlice);
+    inputString = inputString.join(" ");
+    inputString = inputString.substring(0, inputString.length - lastNumSlice);
+    document.getElementById("txtInputAndResult").value = inputString;
+	}
+
   lastNumber = Math.sqrt(lastNumber);
   inputString = inputString.join(" ");
   document.getElementById("txtInputAndResult").value = lastNumber;
@@ -387,7 +398,7 @@ function computePercentage()
   lastNumSlice - parseFloat(lastNumSlice);
 	lastNumber = lastNumber / 100;
 	inputString = inputString.join(" ");
-	inputString = inputString.substring(0, inputString.length - lastNumSlice - 1);
+	inputString = inputString.substring(0, inputString.length - lastNumSlice);
 	document.getElementById("txtInputAndResult").value = inputString + lastNumber;
 }
 
