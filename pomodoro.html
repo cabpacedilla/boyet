@@ -21,13 +21,13 @@ November 2019
 <div>
   <label for="startTime">Start time:</label>
   <input type="time" id="startTime" value="08:00:00" required />
-  <input type="button" value="Current time" onclick="populateStartTimeCurrentTime()" />
+  <input type="button" value="Current time" onclick="alarmWindowulateStartTimeCurrentTime()" />
 </div>
   <br>
 <div>
   <label for="endTime">End time:</label>
-  <input type="time" id="stopTime" value="17:00:00"  required />
-  <input type="button" value="Current time" onclick="populateStopTimeCurrentTime()" />
+  <input type="time" id="stopTime" value="17:00:00" required />
+  <input type="button" value="Current time" onclick="alarmWindowulateStopTimeCurrentTime()" />
 
 </div>
 <br>
@@ -50,8 +50,8 @@ November 2019
 <br> 
 <br> 
 	
-<p>Note:<br> When the first entered time arrives, a 'pop-up is blocked' notification will appear on the right corner of the address bar. 
-Click on the notification and select 'Always allow..'. Click the Ok button. The break and resume time pop-up notification alert message will be displayed 
+<p>Note:<br> When the first entered time arrives, a 'alarmWindow-up is blocked' notification will appear on the right corner of the address bar. 
+Click on the notification and select 'Always allow..'. Click the Ok button. The break and resume time alarmWindow-up notification alert message will be displayed 
 every time a break or resume time arrives.
 <p>
 	
@@ -129,7 +129,7 @@ function toTimeString(dateObj)
   });
 }
 
-function populateStartTimeCurrentTime() 
+function alarmWindowulateStartTimeCurrentTime() 
 {
   //alert(document.getElementById("startTime").value);
   let newDate = new Date();
@@ -149,7 +149,7 @@ function populateStartTimeCurrentTime()
   document.getElementById("startTime").value = currentTimeStartTimeString;
 }
 
-function populateStopTimeCurrentTime() 
+function alarmWindowulateStopTimeCurrentTime() 
 {
   //alert(document.getElementById("startTime").value);
   let newDate = new Date();
@@ -488,13 +488,21 @@ function loopArray()
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
   while (breakFromWorkArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
   {
-    // If pomodoro time is equal to current time, alarm for pomodoro with pop-up message
+    // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message
     //alert(breakFromWorkArray[ctr]);
     //alert(currentTime);
     if (breakFromWorkArray[ctr] == currentTime) 
     {
       //alert(breakFromWorkArray[ctr]);
       alarmWindow = window.open("", "BreakTime", "width=350,height=50");
+			setTimeout(function() 
+			{
+				if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
+				{
+					alarmWindow && alarmWindow.close();
+					alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
+				}
+			}, 1000);
       alarmWindow.focus();
       breakAlertArray = breakFromWorkArray[ctr] + "." + "</p>";
       breakMessage = "<p>Time for a break because it is now ";
@@ -505,10 +513,18 @@ function loopArray()
       break;
     }
 
-    // If back to work time is equal to current time, alarm for back to work with pop-up message    			
+    // If back to work time is equal to current time, alarm for back to work with alarmWindow-up message    			
     if (backToWorkArray[ctr] == currentTime) 
     {
       alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
+			setTimeout(function() 
+			{
+				if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
+				{
+					alarmWindow && alarmWindow.close();
+					alert("Pop-up was blocked. Click on the pop-up blocker and allow pop-ups break and resume to work notification message.");
+				}
+			}, 1000);
       alarmWindow.focus();
       resumeAlertArray = backToWorkArray[ctr] + "." + "</p>";
       resumeMessage = "<p>Time to resume to work because it is now ";
