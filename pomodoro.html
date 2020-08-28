@@ -219,6 +219,7 @@ function addBreakResumeTimes()
     resumeHours = newStartTimeObject.getHours();
     resumeMinutes = newStartTimeObject.getMinutes();
     resumeTime.setHours(resumeHours, resumeMinutes);
+
     while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
     {
       breakMinutes = resumeMinutes + breakDuration;
@@ -240,6 +241,7 @@ function addBreakResumeTimes()
       backToWorkTimes = resumeTimeString;
       backToWorkArray.push(backToWorkTimes);
     }
+    backToWorkArray.pop(backToWorkTimes);
     sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
@@ -252,7 +254,7 @@ function addBreakResumeTimes()
     resumeTime.setHours(resumeHours, resumeMinutes);
     stopTimeObject.setHours(23, 59);
     while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
-    {
+    {			
       breakMinutes = resumeMinutes + breakDuration;
       /* if (breakMinutes == 0)
       	{
@@ -271,6 +273,7 @@ function addBreakResumeTimes()
       backToWorkTimes = resumeTimeString;
       backToWorkArray.push(backToWorkTimes);
     }
+    backToWorkArray.pop(backToWorkTimes);
     sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
@@ -278,7 +281,7 @@ function addBreakResumeTimes()
   else 
   {
     while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
-    {
+    {			
       breakMinutes = resumeMinutes + breakDuration;
       /* if (breakMinutes == 0)
       {
@@ -297,6 +300,7 @@ function addBreakResumeTimes()
       backToWorkTimes = resumeTimeString;
       backToWorkArray.push(backToWorkTimes);
     }
+    backToWorkArray.pop(backToWorkTimes);
     sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
@@ -327,9 +331,9 @@ function addBreakFromWorkTimes()
     else if (ctr > 1) 
     {
       alert("Break times were added.");
-      sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-
     }
+		
+		sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
   }
 }
 
@@ -357,8 +361,9 @@ function addbackToWorkTimes()
     else if (ctr == 1) 
     {
       alert("Resume time was added.");
-      sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
-    }
+    }	
+		
+		sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
   }
 }
 
