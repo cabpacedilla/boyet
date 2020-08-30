@@ -1,0 +1,947 @@
+<html>
+<head>
+<title>Organize your Web</title>
+</head>
+<body link="(#0000FF" vlink="#800080" alink="#Ff0000">
+
+<hr>
+
+<a href="#basics">Begin with the Basics</a><br>
+<a href="#links">Links</a><br>
+<a href="#txtformat">More Text Formatting with HTML</a><br>
+<a href="#htmltool">HTML Assistants: Editors and Assistants</a><br>
+<a href="#imgcolor">Using Images, Color and Backgrounds</a><br>
+<a href="#img">Creating Images for the Web</a>
+
+<hr>
+
+<h1>Get Organized</h1>
+
+<h2>Content</h2>
+
+ <ul>
+ <li>Personal info
+ <li>Hobbies or special interests
+ <li>Publications
+ <li>Company profile
+ <li>Online documentation
+ <li>Shopping catalogs
+ <li>Polling and opinion gathering
+ </ul>
+
+<h2>Goals</h2>
+
+<p>What do you want people to be able to accomplish in your presentation?<br>
+Get people what they want</p>
+
+<h2>Break Content to Main Topics</h2>
+
+<h2>Organization & Navigation</h2>
+
+ <ul>
+ <li>Hierarchies
+ <li>Linear
+ <li>Linear with alternatives
+ <li>Combination of Hierarchical and Linear
+ </ul>
+
+<note>
+Note:<br>
+Do not allow "forward" and "back" link across hierarchical boundaries.
+</note>
+
+<h3>Web</h3>
+
+<p>To solve disorientation:</p>
+
+ <ol>
+ <li>Provide a way out "Return to home page".
+ <li>Include a map of the overall structure of the page (site map of the web).
+ </ol>
+
+<h2>Story boarding</h2>
+
+<h3>Hints for story boarding</h3>
+
+ <ul>
+ <li>Which topics will go on each page
+ <li>What are the primary forms of navigation between pages?
+ <li>What are the alternative forms of navigation are you going to provide? (glossary of terms, index of concepts, credits page)
+ <li>What will you put in your home page?
+ <li>Review your goals
+ </ul>
+
+<br>
+<br>
+
+<h1><a name ="basics"><begin with the basics</a></h1>
+
+<h2>Title</h2>
+
+<p>Describe the content of the page</p>
+
+<h2>Headings &ltH1&gt to &ltH6&gt</h2>
+<!--reserved characters <(less than) &lt >(greater than) &gt-->
+
+<p>Divide sections of text (outline)<br>
+Internet Explorer supports only the ALIGN=&QUOTcenter&QUOT</p>
+
+<p><b>Examples of Headings</b></p>
+
+<h1>Heading 1</h1>
+<h2>Heading 2</h2>
+<h3>Heading 3</h3>
+<h4>Heading 4</h4>
+<h5>Heading 5</h5>
+<h6>Heading 6</h6>
+
+<h2>Paragraph</h2>
+
+<p>&ltP&gt...&lt/P&gt<br>
+Internet Explorer supports only the ALIGN=&QUOTleft&QUOT and ALIGN=&QUOTcenter&QUOT</p>
+
+<p>Example of &ltP ALIGN="right"&gt</p>
+
+<p align="right">The protocol is the way in which the page is accessed; That is, the type of protocol or program your browser will use to get the file. If the browser is using HTTP to get to the file, the protocol part is http. If the browser uses FTP, it's ftp. If you're using Gopher, it's gopher, and so on. The protocol matches an information server that must be installed on the system for it to work. You can't use an FTP URL on a machine that does not have an FTP server installed, for example.</p>
+
+<p>&ltP ALIGN="left"&gt can be ignored because the &ltP&gt tag is already aligned to the left by default</p>
+
+<h2>List</h2>
+
+<h3>Ordered List</h3>
+
+<p>&ltOL&gt...&lt/OL&gt</p>
+
+<h4>List Item</h4>
+
+<p>&ltLI&gt</p>
+
+<p>Example of an ordered list</p>
+
+<h2>To solve disorientation:</h2>
+  <ol>
+  <li>Provide a way out "Return to home page".
+  <li>Include a map of the overall structure of the page (site map of the web).
+  </ol>
+
+<h3>Unordered List</h3>
+
+<p>&ltUL&gt...&lt/UL&gt</p>
+
+<p>Example of an unordered list</p>
+
+<h2>Organization & Navigation</h2>
+  <ul>
+  <li>Hierarchies
+  <li>Linear
+  <li>Linear with alternatives
+  <li>Combination of Hierarchical and Linear
+  </ul>
+
+<h3>Glossary List</h3>
+
+<p>&ltDL&gt...&lt/DL&gt</p>
+
+<h4>Definition Term</h4>
+
+<p>&ltDT&gt...&lt/DT&gt
+
+<h4>Definition definition</h4>
+
+<p>&ltDD&gt...&lt/DD&gt
+
+<h3>Menu List</h3>
+
+<p>List of items or short paragraphs with on bullets or numbers</p>
+<p>&ltMENU&gt...&lt/MENU&gt</p>
+
+<h3>Directory List</h3>
+
+<p>Shorter than menu list intended for columns</p>
+
+<p>Note:<br>
+Order and unordered list will align exactly to the list item at the top of the outline.</p>
+
+<h3>Nesting Lists</h3>
+
+<h2>Comments</h2>
+
+<p>&lt!--Comment--&gt</p>
+
+<br>
+<br>
+
+<h1><a name ="links">Links</a></h1>
+
+<h2>Relative Pathnames</h2>
+
+<p>Point to files based on their locations relative to the current file<br>
+Either the NAME or HREF attribute is required.<br>
+&ltA HREF="location"&gt...&lt/A&gt</p>
+
+<hr>
+
+<blockquote>Folders and directories are the same thing, but they're called different things depending on whether you're on Mac, Windows, DOS, or UNIX. I'll call them simply directories from now on to make things easier.</blockquote>
+
+<hr>
+
+<blockquote>When you specify just the pathname of a linked file within quotes, as you did earlier, the browser looks for that file in the same directory as the current file. This is true even if both the current file and the file being linked to are on a server somewhere else on the Net; Both files are contained in the same directory on that server. This is the simplest form of a relative pathname.</blockquote>
+
+<blockquote>Relative pathnames can also include directory names, or they can point to the path you would take to navigate to that file if you started at the current directory or folder. A pathname might include directions, for example, to go up two directory levels, and then go down two other directories to get to the file.</blockquote>
+
+<hr>
+
+<blockquote>Relative pathnames point to files based on their locations relative to the current file.</blockquote>
+
+<hr>
+
+<blockquote>To specify relative pathnames in links, use UNIX-style pathnames regardless of the system you actually have. This means that directory or folder names are separated by forward slashes (/), and you use two dots to refer generically to the directory above the current one (..)</blockquote>
+
+<b>Table 4.1 shows some examples of relative pathnames and what they mean.</b>
+
+<table>
+<tr><th align="left">Pathname</td><th align="left">Means</td>
+<tr><td>HREF= "file.html"</td><td>File.html is located in the current directory.</td>
+<tr><td>HREF= "files/file.html"</td><td> File.html is located in the directory (or folder) called files (and the files directory is located in the current directory).</td>
+<tr><td>HREF= "files/more files/file.html"</td><td>File.html is located in the more files directory, which is located in the files directory, which is located in the current directory.</td>
+<tr><td>HREF= ".. /file.html"</td><td>File.html is located in the directory one level up from the current directory (the "parent" directory.</td> <tr><td>HREF= "../.. /files/file.html"</td><td>File.html is located two directory levels up, in the directory files.</td>
+</table>
+
+<h2>Link Menus</h2>
+
+<p>Short list of links</p>
+
+<h2>Link to Specific Places within Documents</h2>
+
+<p>Use anchor &ltA&gt with the NAME attribute. To link use  HREF then hash sign # before the name of the anchor.</p>
+
+<blockquote>Anchors are created in much the same way, but instead of using the HREF attribute in the &ltA&gt tag, you use the NAME attribute. The NAME attribute takes a keyword (or words) that will be used to name that anchor.</blockquote>
+
+<h3>Link to Anchors in the Same Document</h3>
+<ul>
+<li>Omit the filename
+<li>Just link to the anchor name
+</ul>
+
+<blockquote>Anchors also require some amount of text between the opening and closing &ltA&gt tags, even though they usually point to a single-character location. The text between the &ltA&gt tags is used by the browser when a link that is attached to this anchor is selected. The browser scrolls the page to the text within the anchor so that it is at the top of the screen. Some browsers may also highlight the text inside the &ltA&gt tags.</blockquote>
+
+<blockquote>So, for example, to create an anchor at the section of a page labeled Part 4, you might add an anchor called Part4 to the heading, like this:</blockquote>
+
+<blockquote><tt>&ltH1&gt</tt><tt>&ltA NAME= "Part4" >Part Four: Grapefruit from
+Heaven&gt&lt/A&gt</tt><tt>&lt/H1&gt</tt></blockquote>
+
+<blockquote>Unlike links, anchors do not show up in the final displayed page. Anchors are invisible until you follow a link that points to them.</blockquote>
+
+<h3>Link to Other Documents</h3>
+
+
+<blockquote>To point to an anchor in a link, you use the same form of link that you would when linking to the whole page, with the filename or URL of the page in the HREF attribute. After the name of the page, however, include a hash sign (#) and the name of the anchor exactly as it appears in the NAME attribute of that anchor (including the same uppercase and lowercase characters!) Like this:</blockquote>
+
+<blockquote><tt><a href= "mybigdoc.html#Part4" >Go to Part 4</a></tt></blockquote>
+
+<blockquote>This link tells the browser to load the page <tt>mybigdoc.html</tt> and then to scroll down to the anchor name Part4. The text inside the anchor definition will appear at the top of the screen.</blockquote>
+
+<h2>URL's</h2>
+
+<h3>Parts of URLs</h3>
+
+<blockquote>Most URLs contain (roughly) three parts: The protocol, the host name, and the directory or filename.</blockquote>
+
+<blockquote>The protocol is the way in which the page is accessed; That is, the type of protocol or program your browser will use to get the file. If the browser is using HTTP to get to the file, the protocol part is http. If the browser uses FTP, it's ftp. If you're using Gopher, it's gopher, and so on. The protocol matches an information server that must be installed on the system for it to work. You can't use an FTP URL on a machine that does not have an FTP server installed, for example.</blockquote>
+
+<blockquote>The host name is the system on the Internet where the information is stored, such as <a href="www.netcom.com">www.netcom.com</a>, <a href="ftp.apple.com">ftp.apple.com</a>, or <a href="www.aol.com">www.aol.com</a>. You can have the same host name but have different URLs with different protocols, like this:</blockquote>
+
+<blockquote><tt>Http://mysystem.com<br>
+ftp://mysystem.com <br>
+gopher://mysystem.com</tt></blockquote>
+
+<blockquote>Same machine, three different information servers, and the browser will use different methods of connecting to that same machine. As long as all three servers are installed on that system and available, there's not a problem.</blockquote>
+
+<blockquote>The host-name part of the URL may include a port number. The port number tells your browser to open a connection of the appropriate protocol on a specific network port other than the default port. The only time you'll need a port number in a URL is if the server handling the information has been explicitly installed on that port.</blockquote>
+
+<blockquote>If a port number is necessary, it goes after the host name but before the directory, like this: </blockquote>
+
+<blockquote><tt>Http://my-public-access-unix.com:1550/pub/file</tt></blockquote>
+
+<blockquote>Finally, the directory is the location of the file or other form of information on the host. The directory may be an actual directory and filename, or it may be another indicator that the protocol uses to refer to the location of that information. (For example, Gopher directories are not explicit directories.)</blockquote>
+
+<h3>URL Examples</h3>
+
+<h3>http:</h3>
+
+<tt>http://www.foo.com/home/foo/</tt>
+
+<h3>Anonymous ftp</h3>
+
+<p>Login using "Anonymous" then use email address for password</p>
+
+<tt>ftp://ftp.foo.com/home/foo/homepage.html></tt>
+
+<h3>Non-anonymous</h3>
+
+<tt>ftp://username:password@ftp.foo.com</tt>
+
+<h3>File</h3>
+
+<tt>file://localhost/dir1/dir2/file</tt>
+
+<h3>Mailto:</h3>
+
+<tt>mailto:email address</tt>
+
+<h3>Gopher</h3>
+
+<tt>Gopher://myhost.com</tt>
+
+<h3>Usenet</h3>
+
+<tt>News:messageID.hostname</tt>
+
+<br>
+<br>
+
+<br>
+<br>
+
+<h1><a name ="txtformat">More Text Formatting with HTML</a></h1>
+
+<h2>Logical Styles</h2>
+<p>Indicate the way text is used</p>
+
+<p>&ltEM&gt...&lt/EM&gt Emphasized =<em>Emphasized</em><br>
+&ltSTRONG&gt...&lt/STRONG&gt Strong =<strong> Strong</strong><br>
+&ltCODE&gt...&lt/CODE&gt Code<code> =CODE</code><br>
+&ltSAMP&gt...&lt/SAMP&gt Sample text, similar to code = <samp>Sample text, similar to code</samp><br>
+&ltKBD&gt...&lt/KBD&gt Intended to be typed by user =<kbd>Intended to be typed by user</kbd><br>
+&ltVAR&gt...&lt/VAR&gt Entity to be replaced by actual value =<var>Entity to be replaced by actual value</var><br>
+&ltDFN&gt...&lt/DFN&gt Word being defined =<dfn>Word being defined</dfn><br>
+&ltCITE&gt...&lt/CITE&gt Short quote as citation =<cite>Short quote as citation</cite></p>
+
+<h2>Physical Styles</h2>
+<p>&ltB&gt...&lt/B&gt Bold =<b>Bold</b><br>
+&ltI&gt...&lt/I&gt Italic =<i>Italic</i><br>
+&ltU&gt...&lt/U&gt Underline =<u>Underline</u><br>
+&ltS&gt...&lt/S&gt Strike through =<s>Strike through</s><br>
+&ltBIG&gt...&lt/BIG&gt Big print than surrounding text =<big>Big print than surrounding text</big><br>
+&ltSMALL&gt...&lt/SMALL&gt Smaller print =<small>Smaller print</small><br>
+&ltSUB&gt...&lt/SUB&gt Subscript =<sub>Subscript</sub><br>
+&ltSUP&gt...&lt/SUP&gt Superscript =<sup>Superscript</sup></p>
+
+<h2>Preformatted Text</h2>
+
+<p>&ltPRE&gt...&lt/PRE&gt</p>
+
+<pre>Preformatted Text</pre>
+
+<h2>Horizontal Rules</h2>
+
+<p>&ltHR&gt</p>
+<hr>
+
+<h2>Line Break</h2>
+
+<p>&ltBR&gt</p>
+
+<br>
+<br>
+
+<h2>Addresses</h2>
+
+<p>Signature-like entities</p>
+<p>&ltADDRESS&gt...&lt/ADDRESS&gt
+
+<br>
+<br>
+
+<h2>Quotations</h2>
+
+<p>&ltBLOCKQUOTE&gt...&lt/BLOCKQUOTE&gt
+
+<blockquote>The protocol is the way in which the page is accessed; That is, the type of protocol or program your browser will use to get the file. If the browser is using HTTP to get to the file, the protocol part is http. If the browser uses FTP, it's ftp. If you're using Gopher, it's gopher, and so on. The protocol matches an information server that must be installed on the system for it to work. You can't use an FTP URL on a machine that does not have an FTP server installed, for example.</blockquote>
+
+<h2>Special Characters (ISO-Latin-1) Appendix B</h2>
+
+&copy Copyright &AMPcopy<br>
+&reg Trademark &AMPreg
+
+<h2>Reserved Character</h2>
+
+&lt(less than) &AMPLT<br>
+&gt(greater than) &AMPGT<br>
+&AMP(ampersand) &AMPAMP<br>
+&QUOT(double quote) &AMPQUOT
+
+<h2>Text Alignment</h2>
+
+<h3>Align Individual</h3>
+
+<p>Use ALIGN attribute</p>
+
+  <ul>
+  <li>CENTER
+  <li>LEFT
+  <li>RIGHT
+  </ul>
+
+<h3>Align Blocks of Elements</h3>
+
+<p>Use &ltDIV&gt tag</p>
+
+<h2>Fonts and Font Sizes</h2>
+
+  <ul>
+  <li>1-7 with 3 being defualt size
+  <li>You can use (-) and (+) sign to add to the default size.
+  </ul>
+
+<p>You can define size by using &ltBASEFONT&gt tag</p>
+
+<p>FACE = attribute (Internet Explorer)</p>
+
+<h2>The Dreaded Blink <blink></h2>
+
+<h2>Other Extensions</h2>
+
+<h3>Special List Formats</h3>
+
+<h4>Unordered List</h4>
+
+<p>TYPE = DISC, CIRCLE, SQUARE</p>
+
+<h4>Ordered List</h4>
+
+<pre>
+TYPE = 1 = 1, 2, 3
+     = A = A, B, C
+     = I = I, II, III
+     = i = i, ii, iii
+</pre>
+
+
+<p>START attribute = where to start the list<br>
+
+VALUE attribute = value of starting item</p>
+
+<h2>No Break</h2>
+
+<p>&ltNOBR&gt...&lt/NOBR&gt</p>
+
+<h2>With Break</h2>
+
+<p>&ltWBR&gt...&lt/WBR&gt</p>
+
+<br>
+<br>
+
+<h1><a name ="htmltool">HTML Assistants: Editors and Assistants</a></h1>
+
+<h2>A. HTML Editor</h2>
+ <ol>
+ <li>HTML Assistant Pro (Windows)
+ <li>HotDog Pro
+ <li>WebEdit
+ <li>HTML-Edit
+ </ol>
+
+<h2>B. WYSISYG (What-You-See-Is-What-You-Get) or New WYSISYG Editors</h2>
+ <ol>
+ <li>Netscape Navigator Gold
+ <li>Microsoft Internet Assistant-plugin for Word
+ <li>HotMeal Pro 2.0
+ <li>Microsoft FrontPage
+ <li>GNN Press
+ </ol>
+
+<h2>C. Converters</h2>
+ <ol>
+ <li>Microsoft Word
+ <li>WordPerfect
+ <li>Rich Text Format (RTF)
+ <li>Quark XPress
+ <li>PageMaker
+ <li>FrameMaker
+ </ol>
+
+<br>
+<br>
+
+<h1><a name ="imgcolor">Using Images, Color and Backgrounds</a></h1>
+
+<h2>Inline Images</h2>
+
+<p>GIF or JPEG = GIF more popular</p>
+
+<h2>External Images</h2>
+
+<p>To be downloaded on demand</p>
+
+<h2>Image Conversion</h2>
+
+<h3>Image Converters</h3>
+
+  <ul>
+  <li>Adobe PhotoShop
+  <li>PaintShop Pro
+  <li>Corel Draw
+  <li>XV
+  </ul>
+
+<p>Note:<br>
+Use lowercase for image file extension</p>
+
+<h2>Inline Image</h2>
+
+<p>&ltIMG&gt tag</p>
+
+<p>attribute<br>
+SRC="source"</p>
+
+<p>Images don't define their own text elements, so the &ltIMG&gt tag has to go inside a paragraph or heading element</p>
+
+<p>&ltP&gt&ltIMG SRC="web.gif"&gt&lt/P&gt</p>
+
+<p><img src="img/Claive.jpg">Claive</p>
+
+<h3>Images and Text</h3>
+
+<p>Add &ltIMG&gt tag at the appropriate point inside an element tag (&ltH1&gt, &ltP&gt, &ltADDRESS&gt)</p>
+
+<h4>Text and Image Alignment</h4>
+
+<p>Use ALIGN attribute (only one line of text)</p>
+
+  <ol>
+  <li>TOP = top of line
+  <li>MIDDLE = center of line
+  <li>BOTTOM = bottom of line
+  <li>TEXTTOP = tallest text in the line
+  <li>ABSMIDDLE = largest item in the line
+  <li>BASELINE
+  <li>ABSBOTTOM = same as baseline
+  </ol>
+
+<p>Example</p>
+
+<p><img src="img/Claive.jpg" align=top>ALIGN=TOP= top of line </p>
+
+<br clear="all">
+
+<p><img src="img/Claive.jpg" align=middle>ALIGN=MIDDLE= center of line</p>
+
+<br clear="all">
+
+<p><img src="img/Claive.jpg" align=bottom>ALIGN=BOTTOM= bottom of line</p>
+
+<br clear="all">
+
+<p><img src="img/Claive.jpg" align=texttop>ALIGN=TEXTTOP= tallest text in the line</p>
+
+<br clear="all">
+
+<p><img src="img/Claive.jpg" align=absmiddle>ALIGN=ABSMIDDLE= largest item in the line </p>
+
+<br clear="all">
+
+<p><img src="img/Claive.jpg" align=absbottom>ALIGN=ABSBOTTOM</p>
+
+<h4>Wrapping Text Next to Images</h4>
+
+<p>Use left and right values for ALIGN</p>
+
+<p>Example</p>
+
+<p>ALIGN=LEFT</p>
+
+<p><img src="img/Claive.jpg" align="left">The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. </p>
+
+<p>ALIGN=RIGHT</p>
+
+<p><img src="img/Claive.jpg" align="right">The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog.</p>
+
+<b>Stopping Text Wrapping</b>
+
+<p>Use line break &ltBR&gt tag and use CLEAR attribute with values:</p>
+
+<p>LEFT = break to empty left margin<br>
+RIGHT = break to empty right margin<br>
+ALL = clear to both margins</p>
+
+<p>CLEAR=LEFT</p>
+
+<p><img src="img/Claive.jpg" align="left">The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. </p>
+
+<br clear=left>
+
+<br clear=all>
+
+<p>CLEAR=RIGHT</p>
+
+<p><img src="img/Claive.jpg" align="right">The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. </p>
+
+<br clear=right>
+
+<br clear=all>
+
+<p>Example of CLEAR=ALL</p>
+
+<p><img src="img/Claive.jpg" align="left">The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.</p>
+
+<br clear=all>
+
+<p><img src="img/Claive.jpg" align="right">The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.</p>
+
+<h4>Text Wrapping in Older Browsers</h4>
+
+<p>Place &ltBR&gt after image</p>
+
+<h4>Adjusting Space Around Images</h4>
+
+<p>VSPACE attribute<br>
+HSPACE attribute</p>
+
+<p>VSPACE EXAMPLE</p>
+
+<p><img src="img/Claive.jpg" align="left" vspace=30>The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. </p>
+
+<p>HSPACE EXAMPLE</p>
+
+<p><img src="img/Claive.jpg" align="left" hspace=30>The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog. The quick brown fox jump over the lazy dog.  The quick brown fox jump over the lazy dog. </p>
+
+<h4>Images and Links</h4>
+
+<p>Used as navigation icons and buttons.  Use border attribute to make images selectable</p>
+
+<h2>External Images</h2>
+
+<p>Serve complementary role to inline images</p>
+
+<h3>Providing Alternatives to Images (Text-only browsers)</h3>
+
+ <ol>
+ <li>Use ALT attribute for &ltIMG&gt tag string to substitute the graphic
+ <li>Make text the anchor instead by leaving the value of as ALT = " " .
+ <li>Use &ltPRE&gt to make ASCII art in the ALT attribute
+ </ol>
+
+<h2>Other Neat Tricks with Images</h2>
+
+<h3>Image Dimensions and Scaling</h3>
+
+<p>Height and Width attribute<br>
+Makes browser loads and display much faster</p>
+
+<h2>More About Image Borders</h2>
+
+<p><img src="img/Claive.jpg" border=5></p>
+
+<h2>Image Previews (entirely optional; simply ignored in older browsers)</h2>
+
+<p>Use LOWSRC attribute</p>
+&ltIMG SRC = "wall.gif" LOWSRC = "wallsmall.gif"&gt
+
+<h2>Using Color</h2>
+
+<h3>Naming Colors<br>
+Color Pickers for HTML</h3>
+
+ <ol>
+ <li>HTML Color Reference
+ <li>Color Finder
+ </ol>
+
+<h2>Changing the Background Color</h2>
+
+<p>Use BGCOLOR attribute in &ltBODY&gt tag</p>
+
+<h2>Changing Text Colors</h2
+
+<p>attribute</p>
+
+ <ul>
+ <li>TEXT
+ <li>LINK
+ <li>VLINK = visited link
+ <li>ALINK = activate link
+ </ul>
+
+<p><font color=blue>LINK</font></p>
+
+<p><font color=purple>VLINK = visited link</font></p>
+
+<h2>Spot Color</h2>
+
+<p>Use font &ltFONT&gt tag and use its color attribute</p>
+<p><font color=blue>BLUE FONT</font></p>
+
+<h2>Image Background</h2>
+
+<p>Use BACKGROUND attribute in <body> tag<br>
+Use BGPROPERTIES = FIXED to scroll only the foreground (text and images)</p>
+
+<h2>Hints for Better Images</h2>
+
+ <ol>
+ <li>Keep your images under 20K.
+ <li>Reuse your images.
+ <li>Provide alternative to images (ALT).
+ <li>Create alternative text-only versions.
+ </ol>
+
+<br>
+<br>
+
+<h1><a name ="img">Creating Images for the Web</a></h1>
+
+<h2>GIF Format</h2>
+
+<p>256 colors</p>
+
+<h2>JPEG Format</h2>
+
+<h2>Color</h2>
+
+<h3>Hue, Saturation, Brightness (HSB) Model</h3>
+
+  <ul>
+  <li><h4>Hue</h4>
+
+  <p>Actual shade of color<br>
+   Measured 0-360 degrees</p>
+
+  <li><h4>Brightness</h4>
+
+  <p>How light and dark<br>
+  Measured as percentage 0-100</p>
+
+  <li><h4>Saturation</h4>
+
+  <p>Intensity of color or amount of   color<br>
+  Measured as percentage 0-100</p>
+  </ul>
+
+<h3>Red, Green, Blue (Blue) Model</h3>
+
+<p>Represented in three numbers from 0-255<br>
+24-bit color = 16.7 million colors</p>
+
+<hr>
+
+<note>Note:<br>
+Think of HSB model to create color but a program will ask you RGB values for that color.<note>
+
+<hr>
+
+
+<h2>Image Color and Color Maps</h2>
+
+<p>GIF formats are stored in color map</p>
+
+<p>JPEG formats are determined by amount of compression not by amount of colors.</p>
+
+<p>Exercise 1</p>
+
+<h3>Reducing Colors in GIF image Using PhotoShop</h3>
+
+  <ol>
+  <li>Select INDEXED color from the mode
+  number of colors indicated in other of resolution section
+  <li>Choose in RESOLUTION to reduce number of colors
+  <li>Used ADAPTIVE PALETTE (weights color in palette based on how frequently they're used to the original image).
+  <li>Use DIFFUSION DITHER (to provide the most uniform dithering).
+  </ol>
+
+<hr>
+
+<note>
+Note:<br>
+If color is fewer than 256 colors use EXACT PALETTE instead of ADAPTIVE PALETTE.
+</note>
+
+<hr>
+
+<h3>Color Allocation</h3>
+
+<hr>
+
+<note>
+Note:<br>
+Total colors in combined images do not go over 256 colors.
+</note>
+
+<hr>
+
+<h4>Number of Colors</h4>
+
+<p>In text format</p>
+
+<pre>
+  ------------------
+  Choice       Color
+  ==================
+  3 bit/pixel  8
+  4            16
+  5            32
+  6            64
+  7            128
+  8 bit/pixel  256
+  -------------------
+</pre>
+
+<p>In HTML table format</p>
+
+<table border>
+<tr><td rowspan=7><th>Choice</th></td><td  rowspan=7><th>Color</th></td></tr>
+
+<tr><td>3 bit/pixel</td><td>8</td></tr>
+<tr><td>4</td><td>16</td></tr>
+<tr><td>5</td><td>32</td></tr>
+<tr><td>6</td><td>64</td></tr>
+<tr><td>7</td><td>128</td></tr>
+<tr><td>8 bit/pixel</td><td>256</td></tr></table>
+
+
+<p>Tip: </p>
+
+   <ol>
+   <li>Use single color map for all images.</ul>
+   <li>Copy all images into one large document.
+   <li>Convert to indexed color map
+   <li>Choose color table
+   <li>Save that color map
+   <li>Open each individual image and convert to indexed color.
+   <li>Choose color table
+   <li>Save each image with new global map.
+   </ol>
+
+<h2>Image Compression</h2>
+
+<h3>Compression Basics</h3>
+
+  <ol>1. Lossy Compression</ol>
+
+  <blockquote>Degrade image</blockquote>
+
+  <ol>2. Lossless Compression</ol>
+
+  <blockquote>Less effective, but no degrade</blockquote>
+
+<h3>Compression of GIF and JPEG</h3>
+
+  <blockquote>GIF = Lossless compression (good for logos)</blockquote>
+
+  <blockquote>JPEG = Lossy compression (good for photographs)</blockquote>
+
+<hr>
+
+<note>
+Note:<br>
+If you use JPEG, try several levels of compression to see what the optimum level.
+</note>
+
+<hr>
+
+<h3>Displaying Compressed Files</h3>
+
+  <blockquote>Image Dithering and Transparency Backgrounds</blockquote>
+  <blockquote>1. Transparency</blockquote>
+  <blockquote>Appropriate for GIF where background can be a one color</blockquote>
+  <blockquote>2. GIF Interlacing</blockquote>
+  <blockquote>Appear to gradually fade</blockquote>
+  <blockquote>Tip:</blockquote>
+  <blockquote>Good for large images</blockquote>
+  <blockquote>3. Progressive JPEG</blockquote>
+  <blockquote>Not backward compatible to older browsers</blockquote>
+  <blockquote>Tools for Creating Transparent and Interlaced Images</blockquote>
+  <blockquote>1. LView Pro</blockquote>
+
+<h3>Creating and Using Images</h3>
+
+  <ol>
+  <li> Design your own
+  <li> Use a scanner
+  <li> Commercial clip art
+  <li> Clip art on the web
+  </ol>
+
+<blockquote>Barry's Clip Art Server<br>
+<a href="www.clever.net/graphics/clip_art/clipart.html"
+>www.clever.net/graphics/clip_art/clipart.html</a></blockquote>
+
+<blockquote>Anthony's loon library = loons<br>
+<a href="www.eit.gu.edu.au/nanthony.icons/index.html">www.eit.gu.edu.au/nanthony.icons/index.html</a></blockquote>
+
+<blockquote>Web Indexes<br>
+  <a href="www.yahoo.com/computers/World_Wide_Web/Programming/Icons">www.yahoo.com/computers/World_Wide_Web/Programming/Icons</a>
+
+or <a href="www.yahoo.com/computers/Multimedia/pictures">www.yahoo.com/computers/Multimedia/pictures</a></blockquote>
+
+<h3>Other Images on the Web</h3>
+
+<p>Ask the artist for permission</p>
+
+<h3>Coming Soon: PNG</h3>
+
+<h4>Features:</h4>
+
+  <ol>
+  <li>Option for color map-based images as with the GIF format
+  <li> Compression method that works equally well with photographed log0-type images.
+  <li> Comments and other extra information can be stored within the image file.
+  <li> An alpha channel, which allow for sophisticated effects such as masking and transparency.
+  <li> Adjustment for gamma correction, which can compensate for differences in intensity and brightness in different kinds of monitor.
+  </ol>
+
+<h3>Technical Info:</h3>
+
+<a href="www.boutell.com/boutell/png">www.boutell.com/boutell/png</a>
+
+<a href="//guest.jpl.nasa.gov/png>">//guest.jpl.nasa.gov/png></a>
+
+<h3>Email:</h3>
+
+<a href="mailto:png-info@uunet.net">png-info@uunet.net</a>
+
+<h3>Graphics FAQ's</h3>
+
+<h4>Computer graphics FAQ</h4>
+
+<a href="www.primenet.com/~grieggs/cg_faq.html">www.primenet.com/~grieggs/cg_faq.html</a>
+
+<h4>Color space FAQ</h4>
+
+<p>JPEG format is still best for photographs</p>
+
+<p>Summary of GIF versus JPEG</p>
+
+<p>In text table format.</p>
+
+<pre>
+  --------------------------------------------------------------------------------------------------
+  Format  Availability   Colors    Interlacing        Compression Type  Compression     Compression
+          in Browsers              and Transparency                     of Logos/Icons  of Photos
+  ==================================================================================================
+  GIF     Excellent      256       Both               Lossless          Excellent       Fair
+  JPEG    Good           Millions  Progressive        Lossy             Poor            Excellent
+  --------------------------------------------------------------------------------------------------
+</pre>
+
+<p>In HTML table format.</p>
+
+<table border width=100%>
+<tr><td rowspan="3"><th>Format</th></td><td rowspan="3"><th>Availability in Browsers</th></td><td rowspan="3"><th>Colors</th></td><td rowspan="3"><th>Interlacing and Transparency</th></td><td rowspan="3"><th>Compression Type</th></td><td rowspan="3"><th>Compression of Logos/Icons</th></td><td rowspan="3"><th>Compression of Photos</th></td></tr>
+
+<tr><td>GIF</td><td>Excellent</td><td>256</td><td>Both</td><td>Lossless</td><td>Excellent</td><td>Fair</td></tr>
+
+<tr><td>JPEG</td><td>Good</td><td>Millions</td><td>Progressive</td><td>Lossy</td><td>Poor</td><td>Excellent</td></tr>
+</table>
+
+<br>
+<br>
+
+[<a href="imgcolor.htm">Previous</a>] [<a href="index.htm">Home</a>]
+
+<br>
+<br>
+
+</body>
+<html>
