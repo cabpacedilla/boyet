@@ -658,3 +658,79 @@ public class TestDataExam {
 }
 
 
+/*************************************************************
+
+FRAMEWORK STRUCTURE
+1.	Core package
+It contains utility classforhandling web browsers on different platform, accessing data source, capturing screenshots, generating customized readable logs as well as the report.28 
+
+2.	Data Objects package
+Contains class to create data objects which will store the value from the data source (xsl).
+ 
+3.	Web Elements package
+Contains class for web page elements (e.g. button, textbox, ..) and all available actions that we can perform on the element (e.g. click, enter, ..)
+
+4.	Page Objects package
+Contains class which are representation of each unique web pages. This is where element locators (e.g. id, name, xpath, etc.) is assigned to a web element to create the page objects.
+Reusable methods for a specific page object actions is also created here which is used in developing the test scripts.
+
+5.	Tests package
+Use Page Objects and Data Objects to create a test script and form a test scenario.
+
+
+SETTING UP MAVEN
+
+Apache Maven is a software project management and comprehension tool that can
+manage a project's build, reporting and documentation from a central piece of
+information. It will download the java bindings and all its dependencies, and will
+create the project for you using a project configuration file.
+
+How to setup projects to Maven:
+Step 1: Follow the step by step guide in configuring your machine with Maven
+Step 2: Open Eclipse application.
+Step 3: Right click on the project file > Configure > click “Convert to Maven Project”
+Step 4: Click Finish button and wait for the loading to finish.
+Step 5: A new file, “pom.xml”, will be created under the project files.
+
+In the pom.xml file we can manage the configurations settings for the project file. We’ll be adding the jar files needed for the project but first removed the jar file added in the project library.
+
+Step 1: We add the “dependencies” tag first in the pom.xml and then in between those tags we add all the dependencies needed for the
+project.
+
+Step 2:
+In the Maven dependencies repositories website ( http://mvnrepository.com/ com/) you can search for the jar files needed and copy the code given for maven.
+
+Step 3: Paste the copied code between the “dependencies” tag, then save the pom.xml
+file. 
+
+After saving you can notice that the project is currently building, it means that Maven started downloading the added
+dependency.
+
+All the files that will be downloaded by Maven will be stored in the “repository” folder, you can find it in
+C: Users \\< eid>\\.m2
+ 
+
+How to setup existing Maven projects
+
+Step 1: Right click on the Package Explorer tab then click “Import”
+
+Step 2: Click “Maven” > click “Existing Maven Projects” then click Next button
+
+Step 3: Click the “Browse…” button
+
+Step 4: Find and select the “SeleniumProject” folder (path: C:\Workspace) then click OK button.
+
+Step 5: The selected folder should appear in the Projects. Click Finish button.
+
+Step 6: The project will now be displayed in the Project Explorer tab. Maven will start downloading the files needed for the project file. Wait for the build of the codes to finish which is displayed on the bottom-right corner of Eclipse.
+
+Step 7: Right click on the project > Maven > click “Update Project…”
+
+Step 8: Click the checkbox “Force Update of Snapshots/Releases” then click OK button.
+
+Step 9: Maven will start downloading the files needed for the project file. Wait for the build of the codes to finish which is displayed on the bottom-right corner of Eclipse.
+
+Step 10: Make sure that there are no errors displayed in the “Problems” tab.
+
+*************************************************************************************/
+
