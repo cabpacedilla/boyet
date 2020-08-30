@@ -1,18 +1,21 @@
 
-// This Selenium test script was written by Claive Alvin P. Acedilla
+
+/* This Selenium test script will navigate, verify and populate data for the "Successful purchase of items" user flow.
+This script was written by Claive Alvin P. Acedilla. 2019 
+Note: The test object, page objects and data object should be saved in separate files*/
 
 /******************************************
 SuccesfulPurchaseOfItems.java tests script
 *******************************************/
 
-package com.seleniumbootcampframework.tests;
+package com.seleniumframework.tests;
 
 import org.testng.annotations.Test;
-import com.seleniumbootcampframework.core.Browser;
-import com.seleniumbootcampframework.core.Log;
-import com.seleniumbootcampframework.dataobjects.TestDataExam;
-import com.seleniumbootcampframework.pageobjects.TricentisHome;
-import com.seleniumbootcampframework.pageobjects.AutomobileInsurancePage;
+import com.seleniumframework.core.Browser;
+import com.seleniumframework.core.Log;
+import com.seleniumframework.dataobjects.TestData;
+import com.seleniumframework.pageobjects.TricentisHome;
+import com.seleniumframework.pageobjects.AutomobileInsurancePage;
 
 // Inherit Browser.java class
 public class SuccesfulPurchaseOfItems extends Browser 
@@ -23,9 +26,9 @@ public class SuccesfulPurchaseOfItems extends Browser
 		Log.setStoryName("Purchase Vehicle");
 		
 		// 1. Navigate to URL using Browser class driver
-		getDriver().get(TestDataExam.Urls.tricentisUrl());
+		getDriver().get(TestData.Urls.tricentisUrl());
 		
-		// Run Test scripts by calling base page element methods and TestDataExam base test values
+		// Run Test scripts by calling base page element methods and TestData base test values
 		
 		// 2. Verify vehicle navigation links 
 		TricentisHome.navSection.verifyAutomobileNavLink();
@@ -45,28 +48,28 @@ public class SuccesfulPurchaseOfItems extends Browser
 		AutomobileInsurancePage.navSection.vrfySendQuoteNavLink();
 		
 		// 5. Populate Vehicle Data fields
-		AutomobileInsurancePage.vehicleDataSection.selMake(TestDataExam.PurchaseInfo.VehicleDataInfo.Make());
-		AutomobileInsurancePage.vehicleDataSection.setEnginePerformance(TestDataExam.PurchaseInfo.VehicleDataInfo.EnginePerformance());
-		AutomobileInsurancePage.vehicleDataSection.setDateOfManufacture(TestDataExam.PurchaseInfo.VehicleDataInfo.ManufactureDate());
-		AutomobileInsurancePage.vehicleDataSection.selNumOfSeats(TestDataExam.PurchaseInfo.VehicleDataInfo.SeatNumbers());
-		AutomobileInsurancePage.vehicleDataSection.selFuelType(TestDataExam.PurchaseInfo.VehicleDataInfo.FuelType());
-		AutomobileInsurancePage.vehicleDataSection.setListPrice(TestDataExam.PurchaseInfo.VehicleDataInfo.ListPrice());
-		AutomobileInsurancePage.vehicleDataSection.setLicensePlateNumber(TestDataExam.PurchaseInfo.VehicleDataInfo.LicensePlateNumber());
-		AutomobileInsurancePage.vehicleDataSection.setAnnualMileage(TestDataExam.PurchaseInfo.VehicleDataInfo.AnnualMileage());
+		AutomobileInsurancePage.vehicleDataSection.selMake(TestData.PurchaseInfo.VehicleDataInfo.Make());
+		AutomobileInsurancePage.vehicleDataSection.setEnginePerformance(TestData.PurchaseInfo.VehicleDataInfo.EnginePerformance());
+		AutomobileInsurancePage.vehicleDataSection.setDateOfManufacture(TestData.PurchaseInfo.VehicleDataInfo.ManufactureDate());
+		AutomobileInsurancePage.vehicleDataSection.selNumOfSeats(TestData.PurchaseInfo.VehicleDataInfo.SeatNumbers());
+		AutomobileInsurancePage.vehicleDataSection.selFuelType(TestData.PurchaseInfo.VehicleDataInfo.FuelType());
+		AutomobileInsurancePage.vehicleDataSection.setListPrice(TestData.PurchaseInfo.VehicleDataInfo.ListPrice());
+		AutomobileInsurancePage.vehicleDataSection.setLicensePlateNumber(TestData.PurchaseInfo.VehicleDataInfo.LicensePlateNumber());
+		AutomobileInsurancePage.vehicleDataSection.setAnnualMileage(TestData.PurchaseInfo.VehicleDataInfo.AnnualMileage());
 		
 		// 6. Click Next button
 		AutomobileInsurancePage.vehicleDataSection.clickNext();
 
 		// 7. Populate Insurant Data fields
-		AutomobileInsurancePage.insurantDataSection.setFirstName(TestDataExam.PurchaseInfo.InsurantDataInfo.FirstName());
-		AutomobileInsurancePage.insurantDataSection.setLastName(TestDataExam.PurchaseInfo.InsurantDataInfo.LastName());
-		AutomobileInsurancePage.insurantDataSection.setDateOfBirth(TestDataExam.PurchaseInfo.InsurantDataInfo.DateOfBirth());
+		AutomobileInsurancePage.insurantDataSection.setFirstName(TestData.PurchaseInfo.InsurantDataInfo.FirstName());
+		AutomobileInsurancePage.insurantDataSection.setLastName(TestData.PurchaseInfo.InsurantDataInfo.LastName());
+		AutomobileInsurancePage.insurantDataSection.setDateOfBirth(TestData.PurchaseInfo.InsurantDataInfo.DateOfBirth());
 		AutomobileInsurancePage.insurantDataSection.selGender();
-		AutomobileInsurancePage.insurantDataSection.setStreetAddress(TestDataExam.PurchaseInfo.InsurantDataInfo.StreetAddress());
-		AutomobileInsurancePage.insurantDataSection.selCountry(TestDataExam.PurchaseInfo.InsurantDataInfo.Country());
-		AutomobileInsurancePage.insurantDataSection.setZipCode(TestDataExam.PurchaseInfo.InsurantDataInfo.ZipCode());
-		AutomobileInsurancePage.insurantDataSection.setCity(TestDataExam.PurchaseInfo.InsurantDataInfo.City());
-		AutomobileInsurancePage.insurantDataSection.selOccupation(TestDataExam.PurchaseInfo.InsurantDataInfo.Occupation());
+		AutomobileInsurancePage.insurantDataSection.setStreetAddress(TestData.PurchaseInfo.InsurantDataInfo.StreetAddress());
+		AutomobileInsurancePage.insurantDataSection.selCountry(TestData.PurchaseInfo.InsurantDataInfo.Country());
+		AutomobileInsurancePage.insurantDataSection.setZipCode(TestData.PurchaseInfo.InsurantDataInfo.ZipCode());
+		AutomobileInsurancePage.insurantDataSection.setCity(TestData.PurchaseInfo.InsurantDataInfo.City());
+		AutomobileInsurancePage.insurantDataSection.selOccupation(TestData.PurchaseInfo.InsurantDataInfo.Occupation());
 		AutomobileInsurancePage.insurantDataSection.selHobbySpeeding();
 		AutomobileInsurancePage.insurantDataSection.selHobbySkydiving();
 
@@ -74,12 +77,12 @@ public class SuccesfulPurchaseOfItems extends Browser
 		AutomobileInsurancePage.insurantDataSection.clickNextProductBtn();
 		
 		// 9. Populate Product Data Fields
-		AutomobileInsurancePage.productDataSection.setStartDate(TestDataExam.PurchaseInfo.ProductDataInfo.StartDate());
-		AutomobileInsurancePage.productDataSection.selInsuranceSum(TestDataExam.PurchaseInfo.ProductDataInfo.InsuranceSum());
-		AutomobileInsurancePage.productDataSection.selMeritRating(TestDataExam.PurchaseInfo.ProductDataInfo.MeritRating());
-		AutomobileInsurancePage.productDataSection.selDamageInsurance(TestDataExam.PurchaseInfo.ProductDataInfo.DamageInsurance());
+		AutomobileInsurancePage.productDataSection.setStartDate(TestData.PurchaseInfo.ProductDataInfo.StartDate());
+		AutomobileInsurancePage.productDataSection.selInsuranceSum(TestData.PurchaseInfo.ProductDataInfo.InsuranceSum());
+		AutomobileInsurancePage.productDataSection.selMeritRating(TestData.PurchaseInfo.ProductDataInfo.MeritRating());
+		AutomobileInsurancePage.productDataSection.selDamageInsurance(TestData.PurchaseInfo.ProductDataInfo.DamageInsurance());
 		AutomobileInsurancePage.productDataSection.selOptionalProducts();
-		AutomobileInsurancePage.productDataSection.selCourtesyCar(TestDataExam.PurchaseInfo.ProductDataInfo.CourtesyCar());
+		AutomobileInsurancePage.productDataSection.selCourtesyCar(TestData.PurchaseInfo.ProductDataInfo.CourtesyCar());
 		
 		// 10. Click Next button
 		AutomobileInsurancePage.productDataSection.clickNextPriceBtn();
@@ -92,10 +95,10 @@ public class SuccesfulPurchaseOfItems extends Browser
 				
 		
 		// 13. Populate Send Quote data fields
-		AutomobileInsurancePage.sendQuoteSection.setEmail(TestDataExam.PurchaseInfo.SendQuoteInfo.Email());
-		AutomobileInsurancePage.sendQuoteSection.setUsername(TestDataExam.PurchaseInfo.SendQuoteInfo.Username());
-		AutomobileInsurancePage.sendQuoteSection.setPassword(TestDataExam.PurchaseInfo.SendQuoteInfo.Password());
-		AutomobileInsurancePage.sendQuoteSection.setConfirmPassword(TestDataExam.PurchaseInfo.SendQuoteInfo.ConfirmPassword());
+		AutomobileInsurancePage.sendQuoteSection.setEmail(TestData.PurchaseInfo.SendQuoteInfo.Email());
+		AutomobileInsurancePage.sendQuoteSection.setUsername(TestData.PurchaseInfo.SendQuoteInfo.Username());
+		AutomobileInsurancePage.sendQuoteSection.setPassword(TestData.PurchaseInfo.SendQuoteInfo.Password());
+		AutomobileInsurancePage.sendQuoteSection.setConfirmPassword(TestData.PurchaseInfo.SendQuoteInfo.ConfirmPassword());
 		
 		// 14. Click Send button
 		AutomobileInsurancePage.sendQuoteSection.clickSendBtn();
@@ -114,15 +117,15 @@ public class SuccesfulPurchaseOfItems extends Browser
 TricentisHome.java pageobject
 ******************************/
 
-package com.seleniumbootcampframework.pageobjects;
+package com.seleniumframework.pageobjects;
 
 import org.openqa.selenium.By;
 
 // Inherit element classes
-import com.seleniumbootcampframework.webelements.Button;
-import com.seleniumbootcampframework.webelements.Element;
-import com.seleniumbootcampframework.webelements.Link;
-import com.seleniumbootcampframework.webelements.TextBox;
+import com.seleniumframework.webelements.Button;
+import com.seleniumframework.webelements.Element;
+import com.seleniumframework.webelements.Link;
+import com.seleniumframework.webelements.TextBox;
 
 public class TricentisHome {
 	
@@ -166,18 +169,18 @@ public class TricentisHome {
 AutomobileInsurancePage.java pageobject
 ****************************************/
 
-package com.seleniumbootcampframework.pageobjects;
+package com.seleniumframework.pageobjects;
 
 import org.openqa.selenium.By;
 
 // Inherit element classes
-import com.seleniumbootcampframework.webelements.Button;
-import com.seleniumbootcampframework.webelements.CheckBox;
-import com.seleniumbootcampframework.webelements.Element;
-import com.seleniumbootcampframework.webelements.Link;
-import com.seleniumbootcampframework.webelements.ListBox;
-import com.seleniumbootcampframework.webelements.RadioButton;
-import com.seleniumbootcampframework.webelements.TextBox;
+import com.seleniumframework.webelements.Button;
+import com.seleniumframework.webelements.CheckBox;
+import com.seleniumframework.webelements.Element;
+import com.seleniumframework.webelements.Link;
+import com.seleniumframework.webelements.ListBox;
+import com.seleniumframework.webelements.RadioButton;
+import com.seleniumframework.webelements.TextBox;
 
 public class AutomobileInsurancePage {
 	
@@ -489,16 +492,16 @@ public class AutomobileInsurancePage {
 }
 
 /****************************
-TestDataExam.java dataobject
+TestData.java dataobject
 *****************************/
 
-package com.seleniumbootcampframework.dataobjects;
+package com.seleniumframework.dataobjects;
 
 import java.io.IOException;
-import com.seleniumbootcampframework.core.DataTable;
+import com.seleniumframework.core.DataTable;
 import jxl.read.biff.BiffException;
 
-public class TestDataExam {
+public class TestData {
 	
 	public static class Urls 
 	{
