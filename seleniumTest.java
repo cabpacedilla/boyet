@@ -1,11 +1,9 @@
-/* This Selenium test script will navigate, verify and populate data for the "Successful purchase of items" user flow.
-* This script was written by Claive Alvin P. Acedilla. 2019 
-*
-* Note: The test object, page objects and data object should be saved in separate files. */
 
-/*********************************************
-* SuccesfulPurchaseOfItems.java tests script * 
-**********************************************/
+/* This Selenium test script will navigate, verify and populate data for the "Successful purchase of items" user flow.
+This script was written by Claive Alvin P. Acedilla. 2019 
+Note: The test object, page objects and data object should be saved in separate files */
+
+/* SuccesfulPurchaseOfItems.java tests script */
 
 package com.seleniumframework.tests;
 
@@ -112,9 +110,7 @@ public class SuccesfulPurchaseOfItems extends Browser
 }
 
 
-/*****************************
-TricentisHome.java pageobject
-******************************/
+/* TricentisHome.java pageobject */
 
 package com.seleniumframework.pageobjects;
 
@@ -164,9 +160,7 @@ public class TricentisHome {
 	}
 }
 
-/***************************************
-AutomobileInsurancePage.java pageobject
-****************************************/
+/* AutomobileInsurancePage.java pageobject */
 
 package com.seleniumframework.pageobjects;
 
@@ -490,9 +484,7 @@ public class AutomobileInsurancePage {
 	}	
 }
 
-/****************************
-TestData.java dataobject
-*****************************/
+/* TestData.java dataobject */
 
 package com.seleniumframework.dataobjects;
 
@@ -660,7 +652,7 @@ public class TestData {
 }
 
 
-/*************************************************************
+/*
 
 FRAMEWORK STRUCTURE
 1.	Core package
@@ -734,5 +726,5 @@ Step 9: Maven will start downloading the files needed for the project file. Wait
 
 Step 10: Make sure that there are no errors displayed in the “Problems” tab.
 
-*************************************************************************************/
+*/
 
