@@ -460,6 +460,7 @@ function displayCalculation(element)
   var lastOperator;
   var lasNum;
   var key;
+	var firstNum;
   
   key = document.getElementById("txtInputAndResult");
   division = document.getElementById("btnDivision").value;
@@ -467,10 +468,39 @@ function displayCalculation(element)
   subtraction = document.getElementById("btnSubtraction").value;
   addition = document.getElementById("btnAddition").value;
   decimal = document.getElementById("btnDecimal").value;
+	zero = document.getElementById("btnZero").value;
+	one = document.getElementById("btnOne").value;
+	two = document.getElementById("btnTwo").value;
+	three = document.getElementById("btnThree").value;
+	four = document.getElementById("btnFour").value;
+	five = document.getElementById("btnFive").value;
+	six = document.getElementById("btnSix").value;
+	seven = document.getElementById("btnSeven").value;
+	eight = document.getElementById("btnEight").value;
+	nine = document.getElementById("btnNine").value;
+
   elementValue = element.value;
   document.getElementById("txtInputAndResult").select();
   inputString = document.getElementById("txtInputAndResult").value;
   lastOperator = inputString[inputString.length - 1];
+	
+	if (lastOperator == zero)  
+	{
+		inputString = inputString.split(" ");
+		lastNumber = inputString[inputString.length - 1];
+    lastNumber = parseFloat(lastNumber);
+		inputString = inputString.join(" ");
+		//alert(lastNumber);
+		if (lastNumber == 0)
+		{
+			if (elementValue == zero || elementValue == one || elementValue == two || elementValue == three || elementValue == four || elementValue == five || elementValue == six || elementValue == seven || elementValue == eight || elementValue == nine)
+			{
+			inputString = inputString.substring(0, inputString.length - 1);
+			}
+		}
+	}
+	
+	
   if (elementValue == decimal)
   {
     inputString = inputString.split(" ");
