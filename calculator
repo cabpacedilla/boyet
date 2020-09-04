@@ -34,9 +34,10 @@ November 2019
 var key;
 var inputString;
 
+memoryClear();
 key = document.getElementById("txtInputAndResult");
 //inputString = document.getElementById("txtInputAndResult").value;
-document.getElementById("txtInputAndResult").select();
+document.getElementById("txtInputAndResult").value = "0";
 
 // Input typing catches		
 
@@ -176,8 +177,7 @@ function restrictAlphaSymbols()
 
 function memoryClear()
 {
-  document.getElementById("txtInputAndResult").value = "";
-  document.getElementById("txtInputAndResult").select();
+   document.getElementById("btnZero").click();
 }
 
 function Clear()
@@ -189,18 +189,21 @@ function Clear()
   if (lastNumber == " ")
   {
     inputString = inputString.substring(0, inputString.length - 3);
-    document.getElementById("txtInputAndResult").select();
+		document.getElementById("txtInputAndResult").select();
+		if ((inputString.substring(0, inputString.length)) == "")
+		{
+			location.reload();
+		}
   }
   else
   {
     inputString = inputString.substring(0, inputString.length - 1);
-    document.getElementById("txtInputAndResult").select();
-  }
-  if (inputString.substring(0, inputString.length = ""))
-  {
-    document.getElementById("txtInputAndResult").value = "";
-    document.getElementById("txtInputAndResult").select();
-  }
+		document.getElementById("txtInputAndResult").select();
+		if ((inputString.substring(0, inputString.length)) == "")
+		{
+			location.reload();
+ 		}
+  }  
   document.getElementById("txtInputAndResult").value = inputString;
 }
 
@@ -222,7 +225,6 @@ function changeSign()
     document.getElementById("txtInputAndResult").value = inputString;
     alert("Please enter a number first.");
   }
-	
 	
   if (Math.sign(lastNumber) == -1)
   {
