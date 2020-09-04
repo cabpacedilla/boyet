@@ -19,7 +19,7 @@ November 2019
 <i>Enter equation by keypad:</i>
 <br>
 <br>
-<input type="text" id="txtInputAndResult" onkeypress="return restrictAlphaSymbols()">
+<input type="text" id="txtInputAndResult" onkeypress="return restrictAlphaSymbols()" onmousedown="return false" onselectstart="return false" >
 <br>
 <br>
 <input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" onclick="memoryAddition()"><br>
@@ -48,6 +48,7 @@ key.addEventListener("keydown", function(event)
     event.preventDefault();
     document.getElementById("btnClear").click();
   }
+	
 });
 
 key.addEventListener("keyup", function(event)
@@ -158,13 +159,14 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnAddition").click();
   }
-  if (event.keyCode == 190 || event.keyCode == 110)
+	if (event.keyCode == 190 || event.keyCode == 110)
   {
     inputString = document.getElementById("txtInputAndResult").value;
     inputString = inputString.substring(0, inputString.length - 1);
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnDecimal").click();
-  }
+	}
+  
 });
 
 function restrictAlphaSymbols()
@@ -177,7 +179,8 @@ function restrictAlphaSymbols()
 
 function memoryClear()
 {
-   document.getElementById("btnZero").click();
+	document.getElementById("txtInputAndResult").value = "";
+	document.getElementById("btnZero").click();
 }
 
 function Clear()
@@ -192,7 +195,7 @@ function Clear()
 		document.getElementById("txtInputAndResult").select();
 		if ((inputString.substring(0, inputString.length)) == "")
 		{
-			location.reload();
+			history.go(0);
 		}
   }
   else
@@ -201,7 +204,7 @@ function Clear()
 		document.getElementById("txtInputAndResult").select();
 		if ((inputString.substring(0, inputString.length)) == "")
 		{
-			location.reload();
+			history.go(0);
  		}
   }  
   document.getElementById("txtInputAndResult").value = inputString;
@@ -472,6 +475,7 @@ function displayCalculation(element)
   var lasNum;
   var key;
 	var firstNum;
+	var secondToLast;
   
   key = document.getElementById("txtInputAndResult");
   division = document.getElementById("btnDivision").value;
@@ -501,16 +505,25 @@ function displayCalculation(element)
 		lastNumber = inputString[inputString.length - 1];
     lastNumber = parseFloat(lastNumber);
 		inputString = inputString.join(" ");
-		//alert(lastNumber);
+	  secondToLast = inputString[inputString.length - 2];
+			//	alert(secondToLast);
+
 		if (lastNumber == 0)
 		{
 			if (elementValue == zero || elementValue == one || elementValue == two || elementValue == three || elementValue == four || elementValue == five || elementValue == six || elementValue == seven || elementValue == eight || elementValue == nine)
 			{
-			inputString = inputString.substring(0, inputString.length - 1);
+				inputString = inputString.substring(0, inputString.length - 1);
+				document.getElementById("txtInputAndResult").value = inputString;
+				
+				if (secondToLast == ".")
+				{
+					inputString = inputString + elementValue;
+				}
 			}
 		}
+		 
+		
 	}
-	
 	
   if (elementValue == decimal)
   {
@@ -531,6 +544,7 @@ function displayCalculation(element)
     if (lastOperator == decimal)
     {
       inputString = inputString.substring(0, inputString.length - 1);
+			document.getElementById("txtInputAndResult").value = inputString;
     }
 		
     if (lastNumber % 1 != 0)
@@ -553,6 +567,7 @@ function displayCalculation(element)
     if (elementValue == division || elementValue == multiplication || elementValue == subtraction || elementValue == addition)
     {
       inputString = inputString.substring(0, inputString.length - 3);
+			document.getElementById("txtInputAndResult").value = inputString;
     }
   }
   inputString = inputString + elementValue;
