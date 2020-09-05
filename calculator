@@ -159,7 +159,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnAddition").click();
   }
-	if (event.keyCode == 190 || event.keyCode == 110)
+	if (event.keyCode == 190 || event.keyCode == 110 || event.keyCode == 46)
   {
     inputString = document.getElementById("txtInputAndResult").value;
     inputString = inputString.substring(0, inputString.length - 1);
@@ -382,7 +382,7 @@ function computeSquareRoot()
     inputString = inputString.substring(0, inputString.length - lastNumSlice);
     document.getElementById("txtInputAndResult").value = inputString;
 	}
-
+	
   lastNumber = Math.sqrt(lastNumber);
   inputString = inputString.join(" ");
   document.getElementById("txtInputAndResult").value = lastNumber;
@@ -457,6 +457,7 @@ function calculate(inputString)
     }
     ctr = ctr + 2;
   }
+	
   inputString = inputString.join(" ");
   document.getElementById("txtInputAndResult").value = inputString + result;
 }
@@ -503,26 +504,17 @@ function displayCalculation(element)
 	{
 		inputString = inputString.split(" ");
 		lastNumber = inputString[inputString.length - 1];
-    lastNumber = parseFloat(lastNumber);
+    //lastNumber = parseFloat(lastNumber);
 		inputString = inputString.join(" ");
-	  secondToLast = inputString[inputString.length - 2];
-			//	alert(secondToLast);
 
-		if (lastNumber == 0)
+		if (lastNumber == zero)
 		{
 			if (elementValue == zero || elementValue == one || elementValue == two || elementValue == three || elementValue == four || elementValue == five || elementValue == six || elementValue == seven || elementValue == eight || elementValue == nine)
 			{
 				inputString = inputString.substring(0, inputString.length - 1);
-				document.getElementById("txtInputAndResult").value = inputString;
-				
-				if (secondToLast == ".")
-				{
-					inputString = inputString + elementValue;
-				}
+				document.getElementById("txtInputAndResult").value = inputString;									
 			}
-		}
-		 
-		
+		}	
 	}
 	
   if (elementValue == decimal)
@@ -535,10 +527,12 @@ function displayCalculation(element)
       inputString = inputString.join(" ");
       lastNumber = "0";
       inputString = inputString + lastNumber;
+			document.getElementById("txtInputAndResult").value = inputString;
     }
     else
     {
       inputString = inputString.join(" ");
+			document.getElementById("txtInputAndResult").value = inputString;
     }
 		
     if (lastOperator == decimal)
@@ -547,14 +541,28 @@ function displayCalculation(element)
 			document.getElementById("txtInputAndResult").value = inputString;
     }
 		
-    if (lastNumber % 1 != 0)
-    {
-      inputString = inputString.join(" ");
-      if (event.keyCode == 190 || event.keyCode == 110)
-      {
-        return false;
-      }
-    }
+		if ((lastNumber - Math.floor(lastNumber)) != 0)
+		{
+			//return false;
+			//document.getElementById("txtInputAndResult").value = inputString;
+			if (event.keyCode == 190 || event.keyCode == 110 || event.keyCode == 46)
+			{			
+				//return false; 
+				document.getElementById("bntClear").click();
+			}	
+		}
+		else if ((lastNumber - Math.floor(lastNumber)) == 0)
+		{				//return false;
+				//document.getElementById("txtInputAndResult").value = inputString;
+				if (event.keyCode == 190 || event.keyCode == 110 || event.keyCode == 46)
+				{
+					//return false;
+					document.getElementById("bntClear").click();
+
+				}	
+				
+		}
+		
   }
 	
   if (lastOperator == " ")
@@ -570,6 +578,7 @@ function displayCalculation(element)
 			document.getElementById("txtInputAndResult").value = inputString;
     }
   }
+	
   inputString = inputString + elementValue;
   document.getElementById("txtInputAndResult").value = inputString;
   equals = document.getElementById("btnEquals").value;
@@ -584,4 +593,3 @@ function displayCalculation(element)
 </script>		
 </body>
 </html>
-
