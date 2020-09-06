@@ -20,13 +20,13 @@ November 2019
 
 <div>
   <label for="startTime">Start time:</label>
-  <input type="time" id="startTime" value="08:00:00" required />
+  <input type="time" id="startTime" value="08:00" required />
   <input type="button" value="Current time" onclick="autoPopulateStartTimeCurrentTime()" />
 </div>
   <br>
 <div>
   <label for="endTime">End time:</label>
-  <input type="time" id="stopTime" value="17:00:00" required />
+  <input type="time" id="stopTime" value="17:00" required />
   <input type="button" value="Current time" onclick="autoPopulateStopTimeCurrentTime()" />
 
 </div>
@@ -76,7 +76,7 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 <h4> Delete an unneeded 'break from work' time:</h4> Enter the number of nth break time that you want to delete starting from the top left in the break times list. <input type="button" value="Show break times" onclick="showBreakTimes()">
 <br>
 <br>
-<input type="number" id="breakTimeIndex" size="1" onclick="breakTimeIndexClick()" min="1" max="99">
+<input type="number" id="breakTimeIndex" size="3" onclick="breakTimeIndexClick()" min="1" max="99">
 <input type="button" value="Delete" onclick="deletePomodoroTime()">
 <br>
 <br>
@@ -84,7 +84,7 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 <h4> Delete an unneeded 'resume to work' time:</h4> Enter the number of nth resume time that you want to delete starting from the top left in the resume times list. <input type="button" value="Show resume times" onclick="showResumeTimes()">
 <br>
 <br> 
-<input type="number" id="resumeTimeIndex" size="1" onclick="resumeTimeIndexClick()" min="1" max="99">
+<input type="number" id="resumeTimeIndex" size="3" onclick="resumeTimeIndexClick()" min="1" max="99">
 <input type="button" value="Delete" onclick="deleteBackToWorkTime()">
 <br> 
 <br> 
