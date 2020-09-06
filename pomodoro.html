@@ -499,14 +499,14 @@ function triggerPopupBlocker(currentTime)
   currentMinutes = newDate.getMinutes();
   currentTimeStartTime.setHours(currentHours, currentMinutes);
   currentTimeStartTimeString = toTimeString(currentTimeStartTime);
-	currentTimeStartTimeString = currentTimeStartTimeString.split(", ");
+	//currentTimeStartTimeString = currentTimeStartTimeString.split(", ");
   //currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
   //currentTimeStartTimeString = currentTimeStartTimeString[0];
 	//currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
 
   //alert(currentTimeStartTimeString);	
-	breakFromWorkArray.push(currentTimeStartTimeString[0]); 
-	localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+	//breakFromWorkArray.push(currentTimeStartTimeString[0]); 
+	//localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
 	if (currentTimeStartTimeString == currentTime)
 	{
 		alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
@@ -515,12 +515,12 @@ function triggerPopupBlocker(currentTime)
 					if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
 					{
 						alarmWindow && alarmWindow.close();
-						alert("If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the break and resume to work alert messages.");
+						alert("If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the alert messages.");
 					}
 				}, 2000);
 		
 		alarmWindow.focus();
-		breakMessage = "<p>When the added break or resumes times are the same as the current time, an alert message will appear.";
+		breakMessage = "<p>When the added break or resumes times are the same as the current time, an alert message will appear. If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the alert messages.";
 		alarmWindow.document.write(breakMessage);
 		setTimeout(function() {
 			alarmWindow.close();
@@ -540,13 +540,7 @@ function loopArray()
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
   while (breakFromWorkArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
   {
-    // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message
-		if (breakFromWorkArray[breakFromWorkArray.length - 1] == currentTime)
-		{
-			alert("When the added break or resumes times are the same as the current time, an alert message will appear. If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the alert messages.");
-			break;
-		}
-		
+    // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message		
     if (breakFromWorkArray[ctr] == currentTime) 
     {
       alarmWindow = window.open("", "BreakTime", "width=350,height=50");
