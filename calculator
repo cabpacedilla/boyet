@@ -41,16 +41,6 @@ document.getElementById("txtInputAndResult").value = "0";
 
 // Input typing catches		
 
-key.addEventListener("keydown", function(event)
-{
-  if (event.keyCode == 8)
-  {
-    event.preventDefault();
-    document.getElementById("btnClear").click();
-  }
-	
-});
-
 key.addEventListener("keyup", function(event)
 {
   // Number 13 is the "Enter" key on the keyboard
@@ -61,6 +51,13 @@ key.addEventListener("keyup", function(event)
     // Trigger the button element with a click
     document.getElementById("btnEquals").click();
   }
+  
+  if (event.keyCode == 8)
+  {
+    event.preventDefault();
+    document.getElementById("btnClear").click();
+  }
+  
   if (event.keyCode == 48 || event.keyCode == 96)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -82,6 +79,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnTwo").click();
   }
+  
   if (event.keyCode == 51 || event.keyCode == 99)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -89,6 +87,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnThree").click();
   }
+  
   if (event.keyCode == 52 || event.keyCode == 100)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -110,6 +109,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnSix").click();
   }
+  
   if (event.keyCode == 55 || event.keyCode == 103)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -117,6 +117,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnSeven").click();
   }
+  
   if (event.keyCode == 56 || event.keyCode == 104)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -124,6 +125,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnEight").click();
   }
+  
   if (event.keyCode == 57 || event.keyCode == 105)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -131,6 +133,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnNine").click();
   }
+  
   if (event.keyCode == 191 || event.keyCode == 111)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -138,6 +141,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnDivision").click();
   }
+  
   if (event.keyCode == 88 || event.keyCode == 106)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -145,6 +149,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnMultiplication").click();
   }
+  
   if (event.keyCode == 189 || event.keyCode == 109)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -152,6 +157,7 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnSubtraction").click();
   }
+  
   if (event.keyCode == 187)
   {
     inputString = document.getElementById("txtInputAndResult").value;
@@ -159,8 +165,10 @@ key.addEventListener("keyup", function(event)
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnAddition").click();
   }
+  
 	if (event.keyCode == 190 || event.keyCode == 110 || event.keyCode == 46)
   {
+		event.preventDefault();
     inputString = document.getElementById("txtInputAndResult").value;
     inputString = inputString.substring(0, inputString.length - 1);
     document.getElementById("txtInputAndResult").value = inputString;
@@ -521,7 +529,7 @@ function displayCalculation(element)
   {
     inputString = inputString.split(" ");
     lastNumber = inputString[inputString.length - 1];
-    lastNumber = parseFloat(lastNumber);
+
     if (Number.isNaN(lastNumber))
     {
       inputString = inputString.join(" ");
@@ -541,28 +549,12 @@ function displayCalculation(element)
 			document.getElementById("txtInputAndResult").value = inputString;
     }
 		
-		if ((lastNumber - Math.floor(lastNumber)) != 0)
+		lastNumber = lastNumber.split(".");
+		if (lastNumber.length > 1)
 		{
-			//return false;
-			//document.getElementById("txtInputAndResult").value = inputString;
-			if (event.keyCode == 190 || event.keyCode == 110 || event.keyCode == 46)
-			{			
-				//return false; 
-				document.getElementById("bntClear").click();
-			}	
+			return false;
+			document.getElementById("txtInputAndResult").select();
 		}
-		else if ((lastNumber - Math.floor(lastNumber)) == 0)
-		{				//return false;
-				//document.getElementById("txtInputAndResult").value = inputString;
-				if (event.keyCode == 190 || event.keyCode == 110 || event.keyCode == 46)
-				{
-					//return false;
-					document.getElementById("bntClear").click();
-
-				}	
-				
-		}
-		
   }
 	
   if (lastOperator == " ")
@@ -593,3 +585,4 @@ function displayCalculation(element)
 </script>		
 </body>
 </html>
+
