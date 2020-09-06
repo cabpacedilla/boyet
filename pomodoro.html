@@ -21,13 +21,13 @@ November 2019
 <div>
   <label for="startTime">Start time:</label>
   <input type="time" id="startTime" value="08:00:00" required />
-  <input type="button" value="Current time" onclick="alarmWindowulateStartTimeCurrentTime()" />
+  <input type="button" value="Current time" onclick="autoPopulateStartTimeCurrentTime()" />
 </div>
   <br>
 <div>
   <label for="endTime">End time:</label>
   <input type="time" id="stopTime" value="17:00:00" required />
-  <input type="button" value="Current time" onclick="alarmWindowulateStopTimeCurrentTime()" />
+  <input type="button" value="Current time" onclick="autoPopulateStopTimeCurrentTime()" />
 
 </div>
 <br>
@@ -91,7 +91,12 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 	
 <h4>Clear all break and resume times:</h4> <input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
     
-<script type="text/javascript">			
+<script type="text/javascript">		
+
+window.onbeforeunload = function () 
+{
+  window.scrollTo(0, 0);
+}	
 			
 let breakFromWorkArray = [];
 let backToWorkArray = [];
@@ -129,9 +134,8 @@ function toTimeString(dateObj)
   });
 }
 
-function alarmWindowulateStartTimeCurrentTime() 
+function autoPopulateStartTimeCurrentTime() 
 {
-  //alert(document.getElementById("startTime").value);
   let newDate = new Date();
   let currentTimeStartTime = new Date();
   let currentTimeStartTimeString;
@@ -145,13 +149,11 @@ function alarmWindowulateStartTimeCurrentTime()
   currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
   currentTimeStartTimeString = currentTimeStartTimeString[0];
   currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
-  //alert(currentTimeStartTimeString);
   document.getElementById("startTime").value = currentTimeStartTimeString;
 }
 
-function alarmWindowulateStopTimeCurrentTime() 
+function autoPopulateStopTimeCurrentTime() 
 {
-  //alert(document.getElementById("startTime").value);
   let newDate = new Date();
   let currentTimeStartTime = new Date();
   let currentTimeStartTimeString;
@@ -165,7 +167,6 @@ function alarmWindowulateStopTimeCurrentTime()
   currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
   currentTimeStartTimeString = currentTimeStartTimeString[0];
   currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
-  //alert(currentTimeStartTimeString);
   document.getElementById("stopTime").value = currentTimeStartTimeString;
 }
 
@@ -277,6 +278,7 @@ function addBreakResumeTimes()
     sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
+		triggerPopupBlocker(currentTime);
   } 
   else 
   {
@@ -304,6 +306,8 @@ function addBreakResumeTimes()
     sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
+		triggerPopupBlocker(currentTime);
+
   }
 }
 
@@ -334,6 +338,7 @@ function addBreakFromWorkTimes()
     }
 		
 		sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+		triggerPopupBlocker(currentTime);
   }
 }
 
@@ -364,6 +369,7 @@ function addbackToWorkTimes()
     }	
 		
 		sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+		triggerPopupBlocker(currentTime);
   }
 }
 
@@ -481,6 +487,46 @@ function clearResumeTimes()
   }
 }
 
+function triggerPopupBlocker(currentTime)
+{
+	let alarmWindow;
+	/*let newDate = new Date();
+  let currentTimeStartTime = new Date();
+  let currentTimeStartTimeString;
+  let currentHours;
+  let currentMinutes;
+
+  currrentHours = newDate.getHours();
+  currentMinutes = newDate.getMinutes();
+  currentTimeStartTime.setHours(currrentHours, currentMinutes);
+  currentTimeStartTimeString = currentTimeStartTime.toTimeString();
+  currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
+  currentTimeStartTimeString = currentTimeStartTimeString[0];
+	currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
+
+  alert(currentTimeStartTimeString);
+	alert(currentTime);*/
+	if (currentTime)
+	{
+		alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
+				setTimeout(function() 
+				{
+					if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
+					{
+						alarmWindow && alarmWindow.close();
+						alert("Pop-up was blocked. Click on the pop-up blocker and allow pop-ups of the break and resume to work alert messages.");
+					}
+				}, 2000);
+		
+		alarmWindow.focus();
+		breakMessage = "<p>Break and resume to work alert messages will appear when added break and resumes times are the same as the current time.";
+		alarmWindow.document.write(breakMessage);
+		setTimeout(function() {
+			alarmWindow.close();
+		}, 50000);
+	}
+}
+
 function loopArray() 
 {
   let alarmWindow;
@@ -494,11 +540,8 @@ function loopArray()
   while (breakFromWorkArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
   {
     // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message
-    //alert(breakFromWorkArray[ctr]);
-    //alert(currentTime);
     if (breakFromWorkArray[ctr] == currentTime) 
     {
-      //alert(breakFromWorkArray[ctr]);
       alarmWindow = window.open("", "BreakTime", "width=350,height=50");
 			setTimeout(function() 
 			{
@@ -507,7 +550,7 @@ function loopArray()
 					alarmWindow && alarmWindow.close();
 					alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
 				}
-			}, 1000);
+			}, 2000);
       alarmWindow.focus();
       breakAlertArray = breakFromWorkArray[ctr] + "." + "</p>";
       breakMessage = "<p>Time for a break because it is now ";
@@ -529,7 +572,7 @@ function loopArray()
 					alarmWindow && alarmWindow.close();
 					alert("Pop-up was blocked. Click on the pop-up blocker and allow pop-ups break and resume to work notification message.");
 				}
-			}, 1000);
+			}, 2000);
       alarmWindow.focus();
       resumeAlertArray = backToWorkArray[ctr] + "." + "</p>";
       resumeMessage = "<p>Time to resume to work because it is now ";
