@@ -203,7 +203,7 @@ function Clear()
 		document.getElementById("txtInputAndResult").select();
 		if ((inputString.substring(0, inputString.length)) == "")
 		{
-			history.go(0);
+			window.location.href = window.location.href;
 		}
   }
   else
@@ -212,7 +212,7 @@ function Clear()
 		document.getElementById("txtInputAndResult").select();
 		if ((inputString.substring(0, inputString.length)) == "")
 		{
-			history.go(0);
+			window.location.href = window.location.href;
  		}
   }  
   document.getElementById("txtInputAndResult").value = inputString;
