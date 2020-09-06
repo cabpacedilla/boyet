@@ -9,7 +9,7 @@ November 2019
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="55">
+    <meta http-equiv="refresh" content="27">
     <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Send Pomodoro alarm</title>
@@ -113,14 +113,14 @@ currentTime = String(new Date().toLocaleTimeString("en-US", {
   minute: "numeric"
 }));
 
-if (sessionStorage.getItem("breakFromWorkTimes") !== null)
+if (localStorage.getItem("breakFromWorkTimes") !== null)
 {
-  breakFromWorkArray = JSON.parse(sessionStorage.getItem("breakFromWorkTimes"));
+  breakFromWorkArray = JSON.parse(localStorage.getItem("breakFromWorkTimes"));
 }
 
-if (sessionStorage.getItem("backToWorkTimes") !== null) 
+if (localStorage.getItem("backToWorkTimes") !== null) 
 {
-  backToWorkArray = JSON.parse(sessionStorage.getItem("backToWorkTimes"));
+  backToWorkArray = JSON.parse(localStorage.getItem("backToWorkTimes"));
 }
 
 loopArray();
@@ -243,8 +243,8 @@ function addBreakResumeTimes()
       backToWorkArray.push(backToWorkTimes);
     }
     backToWorkArray.pop(backToWorkTimes);
-    sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-    sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+    localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+    localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
 
     breakMinutes = startTimeObject.getMinutes();
@@ -275,8 +275,8 @@ function addBreakResumeTimes()
       backToWorkArray.push(backToWorkTimes);
     }
     backToWorkArray.pop(backToWorkTimes);
-    sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-    sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+    localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+    localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
 		triggerPopupBlocker(currentTime);
   } 
@@ -303,11 +303,10 @@ function addBreakResumeTimes()
       backToWorkArray.push(backToWorkTimes);
     }
     backToWorkArray.pop(backToWorkTimes);
-    sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-    sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+    localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+		localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
 		triggerPopupBlocker(currentTime);
-
   }
 }
 
@@ -337,7 +336,7 @@ function addBreakFromWorkTimes()
       alert("Break times were added.");
     }
 		
-		sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+		localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
 		triggerPopupBlocker(currentTime);
   }
 }
@@ -368,7 +367,7 @@ function addbackToWorkTimes()
       alert("Resume time was added.");
     }	
 		
-		sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+		localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
 		triggerPopupBlocker(currentTime);
   }
 }
@@ -417,7 +416,7 @@ function deletePomodoroTime()
     let index = parseFloat(ctr);
     breakFromWorkArray.splice(index - 1, 1);
     breakFromWorkTimes = breakFromWorkArray;
-    sessionStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+    localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     alert("Break time was cleared.");
   }
 }
@@ -441,7 +440,7 @@ function deleteBackToWorkTime()
     let index = parseFloat(ctr);
     backToWorkArray.splice(index - 1, 1);
     backToWorkTimes = backToWorkArray;
-    sessionStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+    localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Resume time was cleared.");
   }
 
@@ -453,7 +452,7 @@ function clearBreakTimes()
   {
     while (breakFromWorkArray.length > 0) 
     {
-      sessionStorage.removeItem("breakFromWorkTimes");
+      localStorage.removeItem("breakFromWorkTimes");
       breakFromWorkArray = [];
     }
 
@@ -473,7 +472,7 @@ function clearResumeTimes()
   {
     while (backToWorkArray.length > 0) 
     {
-      sessionStorage.removeItem("backToWorkTimes");
+      localStorage.removeItem("backToWorkTimes");
       backToWorkArray = [];
     }
 
@@ -490,23 +489,25 @@ function clearResumeTimes()
 function triggerPopupBlocker(currentTime)
 {
 	let alarmWindow;
-	/*let newDate = new Date();
+	let newDate = new Date();
   let currentTimeStartTime = new Date();
   let currentTimeStartTimeString;
   let currentHours;
   let currentMinutes;
 
-  currrentHours = newDate.getHours();
+  currentHours = newDate.getHours();
   currentMinutes = newDate.getMinutes();
-  currentTimeStartTime.setHours(currrentHours, currentMinutes);
-  currentTimeStartTimeString = currentTimeStartTime.toTimeString();
-  currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
-  currentTimeStartTimeString = currentTimeStartTimeString[0];
-	currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
+  currentTimeStartTime.setHours(currentHours, currentMinutes);
+  currentTimeStartTimeString = toTimeString(currentTimeStartTime);
+	currentTimeStartTimeString = currentTimeStartTimeString.split(", ");
+  //currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
+  //currentTimeStartTimeString = currentTimeStartTimeString[0];
+	//currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
 
-  alert(currentTimeStartTimeString);
-	alert(currentTime);*/
-	if (currentTime)
+  //alert(currentTimeStartTimeString);	
+	breakFromWorkArray.push(currentTimeStartTimeString[0]); 
+	localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+	if (currentTimeStartTimeString == currentTime)
 	{
 		alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
 				setTimeout(function() 
@@ -514,12 +515,12 @@ function triggerPopupBlocker(currentTime)
 					if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
 					{
 						alarmWindow && alarmWindow.close();
-						alert("Pop-up was blocked. Click on the pop-up blocker and allow pop-ups of the break and resume to work alert messages.");
+						alert("If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the break and resume to work alert messages.");
 					}
 				}, 2000);
 		
 		alarmWindow.focus();
-		breakMessage = "<p>Break and resume to work alert messages will appear when added break and resumes times are the same as the current time.";
+		breakMessage = "<p>When the added break or resumes times are the same as the current time, an alert message will appear.";
 		alarmWindow.document.write(breakMessage);
 		setTimeout(function() {
 			alarmWindow.close();
@@ -537,9 +538,15 @@ function loopArray()
   let ctr = 0;
 
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
-  while (breakFromWorkArray[ctr] !== currentTime || backToWorkArray[ctr] !== currentTime) 
+  while (breakFromWorkArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
   {
     // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message
+		if (breakFromWorkArray[breakFromWorkArray.length - 1] == currentTime)
+		{
+			alert("When the added break or resumes times are the same as the current time, an alert message will appear. If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the break and resume to work alert messages.");
+			break;
+		}
+		
     if (breakFromWorkArray[ctr] == currentTime) 
     {
       alarmWindow = window.open("", "BreakTime", "width=350,height=50");
@@ -561,7 +568,7 @@ function loopArray()
       break;
     }
 
-    // If back to work time is equal to current time, alarm for back to work with alarmWindow-up message    			
+   // If back to work time is equal to current time, alarm for back to work with alarmWindow-up message    			
     if (backToWorkArray[ctr] == currentTime) 
     {
       alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
