@@ -9,7 +9,7 @@ November 2019
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="27">
+    <meta http-equiv="refresh" content="55">
     <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Send Pomodoro alarm</title>
@@ -213,7 +213,7 @@ function addBreakResumeTimes()
   {
     let newStartTimeObject = new Date();
 
-    newStartTimeObject.setHours(1, 0);
+    newStartTimeObject.setHours(24, 0);
     breakMinutes = newStartTimeObject.getMinutes();
     breakHours = newStartTimeObject.getHours();
     breakTime.setHours(breakHours, breakMinutes);
@@ -242,7 +242,6 @@ function addBreakResumeTimes()
       backToWorkTimes = resumeTimeString;
       backToWorkArray.push(backToWorkTimes);
     }
-    backToWorkArray.pop(backToWorkTimes);
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
@@ -256,11 +255,11 @@ function addBreakResumeTimes()
     stopTimeObject.setHours(23, 59);
     while (breakTime < stopTimeObject && resumeTime < stopTimeObject) 
     {			
-      breakMinutes = resumeMinutes + breakDuration;
+     breakMinutes = resumeMinutes + breakDuration;
       /* if (breakMinutes == 0)
-      	{
-      		breakMinutes = resumeMinutes + breakDuration;					
-      	}	 */
+      {
+      	breakMinutes = resumeMinutes + breakDuration;					
+      }	 */
       breakTime.setHours(breakHours, breakMinutes);
 
       resumeMinutes = breakMinutes + resumeDuration;
@@ -276,7 +275,7 @@ function addBreakResumeTimes()
     }
     backToWorkArray.pop(backToWorkTimes);
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-    localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
+		localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
 		triggerPopupBlocker(currentTime);
   } 
