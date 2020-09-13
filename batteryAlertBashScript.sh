@@ -20,12 +20,15 @@ do
    if [ $battery_level -le 40 ] && [ "$battery_discharge" = Discharging ]
    then
       notify-send "Battery reached ${battery_level}, plug the power cable to optimize battery life!"
+      
    elif [ $battery_level -le 40 ] && [ "$battery_charge" = Charging ]
    then
       :
+      
    elif [ $battery_level -ge 80 ] && [ "$battery_charge" = Charging ]
    then
       notify-send "Battery reached ${battery_level}%, unplug the power cable to optimize battery life!"  
+      
    fi
    
    sleep 60  
