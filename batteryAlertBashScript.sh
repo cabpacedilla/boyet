@@ -9,8 +9,8 @@
 # 2. Create a bin directory inside your home directory
 # 3. Change directory to the bin directory
 # 4. Create the bash script file below with nano or gedit and save it with a filename like batAlert.sh
-# 5. Make file executable with chmod +x batAlert.sh
-# 6. Add the batAlert.sh command in Startup applications
+# 5. Make file executable with chmod +x battAlert.sh
+# 6. Add the battAlert.sh command in Startup applications
 # 7. Reboot the laptop
 
 #!/usr/bin/bash
