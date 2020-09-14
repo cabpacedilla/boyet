@@ -17,23 +17,24 @@
 
 while true
 do
+
    battery_level=`acpi -b | grep -P -o '[0-9]+(?=%)'`
    battery_charge=`acpi -b | grep -P -o 'Charging'`
    battery_discharge=`acpi -b | grep -P -o 'Discharging'`
    
    if [ $battery_level -le 40 ] && [ "$battery_discharge" = Discharging ]
    then
-      notify-send "Battery reached ${battery_level}, plug the power cable to optimize battery life!"
+      notify-send "Battery reached ${battery_level}%, plug the power cable to optimize battery life!"
       
    elif [ $battery_level -le 40 ] && [ "$battery_charge" = Charging ]
    then
       :
-      
+    
    elif [ $battery_level -ge 80 ] && [ "$battery_charge" = Charging ]
    then
       notify-send "Battery reached ${battery_level}%, unplug the power cable to optimize battery life!"  
-      
+         
    fi
    
-   sleep 60  
+   sleep 60
 done
