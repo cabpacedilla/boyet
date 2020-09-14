@@ -18,7 +18,6 @@
 
 while true
 do
-
    battery_level=`acpi -b | grep -P -o '[0-9]+(?=%)'`
    battery_charge=`acpi -b | grep -P -o 'Charging'`
    battery_discharge=`acpi -b | grep -P -o 'Discharging'`
