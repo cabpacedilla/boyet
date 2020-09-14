@@ -1,4 +1,7 @@
-# Battery alert script to optimize laptop battery life
+# This script will notify when battery is below or equal 40% and above or equal 80% to optimize laptop battery life.
+# This script was assembled and written by Claive Alvin P. Acedilla
+# September 2020
+
 # 1. Install acpi
 # 2. Create a bin directory inside your home directory
 # 3. Change directory to the bin directory
@@ -6,8 +9,6 @@
 # 5. Make file executable with chmod +x batAlert.sh
 # 6. Add the batAlert.sh command in Startup applications
 # 7. Reboot the laptop
-
-# Battery alert script that notifies when battery is below or equal 40% and above or equal 80% to optimize laptop battery life 
 
 #!/usr/bin/bash
 
