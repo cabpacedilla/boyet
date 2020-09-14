@@ -1,5 +1,5 @@
 # This script will notify when battery level is below or equal 40% and will notify when batterly level is above or equal 80% to optimize laptop battery life.
-# This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modiefied and redistributed.
+# This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
 
 # This is an improvisation of hdgarrood's script on his answer at https://unix.stackexchange.com/questions/60778/how-can-i-get-an-alert-when-my-battery-is-about-to-die-in-linux-mint
