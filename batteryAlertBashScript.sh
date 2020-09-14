@@ -1,7 +1,8 @@
-# This script will notify when battery is below or equal 40% and above or equal 80% to optimize laptop battery life.
+# This script will notify when battery level is below or equal 40% and will notify when batterly level is above or equal 80% to optimize laptop battery life.
 # This script was assembled and written by Claive Alvin P. Acedilla
 # September 2020
-# Improvisation of hdgarrood's script on his answer at https://unix.stackexchange.com/questions/60778/how-can-i-get-an-alert-when-my-battery-is-about-to-die-in-linux-mint
+
+# This is an improvisation of hdgarrood's script on his answer at https://unix.stackexchange.com/questions/60778/how-can-i-get-an-alert-when-my-battery-is-about-to-die-in-linux-mint
 # and αғsнιη's answer in https://askubuntu.com/questions/518928/how-to-write-a-script-to-listen-to-battery-status-and-alert-me-when-its-above
 
 # 1. Install acpi
