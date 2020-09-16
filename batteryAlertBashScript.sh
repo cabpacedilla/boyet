@@ -15,7 +15,6 @@
 # 7. Reboot the laptop
 
 #!/usr/bin/bash
-
 while true
 do
    battery_level=`acpi -b | grep -P -o '[0-9]+(?=%)'`
