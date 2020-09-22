@@ -1,4 +1,4 @@
-/* This test script will create and account with valid data and signin with the newly created account
+/* This test script will create and account with valid data and signin with the newly created account */
 
 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
 import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
