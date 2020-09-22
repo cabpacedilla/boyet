@@ -11,7 +11,7 @@ import org.testng.annotations.Test;
 import com.seleniumframework.core.Browser;
 import com.seleniumframework.core.Log;
 import com.seleniumframework.dataobjects.TestData;
-import com.seleniumframework.pageobjects.TricentisHome;
+import com.seleniumframework.pageobjects.siteHome;
 import com.seleniumframework.pageobjects.AutomobileInsurancePage;
 
 // Inherit Browser.java class
@@ -23,18 +23,18 @@ public class SuccesfulPurchaseOfItems extends Browser
 		Log.setStoryName("Purchase Vehicle");
 		
 		// 1. Navigate to URL using Browser class driver
-		getDriver().get(TestData.Urls.tricentisUrl());
+		getDriver().get(TestData.Urls.siteUrl());
 		
 		// Run Test scripts by calling base page element methods and TestData base test values
 		
-		// 2. Verify vehicle navigation links 
-		TricentisHome.navSection.verifyAutomobileNavLink();
-		TricentisHome.navSection.verifyTruckNavLink();
-		TricentisHome.navSection.verifyMotorcycleNavLink();
-		TricentisHome.navSection.verifyCamperNavLink();
+      // 2. Verify vehicle navigation links 
+		siteHome.navSection.verifyAutomobileNavLink();
+		siteHome.navSection.verifyTruckNavLink();
+		siteHome.navSection.verifyMotorcycleNavLink();
+		siteHome.navSection.verifyCamperNavLink();
 		
 		// 3. Click the Automobile hyperlink
-		TricentisHome.navSection.clickAutomobileNavLink();
+		siteHome.navSection.clickAutomobileNavLink();
 		
 		// 4. Verify Automobile Insurance nav links
 		AutomobileInsurancePage.navSection.vrfyAutoInsuranceLbl();
@@ -110,7 +110,7 @@ public class SuccesfulPurchaseOfItems extends Browser
 }
 
 
-/* TricentisHome.java pageobject */
+/* siteHome.java pageobject */
 
 package com.seleniumframework.pageobjects;
 
@@ -122,7 +122,7 @@ import com.seleniumframework.webelements.Element;
 import com.seleniumframework.webelements.Link;
 import com.seleniumframework.webelements.TextBox;
 
-public class TricentisHome {
+public class siteHome {
 	
 	public static class navSection 
 	{
@@ -496,7 +496,7 @@ public class TestData {
 	
 	public static class Urls 
 	{
-		public static String tricentisUrl() throws BiffException, IOException 
+		public static String siteUrl() throws BiffException, IOException 
 		{
 			return DataTable.getCellValue("URL", 1);
 		}
