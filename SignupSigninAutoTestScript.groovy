@@ -1,4 +1,5 @@
-/* This test script will create and account with valid data and signin with the newly created account */
+/* This test script will sign up an account with valid data and signin with the newly created account 
+This script was written by Claive Alvin P. Acedilla. 2020 */
 
 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
 import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
