@@ -15,7 +15,6 @@
 # 7. Reboot the laptop
 
 #!/usr/bin/bash
-
 while true
 do
    battery_level=`acpi -b | grep -P -o '[0-9]+(?=%)'`
@@ -37,6 +36,5 @@ do
       gnome-terminal -x nvlc ~/Music/full_batt.mp3
          
    fi
-   
    sleep 60
 done
