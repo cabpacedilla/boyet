@@ -25,7 +25,7 @@ do
    if [ $battery_level -le 40 ] && [ "$battery_discharge" = Discharging ]
    then
       notify-send "Battery reached ${battery_level}%, plug the power cable to optimize battery life!"
-      gnome-terminal -x nvlc ~/Music/low_battery.mp3
+      gnome-terminal -x nvlc ~/Music/low_batt.mp3
       
    elif [ $battery_level -le 40 ] && [ "$battery_charge" = Charging ]
    then
@@ -34,7 +34,7 @@ do
    elif [ $battery_level -ge 80 ] && [ "$battery_charge" = Charging ]
    then
       notify-send "Battery reached ${battery_level}%, unplug the power cable to optimize battery life!" 
-      gnome-terminal -x nvlc ~/Music/glados_bat_full_2.mp3
+      gnome-terminal -x nvlc ~/Music/full_batt.mp3
          
    fi
    
