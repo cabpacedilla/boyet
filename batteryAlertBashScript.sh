@@ -10,7 +10,7 @@
 # 2. Install vlc
 # 3. Create a bin directory inside your home directory
 # 4. Change directory to the bin directory
-# 5. Create the bash script file below with nano or gedit and save it with a filename like batAlert.sh
+# 5. Create the bash script file below with nano or gedit and save it with a filename like battAlert.sh
 # 6. Make file executable with chmod +x battAlert.sh
 # 7. Add the battAlert.sh command in Startup applications
 # 8. Reboot the laptop
