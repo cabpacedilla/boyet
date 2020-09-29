@@ -4,7 +4,7 @@
 
 # This is an improvisation of hdgarrood's script on his answer at https://unix.stackexchange.com/questions/60778/how-can-i-get-an-alert-when-my-battery-is-about-to-die-in-linux-mint
 # and αғsнιη's answer in https://askubuntu.com/questions/518928/how-to-write-a-script-to-listen-to-battery-status-and-alert-me-when-its-above.
-# I added discharging and charging variables and conditions to detect the discharging and charging state of the battery.
+# I added discharging and charging variables and conditions to detect the discharging and charging state of the battery and the nofication sound played in vlc with auto exit 
 
 # 1. Install acpi
 # 2. Install vlc
