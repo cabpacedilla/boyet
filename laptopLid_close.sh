@@ -3,7 +3,7 @@
 # September 2020
 
 # Steps:
-# 1. Install ligthdm display manager and set lightdm as a the default display manager
+# 1. Install the ligthdm display manager and set lightdm as a the default display manager
 # 2. Create a bin directory inside your home directory
 # 3. Change directory to the bin directory
 # 4. Create the bash script file below with nano or gedit and save it with a filename like lid_closed.sh
