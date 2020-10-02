@@ -2,7 +2,7 @@
 # This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
 
-# Steps:
+# Steps to do for the task:
 # 1. Install the ligthdm display manager and set lightdm as a the default display manager
 # 2. Create a bin directory inside your home directory
 # 3. Change directory to the bin directory
