@@ -15,7 +15,7 @@
 # 6. Make file executable with chmod +x battAlert.sh command
 # 7. Add the battAlert.sh command in Startup applications
 # 8. Reboot and use the laptop until the battery drains to 40%
-# 9. A notification message will be displayed to plug the power cable to opitimize the battery life. Then low battery notification sound will be played.
+# 9. A notification message will be displayed to plug the power cable to opitimize the battery life. Then a low battery notification sound will be played.
 # 10. Let the laptop charge until 80%
 # 11. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
 
