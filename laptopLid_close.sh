@@ -1,4 +1,4 @@
-# This script will activate the xscreensaver lock when the laptop lid will be closed for auto lid close security in Ubuntu
+# This script will activate screen lock when the laptop lid will be closed for auto lid close security in Ubuntu
 # This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
 
