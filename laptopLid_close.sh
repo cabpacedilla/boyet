@@ -2,8 +2,13 @@
 # This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
 
-# 1. Install first the ligthdm display manager and set lightdm as a the default display manager
-# 2
+# 1. Install ligthdm display manager and set lightdm as a the default display manager
+# 2. Create the bash script file below with nano or gedit and save it with a filename like lid_closed.sh in ~/bin directory
+# 3. Make file executable with chmod +x lid_closed.sh command
+# 4. Add the lid_closed.sh command in Startup applications
+# 5. Reboot the laptop
+# 6. Close the laptop lid
+# 7. lightdm login screen will 
 
 #!/usr/bin/bash
 while true
