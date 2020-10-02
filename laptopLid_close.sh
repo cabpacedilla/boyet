@@ -1,8 +1,9 @@
-# This script will activate screen lock when the laptop lid will be closed for auto lid close security in Ubuntu
+# This script will activate screen lock when the laptop lid will be closed for auto lid close security in Ubuntu Unity
 # This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
 
-# Install first the ligthdm display manager and set lightdm as a the default display manager
+# 1. Install first the ligthdm display manager and set lightdm as a the default display manager
+# 2
 
 #!/usr/bin/bash
 while true
