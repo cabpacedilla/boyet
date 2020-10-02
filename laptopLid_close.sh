@@ -2,6 +2,8 @@
 # This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
 
+# Install first the ligthdm display manager and set lightdm as a the default display manager
+
 #!/usr/bin/bash
 while true
 do
