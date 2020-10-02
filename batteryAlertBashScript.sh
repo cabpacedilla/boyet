@@ -6,7 +6,7 @@
 # and αғsнιη's answer in https://askubuntu.com/questions/518928/how-to-write-a-script-to-listen-to-battery-status-and-alert-me-when-its-above.
 # I added discharging and charging variables and conditions to detect the discharging and charging state of the battery and the nofication sound played in vlc with auto exit 
 
-# Steps 
+# Steps for the task:
 # 1. Install acpi
 # 2. Install vlc
 # 3. Create a bin directory inside your home directory
