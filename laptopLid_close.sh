@@ -10,11 +10,12 @@ do
    
    if [ "$lid_closed" = close ]
    then
-      xscreensaver-command -lock
+      dm-tool switch-to-greeter
       
    elif [ "$lid_open" = open ]
    then
       :
       
    fi
+   sleep 1
 done
