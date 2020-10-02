@@ -12,7 +12,7 @@
 # 3. Create a bin directory inside your home directory
 # 4. Change directory to the bin directory
 # 5. Create the bash script file below with nano or gedit and save it with a filename like battAlert.sh
-# 6. Make file executable with chmod +x battAlert.sh
+# 6. Make file executable with chmod +x battAlert.sh command
 # 7. Add the battAlert.sh command in Startup applications
 # 8. Reboot and use the laptop until the battery drains to 40%
 # 9. A notification message will be displayed to plug the power cable to opitimize the battery life. Then low battery notification sound will be played.
