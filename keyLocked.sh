@@ -1,5 +1,6 @@
 # This script will notify when Caps Lock or Num Lock are on using the xset q command.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# This is based from taliezin answer in https://unix.stackexchange.com/questions/207754/how-to-identify-if-num-lock-or-caps-lock-is-turned-on-in-rhel-6-6 
 # October 2020
 
 # Steps for the task:
