@@ -1,6 +1,5 @@
 # This script will notify when Caps Lock or Num Lock are on using the xset q command.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
-# This is based from taliezin answer in https://unix.stackexchange.com/questions/207754/how-to-identify-if-num-lock-or-caps-lock-is-turned-on-in-rhel-6-6 
 # October 2020
 
 # Steps for the task:
@@ -18,21 +17,21 @@
 #!/usr/bin/bash
 while true
 do
-   value="$(xset q | grep 'LED mask' | awk '{ print $NF }')"
+   LEDmask="$(xset q | grep 'LED mask' | awk '{ print $NF }')"
 
-   if [ "$value" = 00000001 ]
+   if [ "$LEDmask" = 00000001 ]
    then
       notify-send -t 10000 "Caps lock is on."
    
-   elif [ "$value" = 00000002 ]
+   elif [ "$LEDmask" = 00000002 ]
    then 
       notify-send -t 10000 "Num lock is on."
        
-   elif  [ "$value" = 00000003 ]   
+   elif  [ "$LEDmask" = 00000003 ]   
    then
       notify-send -t 10000 "Caps lock and Num lock are on."
    
-   elif [ "$value" = 00000000 ] 
+   elif [ "$LEDmask" = 00000000 ] 
    then
       : 
    
