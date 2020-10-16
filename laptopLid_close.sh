@@ -22,8 +22,8 @@ do
    
    if [ "$lid_closed" = close ]
    then
-      # dbus-send --type=method_call --dest=org.gnome.ScreenSaver /org/gnome/ScreenSaver org.gnome.ScreenSaver.Lock
-      dm-tool switch-to-greeter
+      #dm-tool switch-to-greeter
+      dbus-send --type=method_call --dest=org.gnome.ScreenSaver /org/gnome/ScreenSaver org.gnome.ScreenSaver.Lock
       
    elif [ "$lid_open" = open ]
    then
