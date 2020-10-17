@@ -23,7 +23,7 @@ do
       
       notify-send "RAM has low free memory. Free high memory consuming applications from the top memory consuming processes: ${top_processes}" 
   
-   elif [ $free -gt 800 ]
+   elif [ $free_mem -gt 800 ]
    then
       :
       
