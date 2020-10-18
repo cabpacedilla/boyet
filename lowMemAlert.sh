@@ -1,5 +1,5 @@
 # This script will alert when free memory is 20% or less
-# This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # October 2020
 
 # Steps for the task:
