@@ -21,7 +21,7 @@ do
    then
       top_processes=`ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head` 
       
-      notify-send "RAM has low free memory. Free high memory consuming applications from the top memory consuming processes: ${top_processes}" 
+      notify-send "RAM has low free memory. Free high memory consuming processes: ${top_processes}" 
   
    elif [ $free_mem -gt 800 ]
    then
