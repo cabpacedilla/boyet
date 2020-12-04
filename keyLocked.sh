@@ -17,16 +17,20 @@
 #!/usr/bin/bash
 while true
 do
+   # 1. Get LED mask value for key lock with xset command
    LEDmask="$(xset q | grep 'LED mask' | awk '{ print $NF }')"
-
+ 
+   # 2. If LED mask value is equal to Caps lock LED mask value, show Caps lock notification
    if [ "$LEDmask" = 00000001 ]
    then
       notify-send -t 15000 "Caps lock is on."
    
+   # 2. If LED mask value is equal to Num lock LED mask value, show Num lock notification
    elif [ "$LEDmask" = 00000002 ]
    then 
       notify-send -t 15000 "Num lock is on."
        
+   # 3. If LED mask value is equal to Caps lock and Num lock LED mask value, show Caps lock and Num lock notification
    elif  [ "$LEDmask" = 00000003 ]   
    then
       notify-send -t 15000 "Caps lock and Num lock are on."
@@ -35,6 +39,3 @@ do
 
    sleep 3
 done    
-
-
-
