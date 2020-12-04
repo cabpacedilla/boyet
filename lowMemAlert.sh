@@ -21,7 +21,7 @@ do
    ## 2. Check if free memory is less or equals to desired low free memory space in megabytes
    if [ $free -le 1000 ] 
    then        
-      ## 3. get top processes consuming system memory and show notification
+      ## 3. get top processes consuming system memory and show notification with the top 10 memory consuming processes
       top_processes=`ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head` 
       notify-send -t 10000 "RAM has low free memory. Free high memory consuming processes: ${top_processes}" 
        
