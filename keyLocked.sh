@@ -31,13 +31,9 @@ do
    then
       notify-send -t 10000 "Caps lock and Num lock are on."
    
-   elif [ "$LEDmask" = 00000000 ] 
-   then
-      : 
-   
    fi
 
-sleep 15
+   sleep 3
 done    
 
 
