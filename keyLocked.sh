@@ -37,5 +37,5 @@ do
    
    fi
 
-   sleep 3
+   sleep 20
 done    
