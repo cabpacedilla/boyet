@@ -1,4 +1,4 @@
-# This script will alert when free memory is 20% or less
+# This script will alert when free memory is less than or equals to desired low free memory space in megabytes
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # October 2020
 
