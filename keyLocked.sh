@@ -21,15 +21,15 @@ do
 
    if [ "$LEDmask" = 00000001 ]
    then
-      notify-send -t 10000 "Caps lock is on."
+      notify-send -t 15000 "Caps lock is on."
    
    elif [ "$LEDmask" = 00000002 ]
    then 
-      notify-send -t 10000 "Num lock is on."
+      notify-send -t 15000 "Num lock is on."
        
    elif  [ "$LEDmask" = 00000003 ]   
    then
-      notify-send -t 10000 "Caps lock and Num lock are on."
+      notify-send -t 15000 "Caps lock and Num lock are on."
    
    fi
 
