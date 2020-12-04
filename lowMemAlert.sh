@@ -9,7 +9,7 @@
 # 4. Make file executable with chmod +x lowMemAlert.sh command
 # 5. Add the lowMemAlert.sh command in Startup applications
 # 6. Reboot the laptop
-# 7. Log in and simulate low memory scenario by running high memory consuming processes until free memory reaches 20% or less
+# 7. Log in and simulate low memory scenario by running high memory consuming processes until free memory space in megabytes
 # 8. Low memory alert message will be displayed
 
 #!/usr/bin/bash
