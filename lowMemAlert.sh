@@ -27,6 +27,6 @@ do
        
    fi
  
-   ## 4. sleep script after 30 seconds
+   ## 4. sleep script for 30 seconds
    sleep 30
 done
