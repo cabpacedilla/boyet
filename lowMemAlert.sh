@@ -26,7 +26,6 @@ do
       notify-send "RAM has low free memory. Free high memory consuming processes: ${top_processes}" 
        
    fi
- 
    ## 4. sleep script for 30 seconds
    sleep 30
 done
