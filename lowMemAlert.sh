@@ -22,7 +22,7 @@ do
    if [ $free -le 1000 ] 
    then        
       ## 3. get top processes consuming system memory and show notification with the top 10 memory consuming processes
-      top_processes=`ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head` 
+      top_processes=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head`)
       notify-send -t 15000 "RAM has low free memory. Free high memory consuming processes: ${top_processes}" 
        
    fi
