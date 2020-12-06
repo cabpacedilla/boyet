@@ -34,6 +34,11 @@ do
    elif  [ "$LEDmask" = 00000003 ]   
    then
       notify-send "Caps lock and Num lock are on."
+      
+   # 4. If LED mask value is equal to LED mask value of no keys being locked, do nothing.   
+   elif  [ "$LEDmask" = 00000000 ]   
+   then
+      :
    
    fi
 
