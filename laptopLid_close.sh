@@ -17,8 +17,8 @@
 #!/usr/bin/bash
 while true
 do
-   lid_closed=`less /proc/acpi/button/lid/LID0/state | grep -P -o 'close'`
-   lid_open=`less /proc/acpi/button/lid/LID0/state | grep -P -o 'open'`
+   lid_closed=$(less /proc/acpi/button/lid/LID0/state | grep -P -o 'close'$)
+   lid_open=$(less /proc/acpi/button/lid/LID0/state | grep -P -o 'open')
    
    if [ "$lid_closed" = close ]
    then
