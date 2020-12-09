@@ -18,9 +18,9 @@
 #!/usr/bin/bash
 while true
 do
-   battery_level=`acpi -b | grep -P -o '[0-9]+(?=%)'`
-   battery_charge=`acpi -b | grep -P -o 'Charging'`
-   battery_discharge=`acpi -b | grep -P -o 'Discharging'`
+   battery_level=$(acpi -b | grep -P -o '[0-9]+(?=%)')
+   battery_charge="$(acpi -b | grep -P -o 'Charging')"
+   battery_discharge="$(acpi -b | grep -P -o 'Discharging')"
 
    if [ $battery_level -le 40 ] && [ "$battery_discharge" = Discharging ]
    then
