@@ -52,10 +52,10 @@ do
       :
     
    elif [ "$battery_level" -ge 80 ] &&  [ "$battery_charge" = 'Charging' ]; then
+      # call notify function and pass full argument and battery level
       notify full "$battery_level"
    
    elif [ "$battery_level" -ge 80 ] && [ "$battery_full" = 'Not charging' ]; then
-      # call notify function and pass full argument and battery level
      notify full "$battery_level"
       
    fi
