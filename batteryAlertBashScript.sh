@@ -16,32 +16,48 @@
 # 11. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
 
 #!/usr/bin/bash
+
+notify()
+{
+   # set plug or unplug 
+   if [ "$1" = low ]; then
+        ACTION="Plug"
+        
+   elif [ "$1" = full ]; then
+        ACTION="Unplug"
+   fi
+    
+   # notify to plug or unplug based on battery level
+   notify-send -t 1500 "Battery reached $2%. $ACTION the power cable to optimize battery life!"
+   
+   # check if cvlc file program is existing then play low or full mp3
+   if [ -f "$(which cvlc)" ]; then
+      cvlc --play-and-exit ~/Music/battery-"$1".mp3 2>/dev/null
+ 
+   fi
+}
+
 while true
 do
    battery_level=$(acpi -b | grep -P -o '[0-9]+(?=%)')
-   battery_charge=$(acpi -b | grep -o Charging)
-   battery_discharge=$(acpi -b | grep -o Discharging)
-   battery_full=$(acpi -b | grep -o 'Full')
+   battery_charge=$(acpi -b | grep -P -o 'Charging')
+   battery_discharge=$(acpi -b | grep -P -o 'Discharging')
+   battery_full=$(acpi -b | grep -P -o 'Not charging')
 
-   if [ "$battery_level" -le 40 ] && [ "$battery_discharge" = Discharging ]
-   then
-      notify-send "Battery reached ${battery_level}%, plug the power cable to optimize battery life!"
-      gnome-terminal -- nvlc --play-and-exit ~/Music/low_battery.mp3 
+   if [ "$battery_level" -le 40 ] && [ "$battery_discharge" = 'Discharging' ]; then
+      # call notify function and pass low argument and battery level
+      notify low "$battery_level"
       
-   elif [ "$battery_level" -le 40 ] && [ "$battery_charge" = Charging ]
-   then
+   elif [ "$battery_level" -le 40 ] && [ "$battery_charge" = 'Charging' ]; then
       :
     
-   elif [ "$battery_level" -ge 80 ] && [ "$battery_charge" = Charging ]
-   then
-      notify-send "Battery reached ${battery_level}%, unplug the power cable to optimize battery life!" 
-      gnome-terminal -- nvlc --play-and-exit ~/Music/glados_bat_full_2.mp3 
+   elif [ "$battery_level" -ge 80 ] &&  [ "$battery_charge" = 'Charging' ]; then
+      notify full "$battery_level"
+   
+   elif [ "$battery_level" -ge 80 ] && [ "$battery_full" = 'Not charging' ]; then
+      # call notify function and pass full argument and battery level
+     notify full "$battery_level"
       
-   elif [ "$battery_level" -ge 80 ] && [ "$battery_full" = Full ]
-   then
-      notify-send "Battery reached ${battery_level}%, unplug the power cable to optimize battery life!" 
-      gnome-terminal -- nvlc --play-and-exit ~/Music/glados_bat_full_2.mp3 
-     
    fi
    
    sleep 60
