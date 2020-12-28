@@ -42,5 +42,5 @@ do
    
    fi
 
-   sleep 7
+   sleep 10
 done      
