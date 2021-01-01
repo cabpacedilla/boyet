@@ -17,18 +17,18 @@
 #!/usr/bin/bash
 while true
 do
-   lid_closed="$(less /proc/acpi/button/lid/LID0/state | grep -P -o 'close'$)"
-   lid_open="$(less /proc/acpi/button/lid/LID0/state | grep -P -o 'open')"
+   lid_status=$(less /proc/acpi/button/lid/LID0/state | awk '{print $2}')
    
-   if [ "$lid_closed" = close ]
-   then
-      #dm-tool switch-to-greeter
-      dbus-send --type=method_call --dest=org.gnome.ScreenSaver /org/gnome/ScreenSaver org.gnome.ScreenSaver.Lock
-      
-   elif [ "$lid_open" = open ]
-   then
+   if [ "$lid_status" = 'open' ]; then
       :
+   
+   else
+      xscreensaver-command -lock
+      systemctl suspend
+      #dm-tool switch-to-greeter
+      #dbus-send --type=method_call --dest=org.gnome.Screensaver /org/gnome/Screensaver org.gnome.ScreenSaver.lock
       
    fi
+   
    sleep 1
 done
