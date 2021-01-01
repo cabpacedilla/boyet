@@ -21,10 +21,11 @@ do
    
    if [ "$lid_status" = 'open' ]; then
       :
-   
+        
    else
       xscreensaver-command -lock
       systemctl suspend
+      
       #dm-tool switch-to-greeter
       #dbus-send --type=method_call --dest=org.gnome.Screensaver /org/gnome/Screensaver org.gnome.ScreenSaver.lock
       
