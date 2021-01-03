@@ -3,13 +3,13 @@
 # September 2020
 
 # Steps for the task:
-# 1. Install icewm window manager 
+# 1. icewm is already installed and configured for user login
 # 2. Install xscreensaver
 # 3. Create a bin directory inside your home directory
 # 4. Change directory to the bin directory
 # 5. Create the bash script file below with nano or gedit and save it with a filename like lid_close.sh
 # 6. Make file executable with chmod +x lid_close.sh command
-# 7. Add the lid_close.sh command in Startup
+# 7. Add the "lid_close.sh comman &" d in .icewm/startup script
 # 8. Reboot the laptop
 # 9. Login to icewm
 # 10. Close the laptop lid
