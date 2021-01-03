@@ -9,7 +9,7 @@
 # 4. Change directory to the bin directory
 # 5. Create the bash script file below with nano or gedit and save it with a filename like lid_close.sh
 # 6. Make file executable with chmod +x lid_close.sh command
-# 7. Add the "lid_close.sh comman &" d in .icewm/startup script
+# 7. Add the "lid_close.sh &" command in .icewm/startup script
 # 8. Reboot the laptop
 # 9. Login to icewm
 # 10. Close the laptop lid
