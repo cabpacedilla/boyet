@@ -18,25 +18,25 @@
 while true
 do
    # 1. Get LED mask value for key lock with xset command
-   LEDmask="$( xset q | grep 'LED mask' | awk '{ print $NF }' )"
+   LED_MASK="$( xset q | grep 'LED mask' | awk '{ print $NF }' )"
  
    # 2. If LED mask value is equal to Caps lock LED mask value, show Caps lock notification
-   if [ "$LEDmask" = 00000001 ]
+   if [ "$LED_MASK" = 00000001 ]
    then
       notify-send "Caps lock is on."
    
    # 2. If LED mask value is equal to Num lock LED mask value, show Num lock notification
-   elif [ "$LEDmask" = 00000002 ]
+   elif [ "$LED_MASK" = 00000002 ]
    then 
       notify-send "Num lock is on."
        
    # 3. If LED mask value is equal to Caps lock and Num lock LED mask value, show Caps lock and Num lock notification
-   elif  [ "$LEDmask" = 00000003 ]   
+   elif  [ "$LED_MASK" = 00000003 ]   
    then
       notify-send "Caps lock and Num lock are on."
       
    # 4. If LED mask value is equal to LED mask value of no keys being locked, do nothing.   
-   elif  [ "$LEDmask" = 00000000 ]   
+   elif  [ "$LED_MASK" = 00000000 ]   
    then
       :
    
