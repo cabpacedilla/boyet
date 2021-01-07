@@ -5,6 +5,7 @@ declare -a SERVICES=("blueman-applet" "nm-applet")
 ctr=0   
 while [ "$ctr" -le "${#SERVICES[@]}" ] ; do
    
+   # check if process is running comparing array item with pgrep -x 
    if pgrep -x "${SERVICES[$ctr]}" >/dev/null; then
       :
    
