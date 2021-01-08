@@ -2,7 +2,7 @@ import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
 import com.kms.katalon.core.configuration.RunConfiguration
 import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
 
-def imgDir = RunConfiguration.getProjectDir() + "screenshots/lionlineAllpagelinks"
+def imgDir = RunConfiguration.getProjectDir() + "screenshots/<projectFolderName>"
 
 def column1 = new Integer[7]
 def column2 = new Integer[7]
@@ -45,7 +45,7 @@ while ( brwsrCtr <  browser.length )
 	
 	def browserFolder = "$column4var"
 	
-	imgDir = RunConfiguration.getProjectDir() + "/screenshots/lionlineAllpagelinks" + "/$browserFolder"
+	imgDir = RunConfiguration.getProjectDir() + "/screenshots" + "/$browserFolder"
 	
 	while ( ctr < column2.length )
 	{
@@ -59,10 +59,10 @@ while ( brwsrCtr <  browser.length )
 		
 		def foldername = "$imgDir" + "/$column1var" + 'x' + "$column2var" + "$column3var"
 		
-		for (def row = 1; row <= findTestData('lionlineAllpagelinks').getRowNumbers() - 1; row++)
+		for (def row = 1; row <= findTestData('<projectTestDataName>').getRowNumbers() - 1; row++)
 		{
-			def filename = findTestData('lionlineAllpagelinks').getValue('Name', row)
-			def page = findTestData('lionlineAllpagelinks').getValue('page', row)
+			def filename = findTestData('<projectTestDataName>').getValue('Name', row)
+			def page = findTestData('<projectTestDataName>').getValue('page', row)
 	
 			'Open browser'
 			WebUI.openBrowser('')
@@ -73,7 +73,7 @@ while ( brwsrCtr <  browser.length )
 			WebUI.setViewPortSize(column1var, column2var)
 				
 			'Navigate to Link in row value'
-			WebUI.navigateToUrl(findTestData('lionlineAllpagelinks').getValue('Links', row))
+			WebUI.navigateToUrl(findTestData('<projectTestDataName>').getValue('Links', row))
 			
 			'Wait for the page to load'
 			WebUI.waitForPageLoad(10)
