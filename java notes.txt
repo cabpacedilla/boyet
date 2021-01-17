@@ -2,6 +2,7 @@ package helloWorld;
 
 import java.util.Arrays;
 import java.util.Scanner;
+import java.util.InputMismatchException;
 
 public class HelloWorld 
 {
@@ -144,7 +145,7 @@ public class HelloWorld
 		// println() moves the cursor down to the next line
 		
 		// Displaying results withould assigning them to variables
-		System.out.println(30+5);
+		System.out.println(30 + 5);
 		
 		// Display the result of a method
 		System.out.println("Oracle".substring(1, 4));
@@ -376,6 +377,161 @@ public class HelloWorld
 		{
 			System.out.println(myNumbers[i]);
 		}
+		
+//		Output:
+//		10
+//		20
+//		30
+//		40
+//		50
+		
+		// Enhanced For Statement
+//		In addition to the for statement, we can also use an enhanced for statement
+//		when working with arrays and Collections (we’ll talk about Collections in
+//		
+//		An enhanced for statement is very useful if you want to get
+//		information from an array without making any changes to it.
+//		The syntax for an enhanced for statement is:
+//		for (variable declaration : name of array)
+//		{
+//		}
+		
+		// Suppose you have
+		
+		int[] myNumbers4 = {10, 20, 30, 40, 50};
+		
+		// You can use the following code to display the elements of the array.
+		
+		for (int item : myNumbers4)
+			System.out.println(item);
+		
+//		Output:
+//		10
+//		20
+//		30
+//		40
+//		50
+		
+		// While Statement
+//		A while statement repeatedly executes instructions inside the loop while a certain
+//		condition remains valid. The structure of a while statement is as follows:
+//		
+//		while (condition is true)
+//		{
+//			do A
+//		}
+//		
+//		Most of the time when using a while statement, we need to first declare a
+//		variable to function as a loop counter. Let’s call this variable counter . The
+//		code below shows an example of how a while statement works.
+		
+		int counter = 5;
+		
+		while (counter > 0)
+		{
+			System.out.println("Counter = " + counter);
+			counter = counter - 1;
+		}
+		
+//		Output:
+//		Counter = 5
+//		Counter = 4
+//		Counter = 3
+//		Counter = 2
+//		Counter = 1	
+		
+		// Do-while statement
+		
+//		The do-while statement is similar to the while statement with one main
+//		difference - the code within the curly braces of a do-while statement is
+//		executed at least once. Here’s an example of how a do-while statement
+//		works.
+		
+		int counter1 = 100;
+		
+		do 
+		{
+			System.out.println("Counter = " + counter1);
+			counter1++;
+		} while (counter1<0);
+		
+//		Output:
+//		Counter = 100
+		
+		
+		// Branching Statements
+		
+		// Break statement
+//		In addition to using it in a switch statement, 
+//		the break statement can also be used in other control
+//		flow statements. It causes the program to exit a loop prematurely when a
+//		certain condition is met
+		
+		for (int i = 0; i < 5; i++)
+		{
+			System.out.println("i = " + i);
+			if (i == 2)
+				break;
+		}
+		
+//		Output:
+//		i = 0
+//		i = 1
+//		i = 2
+		
+		// Continue statement
+		// When we use continue , the rest of the loop after the word is skipped for that
+		// iteration
+		
+		for (int i = 0; i<5; i++)
+		{
+			System.out.println("i = " + i);
+			if (i == 2)
+				continue;
+			System.out.println("I will not be printed if i=2.");
+		}
+		
+//		Output:
+//		i = 0
+//		I will not be printed if i=2.
+//		i = 1
+//		I will not be printed if i=2.
+//		i = 2
+//		i = 3
+//		I will not be printed if i=2.
+//		i = 4
+//		I will not be printed if i=2.
+		
+		// Exception handling
+		// how to control the flow of a program when an error occurs. This is known as exception
+		// handling.
+		
+//		try
+//		{
+//			do something
+//		}
+//		catch (type of error)
+//		{
+//			do something else when an error occurs
+//		}
+//		finally
+//		{
+//			do this regardless of whether the try or catch condition is
+//		met.
+//		}
+//		
+//		You can have more than one catch blocks. In addition, the finally block is
+//		optional
+		
+		errorDemo();
+		
+		// Specific Errors
+//		Java has other classes that can handle
+//		more specific errors. This is useful if you want to perform specific tasks
+//		depending on the error caught. For instance, you may want to display your
+//		own error messages.
+		
+		errorDemo2();
 	}
 	
 	public static void inputDemo()
@@ -444,6 +600,76 @@ public class HelloWorld
 			break;
 		}
 	}
+	
+	public static void errorDemo()
+	{
+		int num, deno;
+		
+		Scanner input = new Scanner(System.in);
+		
+		try
+		{
+			System.out.println("Please enter the numerator: ");
+			num = input.nextInt();
+			
+			System.out.println("Please enter the denominator: ");
+			deno = input.nextInt();
+			
+			System.out.println("The result is " + num / deno);	
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
+		finally
+		{
+			System.out.println("----End of Error Handling Example ----");
+		}
+	}
+	
+//	Input: 12 and 4
+//	Output:
+//	The result is 3
+//	---- End of Error Handling Example ----
+	
+//	Input: 12 and 0
+//	Output:
+//	/ by zero
+//	---End of Error Handling Example ----
+	
+//	The catch block allows us to specify the type of error that it should catch. In
+//	our example, we are trying to catch a general error. Therefore, we write
+//	
+//	catch (Exception e)
+//	
+//	where Exception refers to the class that the error belongs to and e is the
+//	name given to the error.
+//	
+//	Exception is a pre-written class in Java. It handles all general errors and has
+//	a method called getMessage() that explains the reason for the exception. To
+//	display the error message, we write
+//
+//	System.out.println(e.getMessage());
+//	
+//	In our example, we get the following error message
+//	/ by zero
+	
+	public static void errorDemo2()
+	{
+		int choice = 0;
+		
+		Scanner input = new Scanner(System.in);
+		System.out.println("Please enter the index of the array: ");
+		
+		
+	}
+	
+
+	
+	
+	
+	
+	
 	
 }
 
