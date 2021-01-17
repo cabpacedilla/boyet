@@ -212,14 +212,238 @@ public class HelloWorld
 		System.out.printf("%,d", 12345);
 		System.out.println();
 
-		
 		System.out.printf("%,.2f",  12345.56789);
+		System.out.println();
 		
 		// Accepting User Input
 		// Most common way is to use a Scanner object
 //		import java.util.Scanner;
 		
-		Scanner reader = new Scanner(Sysem.in);
+		// Scanner reader = new Scanner(System.in);
+		
+//		The Scanner class contains a few methods that we can use to read input from
+//		the user. The commonly used methods are nextInt() , nextDouble() and
+//		nextLine() for reading int , double and String data types respectively.
+		
+		inputDemo();
+		
+		// Control Flow Statements
+		
+		// Comparison Operators
+		// Theprogram proceeds differently depending on the result of the comparison.
+		
+		// equality operator (==)
+		// statement evaluate to True if two values are equal
+		
+//		Not equal (!=)
+//		Returns true if the left is not equal to the right
+//		is true
+//		6 != 6 is false
+//		5 != 2
+	//	
+//		Greater than (>)
+//		Returns true if the left is greater than the right
+//		is true
+//		3 > 6 is false
+//		5 > 2
+	//	
+//		Smaller than (<)
+//		Returns true if the left is smaller than the right
+//		is true
+//		9 < 6 is false
+//		1 < 7
+	//	
+//		Greater than or equal to (>=)
+//		Returns true if the left is greater than or equal to the right
+//		is true
+//		5 >= 5 is true
+//		3 >= 6 is false
+//		5 >= 2
+	//	
+//		Smaller than or equal to (<=)
+//		Returns true if the left is smaller than or equal to the right
+//		is true
+//		7 <= 7 is true
+	//	
+//		9 <= 6
+//		is false
+		
+//		We also have two logical operators ( && , || ) that are useful if we want to
+//		combine multiple conditions.
+	//	
+//		The AND operator (&&)
+//		Returns true if all conditions are met
+//		is true
+//		5==5 && 2<1 && 3!=7 is false as the second condition ( 2<1 ) is false
+//		5==5 && 2>1 && 3!=7
+	//	
+//		The OR operator (||)
+//		Returns true if at least one condition is met.
+//		is true as the first condition ( 5==5 ) is true
+//		5==6 || 2<1 || 3==7 is false as all conditions are false
+		
+		// Decision Making Statements
+		
+		// if statement
+		// one of the most commonly used control flow statements.
+		
+//		It allows the program to evaluate if a certain condition is met and perform the
+//		appropriate action based on the result of the evaluation.
+//		The structure of an if statement is as follows (line numbers are added for
+//		reference):
+	//	
+//		if (condition 1 is met) 
+//		{
+//			do Task A
+//		}
+//		else if (condition 2 is met)
+//		{	
+//			do Task B
+//		}
+//		else if (condition 3 is met)
+//		{
+//			Task C
+//		}
+//		else
+//		{
+//			do Task D
+//		}
+		
+		ifDemo();
+		
+		// Ternary Operator
+//		The ternary operator ( ? ) is a simpler form of an if statement that is very
+//		convenient if you want to assign a value to a variable depending on the result
+//		of a condition. The syntax is:condition ? value to return if condition is true : value to
+//		return if condition is false;
+//		For instance, the statement
+//		
+//		3>2 ? 10 : 5;
+//		
+//		returns the value 10 since 3 is greater than 2 (i.e. the condition 3 > 2 is true).
+//		This value can then be assigned to a variable.
+//		
+//		If we write
+//		
+//		int myNum = 3>2 ? 10 : 5;
+//		
+//		myNum will be assigned the value 10.
+		
+//		Switch Statement
+//		The switch statement is similar to an if statement except that it does not
+//		work with a range of values. A switch statement requires each case to be
+//		based on a single value. Depending on the value of the variable used for
+//		switching, the program will execute the correct block of code.
+//		The syntax of a switch statement is as follows:
+//		
+//		switch (variable used for switching)
+//		{
+//			case firstCase:
+//				do A;
+//				break;
+//			case secondCase:
+//				do B;
+//				break;
+//			default:
+//				do C;
+//				break;
+//		}
+		
+		switchDemo();
+		
+		// Looping statements
+		
+		// For statement
+//		The for statement executes a block of code repeatedly until the test condition
+//		is no longer valid.
+//		The syntax for a for statement is as follows:
+		
+//		for (initial value; test condition; modification to value)
+//		{
+//			//Do Some Task
+//		}
+//		
+//		To understand how the for statement works, let’s consider the example
+//		below.
+		for (int i = 0; i < 5; i++)
+		{
+			System.out.println(i);
+		}
+		
+		int[] myNumbers = {10, 20, 30, 40, 50};
+		
+		for (int i = 0; i < myNumbers.length; i++)
+		{
+			System.out.println(myNumbers[i]);
+		}
 	}
+	
+	public static void inputDemo()
+	{
+		Scanner input = new Scanner(System.in);
+		
+		System.out.print("Enter an integer: ");
+		int myInt = input.nextInt();
+		System.out.printf("You entered %d.%n%n", myInt);
+
+		System.out.print("Enter an double: ");
+		double myDouble = input.nextDouble();
+		System.out.printf("You entered %.2f.%n%n", myDouble);
+		
+		System.out.print("Enter a string: ");
+		input.nextLine();
+		String myString = input.nextLine();
+		System.out.printf("You entered \"%s\".%n%n", myString);
+		
+	}
+	
+	public static void ifDemo()
+	{
+		Scanner input = new Scanner(System.in);
+		System.out.print("\nPlease enter your age: ");
+		int userAge = input.nextInt();
+		if (userAge < 0 || userAge > 100 )
+		{
+			System.out.println("Invalid age");
+			System.out.println("Age must be between 9 and 100 ");
+		}
+		else if (userAge < 18)
+			System.out.println("Sorry you are underage");
+		else if (userAge < 21)
+			System.out.println("You need parental consent.");
+		else
+		{
+			System.out.println("Congratulations!");
+			System.out.println("You may sign up for the new event!");
+		}
+		
+	}
+	
+	public static void switchDemo()
+	{
+		Scanner input = new Scanner(System.in);
+		
+		System.out.print("Enter your grade: ");
+		String userGrade = input.nextLine().toUpperCase();
+		
+		switch (userGrade)
+		{
+		case "A+":
+			break;
+		case "A":
+			System.out.println("Distinction");
+			break;
+		case "B":
+			System.out.println("B Grade");
+			break;
+		case "C":
+			System.out.println("C Grade");
+			break;
+		default:
+			System.out.println("Fail");
+			break;
+		}
+	}
+	
 }
 
