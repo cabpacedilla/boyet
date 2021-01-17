@@ -1,0 +1,225 @@
+package helloWorld;
+
+import java.util.Arrays;
+import java.util.Scanner;
+
+public class HelloWorld 
+{
+	public static void main(String[] args) 
+	{
+		//Print the words Hello World on the screen		
+		System.out.println("Hello world!");
+		
+		// String methods
+		
+		// length() method		
+		int myLength = "Hello World".length();
+		System.out.println(myLength);
+		
+		// toUpperCase()/toLowerCse() method		
+		String uCase = "Hello World".toUpperCase();
+		System.out.println(uCase);
+		
+		String lCase = "Hello World".toLowerCase();
+		System.out.println(lCase);
+		
+		// substring() method		
+		String firstSubstring = "Hello World".substring(6);
+		System.out.println(firstSubstring);
+
+		String message = "Hello World";
+		String secondSubstring = message.substring(1, 8);
+		System.out.println(secondSubstring);
+
+		// charAt() method		
+		char myChar = "Hello World".charAt(1);
+		System.out.println(myChar);
+		
+		// equals() method
+		boolean equalsOrNot = "This is Jamie".equals("This is Jamie");
+		boolean equalsOrNot2 = "This is Jamie".equals("Hello World");
+		System.out.println(equalsOrNot);
+		System.out.println(equalsOrNot2);
+		
+		// split() method
+		String names = "Peter, John, Andy, David";
+		String[] splitNames = names.split(", ");
+		System.out.println(Arrays.toString(splitNames));
+		
+		// Arrays
+		// Two ways delcaration
+		int[] userAge;
+		int useAge[];
+		
+		// Assigning to arrays
+		userAge = new int[] {21, 22, 23, 24, 25};
+		
+		// One array is initialized, size of array cannot be changed anymore
+		// Array declaration and initialization can be combine
+		//int[] userAge2 = new int[] {21, 22, 23, 24, 25};
+		
+		// or
+		int[] userAge2 = {21, 22, 23, 24,25}; 
+		
+		// third way to declare and initialize arrays
+		int[] userAge3 = new int[5];  // userAge = {0, 0, 0, 0, 0}
+		
+		// Updating array elements
+		userAge[0] = 31; // array becomes {31, 22, 23, 24, 25}
+		
+		userAge[2] = userAge[2] + 20; // array becomes {32, 22, 43, 24, 25}
+		
+		// Array methods
+		// Array methods are found in java.util.Array class
+		// import array methods to use them
+		// import java.util.Arrays;
+		
+		// equals() method
+		int[] arr1 = {0, 2, 4, 6, 8, 10};
+		int[] arr2 = {0, 2, 4, 6, 8, 10};
+		int[] arr3 = {10, 8, 6, 4, 2, 0};
+		
+		boolean result1 = Arrays.equals(arr1, arr2);
+		boolean result2 = Arrays.equals(arr1, arr3);
+		System.out.println(result1);
+		System.out.println(result2);
+		
+		// Array methods are static which are called by adding the name of the class in front
+		
+		// copyOfRange() method
+		int[] source = {12, 1, 5, -2, 16, 14, 18, 20, 25};
+		int[] dest = Arrays.copyOfRange(source, 3, 7);
+		System.out.println(Arrays.toString(dest));
+		
+		// toString() method
+		int[] numbers = {1, 2, 3, 4, 5};
+		System.out.println(Arrays.toString(numbers));
+		
+		// sort() method
+		int[] numbers2 = {12, 1, 5, -2, 16, 14};
+		Arrays.sort(numbers2);
+		// the sort method does not return a new array. It modifies the array that is passed in.
+		System.out.println(Arrays.toString(numbers2));
+		
+		// binarySearch() method
+		// allows you to search for a specific value in a sorted way
+		int[] myInt = {21, 23, 34, 45, 56, 78, 99};
+		int foundIndex = Arrays.binarySearch(myInt, 78);
+		System.out.println(foundIndex);
+		
+		// search not present in the array
+		int foundIndex2 = Arrays.binarySearch(myInt, 39);
+		System.out.println(foundIndex2);
+		
+		// -4 indicates that number is not found
+		
+		// Array length field
+		// There is no array length() method
+		int[] userAge4 = {21, 22, 26, 32, 40};
+		System.out.println(userAge4.length);
+		
+		// All data types in Java can be classified as either a primitive type or a
+//		reference type. There are only 8 primitive types in Java ( byte , short , int ,
+//		long , float , double , char and boolean ), the rest are reference types.
+//		Examples of reference types include strings and arrays
+			
+//		An example of a reference type is a String . When you write a statement like
+//		String message = "Hello";
+//		the variable message actually does not store the string “Hello”.
+//		Instead, the string “Hello” is created and stored elsewhere in the computer’s
+//		memory. The variable message stores the address of that memory location.
+
+		// Strings are immutable
+//		Immutable means the value of a string cannot be changed. Whenever we
+//		update a String variable, we are actually creating a new string and assigning
+//		the memory address to the String variable.
+		
+		// Making interactive programs
+		//-----------------------------
+		
+		// Displaying output
+		// print() or println() methods
+		// use System.out in front to use the methods
+		// belong to the PrintStream class
+		// println() moves the cursor down to the next line
+		
+		// Displaying results withould assigning them to variables
+		System.out.println(30+5);
+		
+		// Display the result of a method
+		System.out.println("Oracle".substring(1, 4));
+		
+		// User the concatenation sign
+		System.out.println("Hello, " + "how are you?" + " I love Java");
+		
+		int results = 79;
+		System.out.println("You scored " + results + " marks for your test.");
+		
+		// Concatenation mathematical expressinos inside parenthesis
+		System.out.println("Ths sume of 50 and 2 is " + (50 + 2) + ".");
+		
+		// Escape Sequences
+		// Special "unprintable" characters like tab or newline
+		
+		// tab (\t)
+		System.out.println("Hello\tWorld");
+		
+		// newline (\n)
+		System.out.println("Hello\nWorld");
+		
+		// print backslash itself (\\)
+		System.out.println("\\");
+		
+		// print double quotes (\")
+		System.out.println("I am 5'9\" tall");
+		
+		
+		// Formatting Outputs
+		System.out.println("The answer for 5.45 divided by 3 is " + (5.45/3));
+		
+		// Use printf to control output
+		System.out.printf("The answer of %.2f divided by %d is %.2f.", 5.45, 3, 5.45/3);
+		System.out.println();
+		
+		// Converter
+		
+		// The integer converter (%d)
+		System.out.printf("%d", 12);
+		System.out.println();
+		
+		// conversion error. floating number is not an integer
+		// System.out.printf("%d", 12.9);
+		
+		// conversion error. integer number is not a floating number		
+		//System.out.printf("%f", 12)
+		
+		// The floating converter (%f)
+		System.out.printf("%f", 12.9);
+		System.out.println();
+				
+		// The newline converter (%n)
+		System.out.printf("%d%n%d",  12, 3);
+		System.out.println();
+		
+		// The width flag (%<number>d of %<number>f)
+		System.out.printf("%8d", 12);
+		System.out.println();
+		
+		System.out.printf("%8.2f",  12.4);
+		System.out.println();
+		
+		// The thousands separator flag(,)
+		System.out.printf("%,d", 12345);
+		System.out.println();
+
+		
+		System.out.printf("%,.2f",  12345.56789);
+		
+		// Accepting User Input
+		// Most common way is to use a Scanner object
+//		import java.util.Scanner;
+		
+		Scanner reader = new Scanner(Sysem.in);
+	}
+}
+
