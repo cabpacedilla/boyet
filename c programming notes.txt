@@ -1,0 +1,2344 @@
+C Programming Notes
+===================
+#include <stdio.h>
+int main()
+{
+
+    printf( "Hi there." );
+}
+
+1. #include <stdio.h> is a directive to command the compiler to refer to the standard input output header file which will be needed by the input output functions in the main block. 
+There are other directives according to the type functions used in the main block.
+2. C programs are enclosed in curly braces {} following the a main() function definition.
+3. printf() displays
+
+
+Output
+------
+#include <stdio.h>
+
+main ()
+{
+    /* Display output with printf function */
+
+        printf ( "%d \n", 128 );
+        printf ( "%f \n", 128.0 );
+
+        printf ( "The output of 128 * 2 is: %d \n", 128 * 2 );
+        printf ( "The output of 128.0 / 2 is: %f \n", 128.0 / 2 );     
+}
+
+Variables
+---------
+#include <stdio.h>
+
+main()
+{
+    /* Variable declaration */
+
+    int a;
+        float b;
+
+        printf ( "%d \n", a );
+        printf ( "%f \n", b );
+}
+
+
+Variable assignments
+---------------------
+#include <stdio.h>
+
+main ( )
+{
+        int a ;
+        float b, c ;
+
+    /* Variable assignments */
+
+    a = 1024 ;
+    b  = a / 2.0 ;  /* int assigned to float will convert to float */
+    c = b + a ;
+
+    printf ( "%d \n", a ) ;
+    printf ( "%f \n", b ) ;
+    printf ( "The result of b + a is: %f \n", c ) ;
+}
+
+Variable multiple assignments
+-----------------------------
+#include <stdio.h>
+
+int main()
+{
+    int a, b, c;
+    float x = 3.4;
+
+    a = b = c=  24;     / * Multiple var assignments */
+    printf( "a = %d, \nb = %d, \nc = %d and \nx = %f\n", a, b, c, x );
+}
+
+
+Format output
+-------------
+#include <stdio.h>
+
+main ( )
+{
+    float x ;
+
+    x = 75 ;
+
+    /* "%" format specifier /
+
+    printf( "%.0f \n", x );
+    printf( "%.1f \n", x );
+    printf( "%.2f \n", x );
+
+    printf( "%.0f \n", 3.0 / 4.0 );
+    printf( "%.1f \n", 3.0 / 4.0 );
+    printf( "%.2f \n", 3.0 / 4.0 );
+}
+
+Format output drill
+--------------------
+/* Write a program to assign the number 3.45678 to a variable name "number",
+*  then display two outpus:
+* 1. The "number" rounded to the nearest integer value.
+* 2. The "number" rounded to two decimal places.
+*/
+
+#include <stdio.h>
+
+main()
+{
+    float number ;
+
+    number = 3.45678 ;
+
+    printf ( "%.0f \n", number );   /* "%.0f" round to nearest integer */
+    printf ( "%.2f \n", number );   /* "%.2f" roud to two decimals */
+}
+
+Single Character variable
+-------------------------
+#include <stdio.h>
+
+main ( )
+{
+    char first_letter ;
+    first_letter = 'A' ;
+    printf( "%c \n", first_letter );    /* Display character */
+    printf( "%d \n", first_letter );    /* Display ASCII value */
+    printf( "%c \n", 65 );  /* Display 'A' from ASCII value */
+}
+
+
+Strings and pointers
+-------------------
+Strings in C are handled differently than in any other language.
+
+When a text string is stored in memory, you keep track of the first character by storing its address in a special type of variable called a pointer.
+
+* Knowing the beginning address and the length of the string, the program can locate it.
+* Pointer is variable containing an address of another variable (rather than data).
+* Pointers play a very important role in C.
+* Ponters can point to any type of data.
+
+#include <stdio.h>
+
+main ( )
+{
+    /* Declare character pointers */
+
+    char *a, *b ;
+
+    /* Initialize character pointers */
+
+    a = "Hellow again." ;
+    b = "How are you feeling today!" ;
+
+    printf ( "%s \n%s \n", a , b );
+}
+
+Pointer memory locations
+------------------------
+#include <stdio.h>
+
+main ( )
+{
+    char *a ;
+
+    a = "Hello again." ;
+
+    /* Display pointer location with different format specifier conversions */
+    printf ( "%s \n", a );  /* Display the string */
+    printf ( "%c \n", *a ); /* Display the character pointed to */
+    printf ( "%d \n", a );  /* Display address in pointer as int */
+    printf ( "%p \n", a );  /* Display in hexadecimal */
+    printf ( "%d \n", *a ); /* Display the ASCII of pointed char */
+}
+
+Drill 1_3.
+
+Write menu in one line
+
+#include <stdio.h>
+
+int numberChoice ;
+
+main ( )
+{
+    printf ("          MAIN MENU          \n------------------------------\n1- Wordperfect.\n2- Lotus 1-2-3\n3- dBASE IV.\n4- AutoCAD.\n-------------------------------\n"Press the required number: " );
+
+}
+
+Input and Output
+----------------
+
+Input read with format
+-----------------------
+#include <stdio.h>
+
+main ( )
+{
+    float x, y, z ;
+
+    /* Read input with scanf function with format specifier */
+
+    scanf ( "%f ", &x );
+    scanf ( "%f ", &y );
+
+    z = x + y ;
+
+    printf ( "The sum of the two numbers is: %.2f \n", z );
+
+}
+
+Mix variables input
+--------------------
+#include <stdio.h>
+
+main()
+{
+    int x;
+    float y, z ;
+
+    scanf ( "%d, %f", &x, &y );     /* separate input with comma */
+    z = x + y ;
+    printf ( "The sum of %d and %.2f is: %.2f \n", x, y, z );
+}
+
+User prompt
+-----------
+/* User printf() function to prompt user */
+
+#include <stdio.h>
+
+main ( )
+{
+    float x, y, z;
+
+    printf ( "Enter the first number: " );
+    scanf ( "%f", &x );
+    printf ( "Enter the second number: " );
+    scanf ( "%f", &y );
+
+    z = x + y;
+
+    printf ( "The sum of the two numbers is: %.2f \n", z );
+
+}
+
+Character Arrays
+----------------
+#include <stdio.h>
+#include <string.h>
+
+main ( )
+{
+    char a[20] ;
+
+    strcpy ( a, "Hello again" );    /* strcpy copies string to array */
+    printf ( "%s \n", a );
+    printf ( "%c \n", a );
+    printf ( "%d \n", a);
+
+}
+
+String input read without format using gets function
+---------------------------------------------------
+#include <stdio.h>
+
+main ( )
+{
+    char employee_name [ 20 ];
+
+    /* read input with gets functioni which stands for "get string" */
+
+    gets( employee_name );
+    printf( "Employee: %s \n", employee_name );
+
+}
+
+
+String output without format using puts function
+-------------------------------------------------
+#include <stdio.h>
+
+main ( )
+{
+    char employee_name [ 20 + 1 ];
+
+    /* Display user prompt with puts function which meand put string
+
+    puts ( "Enter empolyee name: " );
+    gets ( employee_name );
+    puts ( employee_name );
+
+}
+
+String input without format fgets()
+------------------------------------
+#include <stdio.h>
+
+main ( )
+{
+    char employee_name [ 20+2 ];
+
+    fgets ( employee_name, 22, stdin );
+    printf ( "Employee: %s \n", employee_name );
+
+}
+
+String output without format using fputs()
+--------------------------------------
+#include <stdio.h>
+#include <string.h>
+
+main ( )
+{
+   char buf [ 80 ];
+    strcpy ( buf, "Hello \n" );
+    fputs ( "\n", stdout );    /* Try the progrma without this line */
+    fputs ( buf , stdout );
+
+}
+
+Character input with getchar()
+-------------------------------
+
+#include <stdio.h>
+
+main ( )
+{
+    int ascii ;     
+
+    printf ( "\nType a character and press ENTER: " );
+    ascii = getchar ( );    /* assign getchar to int */
+    printf ( "The character %c ", ascii );
+    printf ( "corresponds to the ASCII %d \n", ascii );
+}
+
+
+#include <stdio.h>
+
+main ( )
+{
+    char ascii ;   
+
+    printf ( "Type a character and press ENTER: " );
+    ascii = getchar ( );    /* assign getchar to char */
+    printf ( "The character %c ", ascii );
+    printf ( "corresponds to the ASCII %d \n", ascii );
+
+}
+
+Character input with getch() or getche()
+-----------------------------------------
+#include <stdio.h>
+#include <conio.h>  /* in turbo pascal */
+#inclue <curses.h>  /* in linux */
+
+int main ( )
+{
+    int option ;
+
+    printf ( "Make a choice and press a number: " );
+    option = getche ( );
+
+    return ( 0 );
+
+}
+
+Drill 2-3
+
+Accept a menu choice number from the user and display it.
+
+#include <stdio.h>
+
+int main ( )
+{
+    int numberChoice ;
+
+    printf ("\n          MAIN MENU          \n" );
+    printf ( "------------------------------\n" );
+    printf ( "1- Wordperfect.\n" );
+    printf ( "2- Lotus 1-2-3\n" );
+    printf ( "3- dBASE IV.\n" );
+    printf ( "4- AutoCAD.\n" );
+    printf ( "-------------------------------\n" );
+    printf ( "Press the required number: " );
+
+    numberChoice = getchar ( );
+
+    printf ( "Your choice is: %c \n", numberChoice );
+
+    return ( 0 );
+}
+
+Character output
+----------------
+Putchar function is a simple unformatted function that writes the character to the the screen. It uses one argument which can be a character variale of the character itself contained in single quotes.
+
+#include <stdio.h>
+
+int main ( )
+{
+    char x = 'A' ;
+
+    putchar ( x );
+    putchar ( 'B' );
+    putchar ( '\n' );
+
+    return ( 0 );
+}
+
+Output character with putc()
+----------------------------
+Putc function is intended for files, but the output can be redirected to any standard device like the screen(stdout) or the printer(stdprn).
+
+#include <stdio.h>
+
+int main ( )
+{
+    char x = 'A' ;
+
+    putc ( x, stdout );
+    putc ( '\n', stdout );
+
+}
+
+Data Type Literals
+--------------
+
+Type conversion
+-----------------
+#include <stdio.h>
+
+int main ( void )
+{
+    int a = 300;
+    float b = 50.25 ;
+    float c ;
+
+    c = a + b ;
+
+    printf ( "%f \n", c );
+    printf ( "%d \n", c );
+}
+
+
+Type casts
+--------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a, b ;
+    a = 3 ;
+    b = 2 ;
+
+    printf ( "%f \n", ( float ) a / b );    /* float typecast keep the decimal part */
+
+    return ( 0 );
+}
+
+* Use the correct data type to allocate correct amount of memory
+
+Type precision
+---------------
+#include <stdio.h>
+
+int main ( )
+{
+    float a ;
+
+    a = 123456789.0 ;
+    printf ( "The value of a = %f \n", a );
+
+}
+
+Typecast Drill 3-2
+------------------
+#include <stdio.h>
+
+int main ( )
+{
+    float x = 5.5, y = 4 ;
+    int a = 9 , b = 4 ;
+
+    printf ( "%d \n", ( int ) x + ( int ) y );
+    printf ( "%d \n", a / b );
+    printf ( "%f \n", ( float ) a / b);
+    printf ( "%f \n", ( float ) a / ( float ) b );
+}
+
+More format modifiers
+------------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a ;
+    float x ;
+
+    a = 65 ;
+    x = -100.0 ;
+
+    printf ( "The value of a = % d", a );
+    printf ( "\nThe value of a in hexadecimal = %x \n", a );
+    printf ( "The value of a in octal = %o \n", a );
+    printf ( "The value of x = %f \n", x );
+    printf ( "The value of x = %e \n", x );     /* scientific notation */
+
+}
+
+/*
+* Long integer %ld
+* Double %lf
+* Long double %Lf
+*
+*/
+
+Long format
+------------
+#include <stdio.h>
+
+int main ( )
+{
+    long double x = 123456789.22 ;
+
+    printf ( "The value of x = %f \n", x );
+    printf ( "The value of x = %lf \n", x );
+    printf ( "The value of x = %Lf \n", x );
+
+}
+
+More Format Field Width and Decimal
+-------------------------------
+#include <stdio.h>
+
+int main ( )
+{
+    printf ( "%.2f \n", 12.3456 );
+    printf ( "%10.2f \n", 1234.567 );
+    printf ( "%d \n", 12 );
+    printf ( "%4d \n", 12 );
+    printf ( "%04d \n", 12 );
+    printf ( "%s \n", "12345" );
+    printf ( "%10s \n", "12345" );
+
+}
+
+Drill 3-3 Format
+----------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a = 555 ;
+    float b = 555.55 ;
+
+    printf ( "%06d \n", a );
+    printf ( "%e \n", b );
+
+}
+
+Backslash codes
+----------------
+#include <stdio.h>
+
+int main ( )
+{
+    printf ( " \tHello\tbackslash\tcodes \n" );
+    printf ( " \n\tA\t\x41\t\t\101" );
+    printf ( "\n\t\"This is how to show quotes\" \n" );
+}
+
+Constants
+----------
+#include <stdio.h>
+
+int main ( )
+{
+    const float pi = 3.14159;  /* const variable definition */
+    float radius ;
+    float perimeter ;
+
+    printf ( "Enter radius in mm: " );
+    scanf ( "%f", &radius );
+
+    perimeter = 2 * pi * radius ;
+
+    printf ( "The perimeter is %.2f \n", perimeter );
+
+}
+
+#include <stdio.h>
+#define pi 3.14159
+int main()
+{
+    float radius, perimeter;
+
+    printf ( "Enter radius in mm: " );
+    scanf ( "%f", &radius );
+
+    perimeter = 2 * pi * radius ;
+
+    printf ( "The perimeter is %.2f \n", perimeter );
+}
+
+
+Day 2
+Operators
+==========
+
+Expressions and Operators
+
+Arithmetic Operators
+
+Moduo Division Operator
+-----------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int x = 10, y = 3 ;
+
+    printf ( "Integer division 10 / 3 = %d \n", x / y );
+    printf ( "Remainder of integer division 10 %% 3 = % d \n", x % y );
+
+}
+
+Fractions
+----------
+
+#include <stdio.h>
+
+main ( )
+{
+    printf ( "%d \n", 3 / 4 );  /* incorrect. format and values should in float */
+    printf ( "%f \n", 3 / 4 );  /* incorrect. values should be decimal */
+    printf ( "%f \n", 3.0 / 4.0 );  /* correct. format and values are float */
+
+} 
+
+Increment Decrement operator
+-----------------------------
+#include <stdio.h>
+
+main ( )
+{
+    int a = 8, b = 2, x = 8, y = 2, sum1, sum2 ;
+
+    sum1 = a + ( ++b );
+
+    sum2 = x + ( y++ );
+
+    printf ( "Sum1 = %d \n", sum1 );
+    printf ( "Sum2 = %d \n", sum2 );
+
+}
+
+Pointer operator
+----------------
+#include <stdio.h>
+
+int main ( )
+{
+    int salary, *pntr;
+
+    salary = 3000 ;
+    pntr = &salary;
+
+    printf ( "The value of salary is %d", salary );
+    printf ( "\nThe value pointed to is %d", *pntr );
+
+    *pntr = 3333 ;
+
+    printf ( "\nThe value of salary is %d \n", salary );
+    printf ( "The memory address of salary is: %d \n", &salary );
+    printf ( "The memory address of *pntr is: %d", pntr );
+
+}
+
+Special operator
+----------------
+#include <stdio.h>
+
+main ( )
+{
+    int a , b ;
+    printf ( "Enter the value of the variable \"a\": " );
+    scanf ( "%d", &a );
+
+    b = a > 25 ? 100 : 99 ;
+
+    printf ( "The value of the variable \"b\" is %d \n", b );
+}
+
+Special operator embed
+-----------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a , b ;
+    char *msg1, *msg2, *msg3 ;
+
+    msg1 = "The value of \"a\" is greater than 25" ;
+    msg2 = "The value of \"a\" is less than or equal to 25" ;
+    msg3 = "The value of \"b\" is: " ;
+
+    printf ( "\nEnter the value of the variable \"a\": " );
+    scanf ( "%d", &a );
+    printf ( "%s", a > 25 ? msg1 : msg2 );
+    printf ( "\n%s %d \n\n", msg3, b = a > 25 ? 100 : 99 );
+
+}
+
+Comma operator
+---------------
+#include <stdio.h>
+
+int main ( )
+{
+    char x , c = 'B' ;
+
+    printf ( "\nThe value of the expression is: %c", ( x = c , c = getchar ( ) ));
+    printf ( "\nThe value of the variable \"x\" is: %c \n\n", x );
+}
+
+Sizeof operator
+----------------
+sizeof operator with variable types
+
+#include <stdio.h>
+
+int main ( )
+{
+    printf ( "\nThe Size of char is %d ", sizeof ( char ) );
+    printf ( "\nThe Size of int is %d ", sizeof ( int ) );
+    printf ( "\nThe Size of short is %d ", sizeof ( short ) );
+    printf ( "\nThe Size of float is %d ", sizeof ( float ) );
+    printf ( "\nThe Size of long is %d ", sizeof ( long ) );
+    printf ( "\nThe Size of double is %d ", sizeof ( double ) );
+    printf ( "\nThe Size of long double is %d \n\n", sizeof ( long double ) );
+}
+
+Sizeof operator with variables
+-------------------------------
+#include <stdio.h>
+
+int main ( )
+{
+    char a ;
+    int b; short c;  float d; long e; double f; long double g;
+
+    printf ( "\nThe Size of char is %d ", sizeof ( a ) );
+    printf ( "\nThe Size of int is %d ", sizeof ( b ) );
+    printf ( "\nThe Size of short is %d ", sizeof ( c ) );
+    printf ( "\nThe Size of float is %d ", sizeof ( d ) );
+    printf ( "\nThe Size of long is %d ", sizeof ( e ) );
+    printf ( "\nThe Size of double is %d ", sizeof ( f ) );
+    printf ( "\nThe Size of long double is %d \n\n", sizeof ( g ) );
+
+}
+
+sizeof Arrays
+--------------
+#include <stdio.h>
+
+int main ( )
+{
+    char a [ 25 ] ;
+
+    printf ( "\nThe Size of the array [ 25 ] is %d \n\n", sizeof ( a ) );
+
+}
+
+Bitwise shift operator
+-----------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a = 8 ;
+
+    printf ( "\nThe original number is %d", a );
+    printf ( "\nThe number shifted one bit to the right is %d", a >> 1 );
+    printf ( "\nThe number shfited two bits to the right is %d \n\n", a >> 2 );
+
+}
+
+Left shift operator
+-------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a, b, c, d ;
+
+    a = 1 ;
+    b = a << 1 ;
+    c = a << 2 ;
+    d = a << 3 ;
+
+    printf ( "\nThe original number is #d ", a );
+    printf ( "\nThe number shifted one bit to the left is %d ", b );
+    printf ( "\nThe number shifted two bits to the left is %d ", c );
+    printf ( "\nThe number shifted three bits to the left is %d \n\n ", d );
+
+}
+
+Right shift operator
+--------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a = 8 ;
+
+    printf ( "\nThe original number is %d", a );
+    printf ( "\nThe number shifted one bit to the right is %d", a >> 1 );
+    printf ( "\nThe number shfited two bits to the right is %d \n\n", a >> 2 );
+
+}
+
+Decisions
+==========
+
+If statement
+-------------
+#include <stdio.h>
+
+int main ( )
+{
+    float amount ;
+
+    printf ( "\n" );
+    printf ( "Enter the amount: " );
+    scanf ( "%f", &amount );
+    if ( amount <= 1000 )
+    {
+        printf ( "Your charge is accepted. " );
+        printf ( "\n" );
+        printf ( "\n" );
+    }
+    if ( amount > 1000 )
+    {
+        printf ( "Your amount exceeds your credit limit. " );
+        printf ( "\n" );
+        printf ( "\n" );
+    }
+}
+
+If Else statement
+------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int amount;
+
+    printf ( "\nEnter the amount: " );
+    scanf ( "%d", &amount );
+    if ( amount <= 1000 )
+        printf ( "Your charge is accepted. \n\n" );
+    else
+        printf ( "The amount exceeds your credit limit. \n\n" );
+
+}
+
+If Else blocks
+---------------
+#include <stdio.h>
+
+int main ( )
+{
+    float amount ;
+
+    printf ( "\nEnter the amount: " );
+    scanf ( "%f", &amount );
+    if ( amount <= 1000 )
+    {
+        printf ( "Your charge is accepted." );
+        printf ( "\nYour price plus taxes is $%.2f", amount * ( 1.05 ) );
+     }
+    else
+    {
+        printf ( "The amount of purchase exceeds your credit limit." );
+        printf ( "\nSorry, the purchase can\'t be approved." );
+    }
+    printf ( "\nThank you for using C credit card." );
+    printf ( "\nWe look forward to doing business with you in the future.\n\n" );
+}
+
+Drill 5-1 If Else
+------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int a ;
+
+    a = 6 ;
+
+    if ( a == 5 )
+        printf ( "\nThe condition is TRUE. \n\n" );
+    else
+        printf ( "\nThe condition is FALSE. \n\n" );
+
+}
+
+Nested If Statements
+----------------------
+Rule is every else belongs to the last if in the same block
+if( a >= 4 )
+    if( b >= 4 )
+        printf( "result #1" );
+    else
+        printf( "result #2" );
+
+Enclose last if block in braces if else associates to the first if
+if( a >= 4 )
+    if( b >= 4 )
+    {
+        printf( "result #1" );
+    }
+else
+    printf( "result #2" );
+
+
+If Else if ladder
+-----------------
+#include <stdio.h>
+
+int main ( )
+{
+    char a ;
+
+    printf ( "\nPlease enter an alphabetic character: " );
+    a = getchar ( );
+    if ( a > 64 && a < 91 )
+        printf ( "The character is an uppercase letter. \n\n" );
+    else if ( a > 96 && a < 123 )
+        printf ( "The character is a lowercase letter. \n\n" );
+    else
+        printf ( "This is not an alphabetic character! \n\n" );
+
+}
+
+goto statement
+---------------
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( )
+{
+        char a[ 2 ];    /* use a string array to catch character excluding enter key character */
+
+START:  printf ( "\nPlease enter an alphabetic character: " );
+        scanf ( "%s", &a );
+        if ( a[ 0 ] == '0' )
+            exit ( 0 );
+        else if ( a[ 0 ] > 64  && a[ 0 ] < 91 )
+            printf ( "The character is an uppercase letter. \n" );
+        else if ( a[ 0 ] > 96 && a[ 0 ]< 123 )
+            printf ( "The character is a lowercase letter. \n" ); 
+        else
+            printf ( "\nThis is not an alphabetic character! \n" );
+    goto START;
+}
+
+Input catch
+------------
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( )
+{
+        char a[ 2 ];    /* use a string array to catch character excluding enter key character */
+
+START:  printf ( "\nPlease enter an alphabetic character: " );
+        scanf ( "%s", &a );
+        if ( a[ 0 ] == '0' )
+            exit ( 0 );
+        else if ( a[ 0 ] > 64  && a[ 0 ] < 91 )
+            printf ( "The character is an uppercase letter. \n" );
+        else if ( a[ 0 ] > 96 && a[ 0 ]< 123 )
+            printf ( "The character is a lowercase letter. \n" ); 
+        else
+            printf ( "\nThis is not an alphabetic character! \n" );
+    goto START;
+}
+
+Input catch convert
+-------------------
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( )
+{
+        char response[ 5 ];    /* use a string array to catch character excluding enter key character */
+        float amount ;
+
+START:  printf ( "\nEnter an amount: " );
+        fgets ( response, 5, stdin );
+        amount = atof ( response ) ;
+        if ( amount == 0 )
+        {
+            printf ( "Thank you for using C credit card.\n\n" );
+            exit ( 0 );
+        }
+        if ( amount <= 1000 )
+        {
+            printf ( "Your charge is accepted." );
+            printf ( "\nYour price plus taxes is $%.2f", amount * ( 1.05 ) );
+        }
+        else
+         {
+            printf ( "The amount of purchase exceeds your credit limit." );
+            printf ( "\nSorry, the purchase can\'t be approved" );
+        }
+    goto START;
+}
+
+Switch statement
+------------------
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( )
+{
+    /* char choice [ 1 ]; */
+    char choice ;
+    char *a, *b, *c, *d, *e, *f, *g, *h ;
+
+    a = "             MAIN MENU" ;
+    b = "---------------------------------" ;
+    c = "1- WordPerfect." ;
+    d = "2- Lotus 1-2-3." ;
+    e = "3- dBASE IV." ;
+    f = "4- AutoCAD." ;
+    g = "5- Exit to DOS." ;
+    h = "Press the required number: " ;
+    printf ( "\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s", a, b, c, d, e, f, g, b, h );
+    /*scanf ( "%c", &choice [ 0 ] );*/
+    /*switch ( choice [ 0 ] ) */
+    choice = getchar(  );
+    switch ( choice )
+    {
+        case '1' :
+            printf ( "\nWordPerfect was chosen." );
+            break;
+        case '2' :
+            printf ( "\nLotus 1-2-3 was chosen." );
+            break;
+        case '3' :
+            printf ( "\ndBASE IV was chosen." );
+            break;
+        case '4' :
+            printf ( "\nAutoCAD was chosen." );
+            break;
+        case '5' :
+            exit ( 0 );
+        default :
+            printf ( "\nSorry, wrong key." );
+    }
+    printf ( "\nThis is the end of the SWITCH.\nBack to the program.\n" );
+}
+
+Loops
+-----
+
+For loop
+---------
+#include <stdio.h>
+
+int main ( )
+{
+    int counter ;
+
+    for( counter = 10; counter >= 1; --counter )
+    {
+        printf ( "*" );
+        printf ( "%d ", counter);
+    }
+    printf( "\n" );
+    return( 0 );
+}
+
+Infinite loop
+---------------
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( )
+{
+    char choice [ 1 ];
+    char *a, *b, *c, *d, *e, *f, *g, *h ;
+
+    a = "             MAIN MENU" ;
+    b = "---------------------------------" ;
+    c = "1- WordPerfect." ;
+    d = "2- Lotus 1-2-3." ;
+    e = "3- dBASE IV." ;
+    f = "4- AutoCAD." ;
+    g = "5- Exit to DOS." ;
+    h = "Press the required number: " ;
+    for ( ;; )  /* infinite loop */
+    {
+        printf ( "\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s", a, b, c, d, e, f, g, b, h );
+        scanf ( "%c", &choice [ 0 ] );
+        switch ( choice [ 0 ] )
+        {
+            case '1' :
+                printf ( "\nWordPerfect was chosen." );
+                break;
+            case '2' :
+                printf ( "\nLotus 1-2-3 was chosen." );
+                break;
+            case '3' :
+                printf ( "\ndBASE IV was chosen." );
+                break;
+            case '4' :
+                printf ( "\nAutoCAD was chosen." );
+                break;
+            case '5' :
+                exit ( 0 );
+            default :
+                printf ( "\nSorry, wrong key." );
+        }
+        printf ( "\nThis is the end of the SWITCH.\nBack to the program." );
+    }
+}
+
+While loop
+----------
+#include <stdio.h>
+
+int main ( )
+{
+    int c = 100 ;
+
+
+    while ( c <= 103 )
+    {
+        printf ( "\nHellow world!" );
+        c += 1;
+    }
+    printf ( "Done\n" );
+}
+
+While loop factorial
+--------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int number ;
+    long int factorial = 1 ;
+
+    printf ( "\nEnter the number: " );
+    scanf ( "%d", &number );
+    while ( number > 1 )
+        factorial = factorial * number-- ;
+    printf ( "The factorial is %ld \n\n", factorial );
+
+}
+
+For loop factorial
+-------------------
+#include <stdio.h>
+
+int main (  )
+{
+     int number ;
+    long int factorial = 1 ;
+
+    printf ( "\nEnter the number: " );
+    scanf ( "%d", &number );
+    for ( ; number > 1 ; )
+        factorial = factorial * number-- ;
+    printf ( "The factorial is %ld \n\n", factorial );
+}
+
+Power loop
+----------
+/* Inputs: number and power
+* Related formula: number multiply itself until the nth power number
+1. Make a variable to accumulate to the final number
+* 2. Compare counter to power because power will be the number of times the computation will run
+*/
+
+#include <stdio.h>
+
+int main ( )
+{
+    int number, power, counter = 0 ;
+    long int result = 1 ;
+
+    printf ( "\nEnter the number: " );
+    scanf ( "%d", &number );
+    printf ( "Enter the power: " );
+    scanf ( "%d", &power );
+    while ( counter < power )
+    {
+        result = result * number ;
+        counter++ ;
+    }
+    printf ( "%d raised to the power of %d is: %ld \n\n", number, power, result );
+
+    return ( 0 );
+
+}
+
+Do while loop
+--------------
+#include <stdio.h>
+
+int main ( )
+{
+    int c = 100 ;
+    do
+    {
+        printf ( "\nHello world!" ) ;
+        c++ ;
+    } while ( c <= 103 ) ;   
+    printf ( "\nDone \n\n" ) ;
+}
+
+do whilel loop factorial
+------------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int number; long int factorial ;
+
+    factorial = 1 ;
+    printf ( "\nEnter the number: " ) ;
+    scanf ( "%d", &number ) ;
+    do
+    {
+        factorial = factorial * number-- ;
+
+    } while ( number > 1 ) ;
+    printf ( "The factorial is %ld \n\n", factorial ) ;
+
+}
+
+Loop nesting
+-------------
+#include <stdio.h>
+
+int main ( )
+{
+    int nuumber, counter;
+    long int factorial;
+
+    for ( ;; )
+    {
+        factorial = 1 ;
+        printf ( "\nEnter the number: " ) ;
+        scanf ( "%d", &number ) ;
+        if ( number == 0 )
+            exit ( 0 );
+         counter = number ;
+        do
+        {
+            factorial = factorial * counter-- ;
+        } while ( counter > 1 ) ;
+        printf ( "Factorial of %d = %ld", number, factorial );
+}
+
+Drill 6-2 factorial input show
+-------------------------------
+#include <stdio.h>
+
+int main ( )
+{
+    int number, counter;
+    long int factorial ;
+
+    factorial = 1 ;
+    counter = 1 ;
+    printf ( "\nEnter the number: " ) ;
+    scanf ( "%d", &number ) ;
+    counter = number ;
+    do
+    {
+        factorial = factorial * number-- ;
+
+
+    } while ( number > 1 ) ;
+    printf ( "The factorial of %d is %ld \n\n", counter, factorial ) ;
+
+}
+
+For loop nesting
+------------------
+/* outer loop count the rows while the inner loop count the columns */
+
+#include <stdio.h>
+
+int main ( )
+{
+    int x, y ;
+
+    printf ( "\n" );
+    for ( x = 1 ; x <= 5 ; ++x )
+    {
+        printf ( "Row #%d ", x ) ;
+        for ( y = 1 ; y <= 8 ; ++y )
+        {
+            printf ( "%d", y ) ;
+        }
+        printf ( "\n" );
+    }
+    printf ( "\n" ) ;
+}
+
+Drill 6-3 for loop nesting
+--------------------------
+/* print lower left right triangle with * character
+* use outer loop row number as counter of inner loop to increment right triangle ladder to the right
+*/
+
+#include <stdio.h>
+
+int main ( )
+{
+    int row, column;
+
+    printf ( "\n" ) ;
+    for ( row = 1 ; row <= 6 ; row ++ )
+    {
+        printf ( "\n" );
+        for ( column = 1 ; column <= row ; column++ )
+        {
+            printf ( "*" );
+        }
+    }
+    printf ( "\n\n" );
+}
+
+Nest loop triangle:
+/* print triangle with * character
+* start the number of spaces on first by the number of rows to print
+* use outer loop row number as counter of inner loop to print space space then star while in row
+*/
+
+#include <stdio.h>
+
+int main ( )
+{
+    int numOfRows, row, column, star ;
+
+    printf ( "\nPlease enter the number of rows of print of the triangle: " );
+    scanf ( "%d", &numOfRows );
+
+    for ( row = 1 ; row <= numOfRows ; row++ )
+    {
+        printf ( "\n" );
+        for ( column = numOfRows - row ; column >= 1  ; column-- )
+        {
+            printf ( " " ) ;
+        }         
+        for ( star = 1 ; star <= row; star++ )
+        {         
+            printf ( "* " ) ;
+        }
+    }
+    printf ( "\n\n" ) ;
+}
+
+Pascal triangle loop nest
+-------------------------
+/* print triangle with * character
+* start the number of spaces on first by the number of rows to print
+* use outer loop row number as counter of inner loop to print space space then star while in row
+*/
+
+#include <stdio.h>
+
+int main ( )
+{
+    int numOfRows, row, column, symbol ;
+
+    printf ( "\nPlease enter the number of rows of print of the triangle: " );
+    scanf ( "%d", &numOfRows );
+
+    for ( row = 0 ; row < numOfRows ; row++ )
+    {
+        for ( column = numOfRows - row ; column >= 1  ; column-- )
+        {
+            printf ( " " ) ;
+        }         
+
+        int printChar = 1 ;
+        int num = row ;
+        int den = 1 ;
+        for ( symbol = 0 ; symbol <= row ; symbol++ ) 
+        {
+            printf ( "%d ", printChar ) ;
+            printChar = printChar * num ;
+            printChar = printChar / den ;
+            num-- ;
+            den++ ;
+        }
+        printf ( "\n" ) ;
+    }
+    printf ( "\n\n" ) ;
+
+    return ( 0 );
+}
+
+Break statement
+----------------
+
+Loops and Arrays
+=================
+
+/* Array "class" used to store the scores of one student in six different
+* classes. The scores are entered from the keyboard, then the
+* "sum_of_scores" and the "average" are displayed.
+*/
+
+#include <stdio.h>
+#define MAX 6
+
+int main ( )
+{
+    /* 1. Declare the variables */
+    int counter, average_score ;
+    float class [ MAX ], total = 0 ;
+
+    printf ( "\n" );
+
+    /* 2. Enter the scores for 10 classes */
+    for ( counter = 0 ; counter < MAX ; counter++ )
+    {
+        printf ( "Enter the score in class # %d: ", counter ) ;
+        scanf ( "%f", &class [ counter ] ) ;
+        total  = total + class [ counter ] ;
+
+    }
+
+    /* 3. Calculate the average score */
+    printf ( "\nThe sum-of-scores = %.2f ", total ) ;
+    average_score = ( int ) total / MAX ;
+    printf ( "\nThe average = %d% ", average_score );
+    printf ( "\n\n" ) ;
+
+ }
+
+#include <stdio.h>
+#define STUDENTS 5
+#define TESTS 3
+
+int main()
+{
+    int test_counter, student_counter;
+    float total[ STUDENTS ] = { 0, 0, 0, 0, 0 };
+    float exam_score[ STUDENTS ][ TESTS ] = {
+                            { 80.5, 70.5, 80.4 },
+                            { 50.3, 70.2, 55.7 },
+                            { 77.3, 80.2, 78 },
+                            { 60.5, 66.5, 70.4 },
+                            { 80, 88.8, 87.2 },
+                                    };
+
+    for( student_counter = 0; student_counter < STUDENTS; student_counter++ )
+    {   
+        printf( "\nStudent #%d", student_counter );
+        for( test_counter = 0; test_counter < TESTS; test_counter++ )
+        {
+            printf( "\n\tScore for exam #%d = %.2f", test_counter, exam_score[student_counter][test_counter]);
+            total[student_counter] = total[student_counter] + exam_score[student_counter][test_counter];
+        }
+        printf( "\n\tTotal = %.2f \n", total[student_counter]);
+    }
+}
+
+Chapter 7
+Functions and Macros
+====================
+
+Function square number
+----------------------
+#include <stdio.h>
+
+int square_it ( int ) ;     /* Function prototype */
+
+void main ( void )
+{
+    int a , b ;
+    printf ( "\nEnter a number: " ) ;
+    scanf ( "%d" , &a );
+    b = square_it ( a ) ;
+    printf ( "The square of %d is %d", a , b );
+    printf ( "\n\n" ) ;
+}
+
+/* Function defintion */
+int square_it ( int x )
+{
+    int y ;
+    y = x * x ;
+    return y ;
+}
+
+Function print menu
+-------------------
+#include <stdio.h>
+
+void print_menu ( void ) ;
+
+void main ( void )
+{
+    int option ;
+    print_menu ( ) ;
+    option = getchar ( ) ;
+    printf ( "Your option is: %c", option ) ;
+    printf ( "\n\n" );
+}
+
+void print_menu ( void )
+{
+    printf ( "\n\tMain menu\n" ) ;
+    printf ( "\n1- Add records to the file." );
+    printf ( "\n2- Remove records from the file." );
+    printf ( "\n3- Update a record." );
+    printf ( "\n4- Display records." );
+    printf ( "\n5- Exit the program." );
+    printf ( "\n\nPress the required number: " );
+}
+
+Function factorial
+-------------------
+#include <stdio.h>
+
+long int factorial( int ) ;
+
+void main( void )
+{
+    int x ;
+    printf( "\nEnter the number: " ) ;
+    scanf( "%d", &x ) ;
+    printf( "\nThe factorial is %ld", factorial ( x ) ) ;
+}
+
+long int factorial( int number )
+{
+    long int fac = 1 ;
+    for( ; number > 1 ; )
+    {
+        fac = fac * number-- ;
+    }
+    return( fac ) ;
+}
+
+Drill 7-1 Function power
+---------------------
+#include <stdio.h>
+
+int power( int x , int y ) ;
+
+int main(  )
+{
+    int number, raiseTo ;
+    long int result ;
+
+    printf( "\nEnter the number: " );
+    scanf( "%d", &number );
+    printf( "Enter the power: " );
+    scanf( "%d", &raiseTo );
+    result = power ( number, raiseTo ) ;
+    printf( "%d raised to the power of %d is: %ld \n\n", number, raiseTo, result );
+}
+
+int power( int base, int exponent)
+{
+    int counter = 0 ;
+    long int totalPower = 1 ;
+
+    while( counter < exponent )
+    {
+        totalPower = totalPower * base ;
+        counter++ ;
+    }
+    return( totalPower ) ;
+}
+
+Passing variables to functions
+------------------------------
+
+Function swap local variables
+------------------------------
+#include <stdio.h>
+
+void int swap_em ( int a, int b );
+
+int main ( )
+{
+    int a , b ;
+    a = 5 ; b = 25 ;
+
+    printf ( "\nValues before calling the swap function: a = %d, b = %d \n", a , b );
+    swap_em ( a , b ) ;
+    printf ( "Values after call the swap function: a = % d, b = %d \n", a , b );
+    printf ( "\n" );
+    return 0 ;
+}
+
+void swap_em ( int a , int b )
+{
+    int pot ;
+    pot = a ;
+    a = b ;
+    b = pot ;
+    printf ( "Values after call the swap function: a = % d, b = %d \n", a , b );
+
+}
+
+
+Function swap global variable
+------------------------------   
+#include <stdio.h>
+
+int x , y ;     /* Global variables declaration */
+
+void swap_em ( void );
+
+int main ( )
+{
+    x = 5 ; y = 25 ;
+
+    printf ( "\nOriginal values are: x = %d , y = %d \n", x , y );
+    swap_em ( ) ;
+    return 0 ;
+}
+
+void swap_em ( void )
+{
+    int pot ;
+    pot = x ;
+    x = y ;
+    y = pot ;
+    printf ( "Values after call the swap function: x = % d, y = %d \n", x , y );
+
+}
+
+Function swap function pointers
+--------------------------------
+#include <stdio.h>
+
+int x , y ;     /* Global variables declaration */
+
+void swap_em ( int *a, int *b );
+
+int main ( )
+{
+    int a , b ;
+    a = 5 ; b = 25 ;
+
+    printf ( "\nOriginal values are: a = %d , b = %d \n", a , b );
+    swap_em ( &a , &b ) ;
+    return 0 ;
+}
+
+void swap_em ( int *a, int *b )
+{
+    int pot ;
+    pot = *a ;
+    *a = *b ;
+    *b = pot ;
+    printf ( "Values after call the swap function: a = % d, b = %d \n", a , b );
+
+}
+
+
+
+Drill 7-2 Function swap float
+------------------------------
+#include <stdio.h>
+
+void swap_em ( float a, float b );
+
+int main ( )
+{
+    float a , b ;
+    a = 5.0 ; b = 25.0 ;
+
+    printf ( "\nValues before calling the swap function: a = %f, b = %f \n", a , b );
+    swap_em ( a , b ) ;
+    printf ( "\n" );
+    return 0 ;
+}
+
+void swap_em ( float a, float b )
+{
+    int pot ;
+    pot = a ;
+    a = b ;
+    b = pot ;
+    printf ( "Values after call the swap function: a = %f, b = %f \n", a , b );
+
+}
+
+Function recursion
+--------------------
+#include <stdio.h>
+
+long int factorial ( unsigned ) ;
+
+int main ( )
+{
+    unsigned x ;
+    printf ( "\nEnter the number: " );
+    scanf ( "%d", &x );
+    printf ( "Factorial is %ld", factorial ( x ) );
+    printf ( "\n\n" );
+    return 0 ;
+}
+
+long int factorial ( unsigned number )
+{
+    if ( number <= 1 )
+        return ( 1 ) ;
+    else
+        return ( number * factorial ( number - 1 ) );
+}
+
+Duration of a variable
+-------------------------
+
+Static variable
+-----------------
+#include <stdio.h>
+
+void kount ( void ) ;
+
+int main ( )
+{
+
+    int i = 1 ;
+    while ( i <= 4 )
+    {
+        kount (  ) ;
+        i++ ;
+    }
+    printf ( "\n\n" );
+    return 0 ;
+}   
+
+void kount ( void )
+{
+    int a = 1 ;
+    static int b = 1 ;
+
+    printf ( "\nautomatic \"a\" = %d while static \"b\" = %d", a , b );
+    a++ ;
+    b++ ;
+}
+
+Macros
+-------
+#include <stdio.h>
+
+#define SQUARE( A )             A * A
+#define CUBE( A )               A * SQUARE ( A )
+#define SWAP_EM( A, B, C )      C = A ; A = B ; B = C ; printf ( "\nA = %d and B = %d", A , B )
+
+int main ( )
+{
+    int x = 3 ;
+    int a = 55 , b = 44 , c ;
+
+    printf ( "\nThe square of %d is %d", x , SQUARE ( x ) );
+    printf ( "\nThe cube of %d is %d", x , CUBE ( x ) );
+    SWAP_EM ( a, b, c ) ;
+    printf( "\n\n" );
+    return 0 ;
+}
+
+Macros prompt response
+----------------------
+#include <stdio.h>
+
+#define ASK( prompt, reponse )      printf("\nPlease enter your full name: " ); fgets( name, 40, stdin )
+
+int main ( )
+{
+    char name[ 40 ];
+
+    ASK( name_prompt , name );
+    printf("Your name is: %s", name );
+    printf( "\n\n" );
+    return 0;
+
+}
+
+Macros square, cube and swap
+-----------------------------
+#include <stdio.h>
+#define SQUARE( A )   A*A
+#define CUBE( A )     A*A*A
+#define SWAP_EM( A, B, C ) C = A; A = B; B=C; printf( "\nA = %d and B = %d", A, B )
+
+int main( )
+{
+    int x = 3;
+    int a = 55; b = 44, c;
+
+    printf( "\The square of %d is %d", x, SQUARE( x ) );
+    prinft( "\nThe cube of %d is %d", x, CUBE( x ) );
+    SWAP_EM( a, b, c );
+    return( 0 );
+}
+
+Header files
+-------------
+
+my_header.h
+-------------
+#define SQUARE( A )             A * A
+#define CUBE( A )               A * SQUARE ( A )
+void wait( void );
+
+my_file.h
+----------
+#define SQUARE( A )             A * A
+#define CUBE( A )               A * SQUARE ( A )
+
+headerFile.c
+---------------
+#include <stdio.h>
+#include <curses.h>
+#include "my_header.h"
+
+int main( )
+{
+    int x = 3 ;
+    printf( "\nThe square of %d is %d", x , SQUARE( x ));
+    printf( "\nThe cube of %d is %d", x , CUBE( x ));
+    wait( );
+    return 0;
+}
+
+void wait( void )
+{
+    printf( "\nPress any key to continue.." );
+    getchar( );
+}
+
+Project files
+--------------
+
+game_prog.c
+-------------
+#include <stdio.h>
+#include "game_hdr.h"
+
+char my_char = 'C' ;
+
+int main( )
+{
+    guess_it( );
+    hold_it( );
+    return( 0 );
+}
+
+game_hdr.h
+-----------
+void start_it( void );
+void hold_it( void );
+int guess_it( void );
+void success( int );
+void fail( void );
+
+hold_it.c
+---------
+#include <stdio.h>
+#include "game_hdr.h"
+
+void hold_it( void )
+{
+    printf( "\nPress an key to continue\n" );
+    getchar( );
+}
+
+game_fxn.c
+-----------
+#include <stdio.h>
+#include <stdlib.h>
+#include <curses.h>
+#include <ctype.h>
+#include "game_hdr.h"
+
+extern char my_char;
+
+int guess_it( void )
+{
+    /*char a ;*/
+    char user_char[ 2 ];
+    int kount = 0 ;
+
+    start_it( );
+    do
+
+    {
+        kount++ ;
+        scanf( "%s", &user_char[ 0 ] );
+        toupper( user_char[ 0 ] );
+        if( user_char[ 0 ] == my_char )
+        {
+            success( kount - 1 );
+            return 0 ;
+        }
+        else if( kount < 10 )
+            printf( "\nSorry, wrong guess.\nTry again. " );
+    } while( user_char[ 0 ]  != my_char && kount < 10 );
+    fail( );
+    return 0;
+}
+
+void start_it( )
+{
+    printf( "\nI have a secret letter in my mind." );
+    printf( "\nYou have ten trials to quess it. " );
+}
+
+void success( int counter )
+{
+    printf( "\a\nCorrect. My letter is \"%c\"\n", my_char );
+    printf( "\nYou got it after %d trials", counter );
+}
+
+void fail( void )
+{
+    printf( "\a\a\nSorry, you used up your 10 trials...\nMy letter was \"%c\"\nBetter luck next time.", my_char );
+}
+
+
+Data structures
+----------------
+
+Malloc
+-------
+#include <stdio.h>
+#include <stdlib.h>
+
+int main ( )
+{
+    char *string ;
+    string = ( char * )malloc(80*sizeof(int));
+    if( string == NULL )
+    {
+        printf( "\nCannot allocate memory" ) ;
+        return( 1 );
+    }
+    printf( "\nGive me a string to display: " );
+    gets( string );
+    printf( "The input string is: %s \n", string );
+    return( 0 );
+}
+
+Pointer arrays
+--------------
+/* a. Second dimension means the length of each element
+* b. May omit the first dimension but not the second one
+* c. Print the arrary using "*( season + i )"
+*/
+
+#include <stdio.h>
+
+int main( )
+{
+    int i ;
+    char season[ ][ 10 ] = { "spring",
+                            "summer",
+                            "fall",
+                            "winter" };
+    for( i = 0 ; i <= 3 ; i++ )
+        puts( *( season + i ));
+    return( 0 );
+}
+
+Passing arrays to functions
+---------------------------
+
+/* Bubble sort
+* 1. Compare each element to its next-door neighbor
+* 2. If any element is larger than the next one, swap them
+*
+* Comparison needs two nested loops.
+* 1. Outer loop starts form the first element [ 0 ] and ends right before the last elemnt [ size - 1 ].
+* 2. The inner loop starts one step after the start of the outer loop [ i + 1 ] and ends to the last element [ size ]
+*/
+#include <stdio.h>
+#define MAXDIM 100
+
+void sort_em( int num_array[ ], int size );
+
+int main( )
+{
+    int numbers[ MAXDIM ], actualsize, k ;
+
+/* 1. Enter the size of the array */
+    printf( "Please enter the number of the elements to be sorted: " );
+    scanf( "%d", &actualsize );
+
+/* 2. Enter the elements */
+    for( k = 0 ; k < actualsize ; k++ )
+    {
+        printf( "Element #%d = ", k + 1 );
+        scanf( "%d", &numbers[ k ] );
+    }
+
+/* 3. Call the sort function */
+    sort_em( numbers, actualsize );
+
+/* 4. Print result */
+    printf( "** The sorted array is:\n" );
+    for( k = 0 ; k < actualsize ; k++ )
+        printf( "%d\n", numbers[ k ] );
+    return( 0 );
+}
+
+/* A function for sorting in an ascending order */
+void sort_em( int num_array[ ], int size )
+{
+    int i, j, pot ;
+    for( i = 0 ; i < size - 1 ; i++ )
+        for( j = i + 1; j < size ; j++ )
+            if( num_array[ i ] > num_array[ j ])
+            {
+                pot = num_array[ j ] ;
+                num_array[ j ] = num_array[ i ];
+                num_array[ i ] = pot ;
+            }
+}
+
+Array string pass to function swap
+-----------------------------------
+/* Bubble sort
+* 1. Compare each element to its next-door neighbor
+* 2. If any element is larger than the next one, swap them
+*
+* Comparison needs two nested loops.
+* 1. Outer loop starts form the first element [ 0 ] and ends right before the last elemnt [ size - 1 ].
+* 2. The inner loop starts one step after the start of the outer loop [ i + 1 ] and ends to the last element [ size ]
+*/
+#include <stdio.h>
+#define MAXDIM 2
+#define ACTUALSIZE 2
+
+void swap_em( char *strings[ ] );
+
+int main( )
+{
+    char *string_array[ MAXDIM ];
+    int k;
+
+/* 2. Enter the elements */
+    for( k = 0 ; k < ACTUALSIZE ; k++ )
+    {
+        printf( "Element #%d = ", k + 1 );
+        scanf( "%s", &string_array[ k ] );
+    }
+
+/* 3. Call the sort function */
+    swap_em( string_array );
+
+/* 4. Print result */
+    printf( "** The sorted array is:\n" );
+    for( k = 0 ; k < ACTUALSIZE ; k++ )
+        printf( "%s \n", string_array[ k ]);
+    return( 0 );
+}
+
+/* A function for sorting in an ascending order */
+void swap_em( char *strings[ ] )
+{
+    int i = 0, j = 1, k = 0;
+    char *pot[ 2 ] ;
+    pot[ k ] = strings[ j ] ;
+    strings[ j ] = strings[ i ] ;
+    strings[ i ] = pot[ k ] ;
+    printf ( "Values after call the swap function: a = %s, b = %s \n", strings[ i ], strings[ j ] );
+
+}
+
+Structures
+==========
+
+/* Structures employee record */
+
+#include <stdio.h>
+#include <curses.h>
+
+/* macro definition */
+#define ASK( prompt, response )     puts( prompt ); gets( response )
+
+/* function declaration */
+void hold_it( void );
+
+int main()
+{
+    struct employee
+    {
+        char name[ 30 + 1 ];
+        char dept[ 3 + 1 ];
+        char SSN[ 11 + 1 ];
+        float pay_rate;
+    };
+
+    struct employee employee_record;
+
+    /* Read from the keyboard */
+
+    ASK( "Employee name: ", employee_record.name );
+    ASK( "Employee department: ", employee_record.dept );
+    ASK( "SSN (###-##-####): ", employee_record.SSN );
+    printf( "Enter pay rate: " );
+    scanf( "%f", &employee_record.pay_rate );
+
+    /* Prints results for reviewing */
+
+    printf( "\n\nEmployee Information: \nName: %s\nDepartment: %s\nSSN: %s\nPay rate: $%.2f/hr.", employee_record.name, employee_record.dept, employee_record.SSN, employee_record.pay_rate );
+    hold_it( );
+    return( 0 );
+}
+
+void hold_it( )
+{
+    puts( "\nPress any key to continue..." );
+    getchar( );
+}
+
+Structure initialized
+---------------------
+/* Structures employee record */
+
+#include <stdio.h>
+#include <curses.h>
+
+/* macro definition */
+#define ASK( prompt, response )     fputs( prompt, stdout ); fgets( response, sizeof(response), stdin )
+
+/* function declaration */
+void hold_it( void );
+
+int main()
+{
+    struct employee
+    {
+        char name[ 30 + 1 ];
+        char dept[ 3 + 1 ];
+        char SSN[ 11 + 1 ];
+        float pay_rate;
+    };
+
+    struct employee employee_record = {
+                            "John Martin Smith",
+                            "DPD",
+                            "367-89-1234",
+                            30.56,
+                            };
+
+     /* Prints results for reviewing */
+
+    printf( "\n\nEmployee Information: \nName: %s\nDepartment: %s\nSSN: %s\nPay rate: $%.2f/hr.", employee_record.name, employee_record.dept, employee_record.SSN, employee_record.pay_rate );
+    employee_record.name;
+    employee_record.dept;
+    employee_record.SSN;
+    employee_record.pay_rate;
+    hold_it( );
+    return( 0 );
+}
+
+void hold_it( )
+{
+    puts( "\nPress any key to continue..." );
+    getchar( );
+}
+
+Structure pointers
+------------------
+/* Structures employee record */
+
+#include <stdio.h>
+#include <curses.h>
+#include <stdlib.h>
+
+/* macro definition */
+#define ASK( prompt, response )     fputs( prompt, stdout ); fgets( response, sizeof(response), stdin )
+
+/* struct declartion */
+    struct employee
+    {
+        char name[ 30 + 2 ];
+        char dept[ 3 + 2 ];
+        char SSN[ 11 + 2 ];
+        float pay_rate;
+    };
+/* function declaration */
+void read_info( struct employee * );
+void display_info( struct employee * );
+void hold_it( void );
+
+int main()
+{
+    struct employee employee_record;
+    read_info( &employee_record );
+    display_info( &employee_record );
+    return(0);
+}
+
+void read_info(struct employee *emp_rec)
+{
+    /* Read from the keyboard */
+    char pay_string[ 5 + 2 ];
+    ASK( "Employee name: ", emp_rec -> name );
+    ASK( "Employee department: (xxx) ", emp_rec -> dept );
+    ASK( "SSN (###-##-####): ", emp_rec -> SSN );
+    ASK( "Pay rate: ", pay_string );
+    emp_rec -> pay_rate = atof( pay_string );
+ }
+
+void display_info( struct employee *empl_record )
+{
+    /* Prints results for reviewing */
+
+    printf( "\nEmployee Information: \nName: %sDepartment: %sSSN: %sPay rate: $%.2f/hr.",
+    empl_record -> name,    /* -> indirect membership operator */
+    empl_record -> dept,
+    empl_record -> SSN,
+    empl_record -> pay_rate);   
+    hold_it( );
+}
+
+void hold_it( )
+{
+    puts( "\nPress any key to continue..." );
+    getchar( );
+}
+
+Structure Arrays and Databases
+------------------------------
+/* Structure Arrays and Databases */
+#include <stdio.h>
+#include <curses.h>
+#include <stdlib.h>
+#define SIZE 100
+#define ASK( prompt, response )     fputs( prompt, stdout ); fgets( response, sizeof(response), stdin )
+
+/* struct declartion */
+    struct employee
+    {
+        char name[ 30 + 2 ];
+        char dept[ 3 + 2 ];
+        char SSN[ 11 + 2 ];
+        float pay_rate;
+    };
+/* function declaration */
+char string[ 10 ];      /* a buffer input for strings */
+void menu(void);
+void read_info( struct employee * );
+void display_info( struct employee * );
+void hold_it( void );
+void line( void );
+
+int main()
+{
+    menu();
+    return(0);
+}
+
+void menu(void)
+{
+    static struct employee employee_record[SIZE];
+    printf( "\n1. Add a record. \n2. List Employee Records. \n3. Exit." );
+    ASK( "\n\nPress the option number: ", string );
+    switch(string[0])
+    {
+        case '1':
+            read_info( employee_record );
+            break;
+        case '2':
+            display_info( employee_record );
+            break;
+        case '3':
+            exit( 0 );
+        default:
+            menu();
+    }
+    menu();
+}
+
+void read_info(struct employee *emp_rec)
+{
+    /* Read from the keyboard */
+    int i;
+    ASK( "Enter employee number: ", string );
+    i = atoi(string);
+    ASK( "Employee name: ", emp_rec[i].name );
+    ASK( "Employee department: (xxx) ", emp_rec[i].dept );
+    ASK( "SSN (###-##-####): ", emp_rec[i].SSN );
+    ASK( "Pay rate: ", string );
+    emp_rec[i].pay_rate = atof( string );
+ }
+
+void display_info( struct employee *empl_record )
+{
+    /* Prints results for reviewing */
+
+   int i;
+    printf( "\nEmployee Information:\n" );
+    line();
+    for( i = 0; i < SIZE; i++ )
+    {
+        if( empl_record[i].name[0] != 10 && empl_record[i].name[0] != 0 )
+        {
+            printf( "\nEmployee #%d \nName: %sDepartment: %sSSN: %sPay rate: $%.2f/hr.\n", i, empl_record[i].name, empl_record[i].dept, empl_record[i].SSN, empl_record[i].pay_rate );
+            line();
+        }
+    }
+    hold_it();
+}
+
+void hold_it( )
+{
+    puts( "\nPress any key to continue..." );
+    getchar( );
+}
+
+void line(void)
+{
+    int k;
+    for( k = 1; k <= 30; k++ )
+        putchar('_');
+}
