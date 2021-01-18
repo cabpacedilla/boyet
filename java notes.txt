@@ -532,6 +532,91 @@ public class HelloWorld
 //		own error messages.
 		
 		errorDemo2();
+		
+		// Throwing Exceptions
+//		In addition to catching errors under pre-defined conditions, we can also
+//		define our own conditions for when an error should occur. This is known as
+//		throwing an exception.
+//		
+//		Suppose for whatever reason, you do not want users to access the first
+//		element of the array. You can do that by forcing an exception to be triggered
+//		when users enter the number 0.
+//		
+//		To understand how this works, try running the previous program and enter
+//		the value 0. You'll notice that the program runs normally and gives you
+//		
+//		numbers[0] = 10
+//		
+//		as the output.
+//		
+//		Now try adding the statements
+//		
+//		if (choice == 0)throw new ArrayIndexOutOfBoundsException();
+//		
+//		after the statement
+//		
+//		choice = input.nextInt();
+//		
+//		in the try block above. Run the program again and enter the value 0. You'll
+//		notice that the
+//		
+//		catch(ArrayIndexOutOfBoundsException e)
+//		
+//		block is executed instead.
+//		
+//		This is because when users enter the value 0, the condition choice == 0
+//		evaluates to true. Hence, the statement
+//		
+//		throw new ArrayIndexOutOfBoundsException();
+//		
+//		is executed. This statement causes the
+//		
+//		catch(ArrayIndexOutOfBoundsException e)
+//		
+//		block to be executed.
+		
+		// Object-Oriented Programming
+		
+//		What is Object-Oriented Programming?
+//		Simply stated, object-oriented programming is an approach to programming
+//		that breaks a programming problem into objects that interact with each other.
+//		
+//		Objects are created from templates known as classes. You can think of a class
+//		as the blueprint of a building. An object is the actual “building” that we build
+//		based on the blueprint.
+//		
+//		Writing our own class
+//		The syntax for declaring a class is as follows:
+//		
+//		AccessModifier class ClassName {
+//		//Contents of the class
+//		//including fields, constructors and methods
+//		}
+//		
+//		An example is
+//		public class ManagementStaff{
+//		}
+//		
+//		In the example above, we first state the access level of the class using an
+//		access modifier. Access modifiers are like gate keepers, they control who has
+//		access to that class
+		
+//		public means the class can be accessed by any class in the program.
+//		
+//		Package-private, on the other hand, means the class is only accessible to
+//		other classes within the same package. There can be more than one packages
+//		within a single Java application
+		
+//		Package-private is the default access level. If we do not
+//		write any access modifier, it means the class is package-private.
+		
+//		After declaring the access level of the class, we type the class keyword to
+//		indicate that we are declaring a class, followed by the name of the class
+//		( ManagementStaff ).
+//		
+//		It is common practice to use PascalCasing when naming our classes.
+//		PascalCasing refers to the practice of capitalizing the first letter of each word,
+//		including the first word (e.g. ThisIsAClassName ).
 	}
 	
 	public static void inputDemo()
@@ -625,50 +710,77 @@ public class HelloWorld
 		{
 			System.out.println("----End of Error Handling Example ----");
 		}
+		
+//		Input: 12 and 4
+//		Output:
+//		The result is 3
+//		---- End of Error Handling Example ----
+		
+//		Input: 12 and 0
+//		Output:
+//		/ by zero
+//		---End of Error Handling Example ----
+		
+//		The catch block allows us to specify the type of error that it should catch. In
+//		our example, we are trying to catch a general error. Therefore, we write
+	//	
+//		catch (Exception e)
+	//	
+//		where Exception refers to the class that the error belongs to and e is the
+//		name given to the error.
+	//	
+//		Exception is a pre-written class in Java. It handles all general errors and has
+//		a method called getMessage() that explains the reason for the exception. To
+//		display the error message, we write
+	//
+//		System.out.println(e.getMessage());
+	//	
+//		In our example, we get the following error message
+//		/ by zero
+		
 	}
 	
-//	Input: 12 and 4
-//	Output:
-//	The result is 3
-//	---- End of Error Handling Example ----
-	
-//	Input: 12 and 0
-//	Output:
-//	/ by zero
-//	---End of Error Handling Example ----
-	
-//	The catch block allows us to specify the type of error that it should catch. In
-//	our example, we are trying to catch a general error. Therefore, we write
-//	
-//	catch (Exception e)
-//	
-//	where Exception refers to the class that the error belongs to and e is the
-//	name given to the error.
-//	
-//	Exception is a pre-written class in Java. It handles all general errors and has
-//	a method called getMessage() that explains the reason for the exception. To
-//	display the error message, we write
-//
-//	System.out.println(e.getMessage());
-//	
-//	In our example, we get the following error message
-//	/ by zero
+
 	
 	public static void errorDemo2()
 	{
 		int choice = 0;
 		
 		Scanner input = new Scanner(System.in);
+		
+		int[] numbers = {10, 11, 12, 13, 14, 15};
 		System.out.println("Please enter the index of the array: ");
 		
+		try
+		{
+			choice = input.nextInt();
+			if (choice == 0)
+				throw new ArrayIndexOutOfBoundsException();
+			System.out.printf("numbers[%d] = %d%n",  choice, numbers[choice]);
+		}
+		catch (ArrayIndexOutOfBoundsException e)
+		{
+			System.out.println("Error: Index is invalid.");
+		}
+		catch (InputMismatchException e)
+		{
+			System.out.println("Error: You did not enter an integer.");
+		}
+		catch (Exception e)
+		{
+			System.out.println(e.getMessage());
+		}
 		
+//		If you enter
+//		10
+//		You will get
+//		Error: Index is invalid.
+//		
+//		If you enter
+//		Hello
+//		You will get
+//		Error: You did not enter an integer.
 	}
-	
-
-	
-	
-	
-	
 	
 	
 }
