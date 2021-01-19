@@ -1,4 +1,4 @@
-'This script will open web pages in different view ports. It will create folders by the browser names, view port sizes and one-page and full-page screenshots of the page view port sizes'
+'This script will open web pages in different view ports. It will create folders by the browser names, browser view port sizes with date and time and one-page and full-page screenshots of the page view port sizes'
 'Note: Set the arrangement of the browser test collection in Katalon Studio the same as the arrangement of the browser names in the browser array.'
 'This script was assembled by Claive Alvin P. Acedilla.'
 
