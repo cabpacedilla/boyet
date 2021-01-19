@@ -1,3 +1,6 @@
+'This script will open web pages in different view ports. It will create browser folder, view port folder and one-page and full-page screenshot files with view port filenames'
+'This script was assembled by Claive Alvin P. Acedilla.'
+
 import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
 import com.kms.katalon.core.configuration.RunConfiguration
 import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
