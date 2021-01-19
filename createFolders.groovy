@@ -7,73 +7,73 @@ String todaysDate = date.format('dd-MMMM-yyy HH-mm')
 
 def imgDir = RunConfiguration.getProjectDir() + "screenshots/<testData>"
 
-def length = new Integer[7]
-def width = new Integer[7]
-def device = new String[7]
-def browser = new String[3]
+def lengthArr = new Integer[7]
+def heightArr = new Integer[7]
+def deviceArr = new String[7]
+def browserArr = new String[3]
 
-length[0] = 1920
-width[0] = 950
-device[0] = "desktop"
-length[1] = 360
-width[1] = 640
-device[1] = "GalaxyS5"
-length[2] = 414
-width[2] = 736
-device[2] = "iPhone8+"
-length[3] = 1440
-width[3] = 770
-device[3] = "laptop"
-length[4] = 375
-width[4] = 812
-device[4] = "iPhoneX"
-length[5] = 1024
-width[5] = 768
-device[5] = "iPad"
-length[6] = 1024
-width[6] = 1366
-device[6] = "iPadPro"
+lengthArr[0] = 1920
+heightArr[0] = 950
+deviceArr[0] = "desktop"
+lengthArr[1] = 360
+heightArr[1] = 640
+deviceArr[1] = "GalaxyS5"
+lengthArr[2] = 414
+heightArr[2] = 736
+deviceArr[2] = "iPhone8+"
+lengthArr[3] = 1440
+heightArr[3] = 770
+deviceArr[3] = "laptop"
+lengthArr[4] = 375
+heightArr[4] = 812
+deviceArr[4] = "iPhoneX"
+lengthArr[5] = 1024
+heightArr[5] = 768
+deviceArr[5] = "iPad"
+lengthArr[6] = 1024
+heightArr[6] = 1366
+deviceArr[6] = "iPadPro"
 
-browser[0] = "Chrome"
-browser[1] = "Firefox"
-browser[2] = "Edge"
+browserArr[0] = "Chrome"
+browserArr[1] = "Firefox"
+browserArr[2] = "Edge"
 
 def brwsrCtr = 0
-while ( brwsrCtr <  browser.length )
+while ( brwsrCtr <  browserArr.lengthArr )
 {
-	def browserString
+	def browserArrString
 	
-	browserString = browser[brwsrCtr]
+	browserArrString = browserArr[brwsrCtr]
 	
-	def browserFolder = "$browserString"
+	def browserArrFolder = "$browserArrString"
 	
-	imgDir = RunConfiguration.getProjectDir() + "/screenshots/<projectfolder>" + "/$browserFolder"
+	imgDir = RunConfiguration.getProjectDir() + "/screenshots/<projectfolder>" + "/$browserArrFolder"
 	
 	def ctr = 0
-	while ( ctr < width.length )
+	while ( ctr < heightArr.lengthArr )
 	{
-		def lengthString
-		def widthString
-		def deviceString
+		def lenghtVal
+		def heightVal
+		def deviceVal
 		
-		lengthString = length[ctr]
-		widthString = width[ctr]
-		deviceString = device[ctr]
+		lenghtVal = lengthArr[ctr]
+		heightVal = heightArr[ctr]
+		deviceVal = deviceArr[ctr]
 		
-		def foldername = "$imgDir" + "/$todaysDate" + "/$lengthString" + 'x' + "$widthString" + "$deviceString"
+		def foldername = "$imgDir" + "/$todaysDate" + "/$lenghtVal" + 'x' + "$heightVal" + "$deviceVal"
 		
 		for (def row = 1; row <= findTestData('<testData>').getRowNumbers() - 1; row++)
 		{
 			def filename = findTestData('<testData>').getValue('Name', row)
 			def page = findTestData('<testData>').getValue('page', row)
 						
-			'Open browser'
-			WebUI.openBrowser('')
+			'Open browserArr'
+			WebUI.openbrowser('')
 			
 			'Maximize current window'
 			WebUI.maximizeWindow()
 		
-			WebUI.setViewPortSize(lengthString, widthString)
+			WebUI.setViewPortSize(lenghtVal, heightVal)
 			
 			'Navigate to Link in row value'			
 			WebUI.navigateToUrl(findTestData('<testData>').getValue('Links', row))	
@@ -82,12 +82,13 @@ while ( brwsrCtr <  browser.length )
 			WebUI.waitForPageLoad(10)
 			
 			'Take screenshot and save as png using the filename variables'
-			WebUI.takeScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$lengthString" + 'x' + "$widthString" + '.png')
+			WebUI.takeScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$lenghtVal" + 'x' + "$heightVal" + '.png')
 			
-			WebUI.takeFullPageScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$lengthString" + 'x' + "$widthString" + 'Full' + '.png')
+			'Take full page screenshot after one-page screenshot and save as png using the filename variables'
+			WebUI.takeFullPageScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$lenghtVal" + 'x' + "$heightVal" + 'Full' + '.png')
 			
 			'Close web browser'
-			WebUI.closeBrowser()
+			WebUI.closebrowser()
 		}
 		
 		ctr = ctr + 1
