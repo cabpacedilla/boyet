@@ -1,5 +1,4 @@
 import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
-
 import com.kms.katalon.core.configuration.RunConfiguration
 import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
 
@@ -8,60 +7,60 @@ String todaysDate = date.format('dd-MMMM-yyy HH-mm')
 
 def imgDir = RunConfiguration.getProjectDir() + "screenshots/<testData>"
 
-def column1 = new Integer[7]
-def column2 = new Integer[7]
-def column3 = new String[7]
+def length = new Integer[7]
+def width = new Integer[7]
+def device = new String[7]
 def browser = new String[3]
 
-column1[0] = 1920
-column2[0] = 950
-column3[0] = "desktop"
-column1[1] = 360
-column2[1] = 640
-column3[1] = "GalaxyS5"
-column1[2] = 414
-column2[2] = 736
-column3[2] = "iPhone8+"
-column1[3] = 1440
-column2[3] = 770
-column3[3] = "laptop"
-column1[4] = 375
-column2[4] = 812
-column3[4] = "iPhoneX"
-column1[5] = 1024
-column2[5] = 768
-column3[5] = "iPad"
-column1[6] = 1024
-column2[6] = 1366
-column3[6] = "iPadPro"
+length[0] = 1920
+width[0] = 950
+device[0] = "desktop"
+length[1] = 360
+width[1] = 640
+device[1] = "GalaxyS5"
+length[2] = 414
+width[2] = 736
+device[2] = "iPhone8+"
+length[3] = 1440
+width[3] = 770
+device[3] = "laptop"
+length[4] = 375
+width[4] = 812
+device[4] = "iPhoneX"
+length[5] = 1024
+width[5] = 768
+device[5] = "iPad"
+length[6] = 1024
+width[6] = 1366
+device[6] = "iPadPro"
 
 browser[0] = "Chrome"
 browser[1] = "Firefox"
 browser[2] = "Edge"
 
 def brwsrCtr = 0
-def ctr = 0
 while ( brwsrCtr <  browser.length )
 {
-	def column4var
+	def browserString
 	
-	column4var = browser[brwsrCtr]
+	browserString = browser[brwsrCtr]
 	
-	def browserFolder = "$column4var"
+	def browserFolder = "$browserString"
 	
 	imgDir = RunConfiguration.getProjectDir() + "/screenshots/<projectfolder>" + "/$browserFolder"
 	
-	while ( ctr < column2.length )
+	def ctr = 0
+	while ( ctr < width.length )
 	{
-		def column1var
-		def column2var
-		def column3var
+		def lengthString
+		def widthString
+		def deviceString
 		
-		column1var = column1[ctr]
-		column2var = column2[ctr]
-		column3var = column3[ctr]
+		lengthString = length[ctr]
+		widthString = width[ctr]
+		deviceString = device[ctr]
 		
-		def foldername = "$imgDir" + "/$todaysDate" + "/$column1var" + 'x' + "$column2var" + "$column3var"
+		def foldername = "$imgDir" + "/$todaysDate" + "/$lengthString" + 'x' + "$widthString" + "$deviceString"
 		
 		for (def row = 1; row <= findTestData('<testData>').getRowNumbers() - 1; row++)
 		{
@@ -74,7 +73,7 @@ while ( brwsrCtr <  browser.length )
 			'Maximize current window'
 			WebUI.maximizeWindow()
 		
-			WebUI.setViewPortSize(column1var, column2var)
+			WebUI.setViewPortSize(lengthString, widthString)
 			
 			'Navigate to Link in row value'			
 			WebUI.navigateToUrl(findTestData('<testData>').getValue('Links', row))	
@@ -83,9 +82,9 @@ while ( brwsrCtr <  browser.length )
 			WebUI.waitForPageLoad(10)
 			
 			'Take screenshot and save as png using the filename variables'
-			WebUI.takeScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$column1var" + 'x' + "$column2var" + '.png')
+			WebUI.takeScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$lengthString" + 'x' + "$widthString" + '.png')
 			
-			WebUI.takeFullPageScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$column1var" + 'x' + "$column2var" + 'Full' + '.png')
+			WebUI.takeFullPageScreenshot(("$foldername/$filename") + ' ' + "$page" + ' ' + 'page' + ' ' + "$lengthString" + 'x' + "$widthString" + 'Full' + '.png')
 			
 			'Close web browser'
 			WebUI.closeBrowser()
