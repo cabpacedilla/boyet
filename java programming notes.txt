@@ -818,6 +818,7 @@ public class HelloWorld
 		// There may be cases where a method does not need to return an answer but
 		// simply uses the return statement to exit the method.
 		
+		// Call Staff class
 		Staff staff = new Staff();
 		Scanner input = new Scanner(System.in);
 		
