@@ -1,15 +1,179 @@
 package helloWorld;
 
 import java.util.Arrays;
-import java.util.Scanner;
 import java.util.InputMismatchException;
+import java.util.Scanner;
 
 public class HelloWorld 
 {
 	public static void main(String[] args) 
 	{
+		// Variables and operators
+		// Variables are names given to data that we need to store and manipulate in our
+		// programs.
+		// Variable nameing format : data type of the variable, followed
+		// by its name.
+		
+		// int userAge;
+		// short numberOfStudents;
+		
+//		Variable names should be short but meaningful, designed to indicate to the
+//		casual reader the intent of its use. It makes more sense to name your variables
+//		userName , userAge and userNumber , instead of n , a and un .
+		
+//		It is common practice to use camel casing when naming variables in Java.
+//		Camel casing is the practice of writing compound words with mixed casing,
+//		capitalising the first letter of each word except the first word (e.g.
+//		thisIsAVariableName ).
+		
+//		8 primitive types in Java 
+//		( byte , short , int , long , float , double , char and boolean 
+//		The first 4 data types are for storing integers (i.e. numbers with no fractional
+// 		parts
+	
+//		byte = used for storing integers from -128 to 127
+//		
+//		short = The short data type uses 2 bytes of storage space and has a range of -32768
+//				to 32767.
+//		
+//		int = The int data type uses 4 bytes of storage space and has a range of -2 31
+//				(-2147483648) to 2 31 -1 (2147483647). It is the most commonly used data
+//				type for storing integers as it has the most practical range
+//			
+//		long = The long data type uses 8 bytes of storage space and has a range of -2 63 to
+//				2 63 -1. It is rarely used unless you really need to store a very large integer
+//				(such as the number of inhabitants on Earth). In order to specify a long value,
+//				you have to add the suffix “L” to the end of the number.
+//				
+//		float = The float data type uses 4 bytes of storage and has a range of approximatelynegative 3.40282347 x 10 38 to positive 3.40282347 x 10 38 . It has a precision
+//				of about 7 digits. This means that if you use float to store a number like
+//				1.23456789 (10 digits), the number will be rounded off to approximately 7
+//				digits (i.e. 1.234568).
+		
+//		double = The double data type uses 8 bytes of storage and has a range of
+//				approximately negative 1.79769313486231570 x 10 308 to positive
+//				1.79769313486231570 x 10 308 , with a precision of approximately 15 digits.
+//				
+//				By default, whenever you specify a floating point number in Java, it is
+//				automatically considered to be a double , not a float . If you want Java to
+//				treat the floating point number as a float , you have to add a suffix “F” to the
+//				end of the number.
+//				
+//				Unless memory space is a concern, you should always use a double instead
+//				of a float as it is more precise.
+		
+//		char = stands for character and is used to store single Unicode characters such
+//				as ‘A’, ‘%’, ‘@’ and ‘p’ etc. It uses 2 bytes of memory.
+
+//		boolean = is a special data type that can only hold two values: true and false .
+//				It is commonly used in control flow statements.
+				
+		// Initializing a variable
+		
+//		byte userAge = 20;
+//		short numberOfStudents = 45;
+//		int numberOfEmployees = 500;
+//		long numberOfInhabitants = 21021313012678L;
+//		
+//		float hourlyRate = 60.5F;
+//		double numberOfHours = 5120.5;
+//		
+//		char grade = 'A';
+//		boolean promote = true;
+//		
+//		byte level = 2, userExperience = 5;
+//		
+//		Add the suffix “L” to the end of the number to specify a long value
+	
+		// The assignment operator
+		
+//		In programming, the = sign is known as an assignment
+//		operator. It means we are assigning the value on the right side of the = sign to
+//		the variable on the left
+	
+//		x = 3;
+//		y = 20;
+//		
+//		then write
+//		y = x;
+//		
+//		we are assigning the value of x to the variable y . Hence, y becomes 3 while
+//		the value of x remains unchanged (i.e. y = 3 , x = 3 now).
+		
+//		Basic Operators
+//		Basic operators in Java include + , - , * , / and % which represent addition,
+//		subtraction, multiplication, division and modulus respectively.
+		
+//		Suppose x = 7, y = 2
+//				
+//		Addition:
+//		x + y = 9
+//		
+//		Subtraction:
+//		x - y = 5
+//		
+//		Multiplication: x*y = 14
+//		
+//		Division:
+//		x/y = 3 (rounds down the answer to the nearest integer)
+//		
+//		Modulus:
+//		x%y = 1 (gives the remainder when 7 is divided by 2)
+//		
+//		In Java, division gives an integer answer if both x and y are integers.
+//		However, if either x or y is a non integer, we will get a non integer answer.
+//		For instance,
+//		
+//		7 / 2 = 3
+//		7.0 / 2 = 3.5
+//		7 / 2.0 = 3.5
+//		7.0 / 2.0 = 3.5
+		
+//		In the first case, when an integer is divided by another integer, you get an
+//		integer as the answer. The decimal portion of the answer, if any, is truncated.
+//		Hence, we get 3 instead of 3.5.
+//		
+//		In all other cases, the result is a non integer as at least one of the operands is a
+//		non integer.
+		
+//		Type casting in Java
+//		If we want to convert a smaller data type into a larger data type, we do not
+//		need to do anything explicitly. For instance, the code below assigns a short
+//		(2 bytes) to a double (8 bytes). This is known as a widening primitive
+//		conversion and does not require any special code on our part.
+//		
+//		short age = 10;
+//		double myDouble = age;
+//		
+//		However, if we want to assign a larger data type to a smaller data type, we
+//		need to indicate it explicitly using a pair of parenthesis. This is known as a
+//		narrowing primitive conversion. The example below shows how it can be
+//		done.
+//		
+//		int x = (int) 20.9;
+//		
+//		Here, we can casting a double (8 bytes) into an int (4 bytes).
+//		Narrowing conversion is not safe and should be avoided unless absolutely
+//		necessary. This is because narrowing conversion can result in a loss of data.
+//		When we cast 20.9 into an int , the resulting value is 20, not 21. The decimal
+//		portion is truncated after the conversion.
+		
+//		We can also cast a double into a float . Recall that we mentioned earlier that
+//		all non integers are treated as double by default in Java? If we want to assign
+//		a number like 20.9 to a float, we need to add a suffix ‘F’ to the number.
+//		Another way to do it is to use a cast, like this:
+//		
+//		float num1 = (float) 20.9;
+//		
+//		The value of num1 will be 20.9.
+//		
+//		In addition to casting between numeric types, we can also do other types of
+//		casting.
+		
 		//Print the words Hello World on the screen		
 		System.out.println("Hello world!");
+		
+		// Arrays and strings
 		
 		// String methods
 		
@@ -617,6 +781,51 @@ public class HelloWorld
 //		It is common practice to use PascalCasing when naming our classes.
 //		PascalCasing refers to the practice of capitalizing the first letter of each word,
 //		including the first word (e.g. ThisIsAClassName ).
+		
+//		public class Staff 
+//		{
+//			// Fields
+//			// format: <access level> <field type> <field name>
+//			private String nameOfStaff;
+//			private final int hourlyRate = 30;
+//			private int hoursWorked;
+//			
+//			// Methods
+//			// format: <access level> <return type> <method name> parenthesis braces 
+//			public void printMessage()
+//			{
+//				System.out.println("Calculating Pay...");
+//			}
+//			
+//			public int calculatepPay()
+//			{
+//				printMessage();
+//				
+//				int staffPay;
+//				staffPay = hoursWorked * hourlyRate;
+//				
+//				if (hoursWorked > 0)
+//				{
+//					return staffPay;
+//				}
+//				else
+//					return -1; // return and exit method
+//				
+//			}
+//
+//		}
+		
+		// There may be cases where a method does not need to return an answer but
+		// simply uses the return statement to exit the method.
+		
+		Staff staff = new Staff();
+		Scanner input = new Scanner(System.in);
+		
+		System.out.print("Enter number of worked hours: ");
+		int hoursWorked = input.nextInt();
+		int salary = staff.calculatePay(hoursWorked);
+		System.out.println(salary);		
+	
 	}
 	
 	public static void inputDemo()
@@ -740,8 +949,6 @@ public class HelloWorld
 		
 	}
 	
-
-	
 	public static void errorDemo2()
 	{
 		int choice = 0;
@@ -782,6 +989,34 @@ public class HelloWorld
 //		Error: You did not enter an integer.
 	}
 	
+//	public class Staff 
+//	{
+//		private String nameOfStaff;
+//		private final int hourlyRate = 30;
+//		private int hoursWorked;
+//		
+//		// Methods
+//		// format: <access level> <return type> <method name> parenthesis braces 
+//		public void printMessage()
+//		{
+//			System.out.println("Calculating Pay...");
+//		}
+//		
+//		public int calculatepPay()
+//		{
+//			printMessage();
+//			
+//			int staffPay;
+//			staffPay = hoursWorked * hourlyRate;
+//			
+//			if (hoursWorked > 0)
+//			{
+//				return staffPay;
+//			}
+//			else
+//				return -1;
+//		}	
+//	}		
 	
 }
 
