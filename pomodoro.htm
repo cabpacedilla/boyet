@@ -48,8 +48,8 @@ November 2019
 <br> 
 <br> 
 	
-<p>Note:<br> When the first entered time arrives, a 'alarmWindow-up is blocked' notification will appear on the right corner of the address bar. 
-Click on the notification and select 'Always allow..'. Click the Ok button. The break and resume time alarmWindow-up notification alert message will be displayed 
+<p>Note:<br> When the first entered time arrives, a 'pop-up is blocked' notification will appear on the right corner of the address bar. 
+Click on the notification and select 'Always allow..'. Click the Ok button. The break and resume time alert message will be displayed 
 every time a break or resume time arrives.
 <p>
 	
@@ -121,7 +121,7 @@ if (localStorage.getItem("backToWorkTimes") !== null)
   backToWorkArray = JSON.parse(localStorage.getItem("backToWorkTimes"));
 }
 
-loopArray();
+loopArray(breakFromWorkArray, backToWorkArray);
 
 function toTimeString(dateObj) 
 {
@@ -525,7 +525,7 @@ function triggerPopupBlocker(currentTime)
 	}
 }
 
-function loopArray() 
+function loopArray(breakFromWorkArray, backToWorkArray) 
 {
   let alarmWindow;
   let breakAlertArray;
