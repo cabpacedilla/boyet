@@ -275,7 +275,7 @@ function addBreakResumeTimes()
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
 		localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
-		triggerPopupBlocker(currentTime);
+		//triggerPopupBlocker(backToWorkArray);
   } 
   else 
   {
@@ -303,7 +303,7 @@ function addBreakResumeTimes()
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
 		localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
-		triggerPopupBlocker(currentTime);
+	//	triggerPopupBlocker(backToWorkArray);
   }
 }
 
@@ -334,7 +334,7 @@ function addBreakFromWorkTimes()
     }
 		
 		localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-		triggerPopupBlocker(currentTime);
+	//	triggerPopupBlocker(breakFromWorkArray);
   }
 }
 
@@ -365,7 +365,7 @@ function addbackToWorkTimes()
     }	
 		
 		localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
-		triggerPopupBlocker(currentTime);
+	//	triggerPopupBlocker(backToWorkTimes);
   }
 }
 
@@ -483,70 +483,76 @@ function clearResumeTimes()
   }
 }
 
-function triggerPopupBlocker(currentTime)
-{
-	let alarmWindow;
-	let newDate = new Date();
-  let currentTimeStartTime = new Date();
-  let currentTimeStartTimeString;
-  let currentHours;
-  let currentMinutes;
+// function triggerPopupBlocker(breakResumeArrays)
+// {
+// 	let alarmWindow;
+// 	/*let newDate = new Date();
+//   let currentTimeStartTime = new Date();
+//   let currentTimeStartTimeString;
+//   let currentHours;
+//   let currentMinutes;
 
-  currentHours = newDate.getHours();
-  currentMinutes = newDate.getMinutes();
-  currentTimeStartTime.setHours(currentHours, currentMinutes);
-  currentTimeStartTimeString = toTimeString(currentTimeStartTime);
-	//currentTimeStartTimeString = currentTimeStartTimeString.split(", ");
-  //currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
-  //currentTimeStartTimeString = currentTimeStartTimeString[0];
-	//currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
+//   currentHours = newDate.getHours();
+//   currentMinutes = newDate.getMinutes();
+//   currentTimeStartTime.setHours(currentHours, currentMinutes);
+//   currentTimeStartTimeString = toTimeString(currentTimeStartTime);*/
+// 	//currentTimeStartTimeString = currentTimeStartTimeString.split(", ");
+//   //currentTimeStartTimeString = currentTimeStartTimeString.split(" ");
+//   currentTimeStartTimeString = currentTimeStartTimeString[0];
+// 	//currentTimeStartTimeString = currentTimeStartTimeString.substring(0, currentTimeStartTimeString.length - 3);
 
-  //alert(currentTimeStartTimeString);	
-	//breakFromWorkArray.push(currentTimeStartTimeString[0]); 
-	//localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
-	if (currentTimeStartTimeString == currentTime)
-	{
-		alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
-				setTimeout(function() 
-				{
-					if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
-					{
-						alarmWindow && alarmWindow.close();
-						alert("If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the alert messages.");
-					}
-				}, 2000);
+//   //alert(currentTimeStartTimeString);	
+// 	//breakFromWorkArray.push(currentTimeStartTimeString[0]); 
+// 	//localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
+// 	if (breakResumeArrays !== null)
+// 	{
+// 		alarmWindow = window.open("", "ResumeToWork", "width=375,height=50");
+// 				setTimeout(function() 
+// 				{
+// 					if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
+// 					{
+// 						alarmWindow && alarmWindow.close();
+// 						alert("If pop-up alert is blocked. click on the pop-up blocker and allow pop-ups of the alert messages.");
+// 					}
+// 				}, 2000);
 		
-		alarmWindow.focus();
-		breakMessage = "<p>When the added break or resume time will be the same as the current time, an alert message will appear. If pop-up alert will be blocked, click on the pop-up blocker and allow pop-ups of the alert messages.";
-		alarmWindow.document.write(breakMessage);
-		setTimeout(function() {
-			alarmWindow.close();
-		}, 50000);
-	}
-}
+// 		alarmWindow.focus();
+// 		breakMessage = "<p>When the added break or resume time will be the same as the current time, an alert message will appear. If pop-up alert will be blocked, click on the pop-up blocker and allow pop-ups of the alert messages.";
+// 		alarmWindow.document.write(breakMessage);
+// 		setTimeout(function() {
+// 			alarmWindow.close();
+// 		}, 50000);
+//   }
+// }
 
 function loopArray(breakFromWorkArray, backToWorkArray) 
 {
   let alarmWindow;
+  let popupBlockedWindow;
+  let blockedMessage;
   let breakAlertArray;
   let resumeAlertArray;
   let breakMessage;
   let resumeMessage;
   let ctr = 0;
 
+  
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
   while (breakFromWorkArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
   {
     // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message		
     if (breakFromWorkArray[ctr] == currentTime) 
     {
+      
       alarmWindow = window.open("", "BreakTime", "width=350,height=50");
 			setTimeout(function() 
 			{
 				if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
 				{
-					alarmWindow && alarmWindow.close();
-					alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
+          alarmWindow && alarmWindow.close();
+          popupBlockedWindow = window.open("", "Popup Blocked", "width=350,height=50");
+          blockedMessage = "<p>Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.";
+					popupBlockedWindow.document.write(blockedMessage);
 				}
 			}, 2000);
       alarmWindow.focus();
@@ -567,8 +573,10 @@ function loopArray(breakFromWorkArray, backToWorkArray)
 			{
 				if(!alarmWindow || alarmWindow.closed || alarmWindow.closed == "undefined" || alarmWindow == "undefined" || alarmWindow.document.documentElement.clientWidth == 0 || alarmWindow.document.documentElement.clientHeight == 0)
 				{
-					alarmWindow && alarmWindow.close();
-					alert("Pop-up was blocked. Click on the pop-up blocker and allow pop-ups break and resume to work notification message.");
+          alarmWindow && alarmWindow.close();
+          popupBlockedWindow = window.open("", "Popup Blocked", "width=350,height=50");
+					blockedMessage = "<p>Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.";
+					popupBlockedWindow.document.write(blockedMessage);
 				}
 			}, 2000);
       alarmWindow.focus();
