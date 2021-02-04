@@ -1,5 +1,4 @@
 import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
-
 import com.kms.katalon.core.configuration.RunConfiguration
 import com.kms.katalon.core.webui.driver.DriverFactory
 import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
