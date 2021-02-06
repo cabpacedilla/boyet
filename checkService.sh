@@ -18,10 +18,11 @@ declare -a SCRIPTS=("keyLocked.sh" "lowMemAlert.sh" "powerAlert.sh" "laptopLidCl
 srvCtr=0   
 while [ "$srvCtr" -le "${#SERVICES[@]}" ] ; do
    
-   # check if process is running comparing array item with pgrep -x 
+   # check if service is running comparing array item with pgrep -x 
    if pgrep -x "${SERVICES[$srvCtr]}" >/dev/null; then
       :
    
+   # else, run the service
    else   
       ${SERVICES[$srvCtr]} &
       
@@ -33,10 +34,11 @@ done
 scrCtr=0   
 while [ "$scrCtr" -le "${#SCRIPTS[@]}" ] ; do
    
-   # check if process is running comparing array item with pgrep -x 
+   # check if script is running comparing array item with pgrep -x 
    if pidof -x "${SCRIPTS[$scrCtr]}" >/dev/null; then
       :
    
+   # else, run the script
    else   
       ${SCRIPTS[$scrCtr]} &
       
