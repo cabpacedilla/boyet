@@ -10,22 +10,37 @@
 # 5. Add the checkService.sh command in Startup applications
 # 6. Reboot the laptop and login
 # 7. The script will run the process if the process is not running
-
 #!/usr/bin/bash
 
 declare -a SERVICES=("blueman-applet" "nm-applet")
+declare -a SCRIPTS=("keyLocked.sh" "lowMemAlert.sh" "powerAlert.sh" "laptopLidClosed.sh")
 
-ctr=0   
-while [ "$ctr" -le "${#SERVICES[@]}" ] ; do
+srvCtr=0   
+while [ "$srvCtr" -le "${#SERVICES[@]}" ] ; do
    
    # check if process is running comparing array item with pgrep -x 
-   if pgrep -x "${SERVICES[$ctr]}" >/dev/null; then
+   if pgrep -x "${SERVICES[$srvCtr]}" >/dev/null; then
       :
    
    else   
-      ${SERVICES[$ctr]} &
+      ${SERVICES[$srvCtr]} &
       
    fi
    
-   ctr=$[$ctr + 1] 
+   srvCtr=$[$srvCtr + 1] 
+done
+
+srcCtr=0   
+while [ "$srcCtr" -le "${#SCRIPTS[@]}" ] ; do
+   
+   # check if process is running comparing array item with pgrep -x 
+   if pidof -x "${SCRIPTS[$srcCtr]}" >/dev/null; then
+      :
+   
+   else   
+      ${SCRIPTS[$srcCtr]} &
+      
+   fi
+   
+   srcCtr=$[$srcCtr + 1]  
 done
