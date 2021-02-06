@@ -30,17 +30,17 @@ while [ "$srvCtr" -le "${#SERVICES[@]}" ] ; do
    srvCtr=$[$srvCtr + 1] 
 done
 
-srcCtr=0   
-while [ "$srcCtr" -le "${#SCRIPTS[@]}" ] ; do
+scrCtr=0   
+while [ "$scrCtr" -le "${#SCRIPTS[@]}" ] ; do
    
    # check if process is running comparing array item with pgrep -x 
-   if pidof -x "${SCRIPTS[$srcCtr]}" >/dev/null; then
+   if pidof -x "${SCRIPTS[$scrCtr]}" >/dev/null; then
       :
    
    else   
-      ${SCRIPTS[$srcCtr]} &
+      ${SCRIPTS[$scrCtr]} &
       
    fi
    
-   srcCtr=$[$srcCtr + 1]  
+   scrCtr=$[$scrCtr + 1]  
 done
