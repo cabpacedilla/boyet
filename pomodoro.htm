@@ -494,6 +494,22 @@ function loopArray(breakFromWorkArray, backToWorkArray)
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
   while (breakFromWorkArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime) 
   {
+    let breakFromWorkInMinutes = breakFromWorkArray[ctr];
+    breakFromWorkInMinutes = breakFromWorkInMinutes.substring(0, 5);
+    breakFromWorkInMinutes = breakFromWorkInMinutes.split(":");
+    let breakFromWorkHourMinutes = parseInt(breakFromWorkInMinutes[0]);
+    let breakFromWorkMinutesMinutes = parseInt(breakFromWorkInMinutes[1]);
+    breakFromWorkInMinutes = (breakFromWorkHourMinutes  * 60) + breakFromWorkMinutesMinutes;
+    
+    let resumeFromWorkInMinutes = backToWorkArray[ctr];
+    resumeFromWorkInMinutes= resumeFromWorkInMinutes.substring(0, 5);
+    resumeFromWorkInMinutes = resumeFromWorkInMinutes.split(":");
+    let resumeFromWorkHourMinutes = parseInt(resumeFromWorkInMinutes[0]);
+    let resumeFromWorkMinutesMinutes = parseInt(resumeFromWorkInMinutes[1]);
+    resumeFromWorkInMinutes= (resumeFromWorkHourMinutes  * 60) + resumeFromWorkMinutesMinutes;
+
+    diffMinutes = resumeFromWorkInMinutes - breakFromWorkInMinutes;
+
     // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message		
     if (breakFromWorkArray[ctr] == currentTime) 
     {
@@ -508,9 +524,8 @@ function loopArray(breakFromWorkArray, backToWorkArray)
 				}
 			}, 2000);
       alarmWindow.focus();
-      breakAlertArray = breakFromWorkArray[ctr] + "." + "</p>";
-      breakMessage = "<p>Time for a break because it is now ";
-      alarmWindow.document.write(breakMessage + breakAlertArray);
+      breakMessage = "<p>Time for a break because it is now " + breakFromWorkArray[ctr] + " . " + " Come back after " + diffMinutes + " minute(s).";
+      alarmWindow.document.write(breakMessage);
       setTimeout(function() {
         popupBlockedWindow.close();
         alarmWindow.close();
