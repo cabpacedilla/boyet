@@ -450,7 +450,7 @@ function loopArray(breakFromWorkArray, backToWorkArray)
     // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message		
     if (breakFromWorkArray[ctr] == currentTime)
     {
-      alarmWindow = window.open("", "BreakTime", "width=550,height=50");
+      alarmWindow = window.open("", "BreakTime", "width=500,height=50");
       setTimeout(function()
       {
         if (!alarmWindow || alarmWindow.closed || typeof alarmWindow.closed == "undefined")
