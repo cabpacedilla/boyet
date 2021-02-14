@@ -2,7 +2,6 @@
 This webpage will alert a message when added pomodoro breaktimes and back to work times is equal to the system time.
 This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 November 2019
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">-->
 <!DOCTYPE html>
 <html>
@@ -82,11 +81,13 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 <br>	
 <h4>Clear all break and resume times:</h4> <input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
     
-<script type="text/javascript">		
-  window.onbeforeunload = function()
-  {
-    window.scrollTo(0, 0);
-  }
+<script type="text/javascript">	
+	
+window.onbeforeunload = function()
+{
+  window.scrollTo(0, 0);
+}
+  
 let breakFromWorkArray = [];
 let backToWorkArray = [];
 let breakFromWorkTimes; // Break from work times input	
@@ -94,6 +95,7 @@ let backToWorkTimes; //  Resume to work times input
 let breakTimeString; // Convert breakTime to string to compare to currentTime
 let resumeTimeString; // Convert resumeTime to string to compare to currentTime
 let currentTime;
+
 //Convert time to string in hour and minute.		
 currentTime = String(new Date().toLocaleTimeString("en-US",
 {
@@ -101,6 +103,7 @@ currentTime = String(new Date().toLocaleTimeString("en-US",
   hour: "numeric",
   minute: "numeric"
 }));
+
 if (localStorage.getItem("breakFromWorkTimes") !== null)
 {
   breakFromWorkArray = JSON.parse(localStorage.getItem("breakFromWorkTimes"));
@@ -171,6 +174,7 @@ function addBreakResumeTimes()
   let startTimeObject = new Date();
   let stopTime;
   let stopTimeObject = new Date();
+  
   startTime = document.getElementById("startTime").value;
   stopTime = document.getElementById("stopTime").value;
   if (startTime == "" || stopTime == "" || resumeInterval == "" || workInterval == "")
@@ -444,6 +448,7 @@ function loopArray(breakFromWorkArray, backToWorkArray)
   let breakMessage;
   let resumeMessage;
   let ctr = 0;
+  
   //Loop the arrays while breakFromWorkArray is not equal to currentTime or backToWorkArray is not equal to currentTime
   while (breakFromWorkArray[ctr] != currentTime || backToWorkArray[ctr] != currentTime)
   {
@@ -499,8 +504,6 @@ function loopArray(breakFromWorkArray, backToWorkArray)
     ctr = ctr + 1;
   }
 }
-
 </script>		
 </body>
 </html>
-
