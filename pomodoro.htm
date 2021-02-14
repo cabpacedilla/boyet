@@ -11,10 +11,8 @@ November 2019
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Send Pomodoro alarm</title>
 </head>
-
 <body>
 <h1>Pomodoro work life balance</h1>
-
 <div>
   <label for="startTime">Start time:</label>
   <input type="time" id="startTime" value="08:00" required />
@@ -82,7 +80,6 @@ Or you may also add multiple break and resume times in a 12-hour format separate
 <h4>Clear all break and resume times:</h4> <input type="button" value="Clear break times" onclick="clearBreakTimes()"> <input type="button" value="Clear resume times" onclick="clearResumeTimes()">
     
 <script type="text/javascript">	
-	
 window.onbeforeunload = function()
 {
   window.scrollTo(0, 0);
