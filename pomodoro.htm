@@ -3,10 +3,11 @@ This webpage will alert a message when added pomodoro breaktimes and back to wor
 This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 November 2019
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">-->
+
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="refresh" content="55">
+    <meta http-equiv="refresh" content="59">
     <meta http-equiv="Content-type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Send Pomodoro alarm</title>
@@ -435,13 +436,49 @@ function clearResumeTimes()
   }
 }
 
+function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, message) 
+{  
+   let left;
+   let top;
+   let breakAlarmWindow;
+   let resumeAlarmWindow;
+   
+   setTimeout(function()
+      {
+        if (!alarmWindow || alarmWindow.closed || typeof alarmWindow.closed == "undefined")
+        {
+          document.title = "Pop-up blocked";
+          alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
+        }
+      }, 2000);
+      
+   left = (screen.width - popupWinWidth) / 2; 
+   top = (screen.height - popupWinHeight) / 4; 
+   
+   if (pageTitle == "Break Time")
+   {
+      breakAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left); 
+      breakAlarmWindow.document.write(message);
+      breakAlarmWindow.focus();
+      setTimeout(function()
+      {
+        breakAlarmWindow.close();
+      }, 50000);
+   }
+   else if (pageTitle == "Resume Time")
+   {
+      resumeAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left); 
+      resumeAlarmWindow.document.write(message);
+      resumeAlarmWindow.focus();
+      setTimeout(function()
+      {
+        resumeAlarmWindow.close();
+      }, 50000);
+   }
+} 
+        
 function loopArray(breakFromWorkArray, backToWorkArray)
 {
-  let alarmWindow;
-  let popupBlockedWindow;
-  let blockedMessage;
-  let breakAlertArray;
-  let resumeAlertArray;
   let breakMessage;
   let resumeMessage;
   let ctr = 0;
@@ -452,44 +489,15 @@ function loopArray(breakFromWorkArray, backToWorkArray)
     // If pomodoro time is equal to current time, alarm for pomodoro with alarmWindow-up message		
     if (breakFromWorkArray[ctr] == currentTime)
     {
-      alarmWindow = window.open("", "BreakTime", "width=500,height=50");
-      setTimeout(function()
-      {
-        if (!alarmWindow || alarmWindow.closed || typeof alarmWindow.closed == "undefined")
-        {
-          document.title = "Pop-up blocked";
-          alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
-        }
-      }, 2000);
-      alarmWindow.focus();
       breakMessage = "<p>Time for a break because it is now " + breakFromWorkArray[ctr] + ".";
-      alarmWindow.document.write(breakMessage);
-      setTimeout(function()
-      {
-        alarmWindow.close();
-      }, 50000);
+      showAlarmWindow("", "Break Time", 500, 50, breakMessage);
       break;
     }
     // If back to work time is equal to current time, alarm for back to work with alarmWindow-up message    			
     if (backToWorkArray[ctr] == currentTime)
     {
-      alarmWindow = window.open("", "ResumeToWork", "width=550,height=50");
-      setTimeout(function()
-      {
-        if (!alarmWindow || alarmWindow.closed || typeof alarmWindow.closed == "undefined")
-        {
-          document.title = "Pop-up blocked";
-          alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
-        }
-      }, 2000);
-      alarmWindow.focus();
-      resumeAlertArray = backToWorkArray[ctr] + "." + "</p>";
-      resumeMessage = "<p>Time to resume to work because it is now ";
-      alarmWindow.document.write(resumeMessage + resumeAlertArray);
-      setTimeout(function()
-      {
-        alarmWindow.close();
-      }, 50000);
+      resumeMessage = "<p>Time to resume to work because it is now " + backToWorkArray[ctr] + ".";
+      showAlarmWindow("", "Resume Time", 550, 50, resumeMessage);
       break;
     }
     //break from the ctr if the iteration reach the last elements of the pomodoro and back to work time arrays
