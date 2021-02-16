@@ -436,21 +436,21 @@ function clearResumeTimes()
   }
 }
 
+function showPopBlocked()
+{
+   setTimeout(function()
+   {
+      document.title = "Pop-up blocked";
+      alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
+   }, 2000);
+}
+
 function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, message) 
 {  
    let left;
    let top;
    let breakAlarmWindow;
    let resumeAlarmWindow;
-   
-   setTimeout(function()
-      {
-        if (!alarmWindow || alarmWindow.closed || typeof alarmWindow.closed == "undefined")
-        {
-          document.title = "Pop-up blocked";
-          alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
-        }
-      }, 2000);
       
    left = (screen.width - popupWinWidth) / 2; 
    top = (screen.height - popupWinHeight) / 4; 
@@ -458,6 +458,11 @@ function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, mess
    if (pageTitle == "Break Time")
    {
       breakAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left); 
+      
+      if (!breakAlarmWindow || breakAlarmWindow.closed || typeof breakAlarmWindow.closed == "undefined")
+      {
+         showPopBlocked();
+      }      
       breakAlarmWindow.document.write(message);
       breakAlarmWindow.focus();
       setTimeout(function()
@@ -467,7 +472,11 @@ function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, mess
    }
    else if (pageTitle == "Resume Time")
    {
-      resumeAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left); 
+      resumeAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left);       
+      if (!resumeAlarmWindow|| resumeAlarmWindow.closed || typeof resumeAlarmWindow.closed == "undefined")
+      {
+          showPopBlocked();
+      }
       resumeAlarmWindow.document.write(message);
       resumeAlarmWindow.focus();
       setTimeout(function()
