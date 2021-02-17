@@ -436,12 +436,12 @@ function clearResumeTimes()
   }
 }
 
-function showPopBlocked()
+function showPopupBlocked()
 {
    setTimeout(function()
    {
       document.title = "Pop-up blocked";
-      alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notification.");
+      alert("Pop-up was blocked.  Click on the pop-up blocker and allow pop-ups to display the break and resume to work notifications.");
    }, 2000);
 }
 
@@ -457,11 +457,11 @@ function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, mess
    
    if (pageTitle == "Break Time")
    {
-      breakAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left); 
+      breakAlarmWindow = window.open("", pageTitle, 'width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left); 
       
       if (!breakAlarmWindow || breakAlarmWindow.closed || typeof breakAlarmWindow.closed == "undefined")
       {
-         showPopBlocked();
+         showPopupBlocked();
       }      
       breakAlarmWindow.document.write(message);
       breakAlarmWindow.focus();
@@ -472,10 +472,10 @@ function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, mess
    }
    else if (pageTitle == "Resume Time")
    {
-      resumeAlarmWindow = window.open("", pageTitle, 'resizable=yes, width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left);       
+      resumeAlarmWindow = window.open("", pageTitle, 'width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left);       
       if (!resumeAlarmWindow|| resumeAlarmWindow.closed || typeof resumeAlarmWindow.closed == "undefined")
       {
-          showPopBlocked();
+         showPopupBlocked();
       }
       resumeAlarmWindow.document.write(message);
       resumeAlarmWindow.focus();
