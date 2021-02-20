@@ -470,7 +470,7 @@ function showAlarmWindow(pageURL, pageTitle, popupWinWidth, popupWinHeight, mess
         breakAlarmWindow.close();
       }, 50000);
    }
-   else if (pageTitle == "Resume Time")
+   if (pageTitle == "Resume Time")
    {
       resumeAlarmWindow = window.open("", pageTitle, 'width=' + popupWinWidth + ', height=' + popupWinHeight + ', top=' + top + ', left=' + left);       
       if (!resumeAlarmWindow|| resumeAlarmWindow.closed || typeof resumeAlarmWindow.closed == "undefined")
