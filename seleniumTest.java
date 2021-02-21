@@ -27,7 +27,7 @@ public class SuccesfulPurchaseOfItems extends Browser
 		
 		// Run Test scripts by calling base page element methods and TestData base test values
 		
-      // 2. Verify vehicle navigation links 
+      		// 2. Verify vehicle navigation links 
 		siteHome.navSection.verifyAutomobileNavLink();
 		siteHome.navSection.verifyTruckNavLink();
 		siteHome.navSection.verifyMotorcycleNavLink();
