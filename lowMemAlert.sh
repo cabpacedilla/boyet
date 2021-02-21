@@ -16,14 +16,14 @@
 while true
 do
    ## 1. Get total free memory size in megabytes(MB) 
-   free=$(free -mt | grep Total | awk '{print $4}')
+   FREE_MEM_TOTAL=$(free -mt | grep Total | awk '{print $4}')
 
    ## 2. Check if free memory is less or equals to desired low free memory space in megabytes
-   if [ $free -le 1000 ] 
+   if [ $FREE_MEM_TOTAL -le 1000 ] 
    then        
       ## 3. get top processes consuming system memory and show notification with the top 10 memory consuming processes
-      top_processes=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head`)
-      notify-send -t 15000 "RAM has low free memory. Free high memory consuming processes: ${top_processes}" 
+      TOP_PROCESSES=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head`)
+      notify-send -t 15000 "RAM has low free memory. Free high memory consuming processes: ${TOP_PROCESSES}" 
        
    fi
    ## 4. sleep script for 30 seconds
