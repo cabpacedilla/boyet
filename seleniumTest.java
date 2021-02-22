@@ -4,7 +4,6 @@ Note: The test object, page objects and data object should be saved in separate 
 
 /* SuccesfulPurchaseOfItems.java tests script */
 package com.seleniumframework.tests;
-
 import org.testng.annotations.Test;
 import com.seleniumframework.core.Browser;
 import com.seleniumframework.core.Log;
@@ -107,7 +106,6 @@ public class SuccesfulPurchaseOfItems extends Browser
 
 /* siteHome.java pageobject */
 package com.seleniumframework.pageobjects;
-
 import org.openqa.selenium.By;
 
 // Inherit element classes
@@ -156,7 +154,6 @@ public class siteHome
 
 /* AutomobileInsurancePage.java pageobject */
 package com.seleniumframework.pageobjects;
-
 import org.openqa.selenium.By;
 
 // Inherit element classes
@@ -476,7 +473,6 @@ public class AutomobileInsurancePage
 
 /* TestData.java dataobject */
 package com.seleniumframework.dataobjects;
-
 import java.io.IOException;
 import com.seleniumframework.core.DataTable;
 import jxl.read.biff.BiffException;
