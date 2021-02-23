@@ -9,8 +9,6 @@ import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
 Date date = new Date()
 String todaysDate = date.format('dd-MMMM-yyy HH-mm')
 
-def imgDir = RunConfiguration.getProjectDir() + "screenshots/<testData>"
-
 def lengthArr = new Integer[7]
 def heightArr = new Integer[7]
 def deviceArr = new String[7]
