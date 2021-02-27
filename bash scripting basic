@@ -1,0 +1,293 @@
+1. Shell scripts starts with !#<pathofbash>
+!#/bin/bash
+
+2. Save shell script file with .sh extension
+
+3. Set shell script file executable with chmod command:
+chmod o+x scriptname.sh
+
+CONCEPTS:
+---------
+1. VARIABLES
+2. OPERATORS
+3. IF THEN ELSE TEST CONDITION
+4. LOOPS AND ITERATION
+
+1. VARIABLES: 
+--------------
+External variables
+-------------------
+External variables (argument (data) passed to script): scriptname.sh argument1 argument2 argument3
+Value of external variables = $1 (first argument), $2 (2nd argument), ..
+$# = number of arguments passed to script
+$0 = script itself
+
+Local variables
+---------------
+variable = container to hold data or information
+variable name
+$<variablename> = get value of variable
+
+enclose variables in single quotes ( '$variablename ) = string = output = variablename
+backslash before variables ( /$variablename )= display variable as string
+enclose command in back ticks = take value of command
+assign value of commands to variables
+
+2. OPERATORS:
+-------------
+Assignment operator ('=')
+--------------------------
+variablename = value
+
+Example 1: Displaying output and comments
+
+Filename: displayOutput.sh
+
+!#/bin/bash
+
+# This is a comment
+
+echo "This is a script."
+echo "What do you think?" # this is a comment
+
+Save the file then run the script in terminal with command: bash displayOutput.sh or ./displayOutput.sh
+
+Output:
+This is a script
+What do you think?
+
+Example 2: Variables, variable assignment and displaying variable output
+
+Filename: variablesOutput.sh
+
+!#/bin/bash
+
+testing = "moby dick" 
+
+echo "here is what $testing looks like in double quotes."
+echo 'here is what $testing looks like in single quotes.'
+
+name2 = '$testing'
+
+echo "This is what the variable $name2 is equal to $name2."
+
+name3 = \$testing
+
+echo "This is what the variable $name3 is equal to $name3."
+
+
+space_used = `du -s /home/john | cut -f 1`
+echo "John is using $space_used kilobytes"
+
+Save the file then run the script in terminal: ./variablesOutput.sh
+
+Output:
+here is what moby dick looks like in double quotes
+here is what $testing looks like in single quotes
+This is what the variable name2 is equal to: $testing
+This is what the variable name3 is equal to: $testing
+John is using 7836 kilobytes
+
+Math operators:
+---------------
+  +, -, *, /, % (modulo), ** (exponent)
+  
+Comparison operators for string:
+--------------------------------
+  =, !=, -n, -z       # -n = non-zero characters in string -z = zero characters in string
+
+Comparison operators for numbers:
+--------------------------------
+  -gt, -ge, -lt, -le, -ne, eq
+    
+File operators
+-----------------
+  -r, -x, -w, -d, -f, -s
+    
+    
+3. IF THEN ELSE TEST CONDITION
+-------------------------------    
+Example 1: String
+
+Filename: stringCompare.sh
+
+!#/bin/bash
+
+string1 = "tommy"
+string2 = "chucky"
+
+if [ $string1 != $string2 ]
+then
+  echo "string1 is not equal to string2"
+else
+  echo "string1 is equal to string2"
+fi
+
+if [ -n $string1 ]  # -n = zero length characters
+then
+  echo "string1 is not empty string"
+else
+  echo "string1 is the empty string"
+fi
+
+Save the file then run the script in terminal: ./stringCompare.sh
+
+Output:
+string1 is not equal to string2
+string1 is not empty string
+
+Example 2: Numbers
+
+Filename: numberCompare.sh
+
+!#/bin/bash
+
+num1 = 10
+num2 = 15
+num3 = 20
+
+if [ $num1 -ge $num2 ]
+then  
+  echo "$num1 is greater than or equal to $num2"
+else
+  echo "$num1 is less than $num2"
+fi
+
+let num4 = $num1 + $num2
+
+if [ $num4 -gt $num3 ]
+then
+  echo "$num4 is greater than $num3"
+else
+  echo "$num4 is less than or equal to $num3"
+fi
+
+Save the file then run the script in terminal: ./numberCompare.sh
+
+Output:
+10 is less than 15
+25 is greater than 20
+
+Example 3: Files
+
+Filename: fileCheck.sh
+
+!#/bin/bash
+
+dir1 = /home/perry
+file1 = /home/perry/scripts/example1.sh
+
+if [ -x $file1 ] # if executable
+then
+  echo "$file1 is executable"
+else
+  echo  "$file1 is not executable"
+fi
+
+if [ -d $file ] # if a directory
+then
+  echo "$file1 is a directory"
+else
+  echo "$file1 is not a directory"
+fi
+
+
+if [ -r $dir1 -a -x $dir1 ] # if readable and executable
+then
+  echo "$dir1 is readable and executable"
+else
+  echo "$dir1 is not both readable and executable"
+fi
+
+Save the file then run the script in terminal: ./fileCheck.sh
+
+Output:
+/home/John/scripts/fileCheck.sh is executable
+/home/John/scripts/fileCheck.sh is not a directory
+
+Example 4: Disk usage system check
+
+Filename: diskUsage.sh
+
+#!/bin/bash
+
+if [ $# -lt 1 ]
+then
+   echo "You must pass at least one username to the $0 script"
+   exit
+fi
+
+cd /home/$1
+SPACE = `du -s | cut -f 1`
+
+echo "$S1 is using $SPACE kilobytes"
+
+Save then run the script in terminal with username argument: ./diskUsage.sh John
+
+Output:
+John is using 4324 kilobytes
+
+
+4. LOOPS AND ITERATION
+-----------------------
+While loop:
+-----------
+Example 1: Disk usage system check for multiple users
+
+#!/bin/bash
+
+if [ $# -lt 1 ]
+then
+   echo "You must pass at least one username to the $0 script"
+   exit
+fi
+
+while [ $# -ge 1 ]
+do  
+  cd /home/$1
+  SPACE = `du -s | cut -f 1`
+
+  echo "$S1 is using $SPACE kilobytes"
+  shift
+done
+
+Save the file then run the script in terminal with usernames arguments: diskusage.sh john paul ringo
+
+Output:
+John is using 2342 kilobytes.
+Paul is using 7868 kilobytes.
+Ringo is using 768 kilobytes.
+
+For loop:
+---------
+Example 2: Check password file for new system users
+
+Filename: newUsersCheck.sh
+
+#!/bin/bash
+
+passwordFile = /etc/passwd
+userCount = 0
+specialCount = 0
+
+# extract user id's (field 3) from password file
+userIDs = `cat $passwordFile | cut -f 3 -d :`
+
+# check user id in turn and if is between 500 and 1000 then increment userCount else increment specialCount
+for id in $userIDs
+do
+  if [ $id -ge 500 -a $id -le 1000 ]
+  then
+    let userCount = userCount + 1
+  else
+    let specialCount = specialCount + 1
+  fi
+done
+
+echo "There are $userCount normal users on the system and $specialCount special users on the system"
+
+Save the file then run the script in terminal: ./newUsersCheck.sh
+
+Output:
+There are 34 normal users on the system and 23 special users on the system.
+
