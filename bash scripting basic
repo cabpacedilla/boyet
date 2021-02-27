@@ -22,6 +22,8 @@ Value of external variables = $1 (first argument), $2 (2nd argument), ..
 $# = number of arguments passed to script
 $0 = script itself
 
+Enclose external variables with curly braces for output ${1} or ${2}
+
 Local variables
 ---------------
 variable = container to hold data or information
@@ -33,17 +35,11 @@ backslash before variables ( /$variablename )= display variable as string
 enclose command in back ticks = take value of command
 assign value of commands to variables
 
-2. OPERATORS:
--------------
-Assignment operator ('=')
---------------------------
-variablename = value
-
 Example 1: Displaying output and comments
 
 Filename: displayOutput.sh
 
-!#/bin/bash
+#!/bin/bash
 
 # This is a comment
 
@@ -56,27 +52,35 @@ Output:
 This is a script
 What do you think?
 
+2. OPERATORS:
+-------------
+Assignment operator ('=')
+--------------------------
+variablename=value
+
+Note: There should be no spaces beside the assignment operators, string and number operators.
+
 Example 2: Variables, variable assignment and displaying variable output
 
 Filename: variablesOutput.sh
 
-!#/bin/bash
+#!/bin/bash
 
-testing = "moby dick" 
+testing="moby dick" 
 
 echo "here is what $testing looks like in double quotes."
 echo 'here is what $testing looks like in single quotes.'
 
-name2 = '$testing'
+name2='$testing'
 
-echo "This is what the variable $name2 is equal to $name2."
+echo "This is what the variable $name2 is equal to: $name2."
 
-name3 = \$testing
+name3=\$testing
 
-echo "This is what the variable $name3 is equal to $name3."
+echo "This is what the variable $name3 is equal to: $name3."
 
 
-space_used = `du -s /home/john | cut -f 1`
+space_used=`du -s /home/john | cut -f 1`
 echo "John is using $space_used kilobytes"
 
 Save the file then run the script in terminal: ./variablesOutput.sh
@@ -111,10 +115,10 @@ Example 1: String
 
 Filename: stringCompare.sh
 
-!#/bin/bash
+#!/bin/bash
 
-string1 = "tommy"
-string2 = "chucky"
+string1="tommy"
+string2="chucky"
 
 if [ $string1 != $string2 ]
 then
@@ -140,11 +144,11 @@ Example 2: Numbers
 
 Filename: numberCompare.sh
 
-!#/bin/bash
+#!/bin/bash
 
-num1 = 10
-num2 = 15
-num3 = 20
+num1=10
+num2=15
+num3=20
 
 if [ $num1 -ge $num2 ]
 then  
@@ -153,7 +157,7 @@ else
   echo "$num1 is less than $num2"
 fi
 
-let num4 = $num1 + $num2
+let num4=$num1+$num2
 
 if [ $num4 -gt $num3 ]
 then
@@ -172,10 +176,10 @@ Example 3: Files
 
 Filename: fileCheck.sh
 
-!#/bin/bash
+#!/bin/bash
 
-dir1 = /home/perry
-file1 = /home/perry/scripts/example1.sh
+dir1=/home/perry
+file1=/home/perry/scripts/fileCheck.sh
 
 if [ -x $file1 ] # if executable
 then
@@ -218,9 +222,9 @@ then
 fi
 
 cd /home/$1
-SPACE = `du -s | cut -f 1`
+SPACE=`du -s | cut -f 1`
 
-echo "$S1 is using $SPACE kilobytes"
+echo "${1} is using $SPACE kilobytes."
 
 Save then run the script in terminal with username argument: ./diskUsage.sh John
 
@@ -234,6 +238,8 @@ While loop:
 -----------
 Example 1: Disk usage system check for multiple users
 
+Filename: diskUsageAll.sh
+
 #!/bin/bash
 
 if [ $# -lt 1 ]
@@ -245,9 +251,9 @@ fi
 while [ $# -ge 1 ]
 do  
   cd /home/$1
-  SPACE = `du -s | cut -f 1`
+  SPACE=`du -s | cut -f 1`
 
-  echo "$S1 is using $SPACE kilobytes"
+  echo "${1} is using $SPACE kilobytes"
   shift
 done
 
@@ -266,21 +272,21 @@ Filename: newUsersCheck.sh
 
 #!/bin/bash
 
-passwordFile = /etc/passwd
-userCount = 0
-specialCount = 0
+passwordFile=/etc/passwd
+userCount=0
+specialCount=0
 
 # extract user id's (field 3) from password file
-userIDs = `cat $passwordFile | cut -f 3 -d :`
+userIDs=`cat $passwordFile | cut -f 3 -d :`
 
 # check user id in turn and if is between 500 and 1000 then increment userCount else increment specialCount
 for id in $userIDs
 do
   if [ $id -ge 500 -a $id -le 1000 ]
   then
-    let userCount = userCount + 1
+    let userCount=userCount+1
   else
-    let specialCount = specialCount + 1
+    let specialCount=specialCount+1
   fi
 done
 
@@ -290,4 +296,3 @@ Save the file then run the script in terminal: ./newUsersCheck.sh
 
 Output:
 There are 34 normal users on the system and 23 special users on the system.
-
