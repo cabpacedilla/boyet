@@ -1,4 +1,4 @@
-1. Shell scripts starts with #!<pathofbash>
+1. Shell scripts starts with #!<pathofBashprogram>
 #!/bin/bash
 
 2. Save shell script file with .sh extension
