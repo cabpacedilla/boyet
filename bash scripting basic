@@ -1,5 +1,5 @@
-1. Shell scripts starts with !#<pathofbash>
-!#/bin/bash
+1. Shell scripts starts with #!<pathofbash>
+#!/bin/bash
 
 2. Save shell script file with .sh extension
 
@@ -8,32 +8,9 @@ chmod o+x scriptname.sh
 
 CONCEPTS:
 ---------
-1. VARIABLES
-2. OPERATORS
-3. IF THEN ELSE TEST CONDITION
-4. LOOPS AND ITERATION
-
-1. VARIABLES: 
---------------
-External variables
--------------------
-External variables (argument (data) passed to script): scriptname.sh argument1 argument2 argument3
-Value of external variables = $1 (first argument), $2 (2nd argument), ..
-$# = number of arguments passed to script
-$0 = script itself
-
-Enclose external variables with curly braces for output ${1} or ${2}
-
-Local variables
----------------
-variable = container to hold data or information
-variable name
-$<variablename> = get value of variable
-
-enclose variables in single quotes ( '$variablename ) = string = output = variablename
-backslash before variables ( /$variablename )= display variable as string
-enclose command in back ticks = take value of command
-assign value of commands to variables
+1. VARIABLES and OPERATORS
+2. IF THEN ELSE TEST CONDITION
+3. LOOPS AND ITERATION
 
 Example 1: Displaying output and comments
 
@@ -52,13 +29,85 @@ Output:
 This is a script
 What do you think?
 
-2. OPERATORS:
+1. VARIABLES AND OPERATORS: 
+----------------------------
+Local variables
+---------------
+variable = container to hold data or information
+variable name
+
+Examples:
+string1
+num1
+total
+
+Value of variable format is $<variablename> = $string1, $num1,  
+
+* Enclose variables in double quotes "$variablename" will display the value of the variable
+
+Example:
+#!/bin/bash
+
+testing="moby dick"
+ 
+echo "here is what $testing looks like in double quotes."
+
+Save and run script in terminal.
+
+Output:
+here is what moby dick looks like in double quotes
+
+
+* Enclose variables in single quotes ( '$variablename' ) = string = output = variablename
+
+Example: 
+#!/bin/bash
+
+testing="moby dick" 
+
+echo 'here is what $testing looks like in single quotes.'
+
+Save and run script in terminal.
+
+Output:
+here is what $testing looks like in single quotes
+
+* Backslash before variables ( /$variablename )= display variable as string
+
+Example: 
+#!/bin/bash
+
+name3=\$testing
+
+echo "This is what the variable $name3 is equal to: $name3."
+
+Save and run script in terminal.
+
+Output:
+This is what the variable name3 is equal to: $testing
+
+* Enclose command in back ticks = take value of command
+assign value of commands to variables
+
+Example:
+#!/bin/bash
+
+space_used=`du -s /home/john | cut -f 1`
+echo "John is using $space_used kilobytes"
+
+Save and run script in terminal.
+
+Output:
+John is using 3247 kilobytes.
+
+
+OPERATORS:
 -------------
 Assignment operator ('=')
 --------------------------
 variablename=value
 
-Note: There should be no spaces beside the assignment operators, string and number operators.
+Note: There should be no spaces beside the assignment operators, string and number operators in an expession.
 
 Example 2: Variables, variable assignment and displaying variable output
 
@@ -91,6 +140,7 @@ here is what $testing looks like in single quotes
 This is what the variable name2 is equal to: $testing
 This is what the variable name3 is equal to: $testing
 John is using 7836 kilobytes
+
 
 Math operators:
 ---------------
@@ -209,6 +259,18 @@ Output:
 /home/John/scripts/fileCheck.sh is executable
 /home/John/scripts/fileCheck.sh is not a directory
 
+External variables
+-------------------
+External variables (argument (data) passed to script): 
+Example: 
+$ scriptname.sh argument1 argument2 argument3
+
+Value of external variables = $1 (first argument), $2 (2nd argument), ..
+$# = number of arguments passed to script
+$0 = script itself
+
+Enclose external variables with curly braces for output ${1} or ${2}
+
 Example 4: Disk usage system check
 
 Filename: diskUsage.sh
@@ -296,3 +358,4 @@ Save the file then run the script in terminal: ./newUsersCheck.sh
 
 Output:
 There are 34 normal users on the system and 23 special users on the system.
+
