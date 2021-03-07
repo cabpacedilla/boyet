@@ -1,6 +1,6 @@
 
-Linux command and directory structure
---------------------------------------
+Linux command and directory structure and bash scripting
+---------------------------------------------------------
 
 Pre-requisite: 
 Install Ubuntu in a virtual machine (Virtualbox):
@@ -182,9 +182,12 @@ Apropos command to search for keyword in the man pages
 
 
 Switching to superuser account (root account) for administrator privileges
+-----------------------------------------------------------------------------
+
 su command 
 
 [claive@ubuntupc claive]$ su
+
 
 Linux directory structure
 --------------------------
