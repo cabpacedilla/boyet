@@ -181,10 +181,10 @@ Apropos command to search for keyword in the man pages
 [claive@ubuntupc claive]$ apropos jpeg
 
 
-...Linux commands continuation
+Switching to superuser account (root account) for administrator privileges
+su command 
 
-11. su = switch to superuser account (root account) for administrator privileges
-
+[claive@ubuntupc claive]$ su
 
 Linux directory structure
 --------------------------
