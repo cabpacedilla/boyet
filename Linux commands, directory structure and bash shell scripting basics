@@ -12,6 +12,11 @@ https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
 Linux command line:
 --------------------
 
+Steps to run a graphical terminal emulator in Ubuntu Gnome desktop:
+1. Press Super key (Windows key)
+2. Type terminal
+3. Click the terminal icon of the search result
+
 Terminal prompt: [claive@ubuntupc claive]$ 
 
 Linux commands:
