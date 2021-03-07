@@ -66,7 +66,8 @@ Format: mv sourcefile newfilename
 
 If folder has files, delete the files first inside the directory with the rm command before removing the directory with the rmdir command
 
-Tab = complete command typing or autosuggest commands with the same initial characters of the command from the time tab key is pressed
+Tab = complete command typing or autosuggest commands with the same initial characters of the command from the time the tab key is pressed
+
 
 Editing files in Linux in terminal
 -------------------------------------
