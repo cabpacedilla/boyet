@@ -1,9 +1,226 @@
-1. Shell scripts starts with #!<pathofBashprogram>
+
+Linux command and directory structure
+--------------------------------------
+
+Pre-requisite: 
+Install Ubuntu in a virtual machine (Virtualbox):
+https://itsfoss.com/install-linux-in-virtualbox/
+
+Or Install Ubuntu alongside with Microsoft Windows
+https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
+
+Linux command line:
+--------------------
+
+Terminal prompt: [claive@ubuntupc claive]$ 
+
+Linux commands:
+1. pwd = print working directory
+
+[claive@ubuntupc claive]$ pwd
+Output: /home/claive
+
+2. ls = list the content of a directory
+
+[claive@ubuntupc claive]$ ls
+
+Output:
+Desktop Documents Music Pictures
+
+3. cd = change directory
+
+[claive@ubuntupc claive]$ cd Documents
+
+To navigate to your home directory, use "cd" or "cd ~"
+
+To navigate up one directory level, use "cd .."
+
+To navigate to the previous directory (or back), use "cd -"
+
+To navigate through multiple levels of directory at once, specify the full directory path that you want to go to. For example, use, "cd /var/www" to go directly to the /www subdirectory of /var/. As another example, "cd ~/Desktop" will move you to the Desktop subdirectory inside your home directory.
+
+4. cp = copy
+
+format: cp sourcefile newfile
+
+[claive@ubuntupc claive]$ cp syllabus.txt syllabusNew.txt
+
+5. command history = keyboard up and down arrow
+
+6. clear = clear the screen
+
+7. rm = remove a file or directory
+
+[claive@ubuntupc claive]$ rm -i syllabus.txt 
+
+-i = option to inquire before removing the file
+
+8. mv = rename a file or directory
+
+Format: mv sourcefile newfilename
+[claive@ubuntupc claive]$ mv syllabus.txt linux.txt
+
+9. mkdir = make directory
+
+10. rmdir = remove directory
+
+If folder has files, edit the files first inside with the rm command before removing the directory with the rmdir command
+
+Tab = complete command typing or autosuggest commands with the same initial characters of the command from the time tab key is pressed
+
+Editing files in Linux in terminal
+-------------------------------------
+
+Everything in Linux is a file.
+
+vi Editor
+----------
+
+Command format:
+[claive@pc claive]$ vi filename
+
+Three modes:
+1. command mode = program is available for vi commands (insert, delete lines, etc...)
+2. x mode = program is available to write(save) file or quit(close) file,
+3. insert mode = program is available for typing text, deleting text and characters
+
+vi commands:
+i - Insert at cursor
+a - Write after cursor
+x - Delete character at the cursor
+dd - Delete line
+dw - Delete word
+u - Undo last change
+U - Undo all changes to the entire line
+o - Open a new line
+r - Replace character
+R - Overwrite characters from cursor onward
+
+How to type text in vi: Press letter I 
+
+How to change modes: Press escape key
+
+Sample text file edition in a terminal:
+--------------------------------------
+This is a silly text file!
+
+What do you think?
+~
+~
+~
+~
+~
+~
+~
+~
+~
+
+How to save a file in vi:
+1. Press escape key
+2. Press shift colon
+3. Type w then press Enter
+
+:q - Quit without saving
+:wq - Save the file and quit
+
+You can also graphical text editors like gedit or leafpad if you are inside a desktop environment.
+
+
+man pages
+----------
+command format:
+
+man <nameofcommand>
+
+[claive@ubuntupc claive]$ man ls
+
+NAME         
+       ls - list directory contents
+
+SYNOPSIS         
+       ls [OPTION]... [FILE]...
+
+DESCRIPTION         
+       List information about the FILEs (the current directory by
+       default).  Sort entries alphabetically if none of -cftuvSUX nor
+       --sort is specified.
+
+       Mandatory arguments to long options are mandatory for short
+       options too.
+
+       -a, --all
+              do not ignore entries starting with .
+
+       -A, --almost-all
+              do not list implied . and ..
+
+       --author
+              with -l, print the author of each file
+
+       -b, --escape
+              print C-style escapes for nongraphic characters
+
+       --block-size=SIZE
+              with -l, scale sizes by SIZE when printing them; e.g.,
+              '--block-size=M'; see SIZE format below
+:
+
+List all files:
+[claive@ubuntupc claive]$ ls -a 
+
+List all files in long format (combining options):
+[claive@ubuntupc claive]$ ls -al
+
+Search for keywords in man pages
+[claive@ubuntupc claive]$ man -k <keyword>
+
+[claive@ubuntupc claive]$ man -k jpeg
+
+Apropos command to search for keyword in the man pages
+[claive@ubuntupc claive]$ apropos jpeg
+
+
+...Linux commands continuation
+
+11. su = switch to superuser account (root account) for administrator privileges
+
+
+Linux directory structure
+--------------------------
+
+Changing to root directory
+[claive@ubuntupc claive]$ cd /
+
+/ = root directory
+
+/bin = normal system commands like ls, cd, cp etc..
+
+/boot = boot files
+
+/home = users folders
+
+/opt = optional software
+
+/root = root account directory 
+
+/sbin = system administration programs for system administration
+
+/var = contains files to which the system writes data during the course of its operation like log files
+
+
+Bash shell scripting basics
+----------------------------
+
+Steps to create shell script file:
+
+1. Open a new text file in a text editor like vi or nano in the terminal or in graphical text editors like gedit or leafpad.
+
+2. Shell scripts starts with #!<pathofBashprogram>
 #!/bin/bash
 
-2. Save shell script file with .sh extension
+3. Save shell script file with .sh extension
 
-3. Set shell script file executable with chmod command:
+4. Set shell script file executable with chmod command:
 chmod o+x scriptname.sh
 
 CONCEPTS:
@@ -358,4 +575,7 @@ Save the file then run the script in terminal: ./newUsersCheck.sh
 
 Output:
 There are 34 normal users on the system and 23 special users on the system.
+
+
+
 
