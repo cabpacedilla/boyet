@@ -589,5 +589,106 @@ Output:
 There are 34 normal users on the system and 23 special users on the system.
 
 
+Linux Maintenance
+------------------
+
+BACKUPS
+--------
+1. Full backup
+2. Incremenal backup
+3. Differential backup
+
+Full back with tar to removable media
+------------------------------------
+long format:
+tar --create --verbose --same-permissions --file /mnt/zip/talrball1 /home /etc/
+ls -l /mnt/zip
+
+short format:
+tar cvpf /mnt/zip/tarball1 /home /etc
+
+--diff --compare
+
+
+Tar incremental backup
+----------------
+tar cvpf /mnt/zip/tarball2 --newer 20May02 /home /etc
+
+
+Backup scripts in linux-backup-net
+
+
+Restoring files
+----------------
+tar archive does not start with root directory ('/')
+tar xvpf /mnt/zip/tarball1 home/perry/linux-syllabus.txt
+
+
+list contents of a tar archive
+-------------------------------
+tar tvpf /mnt/zip/tarball1 | more
+
+UI tool = Amanda
+
+
+MONITORING RAM, SWAP AND DISKS
+------------------------------
+
+Monitoring RAM
+---------------
+free command
+
+Memory total, used and free column information
+swap partition information
+
+-b, -k, -m options = display in bytes, kilobytes or in megabytes
+-t = display in total
+-v = display version
+
+free -s option # continuosly run the free command
+
+# Example: Run free in five minutes and redirect output to a text file
+free -s 5 > free_output.txt
+
+
+Monitoring processes
+---------------------
+top command
+
+
+Creating swapfile
+------------------
+dd if=/dev/swapfile bs=1024 count=1024
+mkswap /swapfile
+swapon /swapfile
+check swapfile with free command
+
+
+add swapfile entry in /etc/fstab to always enable swapfile on boo
+
+
+df command = report file system disk space usage
+
+
+Deleting unused files
+---------------------
+
+Core files or core dumps (unused files)
+----------------------------------------
+Don't delete core files recklessly 
+
+Check the ownership of the core file or check 
+
+check which program created a core file or core dump (unused file)
+user gdb command
+gdb -c <nameofcorefile>
+
+cron
+command: more crontab
+
+put scripts in the /ect/cron.hourly, .daily, .weekly, .monthly
+set time designation of cron job
+hourly time means script will in every number of minutes
+
 
 
