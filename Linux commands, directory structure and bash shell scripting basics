@@ -64,7 +64,7 @@ Format: mv sourcefile newfilename
 
 10. rmdir = remove directory
 
-If folder has files, edit the files first inside with the rm command before removing the directory with the rmdir command
+If folder has files, delete the files first inside the directory with the rm command before removing the directory with the rmdir command
 
 Tab = complete command typing or autosuggest commands with the same initial characters of the command from the time tab key is pressed
 
