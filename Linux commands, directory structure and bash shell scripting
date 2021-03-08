@@ -41,6 +41,8 @@ Output:
 
 To navigate to your home directory, use "cd" or "cd ~"
 
+The tilde "~" character means home directory
+
 To navigate up one directory level, use "cd .."
 
 To navigate to the previous directory (or back), use "cd -"
