@@ -160,7 +160,7 @@ How to save a file in vi:
 :q - Quit without saving
 :wq - Save the file and quit
 
-You can also graphical text editors like gedit or leafpad if you are inside a desktop environment.
+You can also use graphical text editors like gedit or leafpad if you are inside a desktop environment.
 
 
 man pages
