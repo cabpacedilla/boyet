@@ -3,10 +3,10 @@ Linux commands and directory structure and bash scripting
 ---------------------------------------------------------
 
 Pre-requisite: 
-Install Ubuntu in a virtual machine (Virtualbox):
+Download and install Ubuntu desktop on a virtual machine (Virtualbox):
 https://itsfoss.com/install-linux-in-virtualbox/
 
-Or Install Ubuntu alongside with Microsoft Windows
+Or install Ubuntu desktop alongside with Microsoft Windows
 https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
 
 Linux command line:
