@@ -71,8 +71,34 @@ Format: mv sourcefile newfilename
 9. mkdir = make directory
 
 10. rmdir = remove directory
-
 If folder has files, delete the files first inside the directory with the rm command before removing the directory with the rmdir command
+
+11. cat = concatenate files and print on the standard output
+
+12. grep = print lines that match patterns
+
+13. echo = display a line of text
+
+14. tail = output the last part of files
+
+15. head = output the first part of files
+
+16. uniq = report or omit repeated lines
+
+17. cal = calendar
+
+18. date = date and time
+
+19. exit = process termination
+
+20. who = show is logged on
+
+21. w = show who is logged on and what they are doing
+
+22. whatis = display one-line description
+
+23. which = locate a command
+
 
 Tab = complete command typing or autosuggest commands with the same initial characters of the command from the time the tab key is pressed
 
