@@ -6,7 +6,8 @@ Pre-requisite:
 Download and install Ubuntu desktop on a virtual machine (Virtualbox):
 https://itsfoss.com/install-linux-in-virtualbox/
 
-Or install Ubuntu desktop alongside with Microsoft Windows
+Or install Ubuntu desktop alongside with Microsoft Windows. Take extra caution when installing Ubuntu alongside Microsoft Windows. 
+I do not take any responsibility if the Ubuntu installation will break your pre-installed Microsoft Windows. 
 https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
 
 Linux command line:
