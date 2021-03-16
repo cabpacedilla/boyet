@@ -3,12 +3,14 @@ Linux commands and directory structure and bash scripting
 ---------------------------------------------------------
 
 Pre-requisite: 
-Download and install Ubuntu desktop Linux on a virtual machine (Virtualbox):
-https://itsfoss.com/install-linux-in-virtualbox/
+Download and install Ubuntu desktop Linux on a virtual machine (Virtualbox): https://itsfoss.com/install-linux-in-virtualbox/
 
-Or install Ubuntu desktop alongside with Microsoft Windows. 
-Take extra caution when installing Ubuntu alongside Microsoft Windows. 
+or install Ubuntu on a dedicated hard drive. https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview
+
 Check first if your desktop or laptop is compatible with Ubuntu from this link: https://certification.ubuntu.com/desktop
+
+or install Ubuntu alongside with Microsoft Windows. 
+Take extra caution when installing Ubuntu alongside Microsoft Windows. 
 I do not take any responsibility if the Ubuntu installation will break your pre-installed Microsoft Windows. 
 How to install Ubuntu desktop alongside with Microsoft Windows: https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
 
