@@ -1,7 +1,6 @@
 
 Linux commands and directory structure and bash scripting
 ---------------------------------------------------------
-
 Pre-requisite: 
 Hardware:
 1. SSD hard drive 
@@ -12,11 +11,11 @@ Ubuntu need higher hardware specifications for better performance. :-)
 Installation:
 Download and install Ubuntu desktop Linux on a virtual machine (Virtualbox) inside Microsoft Windows: https://itsfoss.com/install-linux-in-virtualbox/
 
-or install Ubuntu on a dedicated hard drive. https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview
+Or install Ubuntu on a dedicated hard drive. https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview
 
 Check first if your desktop or laptop is compatible with Ubuntu from this link: https://certification.ubuntu.com/desktop
 
-or install Ubuntu alongside with Microsoft Windows. 
+Or install Ubuntu alongside with Microsoft Windows. 
 Take extra caution when installing Ubuntu alongside Microsoft Windows. 
 I do not take any responsibility if the Ubuntu installation will break your pre-installed Microsoft Windows. 
 How to install Ubuntu desktop alongside with Microsoft Windows: https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
