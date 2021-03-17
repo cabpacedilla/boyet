@@ -3,7 +3,14 @@ Linux commands and directory structure and bash scripting
 ---------------------------------------------------------
 
 Pre-requisite: 
-Download and install Ubuntu desktop Linux on a virtual machine (Virtualbox): https://itsfoss.com/install-linux-in-virtualbox/
+Hardware:
+1. SSD hard drive 
+2. 8 GB RAM
+
+Ubuntu need higher hardware specifications for better performance. :-)
+
+Installation:
+Download and install Ubuntu desktop Linux on a virtual machine (Virtualbox) inside Microsoft Windows: https://itsfoss.com/install-linux-in-virtualbox/
 
 or install Ubuntu on a dedicated hard drive. https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview
 
