@@ -27,6 +27,12 @@ Steps to run a graphical terminal emulator in Ubuntu Gnome desktop:
 
 Terminal prompt sample: [claive@ubuntupc claive]$ 
 
+Basic usage of Ubuntu Gnome desktop:
+1. Press the Super key (Windows key) 
+2. Click an application in the application grid or type the name of an application or the name of a file or folder. The search box can also search files and folders.
+3. Click the application, file or folder icon in the search result. The application, file or folder will open.
+4. If you need frequent access of the the application, file or folder, add the application to Favorites to the panel bar or add a shorcut of the file or folder to the desktop for faster access of the application, file or folder.
+
 Linux commands:
 1. pwd = print working directory
 
