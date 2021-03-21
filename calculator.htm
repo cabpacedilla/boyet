@@ -58,7 +58,16 @@ key = document.getElementById("txtInputAndResult");
 //inputString = document.getElementById("txtInputAndResult").value;
 document.getElementById("txtInputAndResult").value = "0";
 
-// Input typing catches	
+// Input typing catches
+key.addEventListener("keydown", function(event)
+{
+  if (event.keyCode == 8)
+  {
+    event.preventDefault();
+    document.getElementById("btnClear").click();
+  }
+});
+	
 key.addEventListener("keyup", function(event)
 {        
   // Number 13 is the "Enter" key on the keyboard
@@ -69,13 +78,7 @@ key.addEventListener("keyup", function(event)
     // Trigger the button element with a click
     document.getElementById("btnEquals").click();
   }
-  
-  if (event.keyCode == 8)
-  {
-    event.preventDefault();
-    document.getElementById("btnClear").click();
-  }
-  
+
   if (event.keyCode == 48 || event.keyCode == 96)
   {
     inputString = document.getElementById("txtInputAndResult").value;
