@@ -232,6 +232,12 @@ function addBreakResumeTimes()
       backToWorkTimes = resumeTimeString;
       backToWorkArray.push(backToWorkTimes);
     }
+    breakFromWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
+    backToWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     breakMinutes = startTimeObject.getMinutes();
@@ -259,6 +265,12 @@ function addBreakResumeTimes()
       backToWorkArray.push(backToWorkTimes);
     }
     backToWorkArray.pop(backToWorkTimes);
+     breakFromWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
+    backToWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
@@ -283,6 +295,12 @@ function addBreakResumeTimes()
       backToWorkArray.push(backToWorkTimes);
     }
     backToWorkArray.pop(backToWorkTimes);
+     breakFromWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
+    backToWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
     localStorage.setItem("breakFromWorkTimes", JSON.stringify(breakFromWorkArray));
     localStorage.setItem("backToWorkTimes", JSON.stringify(backToWorkArray));
     alert("Break and resume time intervals were added.");
@@ -305,6 +323,11 @@ function addBreakFromWorkTimes()
       breakFromWorkArray.push(breakFromWorkTimes[ctr]);
       ctr = ctr + 1;
     }
+	  
+    breakFromWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
+    
     if (ctr == 1)
     {
       alert("Break time was added.");
@@ -333,6 +356,11 @@ function addbackToWorkTimes()
       backToWorkArray.push(backToWorkTimes[ctr]);
       ctr = ctr + 1;
     }
+	  
+    backToWorkArray.sort(function(a, b) {
+        return new Date('1970/01/01 ' + a) - new Date('1970/01/01 ' + b);
+    });
+	  
     if (ctr > 1)
     {
       alert("Resume times were added.");
