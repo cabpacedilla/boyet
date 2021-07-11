@@ -42,7 +42,7 @@ do
    BATT_LEVEL=$(acpi -b | grep -P -o '[0-9]+(?=%)')
    BATT_STATE=$(acpi -b | awk '{print $3}')   
  
-   if [ "${BATT_LEVEL}" -le 40 ] && [ "$BATT_STATE" = 'Discharging,' ]; then
+   if [ "${BATT_LEVEL}" -le 40 ] && [ "$BATT_STATE" = "Discharging," ]; then
       # if battery level is 40 or less and discharging
       notify low "${BATT_LEVEL}"
       
