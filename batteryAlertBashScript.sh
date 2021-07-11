@@ -43,7 +43,6 @@ do
    BATT_STATE=$(acpi -b | awk '{print $3}')   
  
    if [ "${BATT_LEVEL}" -le 40 ] && [ "$BATT_STATE" = 'Discharging,' ]; then
-      # call notify function and pass low argument and battery level 
       # if battery level is 40 or less and discharging
       notify low "${BATT_LEVEL}"
       
@@ -56,38 +55,31 @@ do
       :
     
    elif [ "${BATT_LEVEL}" -ge 80 ] &&  [ "${BATT_STATE}" = "Charging," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 80 or more and charging
+      # if battery level is 80 or more and charging, call notify
       notify full "${BATT_LEVEL}"
    
    elif [ "$BATT_LEVEL" -ge 80 ] &&  [ "${BATT_STATE}" = "Unknown," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 80 or more and charging
+      # if battery level is 80 or more and charging, call notify
       notify full "$BATT_LEVEL"
       
    elif [ "${BATT_LEVEL}" -ge 80 ] && [ "${BATT_STATE}" = "Discharging," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 80 or more and discharging
+      # if battery level is 80 or more and discharging, do nothing
       :
       
    elif [ "${BATT_LEVEL}" -eq 100 ] && [ "${BATT_STATE}" = "Charging," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and charging
+      # if battery level is 100 and charging, call notify
       notify full "${BATT_LEVEL}"   
       
    elif [ "${BATT_LEVEL}" -eq 100 ] && [ "${BATT_STATE}" = "Unknown," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and charging
+      # if battery level is 100 and charging, call notify
       notify full "${BATT_LEVEL}" 
    
    elif [ "${BATT_LEVEL}" -eq 100 ] && [ "${BATT_STATE}" = "Discharging," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and discharging
+      # if battery level is 100 and discharging, call notify
       notify full "${BATT_LEVEL}"
       
    elif [ "${BATT_LEVEL}" -eq 100 ] && [ "${BATT_STATE}" = "Not Charging," ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and not charging
+      # if battery level is 100 and not charging, call notify
       notify full "${BATT_LEVEL}"
       
    fi   
