@@ -12,7 +12,7 @@
 # 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
 # 8. Low memory alert message will be displayed
 
-#!/usr/bin/sh
+#!/usr/bin/bash
 while true
 do
    ## 1. Get total free memory size in megabytes(MB) 
