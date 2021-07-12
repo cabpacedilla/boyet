@@ -15,7 +15,7 @@
 # 10. Let the laptop charge until 80%
 # 11. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
 
-#!/usr/bin/bash
+#!/usr/bin/sh
 
 notify()
 {
