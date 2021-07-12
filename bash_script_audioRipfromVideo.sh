@@ -19,8 +19,8 @@ t=0
 
 # Loop startimes, durations and titles array with ffmpeg to rip audio from file
 while [ "${starttimes[$s_ctr]}" != "${starttimes[-1]}" ]  &&  [ "${durations[$d]}" != "${durations[-1]}" ]  &&  [ "${titles[$t]}" != "${titles[-1]}" ] ; do
-    ffmpeg4 -y -i /home/cabpa/video.mkv -ss ${starttimes[$s]} -t ${durations[$d]} -q:a 0 -map a ${titles[$t]}.mp3
-    s=$[$s +1]
-    d=$[$d +1]
-    t=$[$t +1]
+    ffmpeg4 -y -i /home/cabpa/video.mkv -ss "${starttimes[$s]}" -t "${durations[$d]}" -q:a 0 -map a "${titles[$t]}".mp3
+    s=$($s +1)
+    d=$($d +1)
+    t=$($t +1)
 done
