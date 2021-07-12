@@ -16,12 +16,12 @@
 # 11. Open the laptop lid
 # 12. xscreensaver will ask for password
 
-#!/usr/bin/bash
+#!/usr/bin/sh
 while true
 do
    LID_STATE=$(less /proc/acpi/button/lid/LID0/state | awk '{print $2}')
    
-   if [ "$LID_STATE" = 'open' ]; then
+   if [ "$LID_STATE" = "open" ]; then
       :
         
    else
