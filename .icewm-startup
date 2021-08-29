@@ -1,0 +1,33 @@
+  GNU nano 5.2                                                                            .icewm/startup                                                                                      
+#!/usr/bin/bash
+
+sleep 2
+#required to give icewm taskbar some time to startup before applets are added
+
+/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1 &
+
+gnome-power-manager &
+
+syndaemon -i .75s -d &
+
+update-notifier &
+
+tracker-miner-fs &
+
+snapd &
+
+xscreensaver -nosplash &
+
+/usr/lib/x86_64-linux-gnu/indicator-messages/indicator-messages-service &
+
+/usr/libexec/at-spi-bus-launcher --launch-immediately &
+
+brightness.sh &
+
+checkService.sh &
+
+/usr/lib/x86_64-linux-gnu/xfce4/notifyd/xfce4-notifyd &
+
+xfce4-indicator-plugin &
+
+hexchat --minimize=2 &
