@@ -13,14 +13,14 @@ durations=(0:03:02 0:04:13 0:04:17 0:04:00 0:03:19 0:03:30 0:04:06)
 titles=(Track1 Track2 Track3 Track4 Track5 Track6 Track7)
 
 # initialize startime, duration and title counters
-s=0
-d=0
-t=0 
+sCtr=0
+dCtr=0
+tCtr=0 
 
 # Loop startimes, durations and titles array with ffmpeg to rip audio from file
-while [ "${starttimes[$s_ctr]}" != "${starttimes[-1]}" ]  &&  [ "${durations[$d]}" != "${durations[-1]}" ]  &&  [ "${titles[$t]}" != "${titles[-1]}" ] ; do
+while [ "${starttimes[$sCtr]}" != "${starttimes[-1]}" ]  &&  [ "${durations[$dCtr]}" != "${durations[-1]}" ]  &&  [ "${titles[$tCtr]}" != "${titles[-1]}" ] ; do
     ffmpeg4 -y -i /home/cabpa/video.mkv -ss "${starttimes[$s]}" -t "${durations[$d]}" -q:a 0 -map a "${titles[$t]}".mp3
-    s=$($s +1)
-    d=$($d +1)
-    t=$($t +1)
+    s=$($sCtr +1)
+    d=$($dCtr +1)
+    t=$($tCtr +1)
 done
