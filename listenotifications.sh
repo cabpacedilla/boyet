@@ -44,10 +44,10 @@ do
                   elif [ "$KEYWORD" = "@mentioned you" ] [ "$KEYWORD" = "mentioned all" ]
                   then 
                      echo "Sending email..."
-                     mail -s "Notification from $KEYWORD" $EMAIL < $NOTIFBUF &      
+                     mail -s "Notification from $KEYWORD" $EMAIL < $NOTIFBUF     
                     
                      MAIL_WIN=$(wmctrl -lp | grep Thunderbird | awk '{print $1}')
-                     wmctrl -ia "$MAIL_WIN" &      
+                     wmctrl -ia "$MAIL_WIN"   
 
                      break
                   fi
@@ -55,13 +55,6 @@ do
             esac              
         done
      done <$NOTIFBUF
-  
-   # Listen other running scripts of important apps
-   APP_ID=$(pgrep app_restore)
-  
-   if [ -z "$APP_ID" ]; then
-      app_restore.sh &
-   fi
         
    # Empty text files
    >$NOTIFLOGS
