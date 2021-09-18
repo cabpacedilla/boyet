@@ -1,7 +1,11 @@
 #!/usr/bin/bash
-# Needs kqueue in BSD systems or inotify-tools in Linux
+# fswatch needs filesystem change monitoring tool like inotify in Linux
+#DATE=`date | awk '{print $2$3$4$5$6}'`
 
 while fswatch -1 ~/Documents/testfiles
-do    
-   sudo rsync -avz ~/Documents/testfiles/* /mnt/backup/      
+
+
+   sudo rsync -avHAX ~/Documents/testfiles/* /mnt/backup/ --delete
+   #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
+
 done
