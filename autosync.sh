@@ -5,7 +5,7 @@
 while fswatch -1 ~/Documents/testfiles
 
 
-   sudo rsync -avHAX ~/Documents/testfiles/* /mnt/backup/ --delete
+   sudo rsync -avHAX ~/Documents/testfiles/ /mnt/backup/ --delete
    #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
 
 done
