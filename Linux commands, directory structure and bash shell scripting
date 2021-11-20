@@ -115,6 +115,11 @@ If folder has files, delete the files first inside the directory with the rm com
 
 23. which = locate a command
 
+24. file = examine type of file
+
+25. less =  read a file
+
+26. clear = clear screen
 
 Tab = complete command typing or autosuggest commands with the same initial characters of the command from the time the tab key is pressed
 
@@ -124,8 +129,19 @@ Editing files in Linux in terminal
 
 Everything in Linux is a file.
 
+1. Install nano editor
+2. Type "sudo apt install nano" on the terminal without the double quotes
+3. To create a text file type "nano <filename>" or to edit an existing file type "nano <pathoffile>" without the double quotes
+4. Start typing
+5. Press Ctrl + O to save the file
+6. To copy text, highlight the text then press Alt + ^
+7. Press Ctrl + K to cut text
+8. Press Ctrl + U to paste text
+
 vi Editor
 ----------
+
+vi has a steeper learning curve
 
 Command format:
 [claive@pc claive]$ vi filename
@@ -174,7 +190,8 @@ How to save a file in vi:
 :q - Quit without saving
 :wq - Save the file and quit
 
-You can also use graphical text editors like gedit or leafpad if you are inside a desktop environment.
+You can also use graphical text editors like gedit or leafpad if you are inside a desktop environment. 
+You can install them if they are not yet installed in the system by typing "sudo apt install gedit" or "sudo apt install leafpad" in the terminal.
 
 
 man pages
@@ -343,7 +360,7 @@ Save and run script in terminal.
 Output:
 here is what $testing looks like in single quotes
 
-* Backslash before variables ( /$variablename )= display variable as string
+* Backslash before variables ( \$variablename )= display variable as string
 
 Example: 
 #!/bin/bash
