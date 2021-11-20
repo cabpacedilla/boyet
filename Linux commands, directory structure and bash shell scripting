@@ -1,6 +1,10 @@
+Learn GNU Linux
+================
 
-Linux commands and directory structure and bash scripting
----------------------------------------------------------
+Learning Linux will create opportunities to program and give commands to the computer how you want the computer to function and land a job with computers even you did not finish 
+
+Linux commands, directory structure, files and bash scripting
+--------------------------------------------------------------
 Pre-requisite: 
 
 Installation:
@@ -15,6 +19,24 @@ Or install Ubuntu alongside with Microsoft Windows.
 Take extra caution when installing Ubuntu alongside Microsoft Windows. 
 I do not take any responsibility if the Ubuntu installation will break your pre-installed Microsoft Windows. 
 How to install Ubuntu desktop alongside with Microsoft Windows: https://itsfoss.com/install-ubuntu-1404-dual-boot-mode-windows-8-81-uefi/
+
+How to use Linux with Gnome Shell like Ubuntu:
+1. Press Super key
+2. Start typing name of desired application, file or feature. Application, file or feature will appear before the search box
+3. Press Enter key. Application, file or feature will be launched.
+
+How to see the Recent accessed files:
+1. Run the Nautilus file manager (named as Files)
+2. Click on the Recent menu at top portion in the left pane
+
+How to display all running applications:
+- Press Super key. All running applications will be displayed
+
+How to display application grid:
+- Press Super key + A
+
+How to display notification pulldown list and calendar:
+- Press Super key + V
 
 Linux command line:
 --------------------
@@ -749,5 +771,5 @@ put scripts in the /ect/cron.hourly, .daily, .weekly, .monthly
 set time designation of cron job
 hourly time means script will in every number of minutes
 
-
+To learn more about creating dedicated programs, pick a programming language like C, Python or Javascript and create programs.
 
