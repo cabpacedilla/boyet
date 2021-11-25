@@ -70,7 +70,7 @@ do
       # if battery level is 80 or more and charging
       notify full ${BATT_LEVEL}
       
-   elif [ "$BATT_LEVEL" -gt 80 ] && [ "$BATT_STATE" = 'Not Charging,' ]; then
+   elif [ "$BATT_LEVEL" -gt 80 ] && [ "$BATT_STATE" = 'Not' ]; then
       # call notify function and pass full argument and battery level
       # if battery level is 100 and not charging
       notify full ${BATT_LEVEL}
