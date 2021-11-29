@@ -31,7 +31,7 @@ notify()
    notify-send -u normal -t 15000 "Battery reached ${2}%. ${ACTION} the power cable to optimize battery life!"
    
    # check if cvlc file program is existing then play low or full mp3
-   if [ -f "$(which cvlc)" ]; then
+   if [ -f "$(which mpv)" ]; then
       #cvlc --play-and-exit ~/Music/battery-"$1".mp3 2>/dev/null
       mpv ~/Music/battery-"$1".mp3 2>/dev/null
    fi
