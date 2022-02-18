@@ -19,72 +19,40 @@
 
 notify()
 {
-   # set plug or unplug 
+   # Set Action to Plug if low
    if [ "$1" = 'low' ]; then
         ACTION="Plug"
-        
+   
+   # Set Action to Unplug if full    
    elif [ "$1" = 'full' ]; then
         ACTION="Unplug"
    fi
     
-   # notify to plug or unplug based on battery level
+   # Notify battery alert with battery level and Action
    notify-send -u normal -t 15000 "Battery reached ${2}%. ${ACTION} the power cable to optimize battery life!"
-   
-   # check if cvlc file program is existing then play low or full mp3
-   if [ -f "$(which mpv)" ]; then
-      #cvlc --play-and-exit ~/Music/battery-"$1".mp3 2>/dev/null
-      mpv ~/Music/battery-"$1".mp3 2>/dev/null
-   fi
 }
 
 while true
 do
+   # 1. Get battery level and state
    BATT_LEVEL=$(acpi -b | grep -P -o '[0-9]+(?=%)')
    BATT_STATE=$(acpi -b | awk '{print $3}')   
  
-   if [ "$BATT_LEVEL" -le 40 ] && [ "$BATT_STATE" = 'Discharging,' ]; then
-      # call notify function and pass low argument and battery level 
-      # if battery level is 40 or less and discharging
-      notify low ${BATT_LEVEL}
+   # 2. If battery battery level is 40 or less and discharging, notify low battery alert
+   if [ "$BATT_LEVEL" -le 40 ] && [ "$BATT_STATE" = "Discharging," ]; then
+      notify low "$BATT_LEVEL"
       
-   elif [ "$BATT_LEVEL" -le 40 ] && [ "$BATT_STATE=" = 'Charging,' ]; then
-      # do nothing if battery level is 40 or less and charging
+   # 3. If battery level is 40 or less and charging, do nothing
+   elif { [ "$BATT_LEVEL" -le 40 ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -le 40 ] && [ "$BATT_STATE" = "Unknown," ]; }; then
       :
+   
+   # 4. If battery level is 80 or more, notify full battery alert
+   elif { [ "$BATT_LEVEL" -ge 80 ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -eq 100 ] && [ "$BATT_STATE" = "Full," ]; } || { [ "$BATT_LEVEL" -gt 80 ] && [ "$BATT_STATE" = "Not" ]; } || { [ "$BATT_LEVEL" -ge 80 ] && [ "$BATT_STATE" = "Unknown," ]; } || { [ "$BATT_LEVEL" -eq 100 ] && [ "$BATT_STATE" = "Discharging," ]; }; then
+       notify full "$BATT_LEVEL"
       
-   elif [ "$BATT_LEVEL" -le 40 ] && [ "$BATT_STATE=" = 'Unknown,' ]; then
-      # do nothing if battery level is 40 or less and charging
-      :
-    
-   elif [ "$BATT_LEVEL" -ge 80 ] &&  [ "$BATT_STATE" = 'Charging,' ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 80 or more and charging
-      notify full ${BATT_LEVEL}
-      
+   # 5. If battery level is 80 and discharging, do nothing   
    elif [ "$BATT_LEVEL" -eq 80 ] &&  [ "$BATT_STATE" = 'Disharging,' ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 80 or more and charging
       :
-   
-   elif [ "$BATT_LEVEL" -ge 80 ] &&  [ "$BATT_STATE" = 'Unknown,' ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 80 or more and charging
-      notify full ${BATT_LEVEL}
-      
-   elif [ "$BATT_LEVEL" -gt 80 ] && [ "$BATT_STATE" = 'Not' ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and not charging
-      notify full ${BATT_LEVEL}
-        
-   elif [ "$BATT_LEVEL" -gt 80 ] && [ "$BATT_STATE" = 'Full,' ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and charging
-      notify full ${BATT_LEVEL} 
-   
-   elif [ "$BATT_LEVEL" -eq 100 ] && [ "$BATT_STATE" = 'Discharging,' ]; then
-      # call notify function and pass full argument and battery level
-      # if battery level is 100 and charging
-      notify full ${BATT_LEVEL} 
-      
    fi
    
    sleep 60
