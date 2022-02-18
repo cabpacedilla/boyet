@@ -4,16 +4,15 @@
 
 # Steps for the task:
 # 1. Install acpi
-# 2. Install vlc
-# 3. Create a bin directory inside your home directory
-# 4. Change directory to the bin directory
-# 5. Create the bash script file below with nano or gedit and save it with a filename like battAlert.sh
-# 6. Make file executable with chmod +x battAlert.sh command
-# 7. Add the battAlert.sh command in Startup applications
-# 8. Reboot and use the laptop until the battery drains to 40%
-# 9. A notification message will be displayed to plug the power cable to opitimize the battery life. Then a low battery notification sound will be played.
-# 10. Let the laptop charge until 80%
-# 11. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
+# 2. Create a bin directory inside your home directory
+# 3. Change directory to the bin directory
+# 4. Create the bash script file below with nano or gedit and save it with a filename like battAlert.sh
+# 5. Make file executable with chmod +x battAlert.sh command
+# 6. Add the battAlert.sh command in Startup applications
+# 7. Reboot and use the laptop until the battery drains to 40%
+# 8. A notification message will be displayed to plug the power cable to opitimize the battery life. Then a low battery notification sound will be played.
+# 0. Let the laptop charge until 80%
+# 10. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
 
 #!/usr/bin/bash
 
