@@ -16,14 +16,21 @@
 # 11. Open the laptop lid
 # 12. xscreensaver will ask for password
 
-#!/usr/bin/bash
+#!/usr/bin/sh
+
 while true
 do
+   ## 1. Set 
+   OPEN_STATE="open"
+   
+   ## 2. Get laptop lid state
    LID_STATE=$(less /proc/acpi/button/lid/LID0/state | awk '{print $2}')
    
-   if [ "$LID_STATE" = "open" ]; then
+   ## 3. Do nothing if lid is open
+   if [ "$LID_STATE" = "$OPEN_STATE" ]; then
       :
-        
+  
+  ## 4. Lock screen if lid is closed
    else
       xscreensaver-command -lock
       systemctl suspend
