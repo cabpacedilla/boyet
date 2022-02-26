@@ -20,7 +20,7 @@
 
 while true
 do
-   ## 1. Set 
+   ## 1. Set for open state
    OPEN_STATE="open"
    
    ## 2. Get laptop lid state
