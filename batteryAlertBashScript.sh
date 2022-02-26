@@ -39,12 +39,12 @@ notify()
 
 while true
 do
-	# 1. Set low, high and full battery levels
-	LOW_BATT=40
-   HIGH_BATT=80 
-	FULL_BATT=100
+   # 1. Set low, high and full battery levels
+   LOW_BATT=40
+   HIGH_BATT=80 	
+   FULL_BATT=100
 
-	# 2. Get battery level and state
+   # 2. Get battery level and state
    BATT_LEVEL=$(acpi -b | grep -P -o '[0-9]+(?=%)')
    BATT_STATE=$(acpi -b | awk '{print $3}')  
    
