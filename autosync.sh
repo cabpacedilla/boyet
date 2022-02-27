@@ -5,7 +5,7 @@
 
 #while fswatch -1 ~/Documents/testfiles
 
-while fswatch -1 ~/<sourcefolder>
+while inotifywait -e modify ~
 do
    sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder>/ --delete
 
