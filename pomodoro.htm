@@ -540,14 +540,14 @@ function loopArray(breakFromWorkArray, backToWorkArray)
     if (breakFromWorkArray[ctr] == currentTime)
     {
       breakMessage = "<p>Time for a break because it is now " + breakFromWorkArray[ctr] + ".";
-      showAlarmWindow("", "Break Time", 500, 50, breakMessage);
+      showAlarmWindow("", "Break Time", 300, 50, breakMessage);
       break;
     }
     // If back to work time is equal to current time, alarm for back to work with alarmWindow-up message    			
     if (backToWorkArray[ctr] == currentTime)
     {
       resumeMessage = "<p>Time to resume to work because it is now " + backToWorkArray[ctr] + ".";
-      showAlarmWindow("", "Resume Time", 550, 50, resumeMessage);
+      showAlarmWindow("", "Resume Time", 350, 50, resumeMessage);
       break;
     }
     //break from the ctr if the iteration reach the last elements of the pomodoro and back to work time arrays
