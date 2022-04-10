@@ -192,6 +192,17 @@ function addBreakResumeTimes()
   {
     return alert("Please enter a start time, a stop time, a break time interval and a resume to work time interval.");
   }
+
+  if (workInterval > 720 || workInterval < 75)
+  {
+    return alert("Please enter a maximum of 720 or minimum of 5 of work interval");	
+  }
+  
+  if (resumeInterval < 5)
+  {
+    return alert("Please enter a minimum of 5 or maximum of 720 of resume interval");
+  }  
+	
   startTime = startTime.substring(0, 5);
   startTime = startTime.split(":");
   startTimeObject.setHours(startTime[0], startTime[1]);
