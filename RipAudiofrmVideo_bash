@@ -19,13 +19,14 @@ d=0
 t=0 
 
 while [ "${starttimes[$s]}" != "${starttimes[-1]}" ]  &&  [ "${durations[$d]}" != "${durations[-1]}" ]  &&  [ "${titles[$t]}" != "${titles[-1]}" ] ; do
-	  
-	  if [ "$FORMAT" = "mp3" ] || [ "$FORMAT" = "MP3" ]; then
-	  	ffmpeg -y -i "$1" -ss "${starttimes[$s]}" -t "${durations[$d]}" -q:a 0 -map a "${titles[$t]}".mp3
+    
+    if [ "$FORMAT" = "mp3" ] || [ "$FORMAT" = "MP3" ]; then
+      ffmpeg -y -i "$1" -ss "${starttimes[$s]}" -t "${durations[$d]}" -q:a 0 -map a "${titles[$t]}".mp3
     
     elif [ "$FORMAT" = "m4a" ] || [ "$FORMAT" = "M4A" ]; then
-    	ffmpeg -y -i "$1" -ss "${starttimes[$s]}" -t "${durations[$d]}" -vn -c:a copy -map a "${titles[$t]}".m4a
-		fi
+      ffmpeg -y -i "$1" -ss "${starttimes[$s]}" -t "${durations[$d]}" -vn -c:a copy -map a "${titles[$t]}".m4a
+    
+    fi
 
     s=$[$s +1]
     d=$[$d +1]
