@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-# This script will automatically switch to Skype or any message app when someone @mention you or @mention all to attend the message right away
+# This script will automatically switch to Skype or any message app when your office mate @mention you or @mention all to attend the message right away
 
 while true
 do
