@@ -1,11 +1,11 @@
 #!/usr/bin/bash
 while true
 do
-   EMAIL=cabapacedilla@gmail.com
    NOTIFLOGS=~/bin/notiflogs.txt
    NOTIFBUF=~/bin/notifbuf.txt
-    
-   NOTIF=("Thunderbird" "@mentioned you" "mentioned all")
+   
+   declare -a NOTIF
+   NOTIF=("@mentioned you" "mentioned all")
   
    # Listen log file change
    # gnome-terminal -- inotifywait -e modify $NOTIFLOGS &
@@ -36,31 +36,19 @@ do
             #echo $KEYWORD
             case "$line" in
                   *"$KEYWORD"*)
-                  if [ "$KEYWORD" = "Thunderbird" ]
-                  then
-                     break
-                    
-                    #${KEYMESSAGE[${KEYWORD}]}
-                  elif [ "$KEYWORD" = "@mentioned you" ] [ "$KEYWORD" = "mentioned all" ]
-                  then 
-                     echo "Sending email..."
-                     mail -s "Notification from $KEYWORD" $EMAIL < $NOTIFBUF     
-                    
+                  if [ "$KEYWORD" = "@mentioned you" ] [ "$KEYWORD" = "mentioned all" ]; then 
                      MAIL_WIN=$(wmctrl -lp | grep Thunderbird | awk '{print $1}')
                      wmctrl -ia "$MAIL_WIN"   
-
-                     break
                   fi
                   ;;                 
             esac              
         done
-     done <$NOTIFBUF
-        
-   # Empty text files
-   >$NOTIFLOGS
-   >$NOTIFBUF
+     done < $NOTIFBUF
+         
+     # Empty text files
+     > $NOTIFLOGS
+     > $NOTIFBUF
     
-   done
-  
-   sleep 0.001
+   done  
+   sleep 0.01s
 done
