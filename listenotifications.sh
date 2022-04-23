@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
 # This script will automatically switch to Skype or any message app when your office mate @mention you or @mention all to attend the message right away
+# This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 
 while true
 do
@@ -8,7 +9,7 @@ do
    NOTIFBUF=~/bin/notifbuf.txt
    
    declare -a NOTIF
-   NOTIF=("@mentioned you" "mentioned all"
+   NOTIF=("@mentioned you" "mentioned all")
    
   # Divert notification monitor update to log file
   dbus-monitor "interface='org.freedesktop.Notifications'" |\
@@ -33,7 +34,7 @@ do
             #echo $KEYWORD
             case "$line" in
                   *"$KEYWORD"*)
-                  if [ "$KEYWORD" = "@mentioned you" ] [ "$KEYWORD" = "mentioned all" ]; then 
+                  if [ "$KEYWORD" = "@mentioned you" ] || [ "$KEYWORD" = "mentioned all" ]; then 
                      SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
                      wmctrl -ia "$SKYPE_WIN"   
                   fi
