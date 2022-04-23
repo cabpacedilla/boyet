@@ -10,7 +10,7 @@
 
 while inotifywait -e modify ~/Documents
 do
-   sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder>/ --delete
+   sudo rsync -avHAX ~/<sourcefolder> /<destinationfolder> --delete
 
    #sudo rsync -avHAX ~/Documents/testfiles/ /mnt/backup/ --delete
    #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
