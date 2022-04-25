@@ -11,20 +11,20 @@ do
    declare -a NOTIF
    NOTIF=("@mentioned you" "mentioned all")
    
-  # Divert notification monitor update to log file
-  dbus-monitor "interface='org.freedesktop.Notifications'" |\
-   grep --line-buffered "string" |\
-   grep --line-buffered -e method -e ":" -e '""' -e urgency -e notify -v |\
-   grep --line-buffered '.*(?=string)|(?<=string).*' -oPi |\
-   grep --line-buffered -v '^\s*$' |\
-   #xargs -d '\n' -I '{}' espeak '{}'\
-   xargs -d '\n' -I '{}'\
-   printf "---$(date)---\n"{}"\n" > $NOTIFLOGS &
-  
-   # Switch to  every time someone @mention you or @mention all
+   # Switch to Skype every time someone @mention you or @mention all
    while inotifywait -e modify $NOTIFLOGS
    do     
-      # Get first 10 lines from log file and save to buffer text file
+      # Divert notification monitor update to log file
+      dbus-monitor "interface='org.freedesktop.Notifications'" |\
+         grep --line-buffered "string" |\
+         grep --line-buffered -e method -e ":" -e '""' -e urgency -e notify -v |\
+         grep --line-buffered '.*(?=string)|(?<=string).*' -oPi |\
+         grep --line-buffered -v '^\s*$' |\
+         #xargs -d '\n' -I '{}' espeak '{}'\
+         xargs -d '\n' -I '{}'\
+         printf "---$(date)---\n"{}"\n" > $NOTIFLOGS &
+         # Get first 10 lines from log file and save to buffer text file
+      
       head $NOTIFLOGS > $NOTIFBUF 
      
       # Read buffer text file for keyword filter
