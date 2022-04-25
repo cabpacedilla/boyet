@@ -5,8 +5,8 @@
 
 while true
 do
-   NOTIFLOGS=~/bin/notiflogs.txt
-   NOTIFBUF=~/bin/notifbuf.txt
+   NOTIFLOGS=~/Documents/listenotif/notiflogs.txt
+   NOTIFBUF=~/Documents/listenotif/notifbuf.txt
    
    declare -a NOTIF
    NOTIF=("@mentioned you" "mentioned all")
