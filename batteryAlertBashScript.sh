@@ -61,7 +61,7 @@ do
        notify high "$BATT_LEVEL"
       
    # 5. If battery level is 80 and discharging, do nothing   
-   elif [ "$BATT_LEVEL" -eq "$MAX_BATT" ] &&  [ "$BATT_STATE" = 'Disharging,' ]; then
+   elif [ "$BATT_LEVEL" -eq "$FULL_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; then
       :
    fi
    
