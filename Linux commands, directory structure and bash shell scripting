@@ -10,7 +10,7 @@ Pre-requisite:
 Installation:
 Download and install Ubuntu desktop Linux on a virtual machine (Virtualbox) inside Microsoft Windows: https://itsfoss.com/install-linux-in-virtualbox/
 
-Or install Ubuntu on a dedicated SSD hard drive and an 8 GB RAM. Ubuntu need higher hardware specifications for better performance. :-)
+Or install Ubuntu on a dedicated SSD hard drive and an 8 GB RAM. Ubuntu need higher hardware specifications for better performance. 🙂
 https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview
 
 Check first if your desktop or laptop is compatible with Ubuntu from this link: https://certification.ubuntu.com/desktop
@@ -160,62 +160,6 @@ Everything in Linux is a file.
 7. Press Ctrl + K to cut text
 8. Press Ctrl + U to paste text
 
-vi Editor
-----------
-
-vi has a steeper learning curve
-
-Command format:
-[claive@pc claive]$ vi filename
-
-Three modes:
-1. command mode = program is available for vi commands (insert, delete lines, etc...)
-2. x mode = program is available to write(save) file or quit(close) file,
-3. insert mode = program is available for typing text, deleting text and characters
-
-vi commands:
-i - Insert at cursor
-a - Write after cursor
-x - Delete character at the cursor
-dd - Delete line
-dw - Delete word
-u - Undo last change
-U - Undo all changes to the entire line
-o - Open a new line
-r - Replace character
-R - Overwrite characters from cursor onward
-
-How to type text in vi: Press letter I 
-
-How to change modes: Press escape key
-
-Sample text file edition in a terminal:
---------------------------------------
-This is a silly text file!
-
-What do you think?
-~
-~
-~
-~
-~
-~
-~
-~
-~
-
-How to save a file in vi:
-1. Press escape key
-2. Press shift colon
-3. Type w then press Enter
-
-:q - Quit without saving
-:wq - Save the file and quit
-
-You can also use graphical text editors like gedit or leafpad if you are inside a desktop environment. 
-You can install them if they are not yet installed in the system by typing "sudo apt install gedit" or "sudo apt install leafpad" in the terminal.
-
-
 man pages
 ----------
 command format:
@@ -306,7 +250,7 @@ Bash shell scripting basics
 
 Steps to create shell script file:
 
-1. Open a new text file in a text editor like vi or nano in the terminal or in graphical text editors like gedit or leafpad.
+1. Create a new in nano text editor inside a terminal or in graphical text editors like gedit or leafpad.
 
 2. Shell scripts starts with #!<pathofBashprogram>
 #!/bin/bash
@@ -382,7 +326,7 @@ Save and run script in terminal.
 Output:
 here is what $testing looks like in single quotes
 
-* Backslash before variables ( \$variablename )= display variable as string
+* Backslash before variables ( \$variablename 🙁 display variable as string
 
 Example: 
 #!/bin/bash
@@ -454,7 +398,7 @@ John is using 7836 kilobytes
 
 Math operators:
 ---------------
-  +, -, *, /, % (modulo), ** (exponent)
+  +, -, , /, % (modulo), * (exponent)
   
 Comparison operators for string:
 --------------------------------
