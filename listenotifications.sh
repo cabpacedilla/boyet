@@ -7,6 +7,8 @@ while true
 do
    NOTIFLOGS=~/Documents/listenotif/notiflogs.txt
    NOTIFBUF=~/Documents/listenotif/notifbuf.txt
+   EMAIL="cabpacedilla@gmail.com"
+   SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
    
    declare -a NOTIF
    NOTIF=("@mentioned you" "mentioned all")
@@ -40,7 +42,6 @@ do
                      # Send email copy of notification to email
             	      mail -s "Notification from $FIRSTNAME" "$EMAIL"
                      # Switch to Skype window
-                     SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
                      wmctrl -ia "$SKYPE_WIN"   
                   fi
                   ;;                 
