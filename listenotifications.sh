@@ -35,6 +35,11 @@ do
             case "$line" in
                   *"$KEYWORD"*)
                   if [ "$KEYWORD" = "@mentioned you" ] || [ "$KEYWORD" = "mentioned all" ]; then 
+                     FIRSTNAME=$(echo $FIRSTNAME| awk '{print $1}')
+                     FIRSTNAME=$(echo ${FIRSTNAME^^})
+                     # Send email copy of notification to email
+            	      mail -s "Notification from $FIRSTNAME" "$EMAIL"
+                     # Switch to Skype window
                      SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
                      wmctrl -ia "$SKYPE_WIN"   
                   fi
