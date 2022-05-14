@@ -8,9 +8,10 @@
 
 #while fswatch -1 ~/Documents/testfiles
 
-while inotifywait -e modify ~/Documents
+while inotifywait modify ~/<sourcefolder>
 do
-   sudo rsync -avHAX ~/<sourcefolder> /<destinationfolder> --delete
+   notify-send "Folder updated. Syncing folder."
+   sudo rsync -avHAX ~/<sourcefolder> /<destinationfolder> 
 
    #sudo rsync -avHAX ~/Documents/testfiles/ /mnt/backup/ --delete
    #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
