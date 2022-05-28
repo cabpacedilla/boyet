@@ -1,4 +1,4 @@
-/* This Selenium test script will navigate, verify and populate data for the "Successful purchase of items" user flow.
+/* This is a Selenium test script that will navigate, verify and populate data for the "Successful purchase of items" user flow.
 This script was written by Claive Alvin P. Acedilla. 2019 
 Note: The test object, page objects and data object should be saved in separate files */
 
