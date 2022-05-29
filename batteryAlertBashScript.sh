@@ -28,7 +28,7 @@ notify()
    fi
     
    # Notify battery alert
-   notify-send -u normal -t 15000 "Battery reached ${2}%. ${ACTION} the power cable to optimize battery life!"
+   notify-send -u critical -t 15000 "Battery reached ${2}%. ${ACTION} the power cable to optimize battery life!"
    
    # check if cvlc file program is existing then play low or high mp3
    #if [ -f "$(which mpv)" ]; then
