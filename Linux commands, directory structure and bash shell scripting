@@ -87,7 +87,7 @@ To navigate through multiple levels of directory at once, specify the full direc
 
 4. cp = copy
 
-format: cp sourcefile newfile
+Format: cp <sourcefile> <newfile>
 
 [claive@ubuntupc claive]$ cp syllabus.txt syllabusNew.txt
 
@@ -96,6 +96,8 @@ format: cp sourcefile newfile
 6. clear = clear the screen
 
 7. rm = remove a file or directory
+
+Format: rm <options> <filename>
 
 [claive@ubuntupc claive]$ rm -i syllabus.txt 
 
@@ -108,20 +110,43 @@ Format: mv sourcefile newfilename
 
 9. mkdir = make directory
 
+Format: mkdir directoryname
+[claive@ubuntupc claive]$ mkdir naturepics
+
 10. rmdir = remove directory
 If folder has files, delete the files first inside the directory with the rm command before removing the directory with the rmdir command
 
+Format: rmdir directoryname
+[claive@ubuntupc claive]$ rmdir naturepics
+
 11. cat = concatenate files and print on the standard output
+
+Format: cat <sourcefile>
+[claive@ubuntupc claive]$ cat syllabus.txt
 
 12. grep = print lines that match patterns
 
+Format: grep <pattern> <sourcefile>
+[claive@ubuntupc claive]$ cat chemistry syllabus.txt
+
 13. echo = display a line of text
+
+Format: echo <text>
+echo claive
+Output: claive
 
 14. tail = output the last part of files
 
+Format: tail <sourcefile>
+
+
 15. head = output the first part of files
 
-16. uniq = report or omit repeated lines
+Format: head <sourcefile>
+
+16. uniq = report or omit repeated lines (lines that are the same or remove duplicate lines)
+
+Format: uniq <sourcefile>
 
 17. cal = calendar
 
@@ -135,11 +160,19 @@ If folder has files, delete the files first inside the directory with the rm com
 
 22. whatis = display one-line description
 
+Format: whatis <nameofcommand>
+
 23. which = locate a command
+
+Format: which <nameofcommand>
 
 24. file = examine type of file
 
+Format: file <sourcefile>
+
 25. less =  read a file
+
+Format: less <sourcefile>
 
 26. clear = clear screen
 
