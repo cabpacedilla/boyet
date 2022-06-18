@@ -359,7 +359,7 @@ Save and run script in terminal.
 Output:
 here is what $testing looks like in single quotes
 
-* Backslash before variables ( \$variablename 🙁 display variable as string
+* Backslash before variables = \$variablename will display variable as string
 
 Example: 
 #!/bin/bash
