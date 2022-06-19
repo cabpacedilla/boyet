@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 # This script will alert when free memory is less than or equals to desired low free memory space in megabytes to that free memory is low and which processes are consuming memory
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # October 2020
@@ -12,7 +13,6 @@
 # 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
 # 8. Low memory alert message will be displayed
 
-#!/usr/bin/bash
 while true
 do
    # 1. Set memory free limit
