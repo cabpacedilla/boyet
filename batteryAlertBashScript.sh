@@ -1,3 +1,4 @@
+#!/usr/bin/sh
 # This script will alert when battery level is below or equal 40% and will notify when battery level is above or equal 80% to optimize laptop battery life.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
@@ -13,8 +14,6 @@
 # 8. A notification message will be displayed to plug the power cable to opitimize the battery life. Then a low battery notification sound will be played.
 # 0. Let the laptop charge until 80%
 # 10. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
-
-#!/usr/bin/sh
 
 notify()
 {
