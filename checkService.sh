@@ -1,3 +1,4 @@
+#!/usr/bin/bash
 # This script will check if a process is running. If the process is not running, it will run the process. 
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # December 2020
@@ -10,8 +11,6 @@
 # 5. Add the checkService.sh command in Startup applications
 # 6. Reboot the laptop and login
 # 7. The script will run the process if the process is not running
-
-#!/usr/bin/bash
 
 declare -a SERVICES=("blueman-applet" "nm-applet")
 declare -a SCRIPTS=("keyLocked.sh" "lowMemAlert.sh" "powerAlert.sh" "laptopLidClosed.sh")
