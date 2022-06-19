@@ -1,8 +1,7 @@
+#!/usr/pkg/bin/bash
 # This script will rip audio parts from a video file with ffmpeg using their start times and duration times
 # This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # July 2020
-
-#!/usr/pkg/bin/bash
 
 declare -a starttimes durations titles
 
