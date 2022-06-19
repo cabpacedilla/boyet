@@ -1,7 +1,7 @@
+#!/usr/bin/bash
 # This script will alert when the CPU temperature equal or greater than 90 degree Celcius
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 
-#!/usr/bin/bash
 while true
 do
 
