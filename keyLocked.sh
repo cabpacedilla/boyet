@@ -1,3 +1,5 @@
+
+#!/usr/bin/sh
 # This script will notify when Caps Lock or Num Lock are on using the xset q command.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # October 2020
@@ -13,8 +15,6 @@
 # 8. A Caps Lock key notification message will be displayed
 # 9. Press the Num Lock key
 # 10. A Num Lock key notification message will be displayed
-
-#!/usr/bin/sh
 
 while true
 do
