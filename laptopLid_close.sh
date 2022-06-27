@@ -31,11 +31,10 @@ do
   
   ## 4. Lock screen if lid is closed
    else
-      xscreensaver-command -lock
-      systemctl suspend
-      
-      #dm-tool switch-to-greeter
-      #dbus-send --type=method_call --dest=org.gnome.Screensaver /org/gnome/Screensaver org.gnome.ScreenSaver.lock
+      xscreensaver-command -lock &
+      # systemctl suspend      
+      # dm-tool switch-to-greeter
+      # dbus-send --type=method_call --dest=org.gnome.Screensaver /org/gnome/Screensaver org.gnome.ScreenSaver.lock
       
    fi
    
