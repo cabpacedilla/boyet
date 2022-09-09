@@ -5,12 +5,12 @@
 while true
 do
 
-TEMPEST=$(sensors | sed '19q;d' | awk '{print $2}')
-TEMPNUM="${TEMPEST:1:-4}"
+TEMPEST=$(sensors | grep Tctl | awk '{print $2}')
+TEMPNUM=${TEMPEST:1:-4}
 HIGHTEMP=90
 
 if [ "$TEMPNUM" -ge "$HIGHTEMP" ]; then
-	notify-send "CPU temp alert" "CPU temp is high. Please check application with high CPU usage."
+	notify-send "CPU temp alert" "$HIGHTEMP degrees C temp is high. Please check application with high CPU usage."
 	
 else 
 	:
