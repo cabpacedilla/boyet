@@ -16,6 +16,9 @@ if [ -n "$UPGRADEABLE" ]; then
 	PACKAGES=$(cut -d/ -f1 upgradeable.txt)
   	notify-send "Upgrading $PACKAGES"
 	sudo apt upgrade
+	if [ $? -eq 0 ]; then
+    		notify-send "Upgrade was successful."
+    	fi 
 	
 else
 	notify-send "No upgradeable packages."
