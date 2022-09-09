@@ -9,10 +9,10 @@
 #    30 1 1,15 * * ~/bin/autoupdate.sh
 
 UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded")
-PACKAGENUM=$(echo $UPGRADEABLE | awk '{print $1}')
+#PACKAGENUM=$(echo $UPGRADEABLE | awk '{print $1}')
 
 if [ -n "$UPGRADEABLE" ]; then
-	sudo apt list --upgradeable > ~/bin/upgradeable.txt
+	sudo apt list --upgradeable | tail -n +2 > ~/bin/upgradeable.txt
 	PACKAGES=$(cut -d/ -f1 upgradeable.txt)
   	notify-send "Upgrading $PACKAGES"
 	sudo apt upgrade
