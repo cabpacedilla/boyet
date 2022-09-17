@@ -22,7 +22,6 @@ if [ -n "$UPGRADEABLE" ]; then
     else
     	notify-send "Upgrade was unsuccessful."
     fi 
-
 else
 	notify-send "No upgradeable packages."
 	
