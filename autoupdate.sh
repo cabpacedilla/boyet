@@ -8,18 +8,21 @@
 # 2. Set a cron job for the script
 #    30 1 1,15 * * ~/bin/autoupdate.sh
 
-UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded")
-#PACKAGENUM=$(echo $UPGRADEABLE | awk '{print $1}')
+#!/usr/bin/bash
+
+UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded.")
 
 if [ -n "$UPGRADEABLE" ]; then
 	sudo apt list --upgradeable | tail -n +2 > ~/bin/upgradeable.txt
 	PACKAGES=$(cut -d/ -f1 upgradeable.txt)
   	notify-send "Upgrading $PACKAGES"
-	sudo apt upgrade
+	yes | sudo apt upgrade
 	if [ $? -eq 0 ]; then
-    		notify-send "Upgrade was successful."
-    	fi 
-	
+    	notify-send "$PACKAGES were updated."
+    else
+    	notify-send "Upgrade was unsuccessful."
+    fi 
+
 else
 	notify-send "No upgradeable packages."
 	
