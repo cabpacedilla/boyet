@@ -6,7 +6,7 @@
 # 1. Set apt with no password requirement with the user account in sudoers file
 #    {user} ALL=(ALL) NOPASSWD: /usr/bin/apt
 # 2. Set a cron job for the script
-#    30 1 1,15 * * ~/bin/autoupdate.sh
+#    30 1 1,15 * * /home/{user}/bin/autoupdate.sh
 
 #!/usr/bin/bash
 
