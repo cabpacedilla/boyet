@@ -13,6 +13,15 @@ do
    declare -a NOTIF
    NOTIF=$("@mentioned you" "mentioned all")
    
+   dbus-monitor "interface='org.freedesktop.Notifications'" |\
+   grep --line-buffered "string" |\
+   grep --line-buffered -e method -e ":" -e '""' -e urgency -e notify -v |\
+   grep --line-buffered '.*(?=string)|(?<=string).*' -oPi |\
+   grep --line-buffered -v '^\s*$' |\
+   #xargs -d '\n' -I '{}' espeak '{}' \
+   xargs -d '\n' -I '{}' \
+   printf "---$(date)---\n"{}"\n" > $NOTIFLOGS &
+   
    # Switch to Skype every time someone @mention you or @mention all
    while inotifywait -e modify $NOTIFLOGS
    do     
