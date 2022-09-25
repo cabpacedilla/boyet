@@ -11,7 +11,7 @@ do
    SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
    
    declare -a NOTIF
-   NOTIF=("@mentioned you" "mentioned all")
+   NOTIF=$("@mentioned you" "mentioned all")
    
    # Switch to Skype every time someone @mention you or @mention all
    while inotifywait -e modify $NOTIFLOGS
