@@ -32,3 +32,5 @@ while [ "${starttimes[$s]}" != "${starttimes[-1]}" ]  &&  [ "${durations[$d]}" !
     d=$[$d +1]
     t=$[$t +1]
 done
+
+notify-send "Audio rip alert!" "Audtio rip is done."
