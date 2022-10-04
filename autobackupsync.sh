@@ -5,10 +5,10 @@
 
 # Needs filesystem change monitoring tool like inotify in Linux
 
-while inotifywait modify ~/<sourcefolder>
+while inotifywait modify-r -e modify,create,delete ~/<sourcefolder>
 do
    notify-send "Folder updated. Syncing folder."
-   sudo rsync -avHAX ~/<sourcefolder> /<destinationfolder> 
+   sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder> 
 
    #sudo rsync -avHAX ~/Documents/testfiles/ /mnt/backup/ --delete
    #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
