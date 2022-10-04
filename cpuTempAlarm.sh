@@ -10,7 +10,7 @@ TEMPNUM=${TEMPEST:1:-4}
 HIGHTEMP=90
 
 if [ "$TEMPNUM" -ge "$HIGHTEMP" ]; then
-	notify-send "CPU temp alert" "$HIGHTEMP degrees C temp is high. Please check application with high CPU usage."
+	notify-send "CPU temp alert!" "$HIGHTEMP degrees C temp is high. Please check application with high CPU usage."
 	
 else 
 	:
