@@ -18,12 +18,13 @@ if [ -n "$UPGRADEABLE" ]; then
   	notify-send "Upgrading $PACKAGES"
 	yes | sudo apt upgrade
 	if [ $? -eq 0 ]; then
-    	notify-send "$PACKAGES were updated."
-    else
-    	notify-send "Upgrade was unsuccessful."
-    fi 
+        	not ify-send "Auto-updates:" "$PACKAGES were updated."
+    	else
+    		notify-send "Auto-updates:" "Upgrade was unsuccessful."
+    	fi 	
+
 else
-	notify-send "No upgradeable packages."
+	notify-send "Auto-updates:" "No upgradeable packages."
 	
 fi
 	
