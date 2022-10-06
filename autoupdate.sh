@@ -14,7 +14,7 @@ UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded.")
 DATE=$(date | awk '{print $2}')
 LIST=~/bin/upgradeable.txt
 
-#if [ "$DATE" = "01" ] || [ "$DATE" = "15" ]; then
+if [ "$DATE" = "01" ] || [ "$DATE" = "15" ]; then
 if [ -n "$UPGRADEABLE" ]; then
 	sudo apt list --upgradeable | tail -n +2 > $LIST
 	PACKAGES=$(cut -d/ -f1 $LIST)
@@ -31,8 +31,8 @@ else
 	
 fi
 
-#else
-#:
-#fi
+else
+ :
+fi
 
 sleep 7h
