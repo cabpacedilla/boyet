@@ -10,8 +10,7 @@ do
    EMAIL="cabpacedilla@gmail.com"
    SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
    
-   declare -a NOTIF=()
-   NOTIF=$("@mentioned you" "mentioned all")
+   NOTIF=("@mentioned you" "mentioned all")
    
    dbus-monitor "interface='org.freedesktop.Notifications'" |\
    grep --line-buffered "string" |\
