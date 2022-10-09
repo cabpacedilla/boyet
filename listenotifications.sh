@@ -10,7 +10,7 @@ do
    EMAIL="cabpacedilla@gmail.com"
    SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
    
-   declare -a NOTIF
+   declare -a NOTIF=()
    NOTIF=$("@mentioned you" "mentioned all")
    
    dbus-monitor "interface='org.freedesktop.Notifications'" |\
@@ -45,13 +45,15 @@ do
             #echo $KEYWORD
             case "$line" in
                   *"$KEYWORD"*)
-                  if [ "$KEYWORD" = "@mentioned you" ] || [ "$KEYWORD" = "mentioned all" ]; then 
-                     FIRSTNAME=$(echo $FIRSTNAME| awk '{print $1}')
-                     FIRSTNAME=$(echo ${FIRSTNAME^^})
+                  if echo "${NOTIF[*]}" | grep "$KEYWORD"; then
+                     SENDER=$(echo $KEYWORD | awk '{print $1}')
+                     SENDER=$(echo ${SENDER^^})
                      # Send email copy of notification to email
-            	      mail -s "Notification from $FIRSTNAME" "$EMAIL"
+            	      mail -s "Notification from $SENDER" "$EMAIL"
                      # Switch to Skype window
                      wmctrl -ia "$SKYPE_WIN"   
+                     notify-send "Notification from $SENDER"
+                     break
                   fi
                   ;;                 
             esac              
