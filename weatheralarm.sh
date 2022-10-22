@@ -31,7 +31,7 @@ WIND=${WIND:1:-4}
 if [ "$WIND" -ge "$STRONGWIND" ]; then
   notify-send "Winds outside are strong. Stay inside."
 else
-	:
+   :
 fi
 
 RAINFALL=$(cat $WEATHER_FILE | awk '{print $5}')
@@ -40,7 +40,7 @@ COMPARE=`echo "$RAINFALL > $HEAVYRAIN" | bc`
 if [ "$COMPARE" -eq 1 ]; then
    notify-send "It is raining heavily outside."
 else
-	:
+   :
 fi
 
 UV=$(cat $WEATHER_FILE | awk '{print $6}')
@@ -60,3 +60,4 @@ fi
 
 sleep 5m
 done
+
