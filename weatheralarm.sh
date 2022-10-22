@@ -27,9 +27,7 @@ else
 fi
 
 WIND=$(cat $WEATHER_FILE | awk '{print $4}')
-#echo $WIND
 WIND=${WIND:1:-4}
-#echo $SPEED
 if [ "$WIND" -ge "$STRONGWIND" ]; then
   notify-send "Winds outside are strong. Stay inside."
 else
@@ -46,14 +44,13 @@ else
 fi
 
 UV=$(cat $WEATHER_FILE | awk '{print $6}')
-echo $UV
-if [ "$UV" -ge 3 ] || [ "$UV" -le 5 ]; then
+if [ "$UV" -ge 3 ] && [ "$UV" -le 5 ]; then
    notify-send "Ultraviolet is $UV. Wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses to protect from the sun."
    
-elif [ "$UV" -ge 6 ] || [ "$UV" -le 7 ]; then
+elif [ "$UV" -ge 6 ] && [ "$UV" -le 7 ]; then
    notify-send "Ultraviolet is $UV. Wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm to protect from the sun."
    
-elif [ "$UV" -ge 8 ] || [ "$UV" -le 10 ]; then
+elif [ "$UV" -ge 8 ] && [ "$UV" -le 10 ]; then
    notify-send "Ultraviolet is $UV. Wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm and stay in the shade."
    
 elif [ "$UV" -gt 11 ]; then
