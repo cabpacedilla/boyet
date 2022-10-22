@@ -5,6 +5,9 @@
 # Steps
 # Add the script in autostart after saving.
 
+while true
+do
+
 UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded.")
 DATE=$(date | awk '{print $2}')
 LIST=~/bin/upgradeable.txt
@@ -31,3 +34,4 @@ else
 fi
 
 sleep 7h
+done
