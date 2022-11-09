@@ -53,6 +53,8 @@ do
                      wmctrl -ia "$SKYPE_WIN"   
                      notify-send "Notification from $SENDER"
                      break
+                  else
+                     :
                   fi
                   ;;                 
             esac              
