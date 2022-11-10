@@ -10,7 +10,4 @@ do
    notify-send "Folder updated. Syncing folder."
    sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder> 
 
-   #sudo rsync -avHAX ~/Documents/testfiles/ /mnt/backup/ --delete
-   #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
-
 done
