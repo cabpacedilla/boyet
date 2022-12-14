@@ -2,7 +2,7 @@
 while true
 do
 
-LISTENSCRIPTS_ID=$(pidof -x listenscripts.sh)
+LISTENSCRIPTS_ID=$(pgrep -f listenscripts.sh)
 LISTENSCRIPTS_IDS=$(echo "$LISTENSCRIPTS_ID" | grep -o " " | wc -c)
 if [ "$LISTENSCRIPTS_IDS" -gt 1 ]; then
   	declare -a LIDCLOSEDARR
