@@ -17,26 +17,28 @@
 # 11. Open the laptop lid
 # 12. xscreensaver will ask for password
 
-while true
-do
-   ## 1. Set for open state
-   OPEN_STATE="open"
+LID_PATH=/proc/acpi/button/lid/LID0/state
+
+while inotifywait -e modify $LID_PATH; do
+
+## 1. Set for open state
+OPEN_STATE="open"
    
-   ## 2. Get laptop lid state
-   LID_STATE=$(less /proc/acpi/button/lid/LID0/state | awk '{print $2}')
+## 2. Get laptop lid state
+LID_STATE=$(less $LID_PATH | awk '{print $2}')
    
-   ## 3. Do nothing if lid is open
-   if [ "$LID_STATE" = "$OPEN_STATE" ]; then
-      :
+## 3. Do nothing if lid is open
+if [ "$LID_STATE" = "$OPEN_STATE" ]; then
+   :
   
-  ## 4. Lock screen if lid is closed
-   else
-      xscreensaver-command -lock &
-      # systemctl suspend      
-      # dm-tool switch-to-greeter
-      # dbus-send --type=method_call --dest=org.gnome.Screensaver /org/gnome/Screensaver org.gnome.ScreenSaver.lock
+## 4. Lock screen if lid is closed
+else
+   xscreensaver-command -lock  
+   systemctl suspend
       
-   fi
-   
-   sleep 1
+   #dm-tool switch-to-greeter
+   #dbus-send --type=method_call --dest=org.gnome.Screensaver /org/gnome/Screensaver org.gnome.ScreenSaver.lock
+      
+fi
+
 done
