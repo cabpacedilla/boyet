@@ -14,7 +14,11 @@ VIOLENTRAIN=50
 curl wttr.in/Maasin?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
 
 WEATHER=$(cat $WEATHER_FILE | awk '{$1=$2=$3=$4=$5=$6=""; print $0}')
-notify-send "Weather update:" "The weather is $WEATHER."
+if [ -z "$WEATHER" ]; then
+   continue
+else
+   notify-send "Weather update:" "The weather is $WEATHER."
+fi
 
 HUMID=$(cat $WEATHER_FILE | awk '{print $2}')
 HUMID=${HUMID:0:-1}
@@ -37,7 +41,7 @@ WIND=${WIND:1:-4}
 if [ "$WIND" -ge "$STRONGWIND" ]; then
   notify-send "Weather warning:" "It's very windy and $WEATHER outside. Stay inside."
 else
-	:
+   :
 fi
 
 RAINFALL=$(cat $WEATHER_FILE | awk '{print $5}')
