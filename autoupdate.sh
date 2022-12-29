@@ -16,7 +16,8 @@ if [ "$DATE" = "01" ] || [ "$DATE" = "15" ]; then
 if [ -n "$UPGRADEABLE" ]; then
    sudo apt list --upgradeable | tail -n +2 > $LIST
    PACKAGES=$(cut -d/ -f1 $LIST)
-   notify-send "Auto-updates:" "Upgrading $PACKAGES"	
+   notify-send "Auto-updates:" "$PACKAGES to be updated."	
+   notify-send "Updating $PACKAGES..."	
    if yes | sudo apt upgrade; then
       notify-send "Auto-updates:" "$PACKAGES were updated."
       yes | sudo apt autoremove
