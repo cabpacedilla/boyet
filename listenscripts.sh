@@ -2,6 +2,9 @@
 while true
 do
 
+MIN_ID=1
+NO_ID=0
+
 LOWMEM_IDS=$(pgrep -c lowmem)
 LOWMEM_PROC=$(pidof -x lowmem.sh)
 declare -a LOWMEMARR
@@ -9,17 +12,16 @@ IFS=' ' read -r -a LOWMEMARR <<< "$LOWMEM_PROC"
 i=0
   while [ "${LOWMEMARR[$i]}" != "${LOWMEMARR[-1]}" ]; do
   echo "${LOWMEMARR[$i]}"
-  if [ "$LOWMEM_IDS" -gt 1 ]; then
+  if [ "$LOWMEM_IDS" -gt $MIN_ID ]; then
       kill -9 "${LOWMEMARR[$i]}"
       notify-send "lowmem ${LOWMEMARR[$i]} process ID is killed."
   fi
   i=$[$i +1]
   done
 
-if [ "$LOWMEM_IDS" -eq 0 ]; then
-	notify-send "Lowmem is not running. Please check if Lowmem process is running" 
-	lowmem.sh &  
-	if [ $? -eq 0 ]; then
+if [ "$LOWMEM_IDS" -eq $NO_ID ]; then
+	notify-send "Lowmem is not running. Please check if Lowmem process is running" 	  
+	if lowmem.sh & then
 		notify-send "Lowmem is running"
 	fi 
 else 
@@ -28,7 +30,7 @@ fi
 
 WEATHER_IDS=$(pgrep -c weatheralarm)
 WEATHER_PROC=$(pidof -x weatheralarm.sh)
-if [ "$WEATHER_IDS" -gt 1 ]; then
+if [ "$WEATHER_IDS" -gt $MIN_ID ]; then
 declare -a WEATHERARR
 IFS=' ' read -r -a WEATHERARR <<< "$WEATHER_PROC"   
 i=0
@@ -40,10 +42,9 @@ i=0
   done
 fi
 
-if [ "$WEATHER_IDS" -eq 0 ]; then
+if [ "$WEATHER_IDS" -eq $NO_ID ]; then
   notify-send "Weatheralarm is not running. Please check if weatheralarm process is running" 
-  weatheralarm.sh &  
-  if [ $? -eq 0 ]; then
+  if  weatheralarm.sh & then
           notify-send "Weatheralarm is running"
   fi      
 else 
@@ -52,7 +53,7 @@ fi
 
 KEYLOCKED_IDS=$(pgrep -c keylocked)
 KEYLOCKED_PROC=$(pidof -x keylocked.sh)
-if [ "$KEYLOCKED_IDS" -gt 1 ]; then
+if [ "$KEYLOCKED_IDS" -gt $MIN_ID ]; then
 declare -a KEYLOCKARR
 IFS=' ' read -r -a KEYLOCKARR <<< "$KEYLOCKED_PROC"   
 i=0
@@ -64,10 +65,9 @@ while [ "${KEYLOCKARR[$i]}" != "${KEYLOCKARR[-1]}" ]; do
 done
 fi
 
-if [ "$KEYLOCKED_IDS" -eq 0 ]; then
+if [ "$KEYLOCKED_IDS" -eq $NO_ID ]; then
 	notify-send "keylocked is not running. Please check if keylocked process is running" 
-	keylocked.sh &  
-	if [ $? -eq 0 ]; then
+	if keylocked.sh & then
 		notify-send "keylocked is running"
 	fi		
 else 
@@ -76,7 +76,7 @@ fi
 
 LIDCLOSED_IDS=$(pgrep -c lidclosed)
 LIDCLOSED_PROC=$(pidof -x lidclosed.sh)
-if [ "$LIDCLOSED_IDS" -gt 1 ]; then
+if [ "$LIDCLOSED_IDS" -gt $MIN_ID ]; then
    declare -a LIDCLOSEDARR
    IFS=' ' read -r -a LIDCLOSEDARR <<< "$LIDCLOSED_PROC"   
    i=0
@@ -88,10 +88,9 @@ if [ "$LIDCLOSED_IDS" -gt 1 ]; then
 	done
 fi
 
-if [ "$LIDCLOSED_IDS" -eq 0 ]; then
+if [ "$LIDCLOSED_IDS" -eq $NO_ID ]; then
 	notify-send "lidclosed is not running. Please check if lidclosed process is running" 
-	lidclosed.sh &  
-	if [ $? -eq 0 ]; then
+	if lidclosed.sh & then
 		notify-send "lidclosed is running"
 	fi		
 else 
@@ -100,7 +99,7 @@ fi
 
 BATALERT_IDS=$(pgrep -c battalert)
 BATALERT_PROC=$(pidof -x battalert.sh)
-if [ "$BATALERT_IDS" -gt 1 ]; then
+if [ "$BATALERT_IDS" -gt $MIN_ID ]; then
    declare -a BATALERTARR
    IFS=' ' read -r -a BATALERTARR <<< "$BATALERT_PROC"   
    i=0
@@ -112,11 +111,33 @@ if [ "$BATALERT_IDS" -gt 1 ]; then
 	done
 fi
 
-if [ "$BATALERT_IDS" -eq 0 ]; then
+if [ "$BATALERT_IDS" -eq $NO_ID ]; then
 	notify-send "battalert is not running. Please check if battalert process is running" 
-	battalert.sh &  
-	if [ $? -eq 0 ]; then
+	if battalert.sh & then
 		notify-send "battalert is running"
+	fi		
+else 
+	:
+fi
+
+BRIGHTNESS_IDS=$(pgrep -c brightness)
+BRIGHTNESS_PROC=$(pidof -x brightness.sh)
+if [ "$BRIGHTNESS_IDS" -gt $MIN_ID ]; then
+   declare -a BRIGHTNESSARR
+   IFS=' ' read -r -a BRIGHTNESSARR <<< "$BRIGHTNESS_PROC"   
+   i=0
+	while [ "${BRIGHTNESSARR[$i]}" != "${BRIGHTNESSARR[-1]}" ]; do
+	   echo "${BRIGHTNESSARR[$i]}"
+		kill -9 "${BRIGHTNESSARR[$i]}"
+		notify-send "brightness ${BRIGHTNESSARR[$i]} process ID is killed."
+		i=$[$i +1]
+	done
+fi
+
+if [ "$BRIGHTNESS_IDS" -eq $NO_ID ]; then
+	notify-send "brightness is not running. Please check if brightness process is running" 
+	if brightness.sh & then
+		notify-send "brightness is running"
 	fi		
 else 
 	:
@@ -124,7 +145,7 @@ fi
 
 LISTENBACK_IDS=$(pgrep -c backlisten)
 LISTENBACK_PROC=$(pidof -x backlisten.sh)
-if [ "$LISTENBACK_IDS" -gt 1 ]; then
+if [ "$LISTENBACK_IDS" -gt $MIN_ID ]; then
    declare -a LISTENBACKARR
    IFS=' ' read -r -a LISTENBACKARR <<< "$LISTENBACK_PROC"   
    i=0
@@ -136,10 +157,9 @@ if [ "$LISTENBACK_IDS" -gt 1 ]; then
 	done
 fi
 
-if [ "$LISTENBACK_IDS" -eq 0 ]; then
-	notify-send "listenback is not running. Please check if listenback process is running" 
-	listenscriptsback.sh &  
-	if [ $? -eq 0 ]; then
+if [ "$LISTENBACK_IDS" -eq $NO_ID ]; then
+	notify-send "listenback is not running. Please check if listenback process is running"   
+	if backlisten.sh & then
 		notify-send "listenback is running"
 	fi		
 else 
@@ -148,22 +168,21 @@ fi
 
 AUTOUPDATE_IDS=$(pgrep -c autoupdate)
 AUTOUPDATE_PROC=$(pidof -x autoupdate.sh)
-if [ "$AUTOUPDATE_IDS" -gt 1 ]; then
+if [ "$AUTOUPDATE_IDS" -gt $MIN_ID ]; then
   	declare -a AUTOUPDATEARR
   	IFS=' ' read -r -a AUTOUPDATEARR <<< "$AUTOUPDATE_PROC"   
   	i=0
-	while [ "${AUTOUPDATEARR[$i]}" != "${AUTOUPDATEARRARR[-1]}" ]; do
+	while [ "${AUTOUPDATEARR[$i]}" != "${AUTOUPDATEARR[-1]}" ]; do
    	echo "${AUTOUPDATEARR[$i]}"
-		kill -9 "${AUTOUPDATEARRARR[$i]}"
-		notify-send "listenback ${AUTOUPDATEARRARR[$i]} process ID is killed."
+		kill -9 "${AUTOUPDATEARR[$i]}"
+		notify-send "listenback ${AUTOUPDATEARR[$i]} process ID is killed."
 		i=$[$i +1]
 	done
 fi
 
-if [ "$AUTOUPDATE_IDS" -eq 0 ]; then
+if [ "$AUTOUPDATE_IDS" -eq $NO_ID ]; then
    notify-send "autoupdate is not running. Please check if autoupdate process is running" 
-   autoupdate.sh &  
-   if [ $? -eq 0 ]; then
+   if autoupdate.sh & then
 		notify-send "autoupdate is running"
 	fi
 else
@@ -171,5 +190,4 @@ else
 fi
 
 sleep 1s
-
 done
