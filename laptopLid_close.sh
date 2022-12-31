@@ -28,13 +28,13 @@ LID_STATE=$(less $LID_PATH | awk '{print $2}')
 ## 3. Wait if LID_PATH is modified
 while inotifywait -e modify $LID_PATH; do
    
-## 4. Do nothing if LID_STATE is open
-if [ "$LID_STATE" = "$OPEN_STATE" ]; then
-   :
-  
-## 5. Lock screen if LID_STATE is closed
-else
-   xscreensaver-command -lock  
-   systemctl suspend
+   ## 4. Do nothing if LID_STATE is open
+   if [ "$LID_STATE" = "$OPEN_STATE" ]; then
+      :
+
+   ## 5. Lock screen if LID_STATE is closed
+   else
+      xscreensaver-command -lock  
+      systemctl suspend
 
 done
