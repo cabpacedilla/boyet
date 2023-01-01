@@ -12,37 +12,62 @@
 # 6. Reboot the laptop and login
 # 7. The script will run the process if the process is not running
 
-declare -a SERVICES=("blueman-applet" "nm-applet")
-declare -a SCRIPTS=("keyLocked.sh" "lowMemAlert.sh" "powerAlert.sh" "laptopLidClosed.sh")
+#!/usr/bin/bash
+while true; do
 
-srvCtr=0   
-while [ "$srvCtr" -le "${#SERVICES[@]}" ] ; do
+declare -a SERVICES=("blueman-applet" "nm-applet")
+declare -a SCRIPTS=("autoupdate" "backlisten" "battalert" "brightness" "cableunplugged" "keylocked" "lidclosed" "lowmem" "tempalarm" "weatheralarm")
+
+MIN_ID=1
+NO_ID=0
+
+SERV_CTR=0   
+while [ "$SERV_CTR" -lt "${#SERVICES[@]}" ] ; do
    
    # check if service is running comparing array item with pgrep -x 
-   if pgrep -x "${SERVICES[$srvCtr]}" >/dev/null; then
+   if pidof -x "${SERVICES[$SERV_CTR]}"; then
       :
    
    # else, run the service
    else   
-      ${SERVICES[$srvCtr]} &
+      ${SERVICES[$SERV_CTR]} &
       
    fi
    
-   srvCtr=$[$srvCtr + 1] 
+   SERV_CTR=$((SERV_CTR + 1)) 
+done
+  
+SCRIPTS_CTR=0   
+while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
+   
+   # Count number of processes of the script and the process IDs of the scripts
+	IDS=$(pgrep -c "${SCRIPTS[$SCRIPTS_CTR]}")
+	PROCS=$(pidof -x "${SCRIPTS[$SCRIPTS_CTR]}.sh")
+   
+   # If number of processes is more than 1, leave only one and kill the rest
+   if [ "$IDS" -gt "$MIN_ID" ]; then
+   	declare -a SCRIPTSARR
+		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"   
+		PROCS_CTR=0
+  		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
+  	   	kill -9 "${SCRIPTSARR[$PROCS_CTR]}"
+     		notify-send "${SCRIPTS[$SCRIPTS_CTR]} ${SCRIPTSARR[$PROCS_CTR]} process ID is killed."
+			PROCS_CTR=$((PROCS_CTR + 1))
+		done
+	fi
+  
+   # If script is not running, run the script. Else, do nothing.
+	if [ "$IDS" -eq "$NO_ID" ]; then
+		notify-send "${SCRIPTS[$SCRIPTS_CTR]} is not running. Please check if ${SCRIPTS[$SCRIPTS_CTR]} process is running" 	  
+		if ${SCRIPTS[$SCRIPTS_CTR]} & then
+			notify-send "${SCRIPTS[SCRIPTS_CTR]} is running"
+		fi 
+	else 
+		:
+	fi
+   
+   SCRIPTS_CTR=$((SCRIPTS_CTR + 1))
 done
 
-scrCtr=0   
-while [ "$scrCtr" -le "${#SCRIPTS[@]}" ] ; do
-   
-   # check if script is running comparing array item with pgrep -x 
-   if pidof -x "${SCRIPTS[$scrCtr]}" >/dev/null; then
-      :
-   
-   # else, run the script
-   else   
-      ${SCRIPTS[$scrCtr]} &
-      
-   fi
-   
-   scrCtr=$[$scrCtr + 1]  
+sleep 1s
 done
