@@ -16,13 +16,14 @@
 while true; do
 
 declare -a SERVICES=("blueman-applet" "nm-applet")
+declare -a APPS=("Skype" "Thunderbird")
 declare -a SCRIPTS=("autoupdate" "backlisten" "battalert" "brightness" "cableunplugged" "keylocked" "lidclosed" "lowmem" "tempalarm" "weatheralarm")
 
 MIN_ID=1
 NO_ID=0
 
 SERV_CTR=0   
-while [ "$SERV_CTR" -lt "${#SERVICES[@]}" ] ; do
+while [ "$SERV_CTR" -lt "${#SERVICES[@]}" ]; do
    
    # check if service is running comparing array item with pgrep -x 
    if pidof -x "${SERVICES[$SERV_CTR]}"; then
@@ -37,9 +38,47 @@ while [ "$SERV_CTR" -lt "${#SERVICES[@]}" ] ; do
    SERV_CTR=$((SERV_CTR + 1)) 
 done
   
-SCRIPTS_CTR=0   
-while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
+APP_CTR=0  
+while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
+	APP_WIN=$(wmctrl -lp | grep "${APPS[APP_CTR]}" | awk '{print $1}')	
+	echo "$APP_WIN"
+	declare -a APP_ARR
+	IFS=' ' read -r -a APP_ARR <<< "$APP_WIN"  
+	if wmctrl -lp | grep "${APPS[APP_CTR]}" | awk '{print $1}'; then
+   	:
+   fi
    
+   if [ -z "$APP_WIN" ]; then
+		notify-send "${APPS[APP_CTR]} is not running. Please check if ${APPS[APP_CTR]} process is running" &
+		WIN_APP=${APPS[APP_CTR]}
+		echo "$WIN_APP"
+		WIN_APP=$(echo "$WIN_APP" | awk '{print tolower($0)}')
+		echo "$WIN_APP"
+		if [ "$WIN_APP" = "skype" ]; then
+			WIN_APP=skypeforlinux
+			if "$WIN_APP" & then
+				notify-send "${APPS[APP_CTR]} is running"
+			fi
+		else		
+			ARR_IDS=$(pgrep -c "${APP_ARR[ARR_CTR]}")
+			if [ "$ARR_IDS" -gt "$MIN_ID" ]; then
+				while [ "${APP_ARR[ARR_CTR]}" != "${APP_ARR[-1]}" ]; do
+					kill -9 "${APP_ARR[ARR_CTR]}"
+     				notify-send "${APP_ARR[ARR_CTR]} instance is already running."
+     				ARR_CTR=$((ARR_CTR + 1))
+     			done
+	   		if "$WIN_APP" & then
+					notify-send "${APPS[APP_CTR]} is running"
+				fi
+	      fi
+	   fi	
+	fi
+	APP_CTR=$((APP_CTR + 1))
+done
+	
+SCRIPTS_CTR=0 
+while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
+	
    # Count number of processes of the script and the process IDs of the scripts
 	IDS=$(pgrep -c "${SCRIPTS[$SCRIPTS_CTR]}")
 	PROCS=$(pidof -x "${SCRIPTS[$SCRIPTS_CTR]}.sh")
@@ -51,7 +90,7 @@ while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 		PROCS_CTR=0
   		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
   	   	kill -9 "${SCRIPTSARR[$PROCS_CTR]}"
-     		notify-send "${SCRIPTS[$SCRIPTS_CTR]} ${SCRIPTSARR[$PROCS_CTR]} process ID is killed."
+     		notify-send "${SCRIPTS[$SCRIPTS_CTR]} instance is already running."
 			PROCS_CTR=$((PROCS_CTR + 1))
 		done
 	fi
@@ -59,7 +98,7 @@ while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
    # If script is not running, run the script. Else, do nothing.
 	if [ "$IDS" -eq "$NO_ID" ]; then
 		notify-send "${SCRIPTS[$SCRIPTS_CTR]} is not running. Please check if ${SCRIPTS[$SCRIPTS_CTR]} process is running" 	  
-		if ${SCRIPTS[$SCRIPTS_CTR]} & then
+		if "${SCRIPTS[$SCRIPTS_CTR]}.sh" & then
 			notify-send "${SCRIPTS[SCRIPTS_CTR]} is running"
 		fi 
 	else 
