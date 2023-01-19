@@ -83,7 +83,6 @@ PROCS=$(pidof -x "${SCRIPTS[$SCRIPTS_CTR]}.sh")
 declare -a SCRIPTSARR
 
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
-   
    # If number of processes is more than 1, leave only one and kill the rest
    if [ "$IDS" -gt "$MIN_ID" ]; then
 		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"   
