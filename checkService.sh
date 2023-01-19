@@ -77,15 +77,15 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
 done
 	
 SCRIPTS_CTR=0 
+# Count number of processes of the script and the process IDs of the scripts
+IDS=$(pgrep -c "${SCRIPTS[$SCRIPTS_CTR]}")
+PROCS=$(pidof -x "${SCRIPTS[$SCRIPTS_CTR]}.sh")
+declare -a SCRIPTSARR
+
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
-	
-   # Count number of processes of the script and the process IDs of the scripts
-	IDS=$(pgrep -c "${SCRIPTS[$SCRIPTS_CTR]}")
-	PROCS=$(pidof -x "${SCRIPTS[$SCRIPTS_CTR]}.sh")
    
    # If number of processes is more than 1, leave only one and kill the rest
    if [ "$IDS" -gt "$MIN_ID" ]; then
-   	declare -a SCRIPTSARR
 		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"   
 		PROCS_CTR=0
   		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
