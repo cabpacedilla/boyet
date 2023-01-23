@@ -26,7 +26,7 @@ SERV_CTR=0
 while [ "$SERV_CTR" -lt "${#SERVICES[@]}" ]; do
    
    # check if service is running comparing array item with pgrep -x 
-   if pidof -x "${SERVICES[$SERV_CTR]}"; then
+   if pidof -x -z "${SERVICES[$SERV_CTR]}"; then
       :
    
    # else, run the service
@@ -79,7 +79,7 @@ done
 SCRIPTS_CTR=0 
 # Count number of processes of the script and the process IDs of the scripts
 IDS=$(pgrep -c "${SCRIPTS[$SCRIPTS_CTR]}")
-PROCS=$(pidof -x "${SCRIPTS[$SCRIPTS_CTR]}.sh")
+PROCS=$(pidof -x -z "${SCRIPTS[$SCRIPTS_CTR]}.sh")
 declare -a SCRIPTSARR
 
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
