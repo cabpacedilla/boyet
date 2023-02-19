@@ -44,7 +44,7 @@ do
       for KEYWORD in "${NOTIF[@]}"; do
          case "$line" in
 	      *"$KEYWORD"*)
-         if echo "${NOTIF[*]}" | grep "$KEYWORD"; then
+         if echo "${NOTIF[*]}" | grep -o -m 1 "$KEYWORD" | head -1; then
             SENDER=$(echo $KEYWORD | awk '{print $1}')
             SENDER=$(echo ${SENDER^^})
             # Send email copy of notification to email
