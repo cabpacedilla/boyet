@@ -20,6 +20,7 @@ grep --line-buffered -v '^\s*$' |\
 #xargs -d '\n' -I '{}' espeak '{}' \
 xargs -d '\n' -I '{}' \
 printf "---$(date)---\n"{}"\n" > $NOTIFLOGS &
+kill $!
 
 # Switch to Skype every time someone @mention you or @mention all
 while inotifywait -e modify $NOTIFLOGS
