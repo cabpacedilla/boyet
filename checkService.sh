@@ -84,18 +84,18 @@ declare -a SCRIPTSARR
 
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
    # If number of processes is more than 1, leave only one and kill the rest
-   if [ "$IDS" -gt "$MIN_ID" ]; then
+   if [ -z "$IDS" ]; then
+		continue
+	elif [ "$IDS" -gt "$MIN_ID" ]; then 
 		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"   
 		PROCS_CTR=0
-  		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
-  	   	kill -9 "${SCRIPTSARR[$PROCS_CTR]}"
-     		notify-send "${SCRIPTS[$SCRIPTS_CTR]} instance is already running."
+		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
+			kill "${SCRIPTSARR[$PROCS_CTR]}"
+			notify-send "${SCRIPTS[$SCRIPTS_CTR]} instance is already running."
 			PROCS_CTR=$((PROCS_CTR + 1))
 		done
-	fi
-  
-   # If script is not running, run the script. Else, do nothing.
-	if [ "$IDS" -eq "$NO_ID" ]; then
+	# If script is not running, run the script. Else, do nothing.
+	elif [ "$IDS" -eq "$NO_ID" ]; then
 		notify-send "${SCRIPTS[$SCRIPTS_CTR]} is not running. Please check if ${SCRIPTS[$SCRIPTS_CTR]} process is running" 	  
 		if "${SCRIPTS[$SCRIPTS_CTR]}.sh" & then
 			notify-send "${SCRIPTS[SCRIPTS_CTR]} is running"
