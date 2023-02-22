@@ -34,7 +34,6 @@ while inotifywait -e modify $LID_PATH; do
 
    ## 5. Lock screen if LID_STATE is closed
    else
-      xscreensaver-command -lock  
       systemctl suspend
 
 done
