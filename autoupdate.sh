@@ -8,17 +8,19 @@
 #!/usr/bin/bash
 while true; do
 
-notify-send "Auto-updates:" "Checking updates."
-
-UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded.")
-DATE=$(date | awk '{print $2}')
 LIST=~/bin/upgradeable.txt
 
-if [ "$DATE" = "30" ] || [ "$DATE" = "15" ]; then
+notify-send "Auto-updates:" "Checking updates."
+sudo apt update &
+wait
+
+UPGRADEABLE=$(apt list --upgradeable | tail -n +2 > "$LIST")
+#DATE=$(date | awk '{print $2}')
+
+#if [ "$DATE" = "30" ] || [ "$DATE" = "15" ]; then
 if [ -z "$UPGRADEABLE" ]; then
 	notify-send "Auto-updates:" "No upgradeable packages."
 elif [ -n "$UPGRADEABLE" ]; then
-	sudo apt list --upgradeable | tail -n +2 > "$LIST"
 	PACKAGES=$(cut -d/ -f1 "$LIST")
 	notify-send "Auto-updates:" "$PACKAGES to be updated."	
 	notify-send "Updating $PACKAGES..."	
