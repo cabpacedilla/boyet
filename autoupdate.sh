@@ -11,10 +11,10 @@ while true; do
 notify-send "Auto-updates:" "Checking updates."
 
 UPGRADEABLE=$(sudo apt update | grep "packages can be upgraded.")
-#DATE=$(date | awk '{print $2}')
+DATE=$(date | awk '{print $2}')
 LIST=~/bin/upgradeable.txt
 
-#if [ "$DATE" = "30" ] || [ "$DATE" = "15" ]; then
+if [ "$DATE" = "30" ] || [ "$DATE" = "15" ]; then
 if [ -z "$UPGRADEABLE" ]; then
 	notify-send "Auto-updates:" "No upgradeable packages."
 elif [ -n "$UPGRADEABLE" ]; then
