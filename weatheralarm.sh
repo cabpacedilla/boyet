@@ -13,9 +13,8 @@ VIOLENTRAIN=50
 
 curl wttr.in/Cebu?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
 
-#WEATHER=$(awk '{$1=$2=$3=$4=$5=$6=""; print $0}' < $WEATHER_FILE)
-#TEMPNUM="${TEMPEST:1:-4}"
-WEATHER=$(awk '{print $7}' < $WEATHER_FILE)
+WEATHER=$(awk '{$1=$2=$3=$4=$5=$6=""; print $0}' < $WEATHER_FILE)
+#WEATHER=$(awk '{print $7}' < $WEATHER_FILE)
 
 if [ -z "$WEATHER" ]; then
 	continue
