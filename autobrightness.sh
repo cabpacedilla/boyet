@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-OPTIMAL=80
+OPTIMAL=128
 
 brightness_check()
 {
