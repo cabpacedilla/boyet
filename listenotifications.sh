@@ -39,10 +39,8 @@ do
    head $NOTIFLOGS > $NOTIFBUF 
 
    # Read buffer text file for keyword filter
-  while read -r line
-   do      
-   	for KEYWORD in "${NOTIF[@]}"
-   	do
+  while read -r line; do      
+   	for KEYWORD in "${NOTIF[@]}"; do
         	case "$line" in
 			*"$KEYWORD"*)
 				if echo "${line}" | grep -o -m 1 "$KEYWORD"; then
