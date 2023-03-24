@@ -3,8 +3,7 @@
 # This script will automatically switch to Skype or any message app when your office mate @mention you or @mention all to attend the message right away
 # This code was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 
-while true
-do
+while true; do
 NOTIFLOGS=~/Documents/listenotif/notiflogs.txt
 NOTIFBUF=~/Documents/listenotif/notifbuf.txt
 EMAIL="cabpacedilla@gmail.com"
@@ -20,7 +19,6 @@ grep --line-buffered -v '^\s*$' |\
 #xargs -d '\n' -I '{}' espeak '{}' \
 xargs -d '\n' -I '{}' \
 printf "---$(date)---\n"{}"\n" > $NOTIFLOGS &
-kill $!
 
 # Switch to Skype every time someone @mention you or @mention all
 while inotifywait -e modify $NOTIFLOGS
