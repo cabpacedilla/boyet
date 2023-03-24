@@ -39,28 +39,19 @@ do
    head $NOTIFLOGS > $NOTIFBUF 
 
    # Read buffer text file for keyword filter
-   while read -r line
-   do     
-      for KEYWORD in "${NOTIF[@]}"; do
-         case "$line" in
-	      *"$KEYWORD"*)
-         if echo "${NOTIF[*]}" | grep -o -m 1 "$KEYWORD"; then
-            SENDER=$(echo $KEYWORD | awk '{print $1}')
-            SENDER=$(echo ${SENDER^^})
-            # Send email copy of notification to email
-            mail -s "Notification from $SENDER" "$EMAIL"
-            # Switch to Skype window
-            wmctrl -ia "$SKYPE_WIN"   
-            notify-send "Notification from $SENDER"
-            break
-         else
-            :
-         fi
-         ;;                 
-         esac              
-      done
-  done < $NOTIFBUF
-
+  while read -r line
+   do      
+   	for KEYWORD in "${NOTIF[@]}"
+   	do
+        	case "$line" in
+			*"$KEYWORD"*)
+				if echo "${line}" | grep -o -m 1 "$KEYWORD"; then
+					notify-send "Notification from $KEYWORD"
+		      fi
+				;;                  
+         esac                      
+   	done 
+	done < $NOTIFBUF 
   # Empty text files
   > $NOTIFLOGS
   > $NOTIFBUF
