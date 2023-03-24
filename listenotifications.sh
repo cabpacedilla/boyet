@@ -46,7 +46,7 @@ do
 				if echo "${line}" | grep -o -m 1 "$KEYWORD"; then
 					notify-send "Notification from $KEYWORD"
 		      fi
-				;;                  
+			;;                  
          esac                      
    	done 
 	done < $NOTIFBUF 
