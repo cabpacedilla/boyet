@@ -15,6 +15,7 @@ curl wttr.in/Cebu?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHE
 
 #WEATHER=$(awk '{$1=$2=$3=$4=$5=$6=""; print $0}' < $WEATHER_FILE)
 WEATHER=$(cut -d\  -f7- < $WEATHER_FILE)
+WEATHER=$(echo "$WEATHER" | tr '[:upper:]' '[:lower:]') 
 
 if [ -z "${WEATHER}" ]; then
 	continue
