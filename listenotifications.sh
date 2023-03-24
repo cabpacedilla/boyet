@@ -53,7 +53,7 @@ do
   # Empty text files
   > $NOTIFLOGS
   > $NOTIFBUF
-
 done  
+
 sleep 0.01s
 done
