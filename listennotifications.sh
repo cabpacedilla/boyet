@@ -6,11 +6,10 @@
 while true; do
 NOTIFLOGS=~/Documents/listenotif/notiflogs.txt
 NOTIFBUF=~/Documents/listenotif/notifbuf.txt
-EMAIL="cabpacedilla@gmail.com"
 SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
 
 NOTIF=("@mentioned you" "mentioned all")
-mapfile -t ARR < 
+
 
 dbus-monitor "interface='org.freedesktop.Notifications'" |\
 grep --line-buffered "string" |\
@@ -49,6 +48,8 @@ do
 #         esac                      
 #   	done 
 #	done < $NOTIFBUF 
+
+mapfile -t ARR < $NOTIFBUF
 
 for LINE in "${ARR[@]}"; do
   for WORD in $LINE; do
