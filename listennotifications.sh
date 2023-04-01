@@ -6,7 +6,6 @@
 while true; do
 NOTIFLOGS=~/Documents/listenotif/notiflogs.txt
 NOTIFBUF=~/Documents/listenotif/notifbuf.txt
-SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
 
 NOTIF=("@mentioned you" "mentioned all")
 
@@ -61,12 +60,10 @@ for LINE in "${ARR[@]}"; do
       fi
     done
   done
-done
-
   # Empty text files
   > $NOTIFLOGS
   > $NOTIFBUF
-done  
+done
 
 sleep 0.01s
 done
