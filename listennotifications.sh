@@ -10,6 +10,7 @@ EMAIL="cabpacedilla@gmail.com"
 SKYPE_WIN=$(wmctrl -lp | grep Skype | awk '{print $1}')
 
 NOTIF=("@mentioned you" "mentioned all")
+mapfile -t ARR < 
 
 dbus-monitor "interface='org.freedesktop.Notifications'" |\
 grep --line-buffered "string" |\
@@ -37,17 +38,30 @@ do
    head $NOTIFLOGS > $NOTIFBUF 
 
    # Read buffer text file for keyword filter
-  while read -r line; do      
-   	for KEYWORD in "${NOTIF[@]}"; do
-        	case "$line" in
-			*"$KEYWORD"*)
-				if echo "${line}" | grep -o -m 1 "$KEYWORD"; then
-					notify-send "Notification from $KEYWORD"
-		      fi
-			;;                  
-         esac                      
-   	done 
-	done < $NOTIFBUF 
+  #while read -r line; do      
+#   	for KEYWORD in "${NOTIF[@]}"; do
+#        	case "$line" in
+#			*"$KEYWORD"*)
+#				if echo "${line}" | grep -o -m 1 "$KEYWORD"; then
+#					notify-send "Notification from $KEYWORD"
+#		      fi
+#			;;                  
+#         esac                      
+#   	done 
+#	done < $NOTIFBUF 
+
+for LINE in "${ARR[@]}"; do
+  for WORD in $LINE; do
+    # Check if word matches any item in array
+    for KEYWORD in "${NOTIF[@]}"; do
+      if [[ "$WORD" == "$KEYWORD" ]]; then
+        notify-send "Notification from $KEYWORD."
+        break 3
+      fi
+    done
+  done
+done
+
   # Empty text files
   > $NOTIFLOGS
   > $NOTIFBUF
