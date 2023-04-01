@@ -10,25 +10,25 @@ while true; do
 
 notify-send "Auto-updates:" "Checking updates."
 
-UPGRADEABLE=$(sudo apt update | grep "can be upgraded.")
+UPGRADEABLE=$(sudo apt update | tail -n1)
 LIST=~/bin/upgradeable.txt
-#DATE=$(date | awk '{print $2}')
+DATE=$(date | awk '{print $2}')
 
-#if [ "$DATE" = "30" ] || [ "$DATE" = "15" ]; then
-if [ -z "$UPGRADEABLE" ]; then
-	notify-send "Auto-updates:" "No upgradeable packages."
-elif [ -n "$UPGRADEABLE" ]; then
-	PACKAGES=$(apt list --upgradable | tail -n +2 > "$LIST")
-	PACKAGES=$(cut -d/ -f1 "$LIST")
-	notify-send "Auto-updates:" "$PACKAGES to be updated."	
-	notify-send "Updating $PACKAGES..."	
-	if gnome-terminal -- sudo apt upgrade -y && yes | sudo apt autoremove; then
-	   notify-send "Auto-updates:" "$PACKAGES were updated."
-	else
-	   notify-send "Auto-updates:" "Upgrade was unsuccessful."
-	fi 
-else
-:
+if [ "$DATE" = "01" ] || [ "$DATE" = "15" ]; then	
+	if [ "$UPGRADEABLE" = "All packages are up to date." ]; then
+		notify-send "System is up to date."
+	else 
+		PACKAGES=$(apt list --upgradable | tail -n +2 > "$LIST")
+		PACKAGES=$(cut -d/ -f1 "ST")
+		notify-send "$PACKAGES to be updated."	
+		notify-send "Updating $PACKAGES..."	
+		if gnome-terminal -- sudo apt upgrade -y && sudo apt autoremove -y && sudo apt autoclean; then
+			notify-send "Autoremoving and autocleaning unneeded packages" && notify-send "$PACKAGES were updated."
+		else
+			notify-send "Upgrade was unsuccessful."
+		fi 
+	
+	fi
 fi
 
 sleep 7h
