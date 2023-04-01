@@ -14,7 +14,7 @@ UPGRADEABLE=$(sudo apt update | tail -n1)
 LIST=~/bin/upgradeable.txt
 DATE=$(date | awk '{print $2}')
 
-if [ "$DATE" = "01" ] || [ "$DATE" = "15" ]; then	
+if [ "$DATE" = "15" ] || [ "$DATE" = "30" ]; then	
 	if [ "$UPGRADEABLE" = "All packages are up to date." ]; then
 		notify-send "System is up to date."
 	else 
