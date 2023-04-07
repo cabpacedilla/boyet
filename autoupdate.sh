@@ -19,7 +19,7 @@ if [ "$DATE" = "15" ] || [ "$DATE" = "30" ]; then
 		notify-send "System is up to date."
 	else 
 		PACKAGES=$(apt list --upgradable | tail -n +2 > "$LIST")
-		PACKAGES=$(cut -d/ -f1 "ST")
+		PACKAGES=$(cut -d/ -f1 "$lIST")
 		notify-send "$PACKAGES to be updated."	
 		notify-send "Updating $PACKAGES..."	
 		if gnome-terminal -- sudo apt upgrade -y && sudo apt autoremove -y && sudo apt autoclean; then
