@@ -17,6 +17,8 @@
 # 11. Open the laptop lid
 # 12. xscreensaver will ask for password
 
+while true; do
+
 LID_PATH=/proc/acpi/button/lid/LID0/state
 
 ## 1. Set for open state
@@ -25,15 +27,15 @@ OPEN_STATE="open"
 ## 2. Get laptop lid state
 LID_STATE=$(less $LID_PATH | awk '{print $2}')
 
-## 3. Wait if LID_PATH is modified
-while inotifywait -e modify $LID_PATH; do
-   
-   ## 4. Do nothing if LID_STATE is open
-   if [ "$LID_STATE" = "$OPEN_STATE" ]; then
-      :
+## 3. Do nothing if lid is open
+if [ "$LID_STATE" = "$OPEN_STATE" ]; then
+	:	  
+## 4. Suspend if lid is closed
+else 
+	sudo echo 80 | sudo tee /sys/class/backlight/amdgpu_bl0/brightness 
 
-   ## 5. Lock screen if LID_STATE is closed
-   else
-      systemctl suspend
+	systemctl suspend	
+fi
 
+sleep 0.1s
 done
