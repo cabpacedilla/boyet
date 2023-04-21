@@ -11,7 +11,7 @@ while true; do
 LIST=~/bin/upgradeable.txt
 DATE=$(date | awk '{print $2}')
 
-if [ "$DATE" = "30" ] || [ "$DATE" = "21" ]; then
+if [ "$DATE" = "15" ] || [ "$DATE" = "30" ]; then
 	notify-send "Auto-updates: Checking system updates."
 	UPGRADES=$(/usr/lib/update-notifier/apt-check |& cut -d";" -f 1 &)
 	if [ "$UPGRADES" -gt 0 ]; then
