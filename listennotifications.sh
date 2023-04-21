@@ -9,7 +9,6 @@ NOTIFBUF=~/Documents/listenotif/notifbuf.txt
 
 NOTIF=("@mentioned you" "mentioned all")
 
-
 dbus-monitor "interface='org.freedesktop.Notifications'" |\
 grep --line-buffered "string" |\
 grep --line-buffered -e method -e ":" -e '""' -e urgency -e notify -v |\
