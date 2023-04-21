@@ -30,40 +30,20 @@ do
       grep --line-buffered -v '^\s*$' |\
       #xargs -d '\n' -I '{}' espeak '{}'\
       xargs -d '\n' -I '{}'\
-      printf "---$(date)---\n"{}"\n" > $NOTIFLOGS &
-      # Get first 10 lines from log file and save to buffer text file
-
-   head $NOTIFLOGS > $NOTIFBUF 
+      printf "---$(date)---\n"{}"\n" > $NOTIFBUF &
 
    # Read buffer text file for keyword filter
-  #while read -r line; do      
-#   	for KEYWORD in "${NOTIF[@]}"; do
-#        	case "$line" in
-#			*"$KEYWORD"*)
-#				if echo "${line}" | grep -o -m 1 "$KEYWORD"; then
-#					notify-send "Notification from $KEYWORD"
-#		      fi
-#			;;                  
-#         esac                      
-#   	done 
-#	done < $NOTIFBUF 
-
-mapfile -t ARR < $NOTIFBUF
-
-for LINE in "${ARR[@]}"; do
-  for WORD in $LINE; do
-    # Check if word matches any item in array
-    for KEYWORD in "${NOTIF[@]}"; do
-      if [[ "$WORD" == "$KEYWORD" ]]; then
-        notify-send "Notification from $KEYWORD."
-        break 3
-      fi
-    done
-  done
-  # Empty text files
-  > $NOTIFLOGS
-  > $NOTIFBUF
-done
+while read -r line; do      
+   	for KEYWORD in "${NOTIF[@]}"; do
+   			if echo "${line}" | grep "$KEYWORD"; then
+   				if [ "$KEYWORD" = "@mentioned you" ] || [ "$KEYWORD" = "@mentioned all" ] 
+                  notify-send "Notification with $line"
+         			break 2  
+         		fi
+         		   				
+         	fi
+      done
+done < "$NOTIFBUF" 
 
 sleep 0.01s
 done
