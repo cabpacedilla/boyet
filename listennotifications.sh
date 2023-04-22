@@ -35,11 +35,8 @@ do
 while read -r line; do      
    	for KEYWORD in "${NOTIF[@]}"; do
    			if echo "${line}" | grep "$KEYWORD"; then
-   				if [ "$KEYWORD" = "@mentioned you" ] || [ "$KEYWORD" = "@mentioned all" ] 
-                  notify-send "Notification with $line"
-         			break 2  
-         		fi
-         		   				
+   				notify-send "Notification with $line"
+         		break 2           		   				
          	fi
       done
 done < "$NOTIFBUF" 
