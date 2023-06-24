@@ -1,4 +1,17 @@
 #!/usr/bin/bash
+# This script will alert when humidity, wind, rain and UV are above normal
+# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# October 2022
+
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like weatheralarm.sh
+# 4. Make file executable with chmod +x weatheralarm.sh command
+# 5. Add the weatheralarm.sh command in Startup applications
+# 6. Reboot the laptop
+# 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
+# 8. Low memory alert message will be displayed
 
 notify()
 {
