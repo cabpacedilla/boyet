@@ -16,7 +16,7 @@ notify()
    fi
     
    # Notify battery alert
-   notify-send -u critical "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
+   notify-send -u normal "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
 }
 
 notify-rain()
@@ -107,7 +107,8 @@ WIND=$(awk '{print $4}' < $WEATHER_FILE)
 WIND=${WIND:1:-4}
 if [ "$WIND" -ge "$STRONGWIND" ]; then
   notify windy
-	:
+else
+   :
 fi
 
 RAINFALL=$(awk '{print $5}' < $WEATHER_FILE)
@@ -117,49 +118,55 @@ if [ "$RAINFALL" = "$NORAIN" ]; then
    :
 fi
 
-COMPARELIGHT=$(echo "$RAINFALL < $LIGHTRAIN" | bc)
-MORETHANNO=$(echo "$RAINFALL > $NORAIN" | bc)
-if [ "$COMPARELIGHT" -eq 1 ] && [ "$MORETHANNO" -eq 1 ] ; then
+ISREAINMORENO=$(echo "$RAINFALL > $NORAIN" | bc)
+ISRAINLESSLIGHT=$(echo "$RAINFALL < $LIGHTRAIN" | bc)
+if [ "$ISRAINLESSLIGHT" -eq 1 ] && [ "$ISREAINMORENO" -eq 1 ] ; then
    notify-rain "raining lightly"
 fi
 
-COMPAREMODLIGTH=$(echo "$RAINFALL > $LIGHTRAIN" | bc)
-COMPAREMODUPPER=$(echo "$RAINFALL < $HEAVYRAIN" | bc)  
-if [ "$COMPAREMODLIGTH" -eq 1 ] && [ "$COMPAREMODUPPER" -eq 1 ]; then
+ISRAINMORELIGHT=$(echo "$RAINFALL > $LIGHTRAIN" | bc)
+ISRAINLESSHEAVY=$(echo "$RAINFALL < $HEAVYRAIN" | bc)  
+if [ "$ISRAINMORELIGHT" -eq 1 ] && [ "$ISRAINLESSHEAVY" -eq 1 ]; then
    notify-rain "raining moderately"
 fi
 
-COMPAREHEAVY=$(echo "$RAINFALL > $HEAVYRAIN" | bc)
-if [ "$COMPAREHEAVY" -eq 1 ]; then
+ISRAINMOREHEAVY=$(echo "$RAINFALL > $HEAVYRAIN" | bc)
+ISRAINLESSVIOLENT=$(echo "$RAINFALL < $VIOLENTRAIN" | bc)
+if [ "$ISRAINMOREHEAVY" -eq 1 ]  && [ "$ISRAINLESSVIOLENT" -eq 1 ]; then
    notify-rain "raining heavily"
 fi
 
-COMPAREVIOLENT=$(echo "$RAINFALL > $VIOLENTRAIN" | bc)
-if [ "$COMPAREVIOLENT" -eq 1 ]; then
+ISRAINMOREVIOLENT=$(echo "$RAINFALL > $VIOLENTRAIN" | bc)
+if [ "$ISRAINMOREVIOLENT" -eq 1 ]; then
    notify-rain "raining violently"
 fi
 
 UV=$(awk '{print $6}' < $WEATHER_FILE)
-COMPARELOWUV=$(echo "$UV > $LOWUV" | bc)
-COMPAREMODUV=$(echo "$UV < $MODUV" | bc)
-if [ "$COMPARELOWUV" -eq 1 ] && [ "$COMPAREMODUV" -eq 1 ] ; then
+
+if [ "$UV" -le "$LOWUV" ]; then
+	:
+fi
+
+ISUVMORELOW=$(echo "$UV > $LOWUV" | bc)
+ISUVLESSMOD=$(echo "$UV < $MODUV" | bc)
+if [ "$ISUVMORELOW" -eq 1 ] && [ "$ISUVLESSMOD" -eq 1 ] ; then
    notify-uv mod-uv
 fi
    
-COMPAREMODUV=$(echo "$UV > $MODUV" | bc)
-COMPAREHIGHUV=$(echo "$UV < $HIGHUV" | bc)
-if [ "$COMPAREMODUV" -eq 1 ] && [ "$COMPAREHIGHUV" -eq 1 ] ; then
+ISUVMOREMOD=$(echo "$UV > $MODUV" | bc)
+ISUVLESSHIGH=$(echo "$UV < $HIGHUV" | bc)
+if [ "$ISUVMOREMOD" -eq 1 ] && [ "$ISUVLESSHIGH" -eq 1 ] ; then
    notify-uv high-uv
 fi
    
-COMPAREHIGHUV=$(echo "$UV > $HIGHUV" | bc)
-COMPAREVERYUV=$(echo "$UV < $VERYUV" | bc)
-if [ "$COMPAREHIGHUV" -eq 1 ] && [ "$COMPAREVERYUV" -eq 1 ] ; then
+ISUVMOREHIGH=$(echo "$UV > $HIGHUV" | bc)
+ISUVLESSVERY=$(echo "$UV < $VERYUV" | bc)
+if [ "$ISUVMOREHIGH" -eq 1 ] && [ "$ISUVLESSVERY" -eq 1 ] ; then
    notify-uv very-uv
 fi
    
-COMPAREEXTUV=$(echo "$UV > $VERYUV" | bc)
-if [ "$COMPAREEXTUV" -eq 1 ]; then
+ISUVMOREVERY=$(echo "$UV > $VERYUV" | bc)
+if [ "$ISUVMOREVERY" -eq 1 ]; then
    notify-uv extreme-uv
 
 fi
