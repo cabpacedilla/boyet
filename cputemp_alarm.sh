@@ -13,7 +13,7 @@ TEMPEST=$(cat /sys/class/thermal/thermal_zone0/temp | awk '{ print ($1 / 1000) }
 if [ -z "$TEMPEST" ]; then
 	continue
 elif (( $(echo "$TEMPEST > $HIGHTEMP" | bc -l) )); then
-	notify-send -u critical "CPU temp alert!" "$HIGHTEMP degrees C temp is high. Please check application with high CPU usage."
+	notify-send -u normal "CPU temp alert!" "$HIGHTEMP degrees C temp is high. Please check application with high CPU usage."
 else 
 	:
 fi
