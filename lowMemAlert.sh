@@ -26,7 +26,7 @@ do
            
       # 4. get top processes consuming system memory and show notification with the top 10 memory consuming processes
       TOP_PROCESSES=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head)
-      notify-send -t 15000 "Low memory alert!" "RAM has low free memory. Free high memory consuming processes: ${TOP_PROCESSES}"   
+      notify-send -u critical "Low memory alert!" "RAM has low free memory. Free high memory consuming processes: ${TOP_PROCESSES}"   
    fi
    
    # 4. sleep for 30 seconds
