@@ -27,7 +27,7 @@ notify()
    fi
     
    # Notify battery alert
-   notify-send -u normal "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
+   notify-send -u critical "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
 }
 
 notify-rain()
