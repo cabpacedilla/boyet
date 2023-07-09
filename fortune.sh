@@ -5,17 +5,23 @@ while true; do
 FORTUNEFILE=$(find ~/Documents/claive/fortune | shuf -n 1 &)
 
 # Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
-declare -a ARR=(); readarray -td% arr < "$FORTUNEFILE" 
+declare -a ARR=(); 
+readarray -td% ARR < "$FORTUNEFILE" 
 
 # Get a quote randomly
-RAND=${arr[$RANDOM % ${#arr[@]}]}
+RANDFORTUNE=${ARR[$RANDOM % ${#ARR[@]}]}
 
-MESSAGE=${RAND#"${RAND%%[![:space:]]*}"}
+if [ -z "${RANDFORTUNE}" ]; then
+	continue
+fi
+
+# Remove 
+MESSAGE=${RANDFORTUNE#"${RANDFORTUNE%%[![:space:]]*}"}
 
 # Alert the random quote
 notify-send -u critical "$MESSAGE"
 
 # Sleep in random time
-sleep $(( $RANDOM % 900 + 600 ))
+sleep $((RANDOM % 1500 + 1200))
 
 done
