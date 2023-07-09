@@ -22,6 +22,6 @@ MESSAGE=${RANDFORTUNE#"${RANDFORTUNE%%[![:space:]]*}"}
 notify-send -u critical "$MESSAGE"
 
 # Sleep in random time
-sleep $((RANDOM % 1500 + 1200))
+sleep $(shuf -i1200-1500 -n1)
 
 done
