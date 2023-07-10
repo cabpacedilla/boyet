@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+while true; do
+    open -a /Applications/Microsoft\ Teams.app/Contents/MacOS/Teams 
+    sleep 240
+
+    open -a thunderbird
+    sleep 240
+    
+    open -a asana
+    sleep 240
+done
