@@ -24,7 +24,7 @@ fi
 MESSAGE=${RANDFORTUNE#"${RANDFORTUNE%%[![:space:]]*}"}
 
 # Alert the random quote
-notify-send -u critical "$MESSAGE"
+notify-send -u critical --app-name "Fortune:" "$MESSAGE"
 
 # Sleep in random time
 sleep $(shuf -i1200-1500 -n1)
