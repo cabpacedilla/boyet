@@ -49,7 +49,7 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
    fi
    
    if [ -z "$APP_WIN" ]; then
-		notify-send "${APPS[APP_CTR]} is not running. Please check if ${APPS[APP_CTR]} process is running" &
+		notify-send --app-name "Check services:" "${APPS[APP_CTR]} is not running. Please check if ${APPS[APP_CTR]} process is running" &
 		WIN_APP=${APPS[APP_CTR]}
 		echo "$WIN_APP"
 		WIN_APP=$(echo "$WIN_APP" | awk '{print tolower($0)}')
@@ -57,18 +57,18 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
 		if [ "$WIN_APP" = "skype" ]; then
 			WIN_APP=skypeforlinux
 			if "$WIN_APP" & then
-				notify-send "${APPS[APP_CTR]} is running"
+				notify-send --app-name "Check services:" "${APPS[APP_CTR]} is running"
 			fi
 		else		
 			ARR_IDS=$(pgrep -c "${APP_ARR[ARR_CTR]}")
 			if [ "$ARR_IDS" -gt "$MIN_ID" ]; then
 				while [ "${APP_ARR[ARR_CTR]}" != "${APP_ARR[-1]}" ]; do
 					kill -9 "${APP_ARR[ARR_CTR]}"
-     				notify-send "${APP_ARR[ARR_CTR]} instance is already running."
+     				notify-send --app-name "Check services:" "${APP_ARR[ARR_CTR]} instance is already running."
      				ARR_CTR=$((ARR_CTR + 1))
      			done
 	   		if "$WIN_APP" & then
-					notify-send "${APPS[APP_CTR]} is running"
+					notify-send --app-name "Check services:" "${APPS[APP_CTR]} is running"
 				fi
 	      fi
 	   fi	
@@ -91,14 +91,14 @@ while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 		PROCS_CTR=0
 		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
 			kill "${SCRIPTSARR[$PROCS_CTR]}"
-			notify-send "${SCRIPTS[$SCRIPTS_CTR]} instance is already running."
+			notify-send --app-name "Check services:" "${SCRIPTS[$SCRIPTS_CTR]} instance is already running."
 			PROCS_CTR=$((PROCS_CTR + 1))
 		done
 	# If script is not running, run the script. Else, do nothing.
 	elif [ "$IDS" -eq "$NO_ID" ]; then
-		notify-send "${SCRIPTS[$SCRIPTS_CTR]} is not running. Please check if ${SCRIPTS[$SCRIPTS_CTR]} process is running" 	  
+		notify-send --app-name "Check services:" "${SCRIPTS[$SCRIPTS_CTR]} is not running. Please check if ${SCRIPTS[$SCRIPTS_CTR]} process is running" 	  
 		if "${SCRIPTS[$SCRIPTS_CTR]}.sh" & then
-			notify-send "${SCRIPTS[SCRIPTS_CTR]} is running"
+			notify-send --app-name "Check services:" "${SCRIPTS[SCRIPTS_CTR]} is running"
 		fi 
 	else 
 		:
