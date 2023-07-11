@@ -29,15 +29,15 @@ LED_MASK=$(xset q | grep 'LED mask' | awk '{ print $NF }')
 
 # 3. If LED mask value is equal to Caps lock LED mask value, show Caps lock notification
 if [ "$LED_MASK" -eq "$CAPS_LOCK" ]; then
-notify-send "Caps lock is on."
+   notify-send --app-name "Key lock:" "Caps lock is on."
 
 # 4. If LED mask value is equal to Num lock LED mask value, show Num lock notification
 elif [ "$LED_MASK" -eq "$NUM_LOCK" ]; then 
-notify-send "Num lock is on."
-
+   notify-send --app-name "Key lock:" "Num lock is on."
+    
 # 5. If LED mask value is equal to Caps lock and Num lock LED mask value, show Caps lock and Num lock notification
 elif  [ "$LED_MASK" -eq "$CAPSNUM_LOCK" ]; then
-notify-send "Caps lock and Num lock are on."
+   notify-send --app-name "Key lock:" "Caps lock and Num lock are on."
 
 # 6. If LED mask value is equal to LED mask value of no keys being locked, do nothing.   
 elif  [ "$LED_MASK" -eq "$NO_LOCK" ]; then
