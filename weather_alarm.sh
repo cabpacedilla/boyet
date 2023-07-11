@@ -11,6 +11,8 @@
 # 5. Add the weatheralarm.sh command in Startup applications
 # 6. Reboot the laptop
 
+#!/usr/bin/bash
+
 notify()
 {
    # Set Action to Plug if low
@@ -27,7 +29,7 @@ notify()
    fi
     
    # Notify battery alert
-   notify-send -u critical "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
+   notify-send -u critical --app-name "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
 }
 
 notify-rain()
@@ -47,7 +49,7 @@ notify-rain()
         
    fi
    
-    notify-send -u critical "Weather warning:" "It's $1 outside. $WARNING"
+    notify-send -u critical --app-name "Weather warning:" "It's $1 outside. $WARNING"
 }
 
 notify-uv()
@@ -66,7 +68,7 @@ notify-uv()
    
    fi
        
-   notify-send -u critical "Weather warning:" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
+   notify-send -u critical --app-name "Weather warning:" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
 }
 
 
@@ -87,7 +89,7 @@ HIGHUV=8
 VERYUV=11
 
 
-curl wttr.in/Cebu?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
+curl wttr.in/Banilad?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
 
 WEATHER=$(cut -d\  -f7- < $WEATHER_FILE)
 WEATHER=$(echo "$WEATHER" | tr '[:upper:]' '[:lower:]') 
@@ -95,7 +97,7 @@ WEATHER=$(echo "$WEATHER" | tr '[:upper:]' '[:lower:]')
 if [ -z "${WEATHER}" ]; then
 	continue
 else
-	notify-send "Weather update: The weather is $WEATHER."
+	notify-send --app-name "Weather update:" "The weather is $WEATHER."
 fi
 
 HUMID=$(awk '{print $2}' < $WEATHER_FILE)
