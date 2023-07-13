@@ -16,6 +16,9 @@ select_random(){
 }
 
 select_file2array
+while [ "${FORTUNEFILE}" = "${OLDFILE}" ]; do
+		select_file2array
+done
 
 # Get a quote randomly
 #RANDFORTUNE=${ARR[$RANDOM % ${#ARR[@]}]}
@@ -25,12 +28,7 @@ if [ -z "${RANDFORTUNE}" ]; then
 	continue
 fi
 
-while [ "${RANDFORTUNE}" = "${NEWFORTUNE}" ]; do
-	select_file2array
-	if [ "${FORTUNEFILE}"s = "${OLDFILE}" ]; then
-		select_file2array
-	fi
-	
+while [ "${RANDFORTUNE}" = "${OLDFORTUNE}" ]; do	
 	RANDFORTUNE=$(select_random "${ARR[@]}")
 done
 	
@@ -40,7 +38,7 @@ MESSAGE=${RANDFORTUNE#"${RANDFORTUNE%%[![:space:]]*}"}
 # Alert the random quote
 notify-send -u critical --app-name "Fortune:" "$MESSAGE"
 
-NEWFORTUNE="$RANDFORTUNE"
+OLDFORTUNE="$RANDFORTUNE"
 
 OLDFILE="$FORTUNEFILE"
 
