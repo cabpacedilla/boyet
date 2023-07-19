@@ -1,0 +1,63 @@
+#!/bin/bash
+while true; do
+
+# Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
+declare -a ARR=(); 
+#readarray -td% arr < "$FORTUNEFILE" 
+#IFS=/ read -d "%\n" -r -a ARR < "$FORTUNEFILE"
+#IFS=/ read -d '%'\\'\n' -r -a ARR < "$FORTUNEFILE"
+
+select_file2array(){
+	# Find fortune file randomly
+	FORTUNEFILE=$(find ~/Documents/claive/fortune -type f -not -name '.*'. | /opt/homebrew/bin/shuf -n 1 &)
+	
+	# Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
+	IFS=/ read -d '%''\n' -r -a ARR < "$FORTUNEFILE"
+}
+
+
+select_random() {
+    #printf "$@" | /opt/homebrew/bin/shuf -z -n1 
+    printf "%s" "$@" | /opt/homebrew/bin/shuf -z -n 1 | tr -d '\0' 
+    #printf "%s\0"
+    #| tr -d '\0'
+}
+
+select_file2array
+while [ "${FORTUNEFILE}" = "${OLDFILE}" ]; do
+		select_file2array
+done
+
+# Get a quote randomly
+#RAND="${arr[$RANDOM % ${#ARR[@]}]}"
+RANDFORTUNE="$(select_random "${ARR[@]}")"
+
+
+if [ -z "$RANDFORTUNE" ]; then
+	continue
+fi
+
+while [ "${RANDFORTUNE}" = "${OLDFORTUNE}" ]; do	
+	RANDFORTUNE=$(select_random "${ARR[@]}")
+done
+
+MESSAGE=${RANDFORTUNE#"${RANDFORTUNE%%[![:space:]]*}"}
+
+# Alert the random quote
+#osascript -e "display notification \"$MESSAGE//\"/}\" with title \"Fortune:\""
+
+osascript \
+  -e "on run(argv)" \
+  -e "return display notification item 1 of argv" \
+  -e "end" \
+  -- "$MESSAGE"
+  
+
+OLDFORTUNE="$RANDFORTUNE"
+
+OLDFILE="$FORTUNEFILE"
+  
+# Sleep in random time
+sleep $(( $RANDOM % 900 + 600 ))
+
+done
