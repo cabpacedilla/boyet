@@ -3,7 +3,7 @@ while true; do
 
 declare -a ARR=();
 
-select_file2array(){
+select_file_to_array(){
 	# Find fortune file randomly
 	FORTUNEFILE=$(find ~/Documents/claive/fortune -type f | shuf -n 1)
 	
@@ -15,7 +15,7 @@ select_random(){
     printf "%s\0" "$@" | shuf -z -n1 | tr -d '\0'
 }
 
-select_file2array
+select_file_to_array
 while [ "${FORTUNEFILE}" = "${OLDFILE}" ]; do
 		select_file2array
 done
