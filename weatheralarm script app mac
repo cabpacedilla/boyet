@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+TIME=$(date)
+TIME=${TIME:0:${#TIME}-12}
+
 notify()
 {
    # Set Action to Plug if low
@@ -16,7 +19,7 @@ notify()
    fi
     
    # Notify battery alert
-   osascript -e "display notification \"Weather warning! It is very $1 and $WEATHER outside. $WARNING\""
+   osascript -e "display notification \"It is very $1 and $WEATHER outside. $WARNING\" with title \"Weather warning!    $TIME\""
 }
 
 notify-rain()
@@ -38,7 +41,7 @@ place."
         
    fi
    
-    osascript -e "display notification \"Weather warning! It is $1 outside. $WARNING\"" 
+    osascript -e "display notification \"It is $1 outside. $WARNING\" with title \"Weather warning!    $TIME\""
 }
 
 notify-uv()
@@ -61,7 +64,7 @@ a wide brim hat, sunglasses and lip balm and stay in the the building."
    
    fi
        
-   osascript -e "display notification \"Weather warning! It is $WEATHER outside and the ultraviolet is $UV. $WARNING\""
+   osascript -e "display notification \"It is $WEATHER outside and the ultraviolet is $UV. $WARNING\" with title \"Weather warning!    $TIME\""
 }
 
 
@@ -90,7 +93,7 @@ WEATHER=$(echo "$WEATHER" | tr '[:upper:]' '[:lower:]')
 if [ -z "${WEATHER}" ]; then
 	continue
 else
-	osascript -e "display notification \"Weather update: The weather is $WEATHER\""
+	osascript -e "display notification \"The weather is $WEATHER\" with title \"Weather update!    $TIME\"" 
 	#"display notification \"$WEATHER\""  Weather update: The weather is 
 	#'display notification "'"$var2"'"'
 fi
