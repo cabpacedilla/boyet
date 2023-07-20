@@ -1,6 +1,9 @@
 #!/bin/bash
 while true; do
 
+TIME=$(date)
+TIME=${TIME:0:${#TIME}-12}
+
 # Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
 declare -a ARR=(); 
 #readarray -td% arr < "$FORTUNEFILE" 
@@ -48,9 +51,9 @@ MESSAGE=${RANDFORTUNE#"${RANDFORTUNE%%[![:space:]]*}"}
 
 osascript \
   -e "on run(argv)" \
-  -e "return display notification item 1 of argv" \
+  -e "return display notification item 1 of argv with title \"Fortune:\"" \
   -e "end" \
-  -- "$MESSAGE"
+  -- "$MESSAGE" 
   
 
 OLDFORTUNE="$RANDFORTUNE"
