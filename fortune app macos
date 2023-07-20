@@ -1,9 +1,6 @@
 #!/bin/bash
 while true; do
 
-TIME=$(date)
-TIME=${TIME:0:${#TIME}-12}
-
 # Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
 declare -a ARR=(); 
 #readarray -td% arr < "$FORTUNEFILE" 
@@ -15,7 +12,7 @@ select_file2array(){
 	FORTUNEFILE=$(find ~/Documents/claive/fortune -type f -not -name '.*'. | /opt/homebrew/bin/shuf -n 1 &)
 	
 	# Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
-	IFS=/ read -d '%''\n' -r -a ARR < "$FORTUNEFILE"
+	IFS=/ read -d %'\n' -r -a ARR < "$FORTUNEFILE"
 }
 
 
