@@ -1,35 +1,44 @@
 #!/bin/bash
 while true; do
 
-declare -a ARR=();
+declare -a FORTARR=();
+declare -a FILEARR=();
 
-select_file_to_array(){
+select_file2array(){
 	# Find fortune file randomly
 	FORTUNEFILE=$(find ~/Documents/claive/fortune -type f | shuf -n 1)
 	
+	FILEARR+=("$FORTUNEFILE")
+	
 	# Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
-	readarray -td% ARR < "$FORTUNEFILE" 
+	readarray -d %'\n' -t FORTARR < "$FORTUNEFILE" 
 }
 
 select_random(){
-    printf "%s\0" "$@" | shuf -z -n1 | tr -d '\0'
+    printf "%s\0" "$@" | shuf -z -n 1 | tr -d '\0'
 }
 
-select_file_to_array
+select_file2array
+if echo "${FILEARR[@]}" | grep "$FORTUNEFILE"; then
+	:
+else
+	select_file2array
+fi
+
 while [ "${FORTUNEFILE}" = "${OLDFILE}" ]; do
 		select_file2array
 done
 
 # Get a quote randomly
 #RANDFORTUNE=${ARR[$RANDOM % ${#ARR[@]}]}
-RANDFORTUNE=$(select_random "${ARR[@]}")
+RANDFORTUNE=$(select_random "${FORTARR[@]}")
 
 if [ -z "${RANDFORTUNE}" ]; then
 	continue
 fi
 
 while [ "${RANDFORTUNE}" = "${OLDFORTUNE}" ]; do	
-	RANDFORTUNE=$(select_random "${ARR[@]}")
+	RANDFORTUNE=$(select_random "${FORTARR[@]}")
 done
 	
 # Remove 
