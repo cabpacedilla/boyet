@@ -11,7 +11,7 @@ select_file2array(){
 	FILEARR+=("$FORTUNEFILE")
 	
 	# Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
-	readarray -d %'\n' -t FORTARR < "$FORTUNEFILE" 
+	readarray -d "%\n" -t FORTARR < "$FORTUNEFILE" 
 }
 
 select_random(){
