@@ -29,7 +29,7 @@ notify()
    fi
     
    # Notify battery alert
-   notify-send -u critical --app-name "Weather warning:" "It's very $1 and $WEATHER outside. $WARNING" 
+   notify-send -u critical --app-name "Weather warning:    $TIME" "It's very $1 and $WEATHER outside. $WARNING" 
 }
 
 notify-rain()
@@ -49,7 +49,7 @@ notify-rain()
         
    fi
    
-    notify-send -u critical --app-name "Weather warning:" "It's $1 outside. $WARNING"
+    notify-send -u critical --app-name "Weather warning:    $TIME" "It's $1 outside. $WARNING"
 }
 
 notify-uv()
@@ -68,12 +68,13 @@ notify-uv()
    
    fi
        
-   notify-send -u critical --app-name "Weather warning:" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
+   notify-send -u critical --app-name "Weather warning:    $TIME" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
 }
 
 
 while true
 do
+TIME=$(date +"%I:%M %p")
 
 WEATHER_FILE=~/bin/weather.txt
 VERYHUMID=85
@@ -97,7 +98,7 @@ WEATHER=$(echo "$WEATHER" | tr '[:upper:]' '[:lower:]')
 if [ -z "${WEATHER}" ]; then
 	continue
 else
-	notify-send --app-name "Weather update:" "The weather is $WEATHER."
+	notify-send --app-name "Weather update:    $TIME" "The weather is $WEATHER."
 fi
 
 HUMID=$(awk '{print $2}' < $WEATHER_FILE)
