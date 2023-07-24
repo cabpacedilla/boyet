@@ -67,8 +67,7 @@ a wide brim hat, sunglasses and lip balm and stay in the the building."
 
 while true
 do
-TIME=$(date)
-TIME=${TIME:0:${#TIME}-12}
+TIME=$(date +"%I:%M %p")
 
 WEATHER_FILE=/Users/mini001/Documents/Claive/weather.txt 
 VERYHUMID=85
