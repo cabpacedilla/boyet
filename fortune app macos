@@ -9,7 +9,7 @@ declare -a ARR=();
 
 select_file2array(){
 	# Find fortune file randomly
-	FORTUNEFILE=$(find ~/Documents/claive/fortune -type f -not -name '.*'. | /opt/homebrew/bin/shuf -n 1 &)
+	FORTUNEFILE=$(find ~/Documents/claive/fortune -type f -not -name '.*' | /opt/homebrew/bin/shuf -n 1 &)
 	
 	# Put the quotes in an array by using '%' delimiter in the quotes to separate the items 
 	IFS=/ read -d %'\n' -r -a ARR < "$FORTUNEFILE"
