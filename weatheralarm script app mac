@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-TIME=$(date)
-TIME=${TIME:0:${#TIME}-12}
-
 notify()
 {
    # Set Action to Plug if low
@@ -70,6 +67,8 @@ a wide brim hat, sunglasses and lip balm and stay in the the building."
 
 while true
 do
+TIME=$(date)
+TIME=${TIME:0:${#TIME}-12}
 
 WEATHER_FILE=/Users/mini001/Documents/Claive/weather.txt 
 VERYHUMID=85
