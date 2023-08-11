@@ -3,12 +3,12 @@ while true; do
 
 PLAYING=$(sudo cat /proc/asound/card1/pcm0p/sub0/status | grep -o "RUNNING" &)
 if [ "$PLAYING" = "RUNNING" ]; then
-	xscreensaver-command -exit
+	xscreensaver-command -deactivate
 fi
 
 PLAYING=$(pacmd list-sink-inputs | grep RUNNING | awk '{ print $2 }' &)
 if [ "$PLAYING" = "RUNNING" ]; then
-	xscreensaver-command -exit
+	xscreensaver-command -deactivate
 fi
 
 sleep 0.1s
