@@ -7,7 +7,7 @@ if [ "$PLAYING" = "RUNNING" ]; then
 fi
 
 PLAYING=$(pacmd list-sink-inputs | grep RUNNING | awk '{ print $2 }' &)
-if [ "$PLAYING" = "RUNNING" ]; then
+if pacmd list-sink-inputs | grep RUNNING | awk '{ print $2 }' ; then
 	xscreensaver-command -deactivate
 fi
 
