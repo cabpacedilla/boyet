@@ -13,7 +13,7 @@ DATE=$(date | awk '{print $2}')
 
 if [ "$DATE" = "15" ] || [ "$DATE" = "30" ]; then
 	notify-send --app-name "Auto-updates:" "Checking system updates."
-	UPGRADES=$(/usr/lib/update-notifier/apt-check |& cut -d";" -f 1 &)
+	UPGRADES=$(/usr/lib/update-notifier/apt-check |& cut -d";" -f 1)
 	if [ "$UPGRADES" -gt 0 ]; then
 	  	sudo apt update
      		sudo apt list --upgradable | tail -n +2 > "$LIST"
@@ -34,7 +34,7 @@ if [ "$DATE" = "15" ] || [ "$DATE" = "30" ]; then
 		notify-send --app-name "Auto-updates:" "System is already up to date."
 	fi
 else
-	 notify-send "Auto-updates:" "Date is not 15 or 30"
+	 :
 fi
 
 sleep 2h
