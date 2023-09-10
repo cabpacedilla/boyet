@@ -8,7 +8,7 @@ do
 HIGHTEMP=90
 #TEMPEST=$(sensors | grep Tctl | awk '{print $2}')
 #TEMPEST=$(echo "$TEMPEST" | awk '{ print substr( $0, 2, length($0)-3 ) }')
-TEMPEST=$(cat /sys/class/thermal/thermal_zone0/temp | awk '{ print ($1 / 1000) }'
+TEMPEST=$(cat /sys/class/thermal/thermal_zone0/temp | awk '{ print ($1 / 1000) }')
 
 if [ -z "$TEMPEST" ]; then
 	continue
