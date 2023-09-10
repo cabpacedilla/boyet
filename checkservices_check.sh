@@ -1,33 +1,38 @@
 #!/usr/bin/bash
-while true
-do
-
+declare -a SCRIPTS=("alarmtemp" "autoupdate" "backlisten" "battalert" "brightness" "fortune" "keylocked" "lowmem" "screensavercheck" "weatheralarm")
 MIN_ID=1
 NO_ID=0
 
-CHECK_SERVICES_IDS=$(pgrep -c checkservices)
-CHECK_SERVICES_PROC=$(pidof -x checkservices.sh)
-if [ "$CHECK_SERVICES_IDS" -gt $MIN_ID ]; then
-   declare -a CHECK_SERVICESARR
-   IFS=' ' read -r -a CHECK_SERVICESARR <<< "$CHECK_SERVICES_PROC"   
-   i=0
-	while [ "${CHECK_SERVICESARR[$i]}" != "${CHECK_SERVICESARR[-1]}" ]; do
-	   echo "${CHECK_SERVICESARR[$i]}"
-		kill -9 "${CHECK_SERVICESARR[$i]}"
-		notify-send "${CHECK_SERVICESARR[$i]} instance is already running."
-		i=$((i + 1))
-	done
-fi
-
-if [ "$CHECK_SERVICES_IDS" -eq $NO_ID ]; then
-	notify-send "checkservices is not running. Please check if checkservices process is running" 
-	if checkservices.sh & then
-		notify-send "checkservices is running"
-	fi		
-else 
-	:
-fi
+while true; do
+SCRIPTS_CTR=0 
+   		
+while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
+	# Count number of processes of the script and the process IDs of the scripts
+	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
+	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")	
+	IDS=$(pgrep -c "$SCRIPT_NAME")	
+	PROCS=$(pidof -x -z "$SCRIPT")
+	  
+   # If number of processes is more than 1, leave only one and kill the rest
+   if [ "$IDS" -gt "$MIN_ID" ]; then 
+		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"   
+		i=0
+  		while [ "${SCRIPTSARR[$i]}" != "${SCRIPTSARR[-1]}" ]; do
+  	   	kill "${SCRIPTSARR[$i]}"
+     		notify-send --app-name "Check services:" "$SCRIPT_NAME instance is already running."
+			i=$((i + 1))
+		done	  
+   # If script is not running, run the script. Else, do nothing.
+	elif [ "$IDS" -eq "$NO_ID" ] && [ -z "$PROCS" ]; then
+		notify-send --app-name "Check services:" "$SCRIPT_NAME is not running. Please check if $SCRIPT_NAME process is running" 	  
+		if "$SCRIPT" & then
+			notify-send --app-name "Check services:" "$SCRIPT_NAME is running"
+		fi 
+	else 
+		:
+	fi   
+   SCRIPTS_CTR=$((SCRIPTS_CTR + 1))
+done
 
 sleep 1s
-
 done
