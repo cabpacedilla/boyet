@@ -19,7 +19,7 @@ do
    MEMFREE_LIMIT=1000
 		
    # 2. Get total free memory size in megabytes(MB) 
-   MEMFREE=$(free -mt | grep Total | awk '{print $4}')
+   MEMFREE=$(free -mt | grep "Total" | awk '{print $4}')
 
    # 3. Check if free memory is less or equals to desired low free memory space in megabytes
    if [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then
