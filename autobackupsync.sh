@@ -8,6 +8,6 @@
 while inotifywait modify-r -e modify,create,delete ~/<sourcefolder>
 do
    notify-send "Folder updated. Syncing folder."
-   sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder> 
+   sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder> --delete
 
 done
