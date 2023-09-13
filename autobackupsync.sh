@@ -8,6 +8,10 @@
 while inotifywait -r -e modify,create,delete ~/<sourcefolder>
 do
    notify-send "Folder updated. Syncing folder."
-   sudo rsync -avHAX ~/<sourcefolder>/ /<destinationfolder> --delete
-
+	rsync -avl /home/boyet/Documents/claive/ /media/boyet/Data/claive --delete
+	if [ $? = 0 ]; then
+		notify-send "Backup sync was successful."
+	else
+		notify-send "Backup sync encountered an error."
+	fi
 done
