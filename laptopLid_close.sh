@@ -32,9 +32,9 @@ if [ "$LID_STATE" = "$OPEN_STATE" ]; then
 	:	  
 ## 4. Suspend if lid is closed
 else 
-	sudo echo 80 | sudo tee /sys/class/backlight/amdgpu_bl0/brightness 
-
-	systemctl suspend	
+	sudo echo 80 | sudo tee /sys/class/backlight/amdgpu_bl0/brightness &
+	xscreensaver-command -lock &
+	systemctl suspend &	
 fi
 
 sleep 0.1s
