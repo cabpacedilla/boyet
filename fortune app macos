@@ -17,7 +17,8 @@ select_file2array(){
 
 
 select_random() {
-    printf "%s" "$@" | /opt/homebrew/bin/shuf -z -n 1 | tr -d '\0' 
+    #printf "%s" "$@" | /opt/homebrew/bin/shuf -z -n 1 | tr -d '\0' 
+    printf "%s\0" "$@" | /opt/homebrew/bin/shuf -z -n 1 | tr -d '\0' 
     #printf "%s\0"
 }
 
