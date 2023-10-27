@@ -20,7 +20,7 @@ from selenium.webdriver.support.select import Select
 browser = webdriver.Chrome()
 
 browser.maximize_window()  
-browser.get("https://wear.23point5.com/collections/all")  
+browser.get("https://www.demoblaze.com/")  
 action = ActionChains(browser)    
 fileAddToCart = open("/Users/mini001/Documents/Claive/selenium/addToCartSameAndOtherProducts.txt", "a") 
 
