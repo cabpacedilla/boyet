@@ -9,5 +9,5 @@ else
 	:
 fi
 
-sleep 0.1s
+sleep 45s
 done
