@@ -76,34 +76,33 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
 	APP_CTR=$((APP_CTR + 1))
 done
 	
-SCRIPTS_CTR=0 
-# Count number of processes of the script and the process IDs of the scripts
-IDS=$(pgrep -c "${SCRIPTS[$SCRIPTS_CTR]}")
-PROCS=$(pidof -x -z "${SCRIPTS[$SCRIPTS_CTR]}.sh")
-declare -a SCRIPTSARR
-
+SCRIPTS_CTR=0  	
+   		
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
+	# Count number of processes of the script and the process IDs of the scripts
+	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
+	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")	
+	IDS=$(pgrep -c "$SCRIPT_NAME")	
+	PROCS=$(pidof -x -z "$SCRIPT")
+	  
    # If number of processes is more than 1, leave only one and kill the rest
-   if [ -z "$IDS" ]; then
-		continue
-	elif [ "$IDS" -gt "$MIN_ID" ]; then 
+   if [ "$IDS" -gt "$MIN_ID" ]; then 
 		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"   
-		PROCS_CTR=0
-		while [ "${SCRIPTSARR[$PROCS_CTR]}" != "${SCRIPTSARR[-1]}" ]; do
-			kill "${SCRIPTSARR[$PROCS_CTR]}"
-			notify-send --app-name "Check services:" "${SCRIPTS[$SCRIPTS_CTR]} instance is already running."
-			PROCS_CTR=$((PROCS_CTR + 1))
-		done
-	# If script is not running, run the script. Else, do nothing.
-	elif [ "$IDS" -eq "$NO_ID" ]; then
-		notify-send --app-name "Check services:" "${SCRIPTS[$SCRIPTS_CTR]} is not running. Please check if ${SCRIPTS[$SCRIPTS_CTR]} process is running" 	  
-		if "${SCRIPTS[$SCRIPTS_CTR]}.sh" & then
-			notify-send --app-name "Check services:" "${SCRIPTS[SCRIPTS_CTR]} is running"
+		i=0
+  		while [ "${SCRIPTSARR[$i]}" != "${SCRIPTSARR[-1]}" ]; do
+  	   	kill "${SCRIPTSARR[$i]}"
+     		notify-send --app-name "Check services:" "$SCRIPT_NAME instance is already running."
+			i=$((i + 1))
+		done	  
+   # If script is not running, run the script. Else, do nothing.
+	elif [ "$IDS" -eq "$NO_ID" ] && [ -z "$PROCS" ]; then
+		notify-send --app-name "Check services:" "$SCRIPT_NAME is not running. Please check if $SCRIPT_NAME process is running" 	  
+		if "$SCRIPT" & then
+			notify-send --app-name "Check services:" "$SCRIPT_NAME is running"
 		fi 
 	else 
 		:
-	fi
-   
+	fi   
    SCRIPTS_CTR=$((SCRIPTS_CTR + 1))
 done
 
