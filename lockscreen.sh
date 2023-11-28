@@ -2,52 +2,5 @@
 
 sudo echo 80 | sudo tee /sys/class/backlight/amdgpu_bl0/brightness &
 xscreensaver-command -lock &
-
-NEW_TIME()
-{
-	NEW_TIME=$(date +"%I:%M:%S")
-	NEW_SECONDS=${NEW_TIME:6:2} 
-	NEW_MINUTES=${NEW_TIME:3:2}
-	NEW_HOURS=${NEW_TIME:0:2}
-	NEW_TIME="$NEW_HOURS:$NEW_MINUTES:$NEW_SECONDS"
-}
-
-SECONDS_COMPARE()
-{
-	NEW_TIME
-	while [ "$NEW_TIME" != "$1" ]; do
-		NEW_TIME
-		continue
-	done
-	if [ "$NEW_TIME" == "$1" ]; then
-		systemctl suspend & 
-	fi
-}
-
-TICK=60
-TIME_INITIAL=$(date +"%I:%M:%S")
-START_SECONDS=${TIME_INITIAL:6:2} 
-START_MINUTES=${TIME_INITIAL:3:2}
-START_HOURS=${TIME_INITIAL:0:2}
-TO_SUSPEND=$(($START_SECONDS + $TICK))
-if [ $TO_SUSPEND -eq $TICK ]; then
-	START_MINUTES=$(($START_MINUTES + 6))
-	START_SECONDS=00
-fi
-
-if [ $TO_SUSPEND -gt $TICK ]; then
-	TO_SUSPEND=$(($TO_SUSPEND - $TICK))
-	START_SECONDS=$TO_SUSPEND
-	DIGIT_SECONDS="${#START_SECONDS}"
-	if [ "$DIGIT_SECONDS" == "1" ]; then
-		START_SECONDS="0$START_SECONDS"
-	fi
-	START_MINUTES=$(($START_MINUTES + 6))
-	if [ $START_MINUTES -eq $TICK ]; then
-		START_HOURS=$((START_HOURS + 1))
-		START_MINUTES=00
-	fi
-fi
-
-TIME_FINAL="$START_HOURS:$START_MINUTES:$START_SECONDS"
-SECONDS_COMPARE $TIME_FINAL
+sleep 5m
+systemctl suspend &
