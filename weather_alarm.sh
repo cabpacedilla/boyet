@@ -15,14 +15,13 @@
 
 notify()
 {
-   # Set Action to Plug if low
+	
    if [ "$1" = 'humid' ]; then
         WARNING="Stay in an airy place."
    
-   # Set Action to Unplug if high    
    elif [ "$1" = 'hot' ]; then
         WARNING="Stay in a cooler place."
-        
+
    elif [ "$1" = 'windy' ]; then
         WARNING="Stay inside."
   
@@ -35,7 +34,7 @@ notify()
 notify-rain()
 {
 
-	if [ "$1" = 'raining lightly' ]; then
+   if [ "$1" = 'raining lightly' ]; then
         WARNING="Use an umbrella or wear a raincoat."
    
    elif [ "$1" = 'raining moderately' ]; then
