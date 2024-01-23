@@ -13,62 +13,79 @@
 
 #!/usr/bin/bash
 
-notify()
+notify-temp()
 {
-   # Set Action to Plug if low
-   if [ "$1" = 'humid' ]; then
-        WARNING="Stay in an airy place."
-   
-   # Set Action to Unplug if high    
-   elif [ "$1" = 'hot' ]; then
-        WARNING="Stay in a cooler place."
-        
-   elif [ "$1" = 'windy' ]; then
-        WARNING="Stay inside."
-  
-   fi
+	case "$1" in 
+		"humid")
+			WARNING="Stay in an airy place."
+			;;
+			
+		"hot")
+			WARNING="Stay in a cooler place."
+			;;
+			
+		"windy")
+			WARNING="Stay inside."
+			;;
+		*)
+			:
+			;;
+	esac        
     
-   # Notify battery alert
-   notify-send -u critical --app-name "Weather warning:    $TIME" "It's very $1 and $WEATHER outside. $WARNING" 
+	# Notify battery alert
+	notify-send -u critical --app-name "Weather warning:    $TIME" "It's very $1 and $WEATHER outside. $WARNING" 
 }
 
 notify-rain()
 {
-
-	if [ "$1" = 'raining lightly' ]; then
-        WARNING="Use an umbrella or wear a raincoat."
-   
-   elif [ "$1" = 'raining moderately' ]; then
-        WARNING="Use an umbrella or wear a raincoat."
-   
-   elif [ "$1" = 'raining heavily' ]; then
-        WARNING="Be warned for flooding and landslides. Stay in a safe place."
-        
-   elif [ "$1" = 'raining violently' ]; then
-        WARNING="Be warned for flooding and landslides. Stay in a safe place."
-        
-   fi
+	case "$1" in 
+		"raining lightly")
+			WARNING="Use an umbrella or wear a raincoat."
+			;;
+			
+		"raining moderately")
+			WARNING="Use an umbrella or wear a raincoat."
+			;;
+			
+		"raining heavily")
+			WARNING="Be warned for flooding and landslides. Stay in a safe place."
+			;;
+			
+		"raining violently")
+			WARNING="Be warned for flooding and landslides. Stay in a safe place."
+			;;
+		*)
+			:
+			;;
+	esac 
    
     notify-send -u critical --app-name "Weather warning:    $TIME" "It's $1 outside. $WARNING"
 }
 
 notify-uv()
 {
-	if [ "$1" = 'mod-uv' ]; then
-        WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses to protect from the sun."
-   
-   elif [ "$1" = 'high-uv' ]; then
-        WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm to protect from the sun."
-   
-   elif [ "$1" = 'very-uv' ]; then
-        WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm and stay in the shade."
-        
-   elif [ "$1" = 'extreme-uv' ]; then
-        WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm and stay in the the building."
-   
-   fi
+	case "$1" in 
+		"mod-uv")
+			WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses to protect from the sun."
+			;;
+			
+		"high-uv")
+			WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm to protect from the sun."
+			;;
+			
+		"very-uv")
+			WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm and stay in the shade."
+			;;
+			
+		"extreme-uv")
+			WARNING="Use an umbrella and wear long-sleeved shirts, sunscreen, a wide brim hat, sunglasses and lip balm and stay in the the building."
+			;;
+		*)
+			:
+			;;
+	esac 
        
-   notify-send -u critical --app-name "Weather warning:    $TIME" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
+	notify-send -u critical --app-name "Weather warning:    $TIME" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
 }
 
 
