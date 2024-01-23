@@ -30,15 +30,15 @@ LED_MASK=$(xset q | grep 'LED mask' | awk '{ print $NF }')
 # 3. Compare LED_MASK to key lock values
 case "$LED_MASK" in
 	"$CAPS_LOCK")
-		notify-send --app-name "Key lock:" "Caps lock is on."
+		notify-send -t 9000 --app-name "Key lock:" "Caps lock is on."
 		;;
 		
 	"$NUM_LOCK")
-		notify-send --app-name "Key lock:" "Num lock is on."
+		notify-send -t 9000 --app-name "Key lock:" "Num lock is on."
 		;;
 		
 	"$CAPSNUM_LOCK")
-		notify-send --app-name "Key lock:" "Caps lock and Num lock are on."
+		notify-send -t 9000 --app-name "Key lock:" "Caps lock and Num lock are on."
 		;;
 		
 	*)
