@@ -4,7 +4,6 @@ run_session.sh
 UNIQAPPS=~/bin/uniq_apps.txt
 
 while read -r  line; do 
-	#if grep "${line}" "$MENUAPPS"; then
 	if [ "${line}" = "/usr/bin/lxqt-panel" ]; then
 		:
 	else
