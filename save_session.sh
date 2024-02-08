@@ -3,8 +3,6 @@ run_session.sh
 
 UNIQAPPS=~/bin/uniq_apps.txt
 
-#ls /usr/share/applications > "$MENUAPPS"
-
 while read -r  line; do 
 	#if grep "${line}" "$MENUAPPS"; then
 	if [ "${line}" = "/usr/bin/lxqt-panel" ]; then
