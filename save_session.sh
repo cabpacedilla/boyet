@@ -1,5 +1,23 @@
-save_session.sh
+run_session.sh
+#!/usr/bin/bash
 
+UNIQAPPS=~/bin/uniq_apps.txt
+
+#ls /usr/share/applications > "$MENUAPPS"
+
+while read -r  line; do 
+	#if grep "${line}" "$MENUAPPS"; then
+	if [ "${line}" = "/usr/bin/lxqt-panel" ]; then
+		:
+	else
+		"${line}" &
+	fi                             
+done  < "$UNIQAPPS"
+ 
+save_session.sh &
+
+
+save_session.sh
 #!/usr/bin/bash
 while true; do
 
@@ -20,22 +38,3 @@ done < "$LAST_PIDS"
 
 sleep 2s
 done
-
-
-run_session.sh
-#!/usr/bin/bash
-
-UNIQAPPS=~/bin/uniq_apps.txt
-
-#ls /usr/share/applications > "$MENUAPPS"
-
-while read -r  line; do 
-	#if grep "${line}" "$MENUAPPS"; then
-	if [ "${line}" = "/usr/bin/lxqt-panel" ]; then
-		:
-	else
-		"${line}" &
-	fi                             
-done  < "$UNIQAPPS"
- 
-save_session.sh &
