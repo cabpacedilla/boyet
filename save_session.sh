@@ -29,12 +29,8 @@ wmctrl -lp | awk '{print $3}' > "$LAST_PIDS"
 
 > "$NEW_APPS" 
 
-#cat "$LAST_PIDS" | while read line
 while read -r  line; do 
-	#ps -p "${line}" -o comm=
-	#ps -p "${line}" -o comm= >> ~/bin/last_apps.txt 
-	ps -ux | grep "${line}" | awk '{ print $11 }' >> "$NEW_APPS"             
-	#sort "$LAST_APPS" | uniq > "$UNIQ_APPS"             
+	ps -ux | grep "${line}" | awk '{ print $11 }' >> "$NEW_APPS"                      
 done < "$LAST_PIDS"
 
 diff "$NEW_APPS" "$LAST_APPS" 
