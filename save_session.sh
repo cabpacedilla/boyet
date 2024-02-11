@@ -20,19 +20,31 @@ while true; do
 
 LAST_PIDS=~/bin/last_pids.txt
 LAST_APPS=~/bin/last_apps.txt
+NEW_APPS=~/bin/new_apps.txt
 UNIQ_APPS=~/bin/uniq_apps.txt
 
 > "$LAST_PIDS"
 
 wmctrl -lp | awk '{print $3}' > "$LAST_PIDS"
 
-> "$LAST_APPS"
+> "$NEW_APPS" 
 
+#cat "$LAST_PIDS" | while read line
 while read -r  line; do 
-	ps -ux | grep "${line}" | awk '{ print $11 }' >> "$LAST_APPS"             
-	sort "$LAST_APPS" | uniq > "$UNIQ_APPS"             
+	#ps -p "${line}" -o comm=
+	#ps -p "${line}" -o comm= >> ~/bin/last_apps.txt 
+	ps -ux | grep "${line}" | awk '{ print $11 }' >> "$NEW_APPS"             
+	#sort "$LAST_APPS" | uniq > "$UNIQ_APPS"             
 done < "$LAST_PIDS"
+
+diff "$NEW_APPS" "$LAST_APPS" 
+
+if [ $(echo $?) = "0" ]; then
+	:
+else
+	cat "$NEW_APPS" > "$LAST_APPS" 
+	sort "$LAST_APPS" | uniq > "$UNIQ_APPS"      
+fi
 
 sleep 2s
 done
-
