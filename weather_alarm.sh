@@ -108,7 +108,7 @@ VERYUV=11
 
 curl wttr.in/Banilad?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
 
-if [ $(echo $?) = "2" ]; then
+if [ $(echo $?) != "0" ]; then
 	sleep 15m
 fi
 
