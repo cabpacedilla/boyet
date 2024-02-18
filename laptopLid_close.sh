@@ -27,6 +27,10 @@ STATE="open"
 ## 2. Get laptop lid state
 LID_STATE=$(less $LID_PATH | awk '{print $2}')
 
+if [ "$(echo $?)" = "2" ]; then
+	sleep 0.1s
+fi	
+
 ## 3. Do nothing if lid is open
 if [ "$LID_STATE" = "$STATE" ]; then
 	:	  
