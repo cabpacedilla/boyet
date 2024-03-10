@@ -27,6 +27,10 @@ CAPSNUM_LOCK=00000003
 # 2. Get LED mask value for key lock with xset command
 LED_MASK=$(xset q | grep 'LED mask' | awk '{ print $NF }')
 
+if [ "$(echo $?)" != "0" ]; then
+	sleep 
+fi	
+
 # 3. Compare LED_MASK to key lock values
 case "$LED_MASK" in
 	"$CAPS_LOCK")
