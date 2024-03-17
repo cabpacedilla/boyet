@@ -2,7 +2,7 @@
 # resizes the window to full height and 50% width and moves into upper right corner
 
 #define the height in px of the top system-bar:
-TOPMARGIN=27
+TOPMARGIN=35
 
 #sum in px of all horizontal borders:
 RIGHTMARGIN=10
