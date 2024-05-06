@@ -7,7 +7,7 @@ brightness_check()
 {
 	BRIGHTNESS=$(cat $BRIGHT_PATH)
 	if [ "$BRIGHTNESS" != "$OPTIMAL" ]; then
-		echo $OPTIMAL | sudo tee $BRIGHT_PATH
+		sudo echo $OPTIMAL | sudo tee $BRIGHT_PATH
 	else
 		:
 	fi
