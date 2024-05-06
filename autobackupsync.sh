@@ -1,7 +1,7 @@
 #!/usr/bin/sh
 
 # Set user in /etc/sudoers file without providing password with rsync command
-# add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
+# add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync at the bottom of the /etc/sudoers file using sudo visudo
 
 # Needs filesystem change monitoring tool like inotify in Linux
 
