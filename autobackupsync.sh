@@ -8,7 +8,8 @@
 while inotifywait -r -e modify,create,delete ~/<sourcefolder>
 do
    notify-send "Folder updated. Syncing folder."
-	rsync -avl /home/boyet/Documents/claive/ /media/boyet/Data/claive --delete
+	#rsync -avl /home/boyet/Documents/claive/ /media/boyet/Data/claive --delete
+ 	rsync avhP /home/boyet/Documents/claive/ /media/boyet/Data/claive
 	if [ $? = 0 ]; then
 		notify-send "Backup sync was successful."
 	else
