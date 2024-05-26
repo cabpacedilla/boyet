@@ -1,7 +1,7 @@
 #!/usr/bin/bash 
 while true; do
 
-# Create a shortcut key with command 
+# Create a shortcut key with command qterminal -e recentFiles.sh
 
 RECENT_LIST=~/bin/recentFiles.txt
 RECENTLY_USED=~/.local/share/recently-used.xbel
