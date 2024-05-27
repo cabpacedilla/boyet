@@ -1,41 +1,46 @@
 #!/usr/bin/bash 
+
+# Infinite loop to continuously check recent files
 while true; do
 
-# Create a shortcut key with command qterminal -e recentFiles.sh
+    # Define file paths
+    RECENT_LIST=~/bin/recentFiles.txt
+    REVERSE_LIST=~/bin/reverseRecent.txt
+    RECENTLY_FILE=~/.local/share/recently-used.xbel
 
-RECENT_LIST=~/bin/recentFiles.txt
-REVERSE_LIST=~/bin/reverseRecent.txt
-RECENTLY_FILE=~/.local/share/recently-used.xbel
+    # Extract recent file paths from the recently-used.xbel file
+    RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $2}' "$RECENTLY_FILE")
+    RECENT_FILES_CLEAN=$(echo "$RECENT_FILES" | sed 's/%20/ /g')
 
-RECENT_FILES=$(awk -F"file://|\" " '/file:\/\// {print $2}' "$RECENTLY_FILE")
-RECENT_FILES_CLEAN=$(awk -F"file://|\" " '/file:\/\// {print $2}' "$RECENTLY_FILE" | sed 's/%20/\ /g')
+    # Save recent files to RECENT_LIST
+    echo "$RECENT_FILES" > "$RECENT_LIST"
 
-echo "$RECENT_FILES" > "$RECENT_LIST"
+    # Get the last few recent files
+    RECENTS=$(tail "$RECENT_LIST")
 
-RECENTS=$(cat "$RECENT_LIST" | tail)
+    # Update RECENT_LIST with recent files
+    echo "$RECENTS" > "$RECENT_LIST"
 
-echo "$RECENTS" > "$RECENT_LIST"
+    # Initialize an array to hold recent files
+    declare -a RECENTARR=()
+    while read -r line; do
+        RECENTARR+=("$line")
+    done < "$RECENT_LIST"
 
-declare -a RECENTARR=()
-while read -r line; do      
-	RECENTARR+=($line)
-done < "$RECENT_LIST"
+    # Save cleaned recent files to REVERSE_LIST and number the lines
+    echo "$RECENT_FILES_CLEAN" | tail > "$REVERSE_LIST"
+    REVERSE_LIST=$(nl "$REVERSE_LIST")
+    echo "$REVERSE_LIST"
 
-#echo "${RECENTARR[@]}"
+    # Prompt the user to select a file
+    echo "Please provide the sequence number of the accessed file: "
+    read -r OPEN_FILE
 
-echo "$RECENT_FILES_CLEAN" | tail > "$REVERSE_LIST"
-REVERSE_LIST=$(nl "$REVERSE_LIST")
-echo "$REVERSE_LIST"
+    # Get the selected file and clean up any escaped characters
+    FILE=$(echo "${RECENTARR[OPEN_FILE - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
+    FILE=$(echo "$FILE" | xargs)
 
-echo "Please provide the sequence number of the accessed file: "
-
-read OPEN_FILE
-
-FILE=$(echo "${RECENTARR[${OPEN_FILE} - 1]}" | sed 's/%20/\\ /g' | sed 's/%2520/\\ /g')
-FILE=$(echo "$FILE" | xargs)
-
-xdg-open "$FILE"
+    # Open the selected file
+    xdg-open "$FILE"
 
 done
-
-
