@@ -1,13 +1,11 @@
-#!/usr/bin/bash 
-
+#!/usr/bin/bash   
 # Infinite loop to continuously check recent files
 while true; do
-
-    # Define file paths
-    RECENT_LIST=~/bin/recentFiles.txt
-    REVERSE_LIST=~/bin/reverseRecent.txt
-    RECENTLY_FILE=~/.local/share/recently-used.xbel
-
+	# Define file paths
+	RECENT_LIST=~/bin/recentFiles.txt
+	REVERSE_LIST=~/bin/reverseRecent.txt
+	RECENTLY_FILE=~/.local/share/recently-used.xbel
+	
     # Extract recent file paths from the recently-used.xbel file
     RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $2}' "$RECENTLY_FILE")
     RECENT_FILES_CLEAN=$(echo "$RECENT_FILES" | sed 's/%20/ /g')
@@ -16,7 +14,7 @@ while true; do
     echo "$RECENT_FILES" > "$RECENT_LIST"
 
     # Get the last few recent files
-    RECENTS=$(tail "$RECENT_LIST")
+    RECENTS=$(tail -n 15 "$RECENT_LIST")
 
     # Update RECENT_LIST with recent files
     echo "$RECENTS" > "$RECENT_LIST"
@@ -28,7 +26,7 @@ while true; do
     done < "$RECENT_LIST"
 
     # Save cleaned recent files to REVERSE_LIST and number the lines
-    echo "$RECENT_FILES_CLEAN" | tail > "$REVERSE_LIST"
+    echo "$RECENT_FILES_CLEAN" | tail -n 15 > "$REVERSE_LIST"
     REVERSE_LIST=$(nl "$REVERSE_LIST")
     echo "$REVERSE_LIST"
 
@@ -41,6 +39,6 @@ while true; do
     FILE=$(echo "$FILE" | xargs)
 
     # Open the selected file
-    xdg-open "$FILE"
+    xdg-open "$FILE" &
 
 done
