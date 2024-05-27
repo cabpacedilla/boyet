@@ -31,10 +31,10 @@ echo "Please provide the sequence number of the accessed file: "
 
 read OPEN_FILE
 
-file=$(echo "${RECENTARR[${OPEN_FILE} - 1]}" | sed 's/%20/\\ /g' | sed 's/%2520/\\ /g')
-file=$(echo "$file" | xargs)
+FILE=$(echo "${RECENTARR[${OPEN_FILE} - 1]}" | sed 's/%20/\\ /g' | sed 's/%2520/\\ /g')
+FILE=$(echo "$FILE" | xargs)
 
-xdg-open "$file"
+xdg-open "$FILE"
 
 done
 
