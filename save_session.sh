@@ -29,8 +29,15 @@ wmctrl -lp | awk '{print $3}' > "$LAST_PIDS"
 
 > "$NEW_APPS" 
 
-while read -r  line; do 
-	ps -ux | grep "${line}" | awk '{ print $11 }' >> "$NEW_APPS"                      
+while read -r line; do 
+	if [ "${line}" = "0" ]; then
+		echo "xfe" >> "$NEW_APPS" 
+	elif [ "${line}" = "grep" ] || [ "${line}" = "CMD" ]; then
+		:
+	else    
+		ps -o cmd fp "${line}" | grep / >> "$NEW_APPS"      
+		#ps -ux | grep "${line}" | awk '{ print $11 }' >> "$NEW_APPS"
+	fi            
 done < "$LAST_PIDS"
 
 diff "$NEW_APPS" "$LAST_APPS" 
@@ -42,5 +49,5 @@ else
 	sort "$LAST_APPS" | uniq > "$UNIQ_APPS"      
 fi
 
-sleep 2s
+sleep 2s 
 done
