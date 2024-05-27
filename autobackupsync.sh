@@ -5,11 +5,12 @@
 
 # Needs filesystem change monitoring tool like inotify in Linux
 
-while inotifywait -r -e modify,create,delete ~/<sourcefolder>
+# while inotifywait -r -e modify,create,delete ~/<sourcefolder> ~/<sourcefolder> 
+while inotifywait -r -e modify,create,delete /home/boyet/Documents/claive/ /home/boyet/bin/
 do
    notify-send "Folder updated. Syncing folder."
 	#rsync -avl /home/boyet/Documents/claive/ /media/boyet/Data/claive --delete
- 	rsync avhP /home/boyet/Documents/claive/ /media/boyet/Data/claive
+ 	rsync -avhP /home/boyet/Documents/claive/ /home/boyet/bin/ /media/boyet/Data/claive
 	if [ $? = 0 ]; then
 		notify-send "Backup sync was successful."
 	else
