@@ -14,7 +14,7 @@ while true; do
     echo "$RECENT_FILES" > "$RECENT_LIST"
 
     # Get the last few recent files
-    RECENTS=$(tail -n 15 "$RECENT_LIST")
+    RECENTS=$(tail -n 40 "$RECENT_LIST")
 
     # Update RECENT_LIST with recent files
     echo "$RECENTS" > "$RECENT_LIST"
@@ -26,7 +26,7 @@ while true; do
     done < "$RECENT_LIST"
 
     # Save cleaned recent files to REVERSE_LIST and number the lines
-    echo "$RECENT_FILES_CLEAN" | tail -n 15 > "$REVERSE_LIST"
+    echo "$RECENT_FILES_CLEAN" | tail -n 40 > "$REVERSE_LIST"
     REVERSE_LIST=$(nl "$REVERSE_LIST")
     echo "$REVERSE_LIST"
 
