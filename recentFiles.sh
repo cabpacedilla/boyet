@@ -3,7 +3,7 @@
 while true; do
 	# Define file paths
 	RECENT_LIST=~/bin/recentFiles.txt
-	REVERSE_LIST=~/bin/reverseRecent.txt
+	TAIL_LIST=~/bin/reverseRecent.txt
 	RECENTLY_FILE=~/.local/share/recently-used.xbel
 	
     # Extract recent file paths from the recently-used.xbel file
@@ -26,9 +26,9 @@ while true; do
     done < "$RECENT_LIST"
 
     # Save cleaned recent files to REVERSE_LIST and number the lines
-    echo "$RECENT_FILES_CLEAN" | tail -n 40 > "$REVERSE_LIST"
-    REVERSE_LIST=$(nl "$REVERSE_LIST")
-    echo "$REVERSE_LIST"
+    echo "$RECENT_FILES_CLEAN" | tail -n 40 > "$TAIL_LIST"
+    REVERSE_LIST=$(nl "$TAIL_LIST")
+    echo "$TAIL_LIST"
 
     # Prompt the user to select a file
     echo "Please provide the sequence number of the accessed file: "
