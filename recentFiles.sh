@@ -27,8 +27,8 @@ while true; do
 
     # Save cleaned recent files to REVERSE_LIST and number the lines
     echo "$RECENT_FILES_CLEAN" | tail -n 40 > "$TAIL_LIST"
-    REVERSE_LIST=$(nl "$TAIL_LIST")
-    echo "$TAIL_LIST"
+    RECENT_FILES_CLEAN=$(nl "$TAIL_LIST")
+    echo "$RECENT_FILES_CLEAN"
 
     # Prompt the user to select a file
     echo "Please provide the sequence number of the accessed file: "
