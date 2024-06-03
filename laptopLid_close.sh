@@ -23,7 +23,7 @@ while true; do
 LID_PATH=/proc/acpi/button/lid/LID0/state
 
 ## 1. Set for open state
-STATE="open"
+CLOSED_STATE="closed"
 	
 ## 2. Get laptop lid state
 LID_STATE=$(cat $LID_PATH | awk '{print $2}')
@@ -32,15 +32,15 @@ if [ "$(echo $?)" != "0" ]; then
 	break
 fi	
 
-## 3. Do nothing if lid is open
-if [ "$LID_STATE" = "$STATE" ]; then
-	:	  
-## 4. Suspend if lid is closed
-else 
-	sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl0/brightness &
+## 3. Lock and suspend if lid is close and do nothing otherwise
+if [ "$LID_STATE" = "$CLOSED_STATE" ]; then
+	sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness &
 	xscreensaver-command -lock &
-	systemctl suspend &	
+	systemctl suspend &
+else
+	:
 fi
 	
 sleep 0.1s
 done
+
