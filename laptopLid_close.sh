@@ -37,10 +37,12 @@ if [ "$LID_STATE" = "$OPEN_STATE" ]; then
 	:
 else
 	sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
-	xscreensaver-command -lock
-	systemctl suspend &
+	xscreensaver-command --lock
+	xscreensaver-command --suspend
+	systemctl suspend
 fi
 	
 sleep 0.1s
 done
+
 
