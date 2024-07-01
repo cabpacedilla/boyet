@@ -19,18 +19,19 @@
 
 #!/usr/bin/bash
 while true; do
-   
+
 LID_PATH=/proc/acpi/button/lid/LID0/state
+HDMI_DETECT=$(xrandr |grep ' connected' |grep 'HDMI' |awk '{print $1}')
 
 ## 1. Set for open state
 OPEN_STATE="open"
-	
+
 ## 2. Get laptop lid state
 LID_STATE=$(cat $LID_PATH | awk '{print $2}')
 
-if [ "$(echo $?)" != "0" ]; then
-	break
-fi	
+#~ if [ "$(echo $?)" != "0" ]; then
+	#~ break
+#~ fi
 
 ## 3. Lock and suspend if lid is close and do nothing otherwise
 if [ "$LID_STATE" = "$OPEN_STATE" ]; then
@@ -38,11 +39,16 @@ if [ "$LID_STATE" = "$OPEN_STATE" ]; then
 else
 	sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
 	xscreensaver-command --lock
-	xscreensaver-command --suspend
 	systemctl suspend
+	if [ -n "$HDMI_DETECT" ]; then
+		sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
+		xscreensaver-command --lock
+		systemctl suspend
+	fi
 fi
-	
+
 sleep 0.1s
 done
+
 
 
