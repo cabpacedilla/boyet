@@ -21,7 +21,7 @@
 while true; do
 
 LID_PATH=/proc/acpi/button/lid/LID0/state
-HDMI_DETECT=$(xrandr |grep ' connected' |grep 'HDMI' |awk '{print $1}')
+HDMI_DETECT=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
 
 ## 1. Set for open state
 OPEN_STATE="open"
@@ -49,6 +49,7 @@ fi
 
 sleep 0.1s
 done
+
 
 
 
