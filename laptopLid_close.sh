@@ -40,11 +40,11 @@ else
 	sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
 	xscreensaver-command --lock
 	systemctl suspend
-	if [ -n "$HDMI_DETECT" ]; then
-		sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
-		xscreensaver-command --lock
-		systemctl suspend
-	fi
+	#~ if [ -n "$HDMI_DETECT" ]; then
+		#~ sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
+		#~ xscreensaver-command --lock
+		#~ systemctl suspend
+	#~ fi
 fi
 
 sleep 0.1s
