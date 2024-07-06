@@ -1,9 +1,9 @@
-#!/usr/bin/bash   
+#!/bin/bash   
 # Infinite loop to continuously check recent files
 while true; do
 	# Define file paths
-	RECENT_LIST=~/bin/recentFiles.txt
-	TAIL_LIST=~/bin/reverseRecent.txt
+	RECENT_LIST=~/Documents/bin/recentFiles.txt
+	TAIL_LIST=~/Documents/bin/reverseRecent.txt
 	RECENTLY_FILE=~/.local/share/recently-used.xbel
 	
     # Extract recent file paths from the recently-used.xbel file
@@ -20,12 +20,12 @@ while true; do
     echo "$RECENTS" > "$RECENT_LIST"
 
     # Initialize an array to hold recent files
-    declare -a RECENTARR=()
+    declare -a RECENT_ARR=()
     while read -r line; do
-        RECENTARR+=("$line")
+        RECENT_ARR+=("$line")
     done < "$RECENT_LIST"
 
-    # Save cleaned recent files to REVERSE_LIST and number the lines
+    # Add line numbers
     echo "$RECENT_FILES_CLEAN" | tail -n 40 > "$TAIL_LIST"
     RECENT_FILES_CLEAN=$(nl "$TAIL_LIST")
     echo "$RECENT_FILES_CLEAN"
@@ -35,7 +35,7 @@ while true; do
     read -r OPEN_FILE
 
     # Get the selected file and clean up any escaped characters
-    FILE=$(echo "${RECENTARR[OPEN_FILE - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
+    FILE=$(echo "${RECENT_ARR[OPEN_FILE - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
     FILE=$(echo "$FILE" | xargs)
 
     # Open the selected file
