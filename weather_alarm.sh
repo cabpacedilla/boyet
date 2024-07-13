@@ -93,7 +93,7 @@ while true
 do
 TIME=$(date +"%I:%M %p")
 
-WEATHER_FILE=~/bin/weather.txt
+WEATHER_FILE=~/scriptlogs/weather.txt
 VERYHUMID=85
 HIGHTEMP=33
 STRONGWIND=50
