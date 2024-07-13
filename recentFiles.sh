@@ -25,7 +25,7 @@ RECENTS=$(tail -n 40 "$RECENT_LIST")
 echo "$RECENTS" > "$RECENT_LIST"
 
 # Initialize an array to hold recent files
-mapfile -t RECENTARR < "$RECENT_LIST"
+mapfile -t RECENT_ARR < "$RECENT_LIST"
 
 # Add line numbers
 echo "$RECENT_FILES_CLEAN" | tail -n 40 > "$TAIL_LIST"
@@ -37,13 +37,13 @@ echo "Please provide the sequence number of the accessed file: "
 read -r OPEN_FILE
 
 # Validate user input
-if { [ -n "${OPEN_FILE//[0-9]/}" ]; } || { [ "$OPEN_FILE" -lt "1" ] || [ "$OPEN_FILE" -gt "${#RECENTARR[@]}" ]; }; then
+if { [ -n "${OPEN_FILE//[0-9]/}" ]; } || { [ "$OPEN_FILE" -lt "1" ] || [ "$OPEN_FILE" -gt "${#RECENT_ARR[@]}" ]; }; then
 	notify-send "Invalid input. Please enter a valid sequence number." &
 	continue
 fi
 
 # Get the selected file and clean up any escaped characters
-FILE=$(echo "${RECENTARR[OPEN_FILE - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
+FILE=$(echo "${RECENT_ARR[OPEN_FILE - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
 FILE=$(echo "$FILE" | xargs)
 
 # Check if the file exists before attempting to open it
