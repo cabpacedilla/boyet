@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# This script is used to monitor and access recently used files
+# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# June 2024
 
 # Infinite loop to continuously check recent files
 while true; do
