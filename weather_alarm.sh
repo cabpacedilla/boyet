@@ -88,9 +88,7 @@ notify-uv()
 	notify-send -u critical --app-name "Weather warning:    $TIME" "It's $WEATHER outside and the ultraviolet is $UV. $WARNING"
 }
 
-
-while true
-do
+while true; do
 TIME=$(date +"%I:%M %p")
 
 WEATHER_FILE=~/scriptlogs/weather.txt
