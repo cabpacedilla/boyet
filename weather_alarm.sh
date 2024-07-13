@@ -92,19 +92,19 @@ while true; do
 TIME=$(date +"%I:%M %p")
 
 WEATHER_FILE=~/scriptlogs/weather.txt
-VERYHUMID=85
-HIGHTEMP=33
-STRONGWIND=50
-NORAIN=0.0 
-LIGHTRAIN=2.5
-HEAVYRAIN=7.6
-VIOLENTRAIN=50
-LOWUV=2
-MODUV=6
-HIGHUV=8
-VERYUV=11
+VERY_HUMID=85
+HIGH_TEMP=33
+STRONG_WIND=50
+NO_RAIN=0.0 
+LIGHT_RAIN=2.5
+HEAVY_RAIN=7.6
+VIOLENT_RAIN=50
+LOW_UV=2
+MOD_UV=6
+HIGH_UV=8
+VERY_UV=11
 
-curl wttr.in/Banilad?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
+curl wttr.in/Cebu?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
 
 if [ $(echo $?) != "0" ]; then
 	sleep 15m
@@ -121,24 +121,24 @@ fi
 
 HUMID=$(awk '{print $2}' < $WEATHER_FILE)
 HUMID=${HUMID:0:-1}
-if [ "$HUMID" -ge "$VERYHUMID" ]; then
-   notify humid 
+if [ "$HUMID" -ge "$VERY_HUMID" ]; then
+   notify-temp humid 
 else
    :
 fi
 
 TEMP=$(awk '{print $3}' < $WEATHER_FILE)
 TEMP=${TEMP:1:-2}
-if [ "$TEMP" -ge "$HIGHTEMP" ]; then
-	notify hot
+if [ "$TEMP" -ge "$HIGH_TEMP" ]; then
+	notify-temp hot
 else
    :
 fi
 
 WIND=$(awk '{print $4}' < $WEATHER_FILE)
 WIND=${WIND:1:-4}
-if [ "$WIND" -ge "$STRONGWIND" ]; then
-  notify windy
+if [ "$WIND" -ge "$STRONG_WIND" ]; then
+  notify-temp windy
 else
    :
 fi
@@ -146,61 +146,60 @@ fi
 RAINFALL=$(awk '{print $5}' < $WEATHER_FILE)
 RAINFALL=${RAINFALL:0:-2}
 
-if [ "$RAINFALL" = "$NORAIN" ]; then
+if [ "$RAINFALL" = "$NO_RAIN" ]; then
    :
 fi
 
-ISREAINMORENO=$(echo "$RAINFALL > $NORAIN" | bc)
-ISRAINLESSLIGHT=$(echo "$RAINFALL < $LIGHTRAIN" | bc)
-if [ "$ISRAINLESSLIGHT" -eq 1 ] && [ "$ISREAINMORENO" -eq 1 ] ; then
+RAIN_IS_MORE_THAN_NO_RAIN=$(echo "$RAINFALL > $NO_RAIN" | bc)
+RAIN_IS_LESS_THAN_LIGHT=$(echo "$RAINFALL < $LIGHT_RAIN" | bc)
+if [ "$RAIN_IS_LESS_THAN_LIGHT" -eq 1 ] && [ "$RAIN_IS_MORE_THAN_NO_RAIN" -eq 1 ] ; then
    notify-rain "raining lightly"
 fi
 
-ISRAINMORELIGHT=$(echo "$RAINFALL > $LIGHTRAIN" | bc)
-ISRAINLESSHEAVY=$(echo "$RAINFALL < $HEAVYRAIN" | bc)  
-if [ "$ISRAINMORELIGHT" -eq 1 ] && [ "$ISRAINLESSHEAVY" -eq 1 ]; then
+RAIN_IS_MORE_THAN_LIGHT=$(echo "$RAINFALL > $LIGHT_RAIN" | bc)
+RAIN_IS_LESS_THAN_HEAVY=$(echo "$RAINFALL < $HEAVY_RAIN" | bc)  
+if [ "$RAIN_IS_MORE_THAN_LIGHT" -eq 1 ] && [ "$RAIN_IS_LESS_THAN_HEAVY" -eq 1 ]; then
    notify-rain "raining moderately"
 fi
 
-ISRAINMOREHEAVY=$(echo "$RAINFALL > $HEAVYRAIN" | bc)
-ISRAINLESSVIOLENT=$(echo "$RAINFALL < $VIOLENTRAIN" | bc)
-if [ "$ISRAINMOREHEAVY" -eq 1 ]  && [ "$ISRAINLESSVIOLENT" -eq 1 ]; then
+RAIN_IS_MORE_THAN_HEAVY=$(echo "$RAINFALL > $HEAVY_RAIN" | bc)
+RAIN_IS_LESS_THAN_VIOLENT=$(echo "$RAINFALL < $VIOLENT_RAIN" | bc)
+if [ "$RAIN_IS_MORE_THAN_HEAVY" -eq 1 ]  && [ "$RAIN_IS_LESS_THAN_VIOLENT" -eq 1 ]; then
    notify-rain "raining heavily"
 fi
 
-ISRAINMOREVIOLENT=$(echo "$RAINFALL > $VIOLENTRAIN" | bc)
-if [ "$ISRAINMOREVIOLENT" -eq 1 ]; then
+RAIN_IS_MORE_VIOLENT=$(echo "$RAINFALL > $VIOLENT_RAIN" | bc)
+if [ "$RAIN_IS_MORE_VIOLENT" -eq 1 ]; then
    notify-rain "raining violently"
 fi
 
 UV=$(awk '{print $6}' < $WEATHER_FILE)
 
-if [ "$UV" -le "$LOWUV" ]; then
+if [ "$UV" -le "$LOW_UV" ]; then
 	:
 fi
 
-ISUVMORELOW=$(echo "$UV > $LOWUV" | bc)
-ISUVLESSMOD=$(echo "$UV < $MODUV" | bc)
-if [ "$ISUVMORELOW" -eq 1 ] && [ "$ISUVLESSMOD" -eq 1 ] ; then
+UV_IS_MORE_THAN_LOW=$(echo "$UV > $LOW_UV" | bc)
+UV_IS_LESS_THAN_MOD=$(echo "$UV < $MOD_UV" | bc)
+if [ "$UV_IS_MORE_THAN_LOW" -eq 1 ] && [ "$UV_IS_LESS_THAN_MOD" -eq 1 ] ; then
    notify-uv mod-uv
 fi
    
-ISUVMOREMOD=$(echo "$UV > $MODUV" | bc)
-ISUVLESSHIGH=$(echo "$UV < $HIGHUV" | bc)
-if [ "$ISUVMOREMOD" -eq 1 ] && [ "$ISUVLESSHIGH" -eq 1 ] ; then
+UV_IS_MORE_THAN_MOD=$(echo "$UV > $MOD_UV" | bc)
+UV_IS_LESS_THAN_HIGH=$(echo "$UV < $HIGH_UV" | bc)
+if [ "$UV_IS_MORE_THAN_MOD" -eq 1 ] && [ "$UV_IS_LESS_THAN_HIGH" -eq 1 ] ; then
    notify-uv high-uv
 fi
    
-ISUVMOREHIGH=$(echo "$UV > $HIGHUV" | bc)
-ISUVLESSVERY=$(echo "$UV < $VERYUV" | bc)
-if [ "$ISUVMOREHIGH" -eq 1 ] && [ "$ISUVLESSVERY" -eq 1 ] ; then
+UV_IS_MORE_THAN_HIGH=$(echo "$UV > $HIGH_UV" | bc)
+UV_IS_LESS_THAN_VERY=$(echo "$UV < $VERY_UV" | bc)
+if [ "$UV_IS_MORE_THAN_HIGH" -eq 1 ] && [ "$UV_IS_LESS_THAN_VERY" -eq 1 ] ; then
    notify-uv very-uv
 fi
    
-ISUVMOREVERY=$(echo "$UV > $VERYUV" | bc)
-if [ "$ISUVMOREVERY" -eq 1 ]; then
+UV_IS_MORE_THAN_VERY=$(echo "$UV > $VERY_UV" | bc)
+if [ "$UV_IS_MORE_THAN_VERY" -eq 1 ]; then
    notify-uv extreme-uv
-
 fi
 
 sleep 15m
