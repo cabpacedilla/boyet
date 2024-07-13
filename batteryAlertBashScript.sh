@@ -60,8 +60,8 @@ if [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; then
 elif { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Unknown," ]; }; then
    if [ "$BRIGHTNESS" != "$OPTIMAL" ]; then
 		echo $OPTIMAL | sudo tee /sys/class/backlight/amdgpu_bl0/brightness
-		:
 	fi
+ 	:
    
 #4. If battery level is 80 or more, notify full battery alert
 elif { [ "$BATT_LEVEL" -ge "$HIGH_BATT" ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -eq "$FULL_BATT" ] && [ "$BATT_STATE" = "Full," ]; } || { [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] && [ "$BATT_STATE" = "Not" ]; } || { [ "$BATT_LEVEL" -ge "$HIGH_BATT" ] && [ "$BATT_STATE" = "Unknown," ]; } || { [ "$BATT_LEVEL" -eq "$FULL_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; }; then
@@ -72,6 +72,7 @@ elif { [ "$BATT_LEVEL" -le "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]
    if [ "$BRIGHTNESS" != "$OPTIMAL" ]; then
 		echo $OPTIMAL | sudo tee /sys/class/backlight/amdgpu_bl0/brightness
 	fi
+ 	:
 	
 ##5. If battery level is 80 or more and discharging, do nothing 
 #elif [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; then
