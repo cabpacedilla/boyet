@@ -34,16 +34,16 @@ echo "$RECENT_FILES_CLEAN"
 
 # Prompt the user to select a file
 echo "Please provide the sequence number of the accessed file: "
-read -r OPEN_FILE
+read -r SEQUENCE_NUM
 
 # Validate user input
-if { [ -n "${OPEN_FILE//[0-9]/}" ]; } || { [ "$OPEN_FILE" -lt "1" ] || [ "$OPEN_FILE" -gt "${#RECENT_ARR[@]}" ]; }; then
+if { [ -n "${SEQUENCE_NUM//[0-9]/}" ]; } || { [ "$SEQUENCE_NUM" -lt "1" ] || [ "$SEQUENCE_NUM" -gt "${#RECENT_ARR[@]}" ]; }; then
 	notify-send "Invalid input. Please enter a valid sequence number." &
 	continue
 fi
 
 # Get the selected file and clean up any escaped characters
-FILE=$(echo "${RECENT_ARR[OPEN_FILE - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
+FILE=$(echo "${RECENT_ARR[SEQUENCE_NUM - 1]}" | sed 's/%20/ /g' | sed 's/%2520/ /g')
 FILE=$(echo "$FILE" | xargs)
 
 # Check if the file exists before attempting to open it
