@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # This script will automatically backup when source files are changed
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# October 2023
+
 # Set user in /etc/sudoers file without providing password with rsync command
-# add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
+# Add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
 
 # Needs filesystem change monitoring tool like inotify in Linux
 SRC_DIR="/Users/macPC/Documents/Claive/"
