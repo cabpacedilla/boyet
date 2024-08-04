@@ -39,7 +39,8 @@ November 2019
 <i>Enter equation by clicking the buttons or by numpad:</i>
 <br>
 <br>
-<input type="text" id="txtInputAndResult" rows="2" onkeypress="return restrictAlphaSymbols()" onmousedown="return false" onselectstart="return false" >
+
+<textarea type="text" id="txtInputAndResult" VerticalScrollBarVisibility="Auto" onkeypress="return restrictAlphaSymbols()" onmousedown="return false" onselectstart="return false" wrap="soft"></textarea>
 <br>
 <br>
 <input type="button" id="btnMemoryClear" value="MC" onclick="memoryClear()"><input type="button" id="btnMemoryRecall" value="MR" onclick="memoryRecall()"><input type="button" id="btnMemorySubtraction"value="M-" onclick="memorySubstraction()"><input type="button" id="btnMemoryAddition"value="M+" onclick="memoryAddition()"><br>
@@ -58,6 +59,12 @@ key = document.getElementById("txtInputAndResult");
 //inputString = document.getElementById("txtInputAndResult").value;
 document.getElementById("txtInputAndResult").value = "0";
 
+var textarea = document.getElementById('textarea_id');
+setInterval(function(){
+    textarea.value += Math.random()+'\n';
+    textarea.scrollHeight = textarea.scrollTop;
+}, 1000);
+
 // Input typing catches
 key.addEventListener("keydown", function(event)
 {
@@ -66,15 +73,22 @@ key.addEventListener("keydown", function(event)
     event.preventDefault();
     document.getElementById("btnClear").click();
   }
-});
 	
+	if (event.keyCode == 13 && !event.shiftKey)
+	{
+		// prevent default behavior
+		event.preventDefault();
+	}
+    
+});
+
 key.addEventListener("keyup", function(event)
 {        
   // Number 13 is the "Enter" key on the keyboard
   if (event.keyCode == 13)
   {
     // Cancel the default action, if needed
-    event.preventDefault();
+    //~ event.preventDefault();
     // Trigger the button element with a click
     document.getElementById("btnEquals").click();
   }
@@ -171,10 +185,10 @@ key.addEventListener("keyup", function(event)
     document.getElementById("btnDivision").click();
   }
   
-  if (event.keyCode == 106)
+  if (event.keyCode == 106 || event.keyCode == 88 )
   {
     inputString = document.getElementById("txtInputAndResult").value;
-    inputString = inputString.substring(0, inputString.length - 1);
+    inputString = inputString.substring(0, inputString.length);
     document.getElementById("txtInputAndResult").value = inputString;
     document.getElementById("btnMultiplication").click();
   }
@@ -508,9 +522,10 @@ function calculate(inputString)
     {
       result = result + operand;
     }
+    
     ctr = ctr + 2;
   }
-	
+
   inputString = inputString.join(" ");
   document.getElementById("txtInputAndResult").value = inputString + result;
 }
