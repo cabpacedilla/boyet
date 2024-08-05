@@ -3,8 +3,6 @@
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # June 2024
 
-#!/usr/bin/env bash
-
 # Define file paths
 RECENT_FILES_LIST=~/scriptlogs/recentFiles.txt
 TAIL_LIST=~/scriptlogs/reverseRecent.txt
@@ -13,46 +11,82 @@ RECENTLY_XBEL_FILE=~/.local/share/recently-used.xbel
 # Infinite loop to continuously check recent files
 while true; do
 
-  # Extract recent file paths from the recently-used.xbel file
-  RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $2}' "$RECENTLY_XBEL_FILE" | sed 's/%20/ /g')
-  
-  # Save recent files to RECENT_FILES_LIST
-  echo "$RECENT_FILES" > "$RECENT_FILES_LIST"
+	# Ensure the recently-used.xbel file exists
+	if [[ ! -f "$RECENTLY_XBEL_FILE" ]]; then
+	  echo "File $RECENTLY_XBEL_FILE does not exist."
+	  exit 1
+	fi
 
-  # Get the last few recent files (the most recent 40 files)
-  RECENT_FILES_LAST_40=$(tail -n 40 "$RECENT_FILES_LIST")
+	# Extract recent file paths from the recently-used.xbel file and cleanup path percent encoding
+	#RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $2}' "$RECENTLY_XBEL_FILE" | sed 's/%20/ /g')
+	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $2}' "$RECENTLY_XBEL_FILE" | 
+	sed -e 's/%20/ /g' \
+	-e 's/%2F/ /g' \
+	-e 's/%3A/ /g' \
+	-e 's/%2C/ /g' \
+	-e 's/%3F/ /g' \
+	-e 's/%23/ /g' \
+	-e 's/%26/ /g' \
+	-e 's/%2B/ /g' \
+	-e 's/%3D/ /g' \
+	-e 's/%40/ /g' \
+	-e 's/%2D/ /g' \
+	-e 's/%28/ /g' \
+	-e 's/%29/ /g' \
+	-e 's/%25/ /g' \
+	-e 's/%5B/ /g' \
+	-e 's/%5D/ /g' \
+	-e 's/%7B/ /g' \
+	-e 's/%7D/ /g' \
+	-e 's/%7E/ /g' \
+	-e 's/%2A/ /g' \
+	-e 's/%2D/ /g' \
+	-e 's/%2E/ /g' \
+	-e 's/%5C/ /g' )
 
-  # Save the recent 40 files to RECENT_FILES_LIST
-  echo "$RECENT_FILES_LAST_40" > "$RECENT_FILES_LIST"
+	# Save recent files to RECENT_FILES_LIST
+	echo "$RECENT_FILES" > "$RECENT_FILES_LIST"
 
-  # Initialize an array to hold recent files
-  mapfile -t RECENT_FILES_ARRAY < "$RECENT_FILES_LIST"
+	# Get the last few recent files (the most recent 40 files)
+	RECENT_FILES_LAST_40=$(tail -n 40 "$RECENT_FILES_LIST")
 
-  # Add line numbers to the recent files
-  echo "$RECENT_FILES_LAST_40" | nl > "$TAIL_LIST"
-  RECENT_FILES_NUMBERED=$(cat "$TAIL_LIST")
-  echo "$RECENT_FILES_NUMBERED"
+	# Save the recent 40 files to RECENT_FILES_LIST
+	echo "$RECENT_FILES_LAST_40" > "$RECENT_FILES_LIST"
 
-  # Prompt the user to select a file
-  echo "Please provide the sequence number of the accessed file: "
-  read -r SEQUENCE_NUM
+	# Place recent files list to an array 
+	mapfile -t RECENT_FILES_ARRAY < "$RECENT_FILES_LIST"
 
-  # Validate user input
-  if [[ ! "$SEQUENCE_NUM" =~ ^[0-9]+$ ]] || [[ "$SEQUENCE_NUM" -lt 1 ]] || [[ "$SEQUENCE_NUM" -gt "${#RECENT_FILES_ARRAY[@]}" ]]; then
-    notify-send "Invalid input. Please enter a valid sequence number." &
-    continue
-  fi
+	# Check if the array is empty
+	if [ ${#RECENT_FILES_ARRAY[@]} -eq 0 ]; then
+		echo "No recent files found."
+		sleep 5  # Pause for a moment before the next loop iteration
+		continue
+	fi
 
-  # Get the selected file and clean up any escaped characters
-  SELECTED_FILE="${RECENT_FILES_ARRAY[SEQUENCE_NUM - 1]}"
-  SELECTED_FILE=$(echo "$SELECTED_FILE" | sed 's/%20/ /g; s/%2520/ /g' | xargs)
+	# Add line numbers to the recent files and display
+	nl "$RECENT_FILES_LIST" > "$TAIL_LIST"
+	cat "$TAIL_LIST"
 
-  # Check if the file exists before attempting to open it
-  if [ -f "$SELECTED_FILE" ]; then
-    # Open the selected file
-    xdg-open "$SELECTED_FILE" &
-  else
-    notify-send "File does not exist: $SELECTED_FILE" &
-  fi
+	# Prompt the user to select a file
+	echo "Please provide the sequence number of the accessed file: "
+	read -r SEQUENCE_NUM
+
+	# Validate user input
+	if [[ ! "$SEQUENCE_NUM" =~ ^[0-9]+$ ]] || [[ "$SEQUENCE_NUM" -lt 1 ]] || [[ "$SEQUENCE_NUM" -gt "${#RECENT_FILES_ARRAY[@]}" ]]; then
+		notify-send "Invalid input. Please enter a valid sequence number." &
+		continue
+	fi
+
+	# Get the selected file and clean up any escaped characters
+	SELECTED_FILE="${RECENT_FILES_ARRAY[SEQUENCE_NUM - 1]}"
+	#~ SELECTED_FILE=$(echo "$SELECTED_FILE" | sed 's/%20/ /g; s/%2520/ /g' | xargs)
+
+	# Check if the file exists before attempting to open it
+	if [[ -f "$SELECTED_FILE" ]]; then
+		# Open the selected file
+		xdg-open "$SELECTED_FILE" &
+	else
+		notify-send "File does not exist: $SELECTED_FILE" &
+	fi
 
 done
