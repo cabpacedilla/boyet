@@ -16,39 +16,46 @@
 # 9. Press the Num Lock key
 # 10. A Num Lock key notification message will be displayed
 
-while true
-do
-# 1. Set key lock values
-CAPS_LOCK=00000001
-NUM_LOCK=00000002
-CAPSNUM_LOCK=00000003
-#NO_LOCK=00000000
+# Define LED mask values for key locks
+CAPS_LOCK="00000001"
+NUM_LOCK="00000002"
+CAPSNUM_LOCK="00000003"
+NO_LOCK="00000000"
 
-# 2. Get LED mask value for key lock with xset command
-LED_MASK=$(xset q | grep 'LED mask' | awk '{ print $NF }')
+# Function to get LED mask value
+get_led_mask() {
+    xset q | grep 'LED mask' | awk '{ print $NF }'
+}
 
-if [ "$(echo $?)" != "0" ]; then
-	sleep 
-fi	
+# Main loop
+while true; do
+    LED_MASK=$(get_led_mask)
 
-# 3. Compare LED_MASK to key lock values
-case "$LED_MASK" in
-	"$CAPS_LOCK")
-		notify-send -t 9000 --app-name "Key lock:" "Caps lock is on."
-		;;
-		
-	"$NUM_LOCK")
-		notify-send -t 9000 --app-name "Key lock:" "Num lock is on."
-		;;
-		
-	"$CAPSNUM_LOCK")
-		notify-send -t 9000 --app-name "Key lock:" "Caps lock and Num lock are on."
-		;;
-		
-	*)
-		:
-		;;
-esac
+    # Check if the LED mask command was successful
+    if [ $? -ne 0 ]; then
+        sleep 10
+        continue
+    fi
 
-sleep 10
-done      
+    # Notify based on LED mask value
+    case "$LED_MASK" in
+        "$CAPS_LOCK")
+            notify-send -t 9000 --app-name "Key lock:" "Caps lock is on."
+            ;;
+        "$NUM_LOCK")
+            notify-send -t 9000 --app-name "Key lock:" "Num lock is on."
+            ;;
+        "$CAPSNUM_LOCK")
+            notify-send -t 9000 --app-name "Key lock:" "Caps lock and Num lock are on."
+            ;;
+        "$NO_LOCK")
+            # Do nothing
+            ;;
+        *)
+            # Handle unexpected values
+            ;;
+    esac
+
+    sleep 10
+done
+
