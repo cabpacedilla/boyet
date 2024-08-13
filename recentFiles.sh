@@ -13,7 +13,7 @@ while true; do
 
 	# Ensure the recently-used.xbel file exists
 	if [[ ! -f "$RECENTLY_XBEL_FILE" ]]; then
-	  echo "File $RECENTLY_XBEL_FILE does not exist."
+	  notify-send "File $RECENTLY_XBEL_FILE does not exist." &
 	  exit 1
 	fi
 
@@ -57,7 +57,7 @@ while true; do
 
 	# Check if the array is empty
 	if [ ${#RECENT_FILES_ARRAY[@]} -eq 0 ]; then
-		echo "No recent files found."
+		notify-send "No recent files found." &
 		sleep 5  # Pause for a moment before the next loop iteration
 		continue
 	fi
@@ -76,12 +76,13 @@ while true; do
 		continue
 	fi
 
-	# Get the selected file and clean up any escaped characters
+	# Get the selected file 
 	SELECTED_FILE="${RECENT_FILES_ARRAY[SEQUENCE_NUM - 1]}"
-	#~ SELECTED_FILE=$(echo "$SELECTED_FILE" | sed 's/%20/ /g; s/%2520/ /g' | xargs)
 
-	# Check if the file exists before attempting to open it
-	if [[ -f "$SELECTED_FILE" ]]; then
+	# Check if selected file is a directory or file
+	if [[ -d "$SELECTED_FILE" ]]; then
+		dolphin "$SELECTED_FILE" &
+	elif [[ -f "$SELECTED_FILE" ]]; then
 		# Open the selected file
 		xdg-open "$SELECTED_FILE" &
 	else
