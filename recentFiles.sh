@@ -81,12 +81,12 @@ while true; do
 
 	# Check if selected file is a directory or file
 	if [[ -d "$SELECTED_FILE" ]]; then
+		# Open the folder with a file manager
 		dolphin "$SELECTED_FILE" &
 	elif [[ -f "$SELECTED_FILE" ]]; then
-		# Open the selected file
+		# Open the file with the preferred application
 		xdg-open "$SELECTED_FILE" &
 	else
-		notify-send "File does not exist: $SELECTED_FILE" &
+		notify-send "Path does not exist: $SELECTED_FILE" &
 	fi
-
 done
