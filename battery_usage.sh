@@ -26,7 +26,7 @@ while true; do
 	MESSAGE="$POWER_DATA"
 
 	# Send notification with the top power consumers
-	konsole -e bash -c "echo -e \"Top 10 Power Consumers\n$MESSAGE\"; read -p 'Press enter to close...'" &
+	konsole -e bash -c "echo -e \"Top 10 Power Consumers\n$MESSAGE\n\"; read -p 'Press enter to close...'" &
 
 	# Wait for the specified interval
 	sleep $INTERVAL
