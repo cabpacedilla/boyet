@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Set the interval between each notification in seconds (20 minutes)
-INTERVAL=1200  # 20 minutes
+INTERVAL=3600  # 1 hr
 
 # Start the monitoring
 notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 1 hour."
@@ -21,7 +21,8 @@ while true; do
     MESSAGE="\n$POWER_DATA"
 
     # Send notification with the top power consumers
-    echo -e "Top 10 Power Consumers" "$MESSAGE" &
+    konsole -e bash -c "echo -e \"Top 10 Power Consumers\n$MESSAGE\"; read -p 'Press enter to close...'" &
+
     # Wait for the specified interval (20 minutes)
     sleep $INTERVAL
 done
