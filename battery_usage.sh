@@ -21,7 +21,7 @@ while true; do
     MESSAGE="\n$POWER_DATA"
 
     # Send notification with the top power consumers
-    echo -e "Top 10 Power Consumers" "$MESSAGE"
+    echo -e "Top 10 Power Consumers" "$MESSAGE" &
     # Wait for the specified interval (20 minutes)
     sleep $INTERVAL
 done
