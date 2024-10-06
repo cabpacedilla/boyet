@@ -4,7 +4,7 @@
 INTERVAL=1200  # 20 minutes
 
 # Start the monitoring
-notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 20 minutes."
+notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 1 hour."
 
 # Infinite loop for monitoring
 while true; do
