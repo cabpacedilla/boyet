@@ -9,13 +9,13 @@ notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 1 
 # Infinite loop for monitoring
 while true; do
     # Get power consumption data from powertop
-    sudo powertop --html=powertop.html &>/dev/null 
+    sudo powertop --html=powertop.html
 
 	# Extract top power consumers from the HTML file
-	POWER_DATA=$(grep -A 10 "Top 10 Power Consumers" powertop.html | \
+	POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
 	grep "<tr" | \
 	awk -F '>' '{gsub(/<\/t[dh]/, "", $9); gsub(/<\/t[dh]/, "", $11); printf "%-8s %s\n", $11, $9}' | \
-	head -n 10)
+	head -n 12)
 	
 	# Check if POWER_DATA is empty
     if [ -z "$POWER_DATA" ]; then
