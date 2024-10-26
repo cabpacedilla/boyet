@@ -1,18 +1,29 @@
 run_session.sh
 #!/usr/bin/bash
 
-UNIQAPPS=~/bin/uniq_apps.txt
+UNIQAPPS=~/Documents/bin/uniq_apps.txt
 
-while read -r  line; do 
-	if [ "${line}" = "/usr/bin/lxqt-panel" ]; then
-		:
-	else
-		"${line}" &
-	fi                             
-done  < "$UNIQAPPS"
- 
+while read -r line; do 
+    line=$(echo "$line" | sed 's/[[:space:]]*$//')  # Trim trailing spaces
+    echo "$line"
+    if [ "${line}" = "konsole -e /home/claiveapa/Documents/bin/recentFiles.sh" ] || 
+       [ "${line}" = "/usr/bin/plasmashell --no-respawn" ]; then
+        :
+    elif [ "${line}" = "/usr/bin/vlc --started-from-file" ]; then
+        vlc &>/dev/null &	
+    elif [ "${line}" = "/usr/bin/python3 /usr/bin/catfish" ]; then
+        catfish &>/dev/null &
+    elif [ "${line}" = "/usr/bin/simplescreenrecorder --logfile" ]; then
+        simplescreenrecorder &>/dev/null &
+    elif [ "${line}" = "/usr/lib64/libreoffice/program/soffice.bin --writer --splash-pipe=5" ]; then
+        /usr/lib64/libreoffice/program/soffice.bin --writer &>/dev/null &
+    elif [ "${line}" = "/usr/lib64/libreoffice/program/soffice.bin --calc --splash-pipe=5" ]; then
+        /usr/lib64/libreoffice/program/soffice.bin --calc &>/dev/null &
+    else
+        eval "${line}"  &>/dev/null &  # Use eval to run the command
+    fi                             
+done < "$UNIQAPPS"
 save_session.sh &
-
 
 save_session.sh
 #!/usr/bin/bash
@@ -46,7 +57,7 @@ if [ $(echo $?) = "0" ]; then
 	:
 else
 	cat "$NEW_APPS" > "$LAST_APPS" 
-	sort "$LAST_APPS" | uniq > "$UNIQ_APPS"      
+	sort "$LAST_APPS" > "$UNIQ_APPS"      
 fi
 
 sleep 2s 
