@@ -2,6 +2,7 @@
 # This script is used to monitor and access recently used files
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # June 2024
+# call script to launch in a terminal konsole -e /home/claiveapa/Documents/bin/recentFiles.sh
 
 # Define file paths
 RECENT_FILES_LIST=~/scriptlogs/recentFiles.txt
