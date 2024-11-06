@@ -22,7 +22,8 @@ while true; do
         # Extract top power consumers from the HTML file
         POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
         grep "<tr" | \
-        awk -F '>' '{gsub(/<\/t[dh]/, "", $9); gsub(/<\/t[dh]/, "", $11); printf "%-8s %s\n", $11, $9}' | \
+        awk -F '>' '{gsub(/<\/t[dh]/, "", $3); gsub(/<\/t[dh]/, "", $5); gsub(/<\/t[dh]/, "", $7); gsub(/<\/t[dh]/, "", $9); \
+        printf "%-8s %-8s %-10s %s\n", $3, $5, $7, $9}' | \
         head -n 12)
         
         # Check if POWER_DATA is empty
