@@ -9,7 +9,7 @@ while true; do
     # Calculate CPU usage by subtracting idle CPU from 100
     CPU_USAGE=$(echo "100 - $IDLE_CPU" | bc)
 
-    # Check if CPU usage is below the threshold (i.e., system is under load)
+    # Check if CPU usage is below the threshold (i.e., system is over load)
     if (( $(echo "$CPU_USAGE < $CPU_THRESHOLD" | bc -l) )); then
         # List processes consuming more than the threshold CPU usage
         konsole -e bash -c "echo -e \"Top 10 CPU Consumers:\n\$(ps --sort=-%cpu -eo pid,%cpu,comm | head -n 11)\n\"; read -p 'Press enter to close...'" &
