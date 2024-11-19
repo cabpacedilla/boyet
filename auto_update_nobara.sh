@@ -42,6 +42,6 @@ while true; do
         rm -f "$LIST.tmp"
     fi
     
-    # Sleep for 2 hours before checking again
+    # Sleep for 8 hours before checking again
     sleep 8h
 done
