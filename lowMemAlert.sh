@@ -23,8 +23,9 @@ MEMFREE=$(free -m | awk 'NR==2 {print $7}')
 # 3. Check if free memory is less or equals to desired low free memory space in megabytes
 if [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then    
    # 4. get top processes consuming system memory and show notification with the top 10 memory consuming processes
-   TOP_PROCESSES=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head)
-   konsole -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes: \n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+   TOP_PROCESSES=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 10)
+  
+	konsole -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes: \n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
 fi
 
 # 4. sleep for 30 seconds
