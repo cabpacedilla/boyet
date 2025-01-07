@@ -3,7 +3,7 @@
 # Function to check if media is playing
 is_media_playing() {
 	#~ MEDIA_PLAY=$(pacmd list-sink-inputs | grep -w "RUNNING" | awk '{ print $2 }')
-    pactl list | grep -w "RUNNING" | awk '{ print $2 }'
+    MEDIA_PLAY=$(pactl list | grep -w "RUNNING" | awk '{ print $2 }')
 }
 
 # Main loop
