@@ -1,31 +1,32 @@
-run_session.sh
+run_session.sh script
 #!/usr/bin/bash
+UNIQAPPS=~/bin/uniq_apps.txt
 
-UNIQAPPS=~/Documents/bin/uniq_apps.txt
+# Check if the file exists and is not empty
+if [ ! -s "$UNIQAPPS" ]; then
+    :
+fi
+
+launch_app() {
+    nohup "$@" > /dev/null 2>&1 &
+    # Add small delay between launches
+    sleep 0.5  
+}
 
 while read -r line; do 
     line=$(echo "$line" | sed 's/[[:space:]]*$//')  # Trim trailing spaces
     echo "$line"
-    if [ "${line}" = "konsole -e /home/claiveapa/Documents/bin/recentFiles.sh" ] || 
-       [ "${line}" = "/usr/bin/plasmashell --no-respawn" ]; then
+    if [ "${line}" = "/usr/bin/lxqt-panel" ] || [ "${line}" = "/usr/bin/lxqt-leave --logout" ] || [ "${line}" = "/usr/bin/lxqt-leave --reboot" ] || [ "${line}" = "/usr/bin/lxqt-leave --shutdown" ] || [ "${line}" = "/usr/bin/lxqt-leave --suspend" ]; then
         :
-    elif [ "${line}" = "/usr/bin/vlc --started-from-file" ]; then
-        vlc &>/dev/null &	
-    elif [ "${line}" = "/usr/bin/python3 /usr/bin/catfish" ]; then
-        catfish &>/dev/null &
-    elif [ "${line}" = "/usr/bin/simplescreenrecorder --logfile" ]; then
-        simplescreenrecorder &>/dev/null &
-    elif [ "${line}" = "/usr/lib64/libreoffice/program/soffice.bin --writer --splash-pipe=5" ]; then
-        /usr/lib64/libreoffice/program/soffice.bin --writer &>/dev/null &
-    elif [ "${line}" = "/usr/lib64/libreoffice/program/soffice.bin --calc --splash-pipe=5" ]; then
-        /usr/lib64/libreoffice/program/soffice.bin --calc &>/dev/null &
     else
-        eval "${line}"  &>/dev/null &  # Use eval to run the command
+        eval "${line}"  &>/dev/null &
     fi                             
 done < "$UNIQAPPS"
+
+# Run save_session.sh from the current directory
 save_session.sh &
 
-save_session.sh
+save_session.sh script
 #!/usr/bin/bash
 while true; do
 
