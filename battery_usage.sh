@@ -30,12 +30,9 @@ while true; do
         if [ -z "$POWER_DATA" ]; then
             continue
         fi
-
-        # Prepare the notification message
-        MESSAGE="$POWER_DATA"
-
+        
         # Send notification with the top power consumers in a Konsole window
-        konsole -e bash -c "echo -e \"Top 10 Power Consumers\n$MESSAGE\n\"; read -p 'Press enter to close...'" &
+        gnome-terminal --execute bash -c "echo -e \"Top 10 Power Consumers\n$POWER_DATA\n\"; read -p 'Press enter to close...'" &
     fi
 
     # Wait for the specified interval (1 hour) before running the next check
