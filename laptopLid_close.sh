@@ -18,36 +18,45 @@
 # 12. xscreensaver will ask for password
 
 #!/usr/bin/bash
+# Pre-requisite: 
+# Install xscreensaver and run xscreensaver at startup
+
+# Path to lid state file
+LID_PATH="/proc/acpi/button/lid/LID0/state"
+BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
+OPTIMAL=4095
+
+# Function to check if HDMI is connected
+check_hdmi() {
+    local HDMI_DETECT
+    HDMI_DETECT=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
+    echo "$HDMI_DETECT"
+}
+
+# Function to get the lid state
+get_lid_state() {
+    local LID_STATE
+    if [ -f "$LID_PATH" ]; then
+        LID_STATE=$(awk '{print $2}' < "$LID_PATH")
+    fi
+    echo "$LID_STATE"
+}
+
+# Main loop
 while true; do
-
-LID_PATH=/proc/acpi/button/lid/LID0/state
-HDMI_DETECT=$(xrandr |grep ' connected' |grep 'HDMI' |awk '{print $1}')
-
-## 1. Set for open state
-OPEN_STATE="open"
-
-## 2. Get laptop lid state
-LID_STATE=$(cat $LID_PATH | awk '{print $2}')
-
-if [ "$(echo $?)" != "0" ]; then
-	break
-fi
-
-## 3. Lock and suspend if lid is close and do nothing otherwise
-if [ "$LID_STATE" = "$OPEN_STATE" ]; then
-	:
-else
-	if [ -n "$HDMI_DETECT" ]; then
+    # Check lid state and HDMI connection
+    if [ "$(get_lid_state)" == "closed" ] && [ -z  "$(check_hdmi)" ]; then
+        # Lock screen and suspend if no HDMI is connected and lid is closed
+        echo $OPTIMAL | sudo tee $BRIGHT_PATH
+        #xscreensaver-command --lock
+        systemctl suspend
+    else
 		:
-	else
-		sudo echo 1000 | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
-		xscreensaver-command --lock
-		systemctl suspend
-	fi
-fi
+    fi
 
-sleep 0.1s
+    sleep 0.1
 done
+
 
 
 
