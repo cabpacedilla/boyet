@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Set the interval between each notification in seconds (20 minutes)
-INTERVAL=3600  # 1 hr
-
 # Start the monitoring
 notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &
 
@@ -17,7 +14,7 @@ while true; do
         first_run=false
     else
         # Get power consumption data from powertop
-        sudo powertop --html=powertop.html
+        sudo powertop --time=3600 --html=powertop.html
 
         # Extract top power consumers from the HTML file
         POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
@@ -25,16 +22,13 @@ while true; do
         awk -F '>' '{gsub(/<\/t[dh]/, "", $3); gsub(/<\/t[dh]/, "", $5); gsub(/<\/t[dh]/, "", $7); gsub(/<\/t[dh]/, "", $9); \
         printf "%-8s %-8s %-10s %s\n", $3, $5, $7, $9}' | \
         head -n 12)
-        
+
         # Check if POWER_DATA is empty
         if [ -z "$POWER_DATA" ]; then
             continue
         fi
-        
-        # Send notification with the top power consumers in a Konsole window
-        gnome-terminal --execute bash -c "echo -e \"Top 10 Power Consumers\n$POWER_DATA\n\"; read -p 'Press enter to close...'" &
-    fi
 
-    # Wait for the specified interval (1 hour) before running the next check
-    sleep $INTERVAL
+        # Send notification with the top power consumers in a Konsole window
+        konsole -e bash -c "echo -e \"Top 10 Power Consumers\n$POWER_DATA\n\"; read -p 'Press enter to close...'" &
+    fi
 done
