@@ -20,7 +20,7 @@ while true; do
         POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
         grep "<tr" | \
         awk -F '>' '{gsub(/<\/t[dh]/, "", $3); gsub(/<\/t[dh]/, "", $5); gsub(/<\/t[dh]/, "", $7); gsub(/<\/t[dh]/, "", $9); \
-        printf "%-8s %-8s %-10s %s\n", $3, $5, $7, $9}' | \
+        printf "%-8s %-10s %-10s %s\n", $3, $5, $7, $9}' | \
         head -n 11)
 
         # Check if POWER_DATA is empty
