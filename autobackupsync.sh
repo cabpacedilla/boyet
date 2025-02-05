@@ -1,7 +1,7 @@
 #!/usr/bin/sh
 # Set user in /etc/sudoers file without providing password with rsync command
 # add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
-ORIGIN=$HOME/Documents/
+ORIGIN=~/Documents/
 DESTINATION=/run/media/claiveapa/Data/claive/Documents/nobara/
 while inotifywait -r -e modify,create $ORIGIN; do
 	TIME=$(date +"%I:%M %p")
