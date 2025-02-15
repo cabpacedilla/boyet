@@ -32,7 +32,7 @@ while true; do
 
                 # First attempt to upgrade
                 if sudo dnf upgrade --refresh --no-best -y; then
-                    notify-send "Auto-updates" "Auto-removing unused packages"
+                    notify-send "Auto-updates:" "Auto-removing and auto-cleaning package updates"
                     sudo dnf -y autoremove
                     sudo dnf clean all
                     notify-send "Auto-updates" "$UPGRADES packages were updated.\nSystem is up to date."
