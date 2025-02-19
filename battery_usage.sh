@@ -14,12 +14,13 @@ while true; do
         first_run=false
     else
         # Get power consumption data from powertop
-        sudo powertop --time=3600 --html=powertop.html
+        sudo powertop --time=1 --html=powertop.html
 
         # Extract top power consumers from the HTML file
         POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
         grep "<tr" | \
         awk -F '>' '{gsub(/<\/t[dh]/, "", $3); gsub(/<\/t[dh]/, "", $5); gsub(/<\/t[dh]/, "", $7); gsub(/<\/t[dh]/, "", $9); \
+        if (length($9) > 119) $9 = substr($9, 1, 116) "..."; \
         printf "%-8s %-10s %-10s %s\n", $3, $5, $7, $9}' | \
         head -n 11)
 
