@@ -13,17 +13,18 @@
 # 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
 # 8. Low memory alert message will be displayed
 
+#!/usr/bin/bash
 while true; do
 # 1. Set memory free limit
-MEMFREE_LIMIT=922
+MEMFREE_LIMIT=2048
 	
 # 2. Get total free memory size in megabytes(MB) 
 MEMFREE=$(free -m | awk 'NR==2 {print $7}')
 
 # 3. Check if free memory is less or equals to desired low free memory space in megabytes
-if [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then    
+if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then    
    # 4. get top processes consuming system memory and show notification with the top 10 memory consuming processes
-   TOP_PROCESSES=$(ps -eo pid,ppid,cmd,%mem,%cpu --sort=-%mem | head -n 10)
+   TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
   
 	konsole -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes: \n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
 fi
@@ -31,4 +32,5 @@ fi
 # 4. sleep for 30 seconds
 sleep 30
 done
+
 
