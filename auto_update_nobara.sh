@@ -3,8 +3,6 @@
 # Modified from original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available.
 
-#!/bin/bash
-
 LOGFILE=~/scriptlogs/update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
 
