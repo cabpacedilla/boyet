@@ -3,7 +3,13 @@
 # Modified from original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and includes security updates of pinned packages.
 # Steps
-# Add the script in autostart after saving.
+# 1. Create a bin directory inside your home directory
+# 2. Add the bin PATH in ~/.profile on the export PATH line: export PATH="$PATH:~/bin"
+# 3. Change directory to the bin directory
+# 4. Create the bash script file below with nano or gedit and save it with a filename like autoupdate_debian.sh
+# 5. Make file executable with chmod +x autoupdate_debian.sh command
+# 6. Create the update log and upgradeable list files in a scrtiptlogs folder in home directory
+# 6. Add the autoupdate_debian.sh command in Startup applications
 
 LOGFILE=~/scriptlogs/update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
