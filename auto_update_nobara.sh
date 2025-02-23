@@ -34,7 +34,7 @@ pin_packages() {
 check_security_updates() {
     SEC_UPDATES_PINNED_PKGS=()  # Clear the array before checking
     for pkg in "${PINNED_PACKAGES[@]}"; do
-        if sudo dnf --security check-update "$pkg" | grep -q 'Security'; then
+        if sudo dnf check-update --security | grep -q "$pkg" ; then
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Security update available for $pkg" >> "$LOGFILE"
             SEC_UPDATES_PINNED_PKGS+=("$pkg")
         fi
