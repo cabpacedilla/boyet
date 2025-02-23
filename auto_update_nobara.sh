@@ -3,9 +3,15 @@
 # Modified from original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and include security updates of pinned packages.
 
+#!/usr/bin/bash
+# This script will automatically upgrade upgradeable packages in Fedora.
+# Modified from original script by Claive Alvin P. Acedilla.
+# Runs as soon as any updates are available and include security updates of pinned packages.
+
 LOGFILE=~/scriptlogs/update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
 PINNED_PACKAGES=("vim" "gimp" "falkon" "geany" "libreoffice" "audacity" "inkscape")
+SEC_UPDATES_PINNED_PKGS=()
 
 # Function to clean up temporary files
 cleanup() {
@@ -26,13 +32,20 @@ pin_packages() {
 
 # Function to check for security updates
 check_security_updates() {
+    SEC_UPDATES_PINNED_PKGS=()  # Clear the array before checking
     for pkg in "${PINNED_PACKAGES[@]}"; do
         if sudo dnf --security check-update "$pkg" | grep -q 'Security'; then
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Security update available for $pkg" >> "$LOGFILE"
-            return 0  # Security update found
+            SEC_UPDATES_PINNED_PKGS+=("$pkg")
         fi
     done
-    return 1  # No security updates found
+
+    if [ ${#SEC_UPDATES_PINNED_PKGS[@]} -gt 0 ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}" >> "$LOGFILE"
+        return 0  # Security update found
+    else
+        return 1  # No security updates found
+    fi
 }
 
 while true; do
@@ -54,8 +67,8 @@ while true; do
 
             # Unpin packages if there are security updates
             if check_security_updates; then
+                notify-send "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying security updates for pinned packages..."
                 unpin_packages
-                notify-send "Security Updates" "Security updates available. Applying updates..."
                 sudo dnf upgrade --security -y 2>> "$LOGFILE"
                 notify-send "Security Updates" "Security updates applied successfully."
                 pin_packages
@@ -87,4 +100,5 @@ while true; do
 
     sleep 1h  # Wait before next check
 done
+
 
