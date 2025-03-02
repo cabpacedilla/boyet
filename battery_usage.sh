@@ -35,7 +35,7 @@ while true; do
         grep "<tr" | \
         awk -F '>' '{gsub(/<\/t[dh]/, "", $3); gsub(/<\/t[dh]/, "", $5); gsub(/<\/t[dh]/, "", $7); gsub(/<\/t[dh]/, "", $9); \
         if (length($9) > 119) $9 = substr($9, 1, 112) "..."; \
-        printf "%-12s %-10s %-10s %s\n", $3, $5, $7, $9}' | \
+        printf "%-14s %-10s %-10s %s\n", $3, $5, $7, $9}' | \
         head -n 11)
 
         # Check if POWER_DATA is empty
