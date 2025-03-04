@@ -16,7 +16,7 @@
 #!/usr/bin/bash
 while true; do
     # 1. Set memory free percentage limit
-    MEMFREE_PERCENTAGE_LIMIT=15
+    MEMFREE_PERCENTAGE_LIMIT=10
 
     # 2. Get total memory and free memory size in megabytes (MB)
     TOTAL_MEM=$(free -m | awk 'NR==2 {print $2}')
