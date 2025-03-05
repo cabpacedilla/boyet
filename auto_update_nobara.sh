@@ -1,12 +1,7 @@
 #!/usr/bin/bash
 # This script will automatically upgrade upgradeable packages in Fedora.
 # Modified from original script by Claive Alvin P. Acedilla.
-# Runs as soon as any updates are available and include security updates of pinned packages.
-
-#!/usr/bin/bash
-# This script will automatically upgrade upgradeable packages in Fedora.
-# Modified from original script by Claive Alvin P. Acedilla.
-# Runs as soon as any updates are available and include security updates of pinned packages.
+# Runs as soon as any updates are available and includes security updates of pinned packages.
 
 LOGFILE=~/scriptlogs/update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
@@ -74,8 +69,9 @@ while true; do
                 pin_packages
             fi
 
-            # First attempt to upgrade
-            if sudo dnf upgrade --refresh --no-best -y 2>> "$LOGFILE"; then
+            # Exclude pinned packages from general upgrade
+            EXCLUDE_PKGS=$(IFS=, ; echo "${PINNED_PACKAGES[*]}")  # Join the pinned package names with commas
+            if sudo dnf upgrade --refresh --no-best --exclude=$EXCLUDE_PKGS -y 2>> "$LOGFILE"; then
                 notify-send "Auto-updates" "Auto-removing unused packages"
                 sudo dnf -y autoremove 2>> "$LOGFILE"
                 sudo dnf clean all 2>> "$LOGFILE"
@@ -100,5 +96,3 @@ while true; do
 
     sleep 1h  # Wait before next check
 done
-
-
