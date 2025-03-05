@@ -5,8 +5,7 @@
 
 LOGFILE=~/scriptlogs/update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
-PINNED_PACKAGES=("vim" "gimp" "falkon" "geany" "libreoffice" "audacity" "inkscape")
-SEC_UPDATES_PINNED_PKGS=()
+PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
 
 # Function to clean up temporary files
 cleanup() {
@@ -27,7 +26,7 @@ pin_packages() {
 
 # Function to check for security updates
 check_security_updates() {
-    SEC_UPDATES_PINNED_PKGS=()  # Clear the array before checking
+    local SEC_UPDATES_PINNED_PKGS=()
     for pkg in "${PINNED_PACKAGES[@]}"; do
         if sudo dnf check-update --security | grep -q "$pkg" ; then
             echo "$(date '+%Y-%m-%d %H:%M:%S') - Security update available for $pkg" >> "$LOGFILE"
@@ -51,38 +50,64 @@ while true; do
     CHECK_EXIT=$?
 
     if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
+        # Process the temporary list
         sed '1,2d' "$LIST.tmp" | grep -v '^$' > "$LIST"
         UPGRADES=$(wc -l < "$LIST")
 
         if [ "$UPGRADES" -gt 0 ]; then
-            NOTIFY_PACKAGES=$(awk '{printf "%s %s\n", $1, $2}' "$LIST")
-
-            notify-send "Auto-updates" "Updates available:\n${NOTIFY_PACKAGES}"
-            notify-send "Auto-updates" "Starting update process..."
+            # Call the function to filter pinned packages
+            FILTERED_LIST=""
 
             # Unpin packages if there are security updates
             if check_security_updates; then
                 notify-send "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying security updates for pinned packages..."
                 unpin_packages
                 sudo dnf upgrade --security -y 2>> "$LOGFILE"
-                notify-send "Security Updates" "Security updates applied successfully."
+                notify-send "Security Updates" "Security updates of pinned packages applied successfully."
                 pin_packages
+            else
+                notify-send "Auto-updates" "No security updates of pinned pacakges found."
             fi
 
-            # Exclude pinned packages from general upgrade
-            EXCLUDE_PKGS=$(IFS=, ; echo "${PINNED_PACKAGES[*]}")  # Join the pinned package names with commas
-            if sudo dnf upgrade --refresh --no-best --exclude=$EXCLUDE_PKGS -y 2>> "$LOGFILE"; then
-                notify-send "Auto-updates" "Auto-removing unused packages"
-                sudo dnf -y autoremove 2>> "$LOGFILE"
-                sudo dnf clean all 2>> "$LOGFILE"
-                notify-send "Auto-updates" "$UPGRADES packages were updated.\nSystem is up to date."
+            while read -r line; do
+                include=true
+                for pinned in "${PINNED_PACKAGES[@]}"; do
+                    # Check if the package name matches any pinned package
+                    if echo "$line" | grep -q "$pinned"; then
+                        include=false
+                        break
+                    fi
+                done
+                if [ "$include" = true ]; then
+                    FILTERED_LIST+="$line"$'\n'
+                fi
+            done < "$LIST"  # Make sure we are reading the contents of $LIST (not the file path)
 
-                echo "$(date '+%Y-%m-%d %H:%M:%S') - Updated Packages:" >> "$LOGFILE"
-                awk '{printf "%s %s\n", $1, $2}' "$LIST" >> "$LOGFILE"
-                echo "-----------------------------------" >> "$LOGFILE"
+            # Log filtered packages for debugging
+            echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE"
+
+            # If there are any packages to upgrade, proceed
+            if [ -n "$FILTERED_LIST" ]; then
+                NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
+                notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
+                notify-send "Auto-updates" "Starting update process..."
+
+                # Perform the upgrade for non-pinned packages
+                if sudo dnf upgrade --refresh --no-best -y $(echo "$FILTERED_LIST" | awk '{print $1}') 2>> "$LOGFILE"; then
+                    notify-send "Auto-updates" "Auto-removing unused packages"
+                    sudo dnf -y autoremove 2>> "$LOGFILE"
+                    sudo dnf clean all 2>> "$LOGFILE"
+                    notify-send "Auto-updates" "Non-security upgrades applied successfully."
+
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Updated Packages:" >> "$LOGFILE"
+                    echo "$FILTERED_LIST" >> "$LOGFILE"
+                    echo "-----------------------------------" >> "$LOGFILE"
+                else
+                    notify-send "Auto-updates" "Upgrade failed! Check $LOGFILE."
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Upgrade failed!" >> "$LOGFILE"
+                fi
             else
-                notify-send "Auto-updates" "Upgrade failed! Check $LOGFILE."
-                echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Upgrade failed!" >> "$LOGFILE"
+                notify-send "Auto-updates" "No packages to upgrade."
             fi
         fi
     elif [ $CHECK_EXIT -eq 0 ]; then
