@@ -86,7 +86,7 @@ while true; do
 
             # Notify-send the content of $LIST
             NOTIFY_PACKAGES=$(cat "$LIST")
-            notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
+            notify-send "Updates of pinned packages" "$NOTIFY_PACKAGES"
 
             # Log filtered packages for debugging
             echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE"
