@@ -56,6 +56,7 @@ while true; do
 
         if [ "$UPGRADES" -gt 0 ]; then
             # Call the function to filter pinned packages
+            # Call the function to filter pinned packages
             FILTERED_LIST=""
 
             # Unpin packages if there are security updates
@@ -66,7 +67,7 @@ while true; do
                 notify-send "Security Updates" "Security updates of pinned packages applied successfully."
                 pin_packages
             else
-                notify-send "Auto-updates" "No security updates of pinned pacakges found."
+                notify-send "Auto-updates" "No security updates of pinned packages found."
             fi
 
             while read -r line; do
@@ -82,6 +83,10 @@ while true; do
                     FILTERED_LIST+="$line"$'\n'
                 fi
             done < "$LIST"  # Make sure we are reading the contents of $LIST (not the file path)
+
+            # Notify-send the content of $LIST
+            NOTIFY_PACKAGES=$(cat "$LIST")
+            notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
 
             # Log filtered packages for debugging
             echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE"
