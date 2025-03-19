@@ -1,11 +1,14 @@
 #!/usr/bin/bash
 # This script will automatically upgrade upgradeable packages in Fedora.
-# Modified from original script by Claive Alvin P. Acedilla.
+# Modified from the original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and includes security updates of pinned packages.
 
-LOGFILE=~/scriptlogs/update_log.txt
+LOGFILE_GENERAL=~/scriptlogs/general_update_log.txt
+LOGFILE_PINNED=~/scriptlogs/pinned_update_log.txt
+SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
 PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
+NON_SECURITY_COUNT=0
 
 # Function to clean up temporary files
 cleanup() {
@@ -28,15 +31,15 @@ pin_packages() {
 check_security_updates() {
     local SEC_UPDATES_PINNED_PKGS=()
     for pkg in "${PINNED_PACKAGES[@]}"; do
-        if sudo dnf check-update --security | grep -q "$pkg" ; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - Security update available for $pkg" >> "$LOGFILE"
+        if sudo dnf check-update --security | grep -q "$pkg"; then
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Security update available for $pkg" >> "$SEC_LOGFILE_PINNED"
             SEC_UPDATES_PINNED_PKGS+=("$pkg")
         fi
     done
 
     if [ ${#SEC_UPDATES_PINNED_PKGS[@]} -gt 0 ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}" >> "$LOGFILE"
-        return 0  # Security update found
+       # echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}" >> "$LOGFILE_PINNED"
+        echo "${SEC_UPDATES_PINNED_PKGS[@]}"  # Security update found
     else
         return 1  # No security updates found
     fi
@@ -46,6 +49,7 @@ while true; do
     notify-send "Auto-updates" "Checking system updates."
 
     # Check for updates and store in temp file, skipping first two lines
+    sudo dnf update nobara-updater --refresh
     sudo dnf check-update > "$LIST.tmp"
     CHECK_EXIT=$?
 
@@ -55,15 +59,13 @@ while true; do
         UPGRADES=$(wc -l < "$LIST")
 
         if [ "$UPGRADES" -gt 0 ]; then
-            # Call the function to filter pinned packages
-            # Call the function to filter pinned packages
             FILTERED_LIST=""
 
             # Unpin packages if there are security updates
             if check_security_updates; then
-                notify-send "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying security updates for pinned packages..."
+                notify-send "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying security updates of pinned packages..."
                 unpin_packages
-                sudo dnf upgrade --security -y 2>> "$LOGFILE"
+                sudo dnf upgrade --security -y
                 notify-send "Security Updates" "Security updates of pinned packages applied successfully."
                 pin_packages
             else
@@ -76,20 +78,23 @@ while true; do
                     # Check if the package name matches any pinned package
                     if echo "$line" | grep -q "$pinned"; then
                         include=false
+                        echo "$(date '+%Y-%m-%d %H:%M:%S') - Pinned package update: $line" >> "$LOGFILE_PINNED"
                         break
                     fi
                 done
                 if [ "$include" = true ]; then
                     FILTERED_LIST+="$line"$'\n'
+                    NON_SECURITY_COUNT=$((NON_SECURITY_COUNT + 1))
                 fi
-            done < "$LIST"  # Make sure we are reading the contents of $LIST (not the file path)
+            done < "$LIST"
 
-            # Notify-send the content of $LIST
-            NOTIFY_PACKAGES=$(cat "$LIST")
-            notify-send "Updates of pinned packages" "$NOTIFY_PACKAGES"
+            # Notify-send the content of general updates for pinned packages
+            NOTIFY_PACKAGES=$(cat "$LOGFILE_PINNED")
+            notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
 
             # Log filtered packages for debugging
-            echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE"
+            echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
+            echo "Number of non-security packages to be updated: $NON_SECURITY_COUNT" >> "$LOGFILE_GENERAL"
 
             # If there are any packages to upgrade, proceed
             if [ -n "$FILTERED_LIST" ]; then
@@ -98,18 +103,18 @@ while true; do
                 notify-send "Auto-updates" "Starting update process..."
 
                 # Perform the upgrade for non-pinned packages
-                if sudo dnf upgrade --refresh --no-best -y $(echo "$FILTERED_LIST" | awk '{print $1}') 2>> "$LOGFILE"; then
+                if sudo dnf upgrade --skip-unavailable -y $(echo "$FILTERED_LIST" | awk '{print $1}') 2>> "$LOGFILE_GENERAL"; then
                     notify-send "Auto-updates" "Auto-removing unused packages"
-                    sudo dnf -y autoremove 2>> "$LOGFILE"
-                    sudo dnf clean all 2>> "$LOGFILE"
-                    notify-send "Auto-updates" "Non-security upgrades applied successfully."
+                    sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"
+                    sudo dnf clean all 2>> "$LOGFILE_GENERAL"
+                    notify-send "Auto-updates" "$NON_SECURITY_COUNT non-security upgrades applied successfully."
 
-                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Updated Packages:" >> "$LOGFILE"
-                    echo "$FILTERED_LIST" >> "$LOGFILE"
-                    echo "-----------------------------------" >> "$LOGFILE"
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Updated Packages:" >> "$LOGFILE_GENERAL"
+                    echo "$FILTERED_LIST" >> "$LOGFILE_GENERAL"
+                    echo "-----------------------------------" >> "$LOGFILE_GENERAL"
                 else
-                    notify-send "Auto-updates" "Upgrade failed! Check $LOGFILE."
-                    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Upgrade failed!" >> "$LOGFILE"
+                    notify-send "Auto-updates" "Upgrade failed! Check $LOGFILE_GENERAL."
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Upgrade failed!" >> "$LOGFILE_GENERAL"
                 fi
             else
                 notify-send "Auto-updates" "No packages to upgrade."
@@ -118,8 +123,8 @@ while true; do
     elif [ $CHECK_EXIT -eq 0 ]; then
         notify-send "Auto-updates" "System is already up to date."
     else
-        notify-send "Auto-updates" "Error checking for updates! See $LOGFILE."
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: dnf check-update failed with exit code $CHECK_EXIT" >> "$LOGFILE"
+        notify-send "Auto-updates" "Error checking for updates! See $LOGFILE_GENERAL."
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: dnf check-update failed with exit code $CHECK_EXIT" >> "$LOGFILE_GENERAL"
     fi
 
     rm -f "$LIST.tmp"  # Ensure temp file cleanup
