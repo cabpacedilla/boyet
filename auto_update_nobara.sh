@@ -8,7 +8,6 @@ LOGFILE_PINNED=~/scriptlogs/pinned_update_log.txt
 SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
 PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
-NON_SECURITY_COUNT=0
 
 # Function to clean up temporary files
 cleanup() {
@@ -47,6 +46,8 @@ check_security_updates() {
 
 while true; do
     notify-send "Auto-updates" "Checking system updates."
+
+    NON_SECURITY_COUNT=0
 
     # Check for updates and store in temp file, skipping first two lines
     sudo dnf update nobara-updater --refresh
