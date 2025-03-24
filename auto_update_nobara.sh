@@ -103,22 +103,48 @@ while true; do
                 notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
                 notify-send "Auto-updates" "Starting update process..."
 
-                # Perform the upgrade for non-pinned packages
-                if sudo dnf upgrade --skip-unavailable -y $(echo "$FILTERED_LIST" | awk '{print $1}') 2>> "$LOGFILE_GENERAL"; then
-                    notify-send "Auto-updates" "Auto-removing unused packages"
-                    sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"
-                    sudo dnf clean all 2>> "$LOGFILE_GENERAL"
-                    notify-send "Auto-updates" "$NON_SECURITY_COUNT non-security upgrades applied successfully."
+                # Process each package one at a time
+                while read -r package; do
+                    CTR=0
+                    # Extract the package name from each line (first word)
+                    package_name=$(echo "$package" | awk -F '.' '{print $1}')
 
-                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Updated Packages:" >> "$LOGFILE_GENERAL"
-                    echo "$FILTERED_LIST" >> "$LOGFILE_GENERAL"
-                    echo "-----------------------------------" >> "$LOGFILE_GENERAL"
+                    # Perform the upgrade for each package
+                    if sudo dnf upgrade --skip-unavailable -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+                        # Verify successful installation
+                        if rpm -q "$package_name" &>/dev/null; then
+                            notify-send "Auto-updates" "$package_name upgraded successfully."
+                            CTR=$((CTR + 1))
+                            if [ "$CTR" -ge "$NON_SECURITY_COUNT" ]; then
+                                break
+                            else
+                                continue
+                            fi
+                        else
+                            notify-send "Auto-updates" "Error: $package_name failed to upgrade. Check logs."
+                        fi
+                    else
+                        notify-send "Auto-updates" "Error during upgrade of $package_name. Check logs."
+                    fi
+                done <<< "$FILTERED_LIST"
+
+                # Remove unused packages
+                if sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"; then
+                    # Notify user about autoremove
+                    notify-send "Auto-updates" "Auto-removed unused packages"
                 else
-                    notify-send "Auto-updates" "Upgrade failed! Check $LOGFILE_GENERAL."
-                    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Upgrade failed!" >> "$LOGFILE_GENERAL"
+                    # Error handling for autoremove
+                    notify-send "Auto-updates" "Error during autoremove. Check logs."
                 fi
-            else
-                notify-send "Auto-updates" "No packages to upgrade."
+
+                # Clean up package manager cache
+                if sudo dnf clean all 2>> "$LOGFILE_GENERAL"; then
+                    # Notify user about cleanup
+                    notify-send "Auto-updates" "Package manager cache cleaned."
+                else
+                    # Error handling for cache cleanup
+                    notify-send "Auto-updates" "Error during cache cleanup. Check logs."
+                fi
             fi
         fi
     elif [ $CHECK_EXIT -eq 0 ]; then
