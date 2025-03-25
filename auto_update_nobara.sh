@@ -108,14 +108,19 @@ while true; do
                     CTR=0
                     # Extract the package name from each line (first word)
                     package_name=$(echo "$package" | awk -F '.' '{print $1}')
+                    if [ "$CTR" -ge "$NON_SECURITY_COUNT" ]; then
+                        break
+                    elif [ "$package_name" = "Obsoleting packages" ] || [ "$package_name" = "" ]; then
+                        continue
+                    fi
 
                     # Perform the upgrade for each package
-                    if sudo dnf upgrade --skip-unavailable --no-best -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+                    if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             notify-send "Auto-updates" "$package_name upgraded successfully."
                             CTR=$((CTR + 1))
-                            if [ "$CTR" -ge "$NON_SECURITY_COUNT" ]; then
+                            if [ "$CTR" -ge "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting packages" ]; then
                                 break
                             else
                                 continue
