@@ -110,7 +110,7 @@ while true; do
                     package_name=$(echo "$package" | awk -F '.' '{print $1}')
 
                     # Perform the upgrade for each package
-                    if sudo dnf upgrade --skip-unavailable -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+                    if sudo dnf upgrade --skip-unavailable --no-best -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             notify-send "Auto-updates" "$package_name upgraded successfully."
