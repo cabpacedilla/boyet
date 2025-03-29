@@ -56,7 +56,8 @@ while true; do
 
     if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
         # Process the temporary list
-        sed '1,2d' "$LIST.tmp" | grep -v '^$' > "$LIST"
+        #sed '1,2d' "$LIST.tmp" | grep -v '^$' > "$LIST"
+        cat "$LIST.tmp" | grep -v '^$' > "$LIST"
         UPGRADES=$(wc -l < "$LIST")
 
         if [ "$UPGRADES" -gt 0 ]; then
