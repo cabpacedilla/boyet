@@ -8,6 +8,17 @@ DISK_IO_THRESHOLD=5    # Disk I/O threshold in MB/s
 LOG_FILE="/home/claiveapa/scriptlogs/abnormal_resource_usage.log"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
 
+is_media_playing() {
+    local MEDIA_PLAY
+    MEDIA_PLAY=$(pactl list | grep -w "RUNNING" | awk '{ print $2 }')
+    if [ -n "$MEDIA_PLAY" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 # Function to check resource usage
 check_resources() {
     local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%id.*/\1/" | awk '{print 100 - $1}')
@@ -16,22 +27,26 @@ check_resources() {
 
     local current_time=$(date +"%Y-%m-%d %H:%M:%S")
 
-    if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
-        notify-send "Abnormal CPU Usage" "$current_time - Abnormal CPU usage: $cpu_usage%"
-        echo "$current_time - Abnormal CPU usage: $cpu_usage%" | sudo tee -a "$LOG_FILE" > /dev/null
-        ps aux --sort=-%cpu | head -n 10 >> "$LOG_FILE"
-    fi
+    if ! is_media_playing; then
+        if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
+            notify-send "Abnormal CPU Usage" "$current_time - Abnormal CPU usage: $cpu_usage%"
+            echo "$current_time - Abnormal CPU usage: $cpu_usage%" | sudo tee -a "$LOG_FILE" > /dev/null
+            ps aux --sort=-%cpu | head -n 10 >> "$LOG_FILE"
+        fi
 
-    if (( $(echo "$mem_usage > $MEMORY_THRESHOLD" | bc -l) )); then
-        notify-send "Abnormal Memory Usage" "$current_time - Abnormal memory usage: $mem_usage%"
-        echo "$current_time - Abnormal CPU usage: $mem_usage%" | sudo tee -a "$LOG_FILE" > /dev/null
-        ps aux --sort=-%mem | head -n 10 >> "$LOG_FILE"
-    fi
+        if (( $(echo "$mem_usage > $MEMORY_THRESHOLD" | bc -l) )); then
+            notify-send "Abnormal Memory Usage" "$current_time - Abnormal memory usage: $mem_usage%"
+            echo "$current_time - Abnormal CPU usage: $mem_usage%" | sudo tee -a "$LOG_FILE" > /dev/null
+            ps aux --sort=-%mem | head -n 10 >> "$LOG_FILE"
+        fi
 
-    if (( $(echo "$disk_io > $DISK_IO_THRESHOLD" | bc -l) )); then
-        notify-send "Abnormal Disk I/O" "$current_time - Abnormal Disk I/O: $disk_io MB/s"
-        echo "$current_time - Abnormal CPU usage: $disk_io%" | sudo tee -a "$LOG_FILE" > /dev/null
-        sudo iotop -boP -n 1 | sudo tee -a "$LOG_FILE" > /dev/null
+        if (( $(echo "$disk_io > $DISK_IO_THRESHOLD" | bc -l) )); then
+            notify-send "Abnormal Disk I/O" "$current_time - Abnormal Disk I/O: $disk_io MB/s"
+            echo "$current_time - Abnormal CPU usage: $disk_io%" | sudo tee -a "$LOG_FILE" > /dev/null
+            sudo iotop -boP -n 1 | sudo tee -a "$LOG_FILE" > /dev/null
+        fi
+    else
+        'echo active > /tmp/sway_idle_status'
     fi
 }
 
