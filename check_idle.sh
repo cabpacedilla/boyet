@@ -5,14 +5,14 @@ IDLE_TIMEOUT=1        # Time in minutes after which the system is considered idl
 CPU_THRESHOLD=10       # CPU usage threshold in percentage
 MEMORY_THRESHOLD=10    # Memory usage threshold in percentage
 DISK_IO_THRESHOLD=5    # Disk I/O threshold in MB/s
-LOG_FILE="~/scriptlogs/abnormal_resource_usage.log"
+LOG_FILE="/home/claiveapa/scriptlogs/abnormal_resource_usage.log"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
 
 # Function to check resource usage
 check_resources() {
     local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%id.*/\1/" | awk '{print 100 - $1}')
     local mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
-    local disk_io=$(iostat -m 1 2 | awk 'NR==4 {print $3+$4}')
+    local disk_io=$(iostat -m 1 2 | awk 'NR==15 {print $3+$4}')
 
     local current_time=$(date +"%Y-%m-%d %H:%M:%S")
 
@@ -31,7 +31,7 @@ check_resources() {
     if (( $(echo "$disk_io > $DISK_IO_THRESHOLD" | bc -l) )); then
         notify-send "Abnormal Disk I/O" "$current_time - Abnormal Disk I/O: $disk_io MB/s"
         echo "$current_time - Abnormal CPU usage: $disk_io%" | sudo tee -a "$LOG_FILE" > /dev/null
-        sudo iotop -boP -n 1 >> "$LOG_FILE"
+        sudo iotop -boP -n 1 | sudo tee -a "$LOG_FILE" > /dev/null
     fi
 }
 
