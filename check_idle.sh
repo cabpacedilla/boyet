@@ -10,7 +10,7 @@ IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
 
 # Function to check resource usage
 check_resources() {
-    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*id, *\([0-9.]*\)%.*/\1" | awk '{print 100 - $1}')
+    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%id.*/\1/" | awk '{print 100 - $1}')
     local mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
     local disk_io=$(iostat -m 1 2 | awk 'NR==4 {print $3+$4}')
 
@@ -60,4 +60,3 @@ while true; do
     check_idle_status
     sleep 60  # Check every minute for idle status
 done
-
