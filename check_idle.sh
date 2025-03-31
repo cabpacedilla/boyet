@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-IDLE_TIMEOUT=10        # Time in minutes after which the system is considered idle
+IDLE_TIMEOUT=60        # Time in minutes after which the system is considered idle
 CPU_THRESHOLD=10       # CPU usage threshold in percentage
 MEMORY_THRESHOLD=10    # Memory usage threshold in percentage
 DISK_IO_THRESHOLD=5    # Disk I/O threshold in MB/s
@@ -18,20 +18,20 @@ check_resources() {
 
     if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
         notify-send "Abnormal CPU Usage" "$current_time - Abnormal CPU usage: $cpu_usage%"
-        sudo echo "$current_time - Abnormal CPU usage: $cpu_usage%" >> "$LOG_FILE"
+        echo "$current_time - Abnormal CPU usage: $cpu_usage%" | sudo tee -a "$LOG_FILE" > /dev/null
         ps aux --sort=-%cpu | head -n 10 >> "$LOG_FILE"
     fi
 
     if (( $(echo "$mem_usage > $MEMORY_THRESHOLD" | bc -l) )); then
         notify-send "Abnormal Memory Usage" "$current_time - Abnormal memory usage: $mem_usage%"
-        sudo echo "$current_time - Abnormal memory usage: $mem_usage%" >> "$LOG_FILE"
+        echo "$current_time - Abnormal CPU usage: $mem_usage%" | sudo tee -a "$LOG_FILE" > /dev/null
         ps aux --sort=-%mem | head -n 10 >> "$LOG_FILE"
     fi
 
     if (( $(echo "$disk_io > $DISK_IO_THRESHOLD" | bc -l) )); then
         notify-send "Abnormal Disk I/O" "$current_time - Abnormal Disk I/O: $disk_io MB/s"
-        sudo echo "$current_time - Abnormal Disk I/O: $disk_io MB/s" >> "$LOG_FILE"
-        iotop -boP -n 1 >> "$LOG_FILE"
+        echo "$current_time - Abnormal CPU usage: $disk_io%" | sudo tee -a "$LOG_FILE" > /dev/null
+        sudo iotop -boP -n 1 >> "$LOG_FILE"
     fi
 }
 
@@ -60,3 +60,4 @@ while true; do
     check_idle_status
     sleep 60  # Check every minute for idle status
 done
+
