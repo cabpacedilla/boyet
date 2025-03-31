@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-IDLE_TIMEOUT=60        # Time in minutes after which the system is considered idle
+IDLE_TIMEOUT=1        # Time in minutes after which the system is considered idle
 CPU_THRESHOLD=10       # CPU usage threshold in percentage
 MEMORY_THRESHOLD=10    # Memory usage threshold in percentage
 DISK_IO_THRESHOLD=5    # Disk I/O threshold in MB/s
