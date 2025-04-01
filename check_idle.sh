@@ -21,11 +21,15 @@ is_media_playing() {
 
 # Function to check resource usage
 check_resources() {
-    local cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%id.*/\1/" | awk '{print 100 - $1}')
-    local mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
-    local disk_io=$(iostat -m 1 2 | awk 'NR==15 {print $3+$4}')
+    local cpu_usage
+    local mem_usage
+    local disk_io
+    local current_time
 
-    local current_time=$(date +"%Y-%m-%d %H:%M:%S")
+    cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%id.*/\1/" | awk '{print 100 - $1}')
+    mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
+    disk_io=$(iostat -m 1 2 | awk 'NR==15 {print $3+$4}')
+    current_time=$(date +"%Y-%m-%d %H:%M:%S")
 
     if ! is_media_playing; then
         if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
