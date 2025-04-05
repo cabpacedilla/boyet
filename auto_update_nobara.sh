@@ -72,18 +72,6 @@ while true; do
                 notify-send "Auto-updates" "No security updates of pinned packages found."
             fi
 
-#             include=true
-#             for pinned in "${PINNED_PACKAGES[@]}"; do
-#                 if grep -q "$pinned" "$LIST" ; then
-#                     include=false
-#                     echo "$(date '+%Y-%m-%d %H:%M:%S') - Pinned package update: $line" >> "$LOGFILE_PINNED"
-#                     break
-#                 elif [ "$include" = true ]; then
-#                     FILTERED_LIST+="$line"$'\n'
-#                     NON_SECURITY_COUNT=$((NON_SECURITY_COUNT + 1))
-#                 fi
-#             done
-
             while read -r line; do
                 include=true
                 for pinned in "${PINNED_PACKAGES[@]}"; do
