@@ -31,7 +31,7 @@ check_security_updates() {
     local SEC_UPDATES_PINNED_PKGS=()
     for pkg in "${PINNED_PACKAGES[@]}"; do
         if sudo dnf check-update --security | grep -q "$pkg"; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - Security update available for $pkg" >> "$SEC_LOGFILE_PINNED"
+            notify-send "Security update available for $pkg"
             SEC_UPDATES_PINNED_PKGS+=("$pkg")
         fi
     done
@@ -67,6 +67,7 @@ while true; do
                 unpin_packages
                 sudo dnf upgrade --security -y
                 notify-send "Security Updates" "Security updates of pinned packages applied successfully."
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]} applied successfully." >> "$SEC_LOGFILE_PINNED"
                 pin_packages
             else
                 notify-send "Auto-updates" "No security updates of pinned packages found."
