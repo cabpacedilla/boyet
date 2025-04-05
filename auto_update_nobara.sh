@@ -37,7 +37,6 @@ check_security_updates() {
     done
 
     if [ ${#SEC_UPDATES_PINNED_PKGS[@]} -gt 0 ]; then
-       # echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}" >> "$LOGFILE_PINNED"
         echo "${SEC_UPDATES_PINNED_PKGS[@]}"  # Security update found
     else
         return 1  # No security updates found
@@ -56,7 +55,6 @@ while true; do
 
     if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
         # Process the temporary list
-        #sed '1,2d' "$LIST.tmp" | grep -v '^$' > "$LIST"
         cat "$LIST.tmp" | grep -v '^$' > "$LIST"
         UPGRADES=$(wc -l < "$LIST")
 
@@ -74,6 +72,18 @@ while true; do
                 notify-send "Auto-updates" "No security updates of pinned packages found."
             fi
 
+#             include=true
+#             for pinned in "${PINNED_PACKAGES[@]}"; do
+#                 if grep -q "$pinned" "$LIST" ; then
+#                     include=false
+#                     echo "$(date '+%Y-%m-%d %H:%M:%S') - Pinned package update: $line" >> "$LOGFILE_PINNED"
+#                     break
+#                 elif [ "$include" = true ]; then
+#                     FILTERED_LIST+="$line"$'\n'
+#                     NON_SECURITY_COUNT=$((NON_SECURITY_COUNT + 1))
+#                 fi
+#             done
+
             while read -r line; do
                 include=true
                 for pinned in "${PINNED_PACKAGES[@]}"; do
@@ -84,6 +94,7 @@ while true; do
                         break
                     fi
                 done
+
                 if [ "$include" = true ]; then
                     FILTERED_LIST+="$line"$'\n'
                     NON_SECURITY_COUNT=$((NON_SECURITY_COUNT + 1))
@@ -120,6 +131,7 @@ while true; do
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             notify-send "Auto-updates" "$package_name upgraded successfully."
+                            echo "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
                             CTR=$((CTR + 1))
                             if [ "$CTR" -ge "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting packages" ]; then
                                 break
@@ -137,7 +149,7 @@ while true; do
                 # Remove unused packages
                 if sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"; then
                     # Notify user about autoremove
-                    notify-send "Auto-updates" "Auto-removed unused packages"
+                    echo "Auto-updates" "Auto-removed unused packages" >> "$LOGFILE_GENERAL"
                 else
                     # Error handling for autoremove
                     notify-send "Auto-updates" "Error during autoremove. Check logs."
@@ -146,7 +158,7 @@ while true; do
                 # Clean up package manager cache
                 if sudo dnf clean all 2>> "$LOGFILE_GENERAL"; then
                     # Notify user about cleanup
-                    notify-send "Auto-updates" "Package manager cache cleaned."
+                    echo "Auto-updates" "Package manager cache cleaned" >> "$LOGFILE_GENERAL"
                 else
                     # Error handling for cache cleanup
                     notify-send "Auto-updates" "Error during cache cleanup. Check logs."
