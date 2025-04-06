@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-IDLE_TIMEOUT=1        # Time in minutes after which the system is considered idle
+IDLE_TIMEOUT=2        # Time in minutes after which the system is considered idle
 CPU_THRESHOLD=10       # CPU usage threshold in percentage
 MEMORY_THRESHOLD=10    # Memory usage threshold in percentage
 DISK_IO_THRESHOLD=5    # Disk I/O threshold in MB/s
@@ -26,7 +26,7 @@ check_resources() {
     local disk_io
     local current_time
 
-    cpu_usage=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%id.*/\1/" | awk '{print 100 - $1}')
+    cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk -F'id,' '{print $1}' | awk '{print 100 - $NF}')
     mem_usage=$(free -m | awk 'NR==2{printf "%.2f", $3*100/$2 }')
     disk_io=$(iostat -m 1 2 | awk 'NR==15 {print $3+$4}')
     current_time=$(date +"%Y-%m-%d %H:%M:%S")
@@ -62,7 +62,7 @@ start_swayidle() {
 
 # Check if the system is idle by reading the status file
 check_idle_status() {
-    if [[ -f "$IDLE_STATUS_FILE" ]]; then
+    if test -f "$IDLE_STATUS_FILE"; then
         idle_status=$(cat "$IDLE_STATUS_FILE")
         if [[ "$idle_status" == "idle" ]]; then
             echo "System is idle. Checking resources..."
