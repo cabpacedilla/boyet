@@ -4,8 +4,9 @@
 # Runs as soon as any updates are available and includes security updates of pinned packages.
 
 LOGFILE_GENERAL=~/scriptlogs/general_update_log.txt
-LOGFILE_PINNED=~/scriptlogs/pinned_update_log.txt
-SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_update_log.txt
+LOGFILE_PINNED=~/scriptlogs/pinned_pkgs_update_log.txt
+SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_pkgs_update_log.txt
+FILTERED_LOGFILE=~/scriptlogs/filtered_pkgs_update_log.txt
 LIST=~/scriptlogs/upgradeable.txt
 PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
 
@@ -55,7 +56,7 @@ while true; do
 
     if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
         # Process the temporary list
-        cat "$LIST.tmp" | grep -v '^$' > "$LIST"
+        cat "$LIST.tmp" > "$LIST"
         UPGRADES=$(wc -l < "$LIST")
 
         if [ "$UPGRADES" -gt 0 ]; then
@@ -73,11 +74,12 @@ while true; do
                 notify-send "Auto-updates" "No security updates of pinned packages found."
             fi
 
+            > $LOGFILE_PINNED
             while read -r line; do
                 include=true
                 for pinned in "${PINNED_PACKAGES[@]}"; do
                     # Check if the package name matches any pinned package
-                    if echo "$line" | grep -q "$pinned"; then
+                    if echo "$line" | grep "$pinned"; then
                         include=false
                         echo "$(date '+%Y-%m-%d %H:%M:%S') - Pinned package update: $line" >> "$LOGFILE_PINNED"
                         break
@@ -120,7 +122,8 @@ while true; do
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             notify-send "Auto-updates" "$package_name upgraded successfully."
-                            echo "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$FILTERED_LOGFILE"
                             CTR=$((CTR + 1))
                             if [ "$CTR" -ge "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting packages" ]; then
                                 break
