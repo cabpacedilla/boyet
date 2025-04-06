@@ -121,7 +121,7 @@ while true; do
                     if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
-                            notify-send "Auto-updates" "$package_name upgraded successfully."
+                            UPDATED_PILTERED_PKGS+=("$package_name")
                             echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
                             echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$FILTERED_LOGFILE"
                             CTR=$((CTR + 1))
@@ -137,6 +137,13 @@ while true; do
                         notify-send "Auto-updates" "Error during upgrade of $package_name. Check logs."
                     fi
                 done <<< "$FILTERED_LIST"
+
+                if [ ${#UPDATED_PILTERED_PKGS[@]} -gt 0 ]; then
+                    UPDATED_LIST=$(printf "%s\n" "${UPDATED_PILTERED_PKGS[@]}")
+                    notify-send "Auto-updates" "The following packages were successfully updated:\n$UPDATED_LIST"
+                else
+                    notify-send "Auto-updates" "No packages were updated."
+                fi
 
                 # Remove unused packages
                 if sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"; then
