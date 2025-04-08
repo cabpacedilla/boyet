@@ -93,8 +93,8 @@ while true; do
             done < "$LIST"
 
             # Notify-send the content of general updates for pinned packages
-            NOTIFY_PACKAGES=$(cat "$LOGFILE_PINNED")
-            notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
+#             NOTIFY_PACKAGES=$(cat "$LOGFILE_PINNED")
+#             notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
 
             # Log filtered packages for debugging
             echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
@@ -139,8 +139,17 @@ while true; do
                 done <<< "$FILTERED_LIST"
 
                 if [ ${#UPDATED_PILTERED_PKGS[@]} -gt 0 ]; then
-                    UPDATED_LIST=$(printf "%s\n" "${UPDATED_PILTERED_PKGS[@]}")
+                    declare -A unique_items # Create an associative array
+                    for pkg in "${UPDATED_PILTERED_PKGS[@]}"; do
+                        unique_items["$pkg"]=1 # Add each item as a key
+                    done
+
+                    # Join the unique items into a newline-separated string
+                    IFS=$'\n'
+                    UPDATED_LIST="${!unique_items[@]}"
+                    unset IFS # Reset IFS to default
                     notify-send "Auto-updates" "The following packages were successfully updated:\n$UPDATED_LIST"
+                    UPDATED_LIST=()
                 else
                     notify-send "Auto-updates" "No packages were updated."
                 fi
