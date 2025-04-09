@@ -17,7 +17,7 @@ while true; do
 
 declare -a SERVICES=("blueman-applet" "nm-applet")
 declare -a APPS=("Skype" "Thunderbird")
-declare -a SCRIPTS=("autoupdate" "backlisten" "battalert" "brightness" "cableunplugged" "keylocked" "lidclosed" "lowmem" "tempalarm" "weatheralarm")
+declare -a SCRIPTS=("autosync" "autoupdate" "backlisten" "battalert" "battery_usage" "brightness" "checkmonitorfailures" "fortune" "keylocked" "lidclosed" "lowmembypercent" "runscreensaver" "weatheralarm")
 
 MIN_ID=1
 NO_ID=0
