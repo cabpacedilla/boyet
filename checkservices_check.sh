@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-declare -a SCRIPTS=("alarmtemp" "autoupdate" "backlisten" "battalert" "brightness" "fortune" "keylocked" "lowmem" "screensavercheck" "weatheralarm")
+declare -a SCRIPTS=("autosync" "autoupdate" "backlisten" "battalert" "battery_usage" "brightness" "checkmonitorfailures" "fortune" "keylocked" "lidclosed" "lowmembypercent" "runscreensaver" "weatheralarm")
 MIN_ID=1
 NO_ID=0
 
