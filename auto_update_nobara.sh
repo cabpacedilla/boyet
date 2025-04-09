@@ -1,186 +1,88 @@
-#!/usr/bin/bash
-# This script will automatically upgrade upgradeable packages in Fedora.
-# Modified from the original script by Claive Alvin P. Acedilla.
-# Runs as soon as any updates are available and includes security updates of pinned packages.
+#!/bin/bash
 
-LOGFILE_GENERAL=~/scriptlogs/general_update_log.txt
-LOGFILE_PINNED=~/scriptlogs/pinned_pkgs_update_log.txt
-SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_pkgs_update_log.txt
-FILTERED_LOGFILE=~/scriptlogs/filtered_pkgs_update_log.txt
-LIST=~/scriptlogs/upgradeable.txt
-PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
+# Configuration
+IDLE_TIMEOUT=2        # Time in minutes after which the system is considered idle
+CPU_THRESHOLD=10       # CPU usage threshold in percentage
+MEMORY_THRESHOLD=10    # Memory usage threshold in percentage
+DISK_IO_THRESHOLD=5    # Disk I/O threshold in MB/s
+LOG_FILE="/home/claiveapa/scriptlogs/abnormal_resource_usage.log"
+IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
 
-# Function to clean up temporary files
-cleanup() {
-    rm -f "$LIST.tmp"
-    notify-send "Auto-updates" "Update terminated. Cleaned up temporary files."
-}
-trap cleanup EXIT  # Ensures cleanup on exit
-
-# Function to unpin packages
-unpin_packages() {
-    sudo sed -i '/exclude=/d' /etc/dnf/dnf.conf
-}
-
-# Function to pin packages back
-pin_packages() {
-    echo "exclude=${PINNED_PACKAGES[*]}" | sudo tee -a /etc/dnf/dnf.conf
-}
-
-# Function to check for security updates
-check_security_updates() {
-    local SEC_UPDATES_PINNED_PKGS=()
-    for pkg in "${PINNED_PACKAGES[@]}"; do
-        if sudo dnf check-update --security | grep -q "$pkg"; then
-            notify-send "Security update available for $pkg"
-            SEC_UPDATES_PINNED_PKGS+=("$pkg")
-        fi
-    done
-
-    if [ ${#SEC_UPDATES_PINNED_PKGS[@]} -gt 0 ]; then
-        echo "${SEC_UPDATES_PINNED_PKGS[@]}"  # Security update found
+is_media_playing() {
+    local MEDIA_PLAY
+    MEDIA_PLAY=$(pactl list | grep -w "RUNNING" | awk '{ print $2 }')
+    if [ -n "$MEDIA_PLAY" ]; then
+        return 0
     else
-        return 1  # No security updates found
+        return 1
     fi
 }
 
+
+# Function to check resource usage
+check_resources() {
+    local cpu_usage
+    local mem_usage
+    local disk_io
+    local current_time
+
+    cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk -F'id,' '{print $1}' | awk '{print 100 - $NF}')
+    mem_usage=$(free -m | awk 'NR==2{printf "%.2f\n", $3*100/$2 }')
+    disk_io=$(iostat -m 1 2 | awk 'NR==15 {print $3+$4}')
+    current_time=$(date +"%Y-%m-%d %H:%M:%S")
+
+    if ! is_media_playing; then
+        if (( $(echo "$cpu_usage > $CPU_THRESHOLD" | bc -l) )); then
+            notify-send "Abnormal CPU Usage" "$current_time - Abnormal CPU usage: $cpu_usage%" &
+            echo "$current_time - Abnormal CPU usage: $cpu_usage%" | sudo tee -a "$LOG_FILE" > /dev/null &
+            ps aux --sort=-%cpu | head -n 10 >> "$LOG_FILE" &
+        else
+            :
+        fi
+
+        if (( $(echo "$mem_usage > $MEMORY_THRESHOLD" | bc -l) )); then
+            notify-send "Abnormal Memory Usage" "$current_time - Abnormal memory usage: $mem_usage%" &
+            echo "$current_time - Abnormal CPU usage: $mem_usage%" | sudo tee -a "$LOG_FILE" > /dev/null &
+            ps aux --sort=-%mem | head -n 10 >> "$LOG_FILE" &
+        else
+            :
+        fi
+
+        if (( $(echo "$disk_io > $DISK_IO_THRESHOLD" | bc -l) )); then
+            notify-send "Abnormal Disk I/O" "$current_time - Abnormal Disk I/O: $disk_io MB/s" &
+            echo "$current_time - Abnormal CPU usage: $disk_io%" | sudo tee -a "$LOG_FILE" > /dev/null &
+            sudo iotop -boP -n 1 | sudo tee -a "$LOG_FILE" > /dev/null &
+        else
+            :
+        fi
+    else
+        echo active > /tmp/sway_idle_status
+    fi
+}
+
+# Use swayidle to detect when the system is idle
+start_swayidle() {
+    # Start swayidle with timeout for idle check and an output file for idle status
+    swayidle -w timeout $((IDLE_TIMEOUT * 60)) 'echo idle > /tmp/sway_idle_status' resume 'echo active > /tmp/sway_idle_status'
+}
+
+# Check if the system is idle by reading the status file
+check_idle_status() {
+    #if test -f "$IDLE_STATUS_FILE"; then
+    idle_status=$(cat "$IDLE_STATUS_FILE")
+    if [[ "$idle_status" == "idle" ]]; then
+        echo "System is idle. Checking resources..."
+        check_resources
+    else
+        :
+    fi
+}
+
+# Start swayidle to track idle status and monitor resources while idle
+start_swayidle &
+
+# Main loop to continuously check idle status
 while true; do
-    notify-send "Auto-updates" "Checking system updates."
-
-    NON_SECURITY_COUNT=0
-
-    # Check for updates and store in temp file, skipping first two lines
-    sudo dnf update nobara-updater --refresh
-    sudo dnf check-update > "$LIST.tmp"
-    CHECK_EXIT=$?
-
-    if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
-        # Process the temporary list
-        cat "$LIST.tmp" > "$LIST"
-        UPGRADES=$(wc -l < "$LIST")
-
-        if [ "$UPGRADES" -gt 0 ]; then
-            FILTERED_LIST=""
-
-            # Unpin packages if there are security updates
-            if check_security_updates; then
-                notify-send "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying security updates of pinned packages..."
-                unpin_packages
-                sudo dnf upgrade --security -y
-                notify-send "Security Updates" "Security updates of pinned packages applied successfully."
-                echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]} applied successfully." >> "$SEC_LOGFILE_PINNED"
-                pin_packages
-            else
-                notify-send "Auto-updates" "No security updates of pinned packages found."
-            fi
-
-            > $LOGFILE_PINNED
-            while read -r line; do
-                include=true
-                for pinned in "${PINNED_PACKAGES[@]}"; do
-                    # Check if the package name matches any pinned package
-                    if echo "$line" | grep "$pinned"; then
-                        include=false
-                        echo "$(date '+%Y-%m-%d %H:%M:%S') - Pinned package update: $line" >> "$LOGFILE_PINNED"
-                        break
-                    fi
-                done
-
-                if [ "$include" = true ]; then
-                    FILTERED_LIST+="$line"$'\n'
-                    NON_SECURITY_COUNT=$((NON_SECURITY_COUNT + 1))
-                fi
-            done < "$LIST"
-
-            # Notify-send the content of general updates for pinned packages
-#             NOTIFY_PACKAGES=$(cat "$LOGFILE_PINNED")
-#             notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
-
-            # Log filtered packages for debugging
-            echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
-            echo "Number of non-security packages to be updated: $NON_SECURITY_COUNT" >> "$LOGFILE_GENERAL"
-
-            # If there are any packages to upgrade, proceed
-            if [ -n "$FILTERED_LIST" ]; then
-                NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
-                notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
-                notify-send "Auto-updates" "Starting update process..."
-
-                # Process each package one at a time
-                while read -r package; do
-                    CTR=0
-                    # Extract the package name from each line (first word)
-                    package_name=$(echo "$package" | awk -F '.' '{print $1}')
-                    if [ "$CTR" -ge "$NON_SECURITY_COUNT" ]; then
-                        break
-                    elif [ "$package_name" = "Obsoleting packages" ] || [ "$package_name" = "" ]; then
-                        continue
-                    fi
-
-                    # Perform the upgrade for each package
-                    if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
-                        # Verify successful installation
-                        if rpm -q "$package_name" &>/dev/null; then
-                            UPDATED_PILTERED_PKGS+=("$package_name")
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$FILTERED_LOGFILE"
-                            CTR=$((CTR + 1))
-                            if [ "$CTR" -ge "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting packages" ]; then
-                                break
-                            else
-                                continue
-                            fi
-                        else
-                            notify-send "Auto-updates" "Error: $package_name failed to upgrade. Check logs."
-                        fi
-                    else
-                        notify-send "Auto-updates" "Error during upgrade of $package_name. Check logs."
-                    fi
-                done <<< "$FILTERED_LIST"
-
-                if [ ${#UPDATED_PILTERED_PKGS[@]} -gt 0 ]; then
-                    declare -A unique_items # Create an associative array
-                    for pkg in "${UPDATED_PILTERED_PKGS[@]}"; do
-                        unique_items["$pkg"]=1 # Add each item as a key
-                    done
-
-                    # Join the unique items into a newline-separated string
-                    IFS=$'\n'
-                    UPDATED_LIST="${!unique_items[@]}"
-                    unset IFS # Reset IFS to default
-                    notify-send "Auto-updates" "The following packages were successfully updated:\n$UPDATED_LIST"
-                    UPDATED_LIST=()
-                else
-                    notify-send "Auto-updates" "No packages were updated."
-                fi
-
-                # Remove unused packages
-                if sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"; then
-                    # Notify user about autoremove
-                    echo "Auto-updates" "Auto-removed unused packages" >> "$LOGFILE_GENERAL"
-                else
-                    # Error handling for autoremove
-                    notify-send "Auto-updates" "Error during autoremove. Check logs."
-                fi
-
-                # Clean up package manager cache
-                if sudo dnf clean all 2>> "$LOGFILE_GENERAL"; then
-                    # Notify user about cleanup
-                    echo "Auto-updates" "Package manager cache cleaned" >> "$LOGFILE_GENERAL"
-                else
-                    # Error handling for cache cleanup
-                    notify-send "Auto-updates" "Error during cache cleanup. Check logs."
-                fi
-            fi
-        fi
-    elif [ $CHECK_EXIT -eq 0 ]; then
-        notify-send "Auto-updates" "System is already up to date."
-    else
-        notify-send "Auto-updates" "Error checking for updates! See $LOGFILE_GENERAL."
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: dnf check-update failed with exit code $CHECK_EXIT" >> "$LOGFILE_GENERAL"
-    fi
-
-    rm -f "$LIST.tmp"  # Ensure temp file cleanup
-
-    sleep 1h  # Wait before next check
+    check_idle_status
+    sleep 60  # Check every minute for idle status
 done
