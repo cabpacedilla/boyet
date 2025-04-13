@@ -41,21 +41,18 @@ start_swayidle() {
     resume 'loginctl lock-session && echo active > /tmp/sway_idle_status && ~/bin/resume_handler.sh'
 }
 
-# Main script logic
-# Kill any previous instances of the screensaver script or processes
-pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
-pkill -9 -f "screensaver-"             # Force kill any running screensaver
-
 # Start swayidle to track idle status and run screensaver when idle
 start_swayidle &
 
 # Main loop to continuously check idle status
 while true; do
     log_status
-
+    pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
+    pkill -9 -f "screensaver-"             # Force kill any running screensaver
     check_idle_status
     sleep 15 # Check every 15 seconds for idle status (you can adjust this duration)
 done
+
 
 
 rand_screensavers.sh
