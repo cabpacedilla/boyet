@@ -1,3 +1,10 @@
+# In KDE 6.3, run one screensaver application in your screensavers folder then right click on the title bar 
+# then cick configure special application settings in More Actions with the following settings
+# 1. Window class (applicatoin) field = substring match for the start of the filenames of the screensavers "screensaver-"
+# 2. Match whole window clas field = Yes
+# 3. Window type field = All selected
+# 4. Fullscreen Size & Poristion property = Force
+
 #!/usr/bin/bash
 # This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
 
