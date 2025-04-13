@@ -36,9 +36,7 @@ check_idle_status() {
 start_swayidle() {
     echo "$(date) - Starting swayidle with timeout $((IDLE_TIMEOUT * 60)) seconds..." >> "$LOGFILE"
     # Start swayidle with timeout for idle state, and update the idle status file on idle/active
-    swayidle -w timeout $((IDLE_TIMEOUT * 60)) \
-    'echo idle > /tmp/sway_idle_status' \
-    resume 'loginctl lock-session && echo active > /tmp/sway_idle_status && ~/bin/resume_handler.sh'
+    swayidle -w timeout $((IDLE_TIMEOUT * 60)) 'echo idle > /tmp/sway_idle_status' resume 'echo active > /tmp/sway_idle_status && ~/bin/resume_handler.sh'
 }
 
 # Start swayidle to track idle status and run screensaver when idle
@@ -52,7 +50,6 @@ while true; do
     check_idle_status
     sleep 15 # Check every 15 seconds for idle status (you can adjust this duration)
 done
-
 
 
 rand_screensavers.sh
@@ -88,17 +85,40 @@ else
 fi
 
 
+
 resume_handler.sh
 ------------------
 #!/usr/bin/bash
 LOGFILE=~/scriptlogs/screensaver_log.txt
+LID_PATH="/proc/acpi/button/lid/LID0/state"
+
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> $LOGFILE
 
-# Kill any running screensaver programs
-pkill -9 -f "/home/claiveapa/bin/rand_screensavers.sh"  # Force Kill the loop!
-pkill -9 -f rss-glx- # Force Kill the screensaver
+# Function to get the lid state
+get_lid_state() {
+    local LID_STATE
+    if [ -f "$LID_PATH" ]; then
+        LID_STATE=$(awk '{print $2}' < "$LID_PATH")
+    fi
+    echo "$LID_STATE"
+}
 
+is_media_playing() {
+    local MEDIA_PLAY
+    MEDIA_PLAY=$(pactl list | grep -w "RUNNING" | awk '{ print $2 }')
+    if [ -n "$MEDIA_PLAY" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
 
-# Kill any running screensaver programs
-pkill -9 -f "/home/claiveapa/bin/run_rss_glx_programs.sh"  # Force Kill the loop!
-pkill -9 -f rss-glx- # Force Kill the screensaver
+if ! is_media_playing && [ "$(get_lid_state)" == "open" ]; then
+    # Kill any running screensaver programs
+    pkill -9 -f "/home/claiveapa/bin/rand_screensavers.sh"  # Force Kill the loop!
+    pkill -9 -f screensaver- # Force Kill the screensaver
+    loginctl lock-session
+else
+    :
+fi
+
