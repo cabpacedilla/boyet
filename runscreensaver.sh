@@ -1,10 +1,10 @@
 #!/usr/bin/bash
-# This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "rss-glx-" during idle time.
+# This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
 
 # Configuration
 LOGFILE=~/scriptlogs/screensaver_log.txt
 IDLE_TIMEOUT=1         # Timeout in minutes after which the system is considered idle
-SCREENSAVER_SCRIPT="/home/claiveapa/bin/run_rss_glx_programs.sh"
+SCREENSAVER_SCRIPT="/home/claiveapa/bin/rand_screensavers.sh"
 RESUME_HANDLER_SCRIPT="/home/claiveapa/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
 
@@ -12,6 +12,7 @@ IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
 log_status() {
     echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
+
 
 # Function to check if the system is idle by reading the status file
 check_idle_status() {
@@ -36,14 +37,14 @@ start_swayidle() {
     echo "$(date) - Starting swayidle with timeout $((IDLE_TIMEOUT * 60)) seconds..." >> "$LOGFILE"
     # Start swayidle with timeout for idle state, and update the idle status file on idle/active
     swayidle -w timeout $((IDLE_TIMEOUT * 60)) \
-        'echo idle > /tmp/sway_idle_status' resume 'echo active > /tmp/sway_idle_status'
+    'echo idle > /tmp/sway_idle_status' \
+    resume 'loginctl lock-session && echo active > /tmp/sway_idle_status && ~/bin/resume_handler.sh'
 }
 
 # Main script logic
 # Kill any previous instances of the screensaver script or processes
-echo "$(date) - Killing any previous screensaver or swayidle processes..." >> "$LOGFILE"
 pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
-pkill -9 -f "rss-glx-"             # Force kill any running screensaver
+pkill -9 -f "screensaver-"             # Force kill any running screensaver
 
 # Start swayidle to track idle status and run screensaver when idle
 start_swayidle &
@@ -51,13 +52,13 @@ start_swayidle &
 # Main loop to continuously check idle status
 while true; do
     log_status
+
     check_idle_status
     sleep 15 # Check every 15 seconds for idle status (you can adjust this duration)
 done
 
 
-
-run_rss_glx_programs.sh
+rand_screensavers.sh
 ------------------------
 #!/usr/bin/bash
 # This script runs randomly selected rss-glx programs every minute.
@@ -75,16 +76,16 @@ is_media_playing() {
     fi
 }
 
-
 if ! is_media_playing; then
-    # Kill the previous screensaver if it is running
-    pkill -9 -f rss-glx- # Force Kill the screensaver
+        # Kill the previous screensaver if it is running
+        pkill -9 -f screensaver- # Force Kill the screensaver
 
-    RSS_GLX_PROGRAMS=(/usr/bin/rss-glx-*)
-    RANDOM_PROGRAM=${RSS_GLX_PROGRAMS[RANDOM % ${#RSS_GLX_PROGRAMS[@]}]}
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_PROGRAM" >> "$LOGFILE"
-    $RANDOM_PROGRAM &
-    sleep 15
+        SCREENSAVER_PROGRAMS=(~/screensavers/screensaver-*)
+        RANDOM_PROGRAM=${SCREENSAVER_PROGRAMS[RANDOM % ${#SCREENSAVER_PROGRAMS[@]}]}
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_PROGRAM" >> "$LOGFILE"
+
+        # Run the screensaver
+        "$RANDOM_PROGRAM" &
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media player is running, skipping screensaver" >> "$LOGFILE"
 fi
@@ -95,6 +96,11 @@ resume_handler.sh
 #!/usr/bin/bash
 LOGFILE=~/scriptlogs/screensaver_log.txt
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> $LOGFILE
+
+# Kill any running screensaver programs
+pkill -9 -f "/home/claiveapa/bin/rand_screensavers.sh"  # Force Kill the loop!
+pkill -9 -f rss-glx- # Force Kill the screensaver
+
 
 # Kill any running screensaver programs
 pkill -9 -f "/home/claiveapa/bin/run_rss_glx_programs.sh"  # Force Kill the loop!
