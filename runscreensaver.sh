@@ -137,7 +137,7 @@ if ! is_media_playing && [ "$(get_lid_state)" == "open" ]; then
     # Kill any running screensaver programs
     pkill -9 -f "/home/claiveapa/bin/rand_screensavers.sh"  # Force Kill the loop!
     pkill -9 -f screensaver- # Force Kill the screensaver
-    loginctl lock-session
+    qdbus org.kde.screensaver /ScreenSaver Lock
 else
     :
 fi
