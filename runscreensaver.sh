@@ -5,6 +5,8 @@
 # 3. Window type field = All selected
 # 4. Fullscreen Size & Poristion property = Force; Yes
 
+runscreensaver.sh
+------------------
 #!/usr/bin/bash
 # This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
 
@@ -14,6 +16,8 @@ IDLE_TIMEOUT=1         # Timeout in minutes after which the system is considered
 SCREENSAVER_SCRIPT="/home/claiveapa/bin/rand_screensavers.sh"
 RESUME_HANDLER_SCRIPT="/home/claiveapa/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
+BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
+OPTIMAL=39321
 
 # Function to log status for debugging
 log_status() {
@@ -46,6 +50,7 @@ start_swayidle() {
     swayidle -w timeout $((IDLE_TIMEOUT * 60)) 'echo idle > /tmp/sway_idle_status' resume 'echo active > /tmp/sway_idle_status && ~/bin/resume_handler.sh'
 }
 
+echo $OPTIMAL | sudo tee $BRIGHT_PATH
 # Start swayidle to track idle status and run screensaver when idle
 start_swayidle &
 
@@ -65,6 +70,10 @@ rand_screensavers.sh
 # This script runs randomly selected rss-glx programs every minute.
 
 LOGFILE=~/scriptlogs/idle_log.txt
+BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
+MINIMAL=1
+OPTIMAL=39321
+
 
 # Function to check if a media player is running
 is_media_playing() {
@@ -81,16 +90,20 @@ if ! is_media_playing; then
         # Kill the previous screensaver if it is running
         pkill -9 -f screensaver- # Force Kill the screensaver
 
+        echo $MINIMAL | sudo tee $BRIGHT_PATH
+        sleep 1
+
         SCREENSAVER_PROGRAMS=(~/screensavers/screensaver-*)
         RANDOM_PROGRAM=${SCREENSAVER_PROGRAMS[RANDOM % ${#SCREENSAVER_PROGRAMS[@]}]}
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_PROGRAM" >> "$LOGFILE"
 
         # Run the screensaver
-        "$RANDOM_PROGRAM" &
+         "$RANDOM_PROGRAM" &
+         sleep 1
+         echo $OPTIMAL | sudo tee $BRIGHT_PATH
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media player is running, skipping screensaver" >> "$LOGFILE"
 fi
-
 
 
 resume_handler.sh
