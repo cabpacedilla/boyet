@@ -71,7 +71,7 @@ rand_screensavers.sh
 
 LOGFILE=~/scriptlogs/idle_log.txt
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-MINIMAL=1
+MINIMAL=0
 OPTIMAL=39321
 
 
@@ -91,7 +91,7 @@ if ! is_media_playing; then
         pkill -9 -f screensaver- # Force Kill the screensaver
 
         echo $MINIMAL | sudo tee $BRIGHT_PATH
-        sleep 1
+        sleep 0.1
 
         SCREENSAVER_PROGRAMS=(~/screensavers/screensaver-*)
         RANDOM_PROGRAM=${SCREENSAVER_PROGRAMS[RANDOM % ${#SCREENSAVER_PROGRAMS[@]}]}
@@ -99,7 +99,7 @@ if ! is_media_playing; then
 
         # Run the screensaver
          "$RANDOM_PROGRAM" &
-         sleep 1
+         sleep 0.5
          echo $OPTIMAL | sudo tee $BRIGHT_PATH
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media player is running, skipping screensaver" >> "$LOGFILE"
