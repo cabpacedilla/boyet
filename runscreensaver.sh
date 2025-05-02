@@ -67,7 +67,7 @@ done
 rand_screensavers.sh
 ------------------------
 #!/usr/bin/bash
-# This script runs randomly selected rss-glx programs every minute.
+# This script runs randomly selected screensaver programs every 15 seconds
 
 LOGFILE=~/scriptlogs/idle_log.txt
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
