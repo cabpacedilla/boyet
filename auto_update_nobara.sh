@@ -44,13 +44,13 @@ check_security_updates() {
     fi
 }
 
+NON_SECURITY_COUNT=0
+
 while true; do
     notify-send "Auto-updates" "Checking system updates."
 
-    NON_SECURITY_COUNT=0
-
     # Check for updates and store in temp file, skipping first two lines
-    sudo dnf update nobara-updater --refresh
+    sudo dnf update nobara-updater --refresh -y
     sudo dnf check-update > "$LIST.tmp"
     CHECK_EXIT=$?
 
@@ -104,17 +104,18 @@ while true; do
             if [ -n "$FILTERED_LIST" ]; then
                 NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
                 notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
-                notify-send "Auto-updates" "Starting update process..."
+                notify-send -t 0 "Auto-updates" "Update in progress..."
+                NOTIFICATION_PID=$!
 
+                CTR=0
                 # Process each package one at a time
                 while read -r package; do
-                    CTR=0
                     # Extract the package name from each line (first word)
                     #package_name=$(echo "$package" | awk -F '-' '{print $1}')
                     package_name=$(echo "$package" | awk '{print $1}')
-                    if [ "$CTR" -ge "$NON_SECURITY_COUNT" ]; then
+                    if [ "$CTR" -gt "$NON_SECURITY_COUNT" ]; then
                         break
-                    elif [ "$package_name" = "Obsoleting packages" ] || [ "$package_name" = "" ]; then
+                    elif [ "$package_name" = "Obsoleting" ] || [ "$package_name" = "" ]; then
                         continue
                     fi
 
@@ -125,8 +126,9 @@ while true; do
                             UPDATED_PILTERED_PKGS+=("$package_name")
                             echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
                             echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$FILTERED_LOGFILE"
+                            notify-send "Auto-updates" "$package_name upgraded successfully."
                             CTR=$((CTR + 1))
-                            if [ "$CTR" -ge "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting" ]; then
+                            if [ "$CTR" -gt "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting" ]; then
                                 break
                             else
                                 continue
@@ -149,7 +151,7 @@ while true; do
                     IFS=$'\n'
                     UPDATED_LIST="${!unique_items[@]}"
                     unset IFS # Reset IFS to default
-                    notify-send "Auto-updates" "The following packages were successfully updated:\n$UPDATED_LIST"
+                    notify-send "Auto-updates" "System is updated. The following packages were successfully updated:\n$UPDATED_LIST"
                     UPDATED_LIST=()
                 else
                     notify-send "Auto-updates" "No packages were updated."
@@ -159,6 +161,7 @@ while true; do
                 if sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"; then
                     # Notify user about autoremove
                     echo "Auto-updates" "Auto-removed unused packages" >> "$LOGFILE_GENERAL"
+                    notify-send "Auto-updates" "Auto-removed unused packages"
                 else
                     # Error handling for autoremove
                     notify-send "Auto-updates" "Error during autoremove. Check logs."
@@ -184,6 +187,7 @@ while true; do
     fi
 
     rm -f "$LIST.tmp"  # Ensure temp file cleanup
+    kill $NOTIFICATION_PID
 
     sleep 1h  # Wait before next check
 done
