@@ -105,7 +105,6 @@ while true; do
                 NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
                 notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
                 notify-send -t 0 "Auto-updates" "Update in progress..."
-                NOTIFICATION_PID=$!
 
                 CTR=0
                 # Process each package one at a time
@@ -151,7 +150,7 @@ while true; do
                     IFS=$'\n'
                     UPDATED_LIST="${!unique_items[@]}"
                     unset IFS # Reset IFS to default
-                    notify-send "Auto-updates" "System is updated. The following packages were successfully updated:\n$UPDATED_LIST"
+                    notify-send -t 0 "Auto-updates" "System is updated. The following packages were successfully updated:\n$UPDATED_LIST"
                     UPDATED_LIST=()
                 else
                     notify-send "Auto-updates" "No packages were updated."
@@ -187,7 +186,5 @@ while true; do
     fi
 
     rm -f "$LIST.tmp"  # Ensure temp file cleanup
-    kill $NOTIFICATION_PID
-
     sleep 1h  # Wait before next check
 done
