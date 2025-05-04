@@ -119,7 +119,8 @@ while true; do
                     fi
 
                     # Perform the upgrade for each package
-                    if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+#                     if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+                    if sudo dnf update --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             UPDATED_PILTERED_PKGS+=("$package_name")
