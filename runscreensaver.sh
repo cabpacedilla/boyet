@@ -90,7 +90,7 @@ if ! is_media_playing; then
         # Kill the previous screensaver if it is running
         pkill -9 -f screensaver- # Force Kill the screensaver
 
-        echo $MINIMAL | sudo tee $BRIGHT_PATH
+        echo $MINIMAL | sudo tee $BRIGHT_PATH &
         sleep 0.1
 
         SCREENSAVER_PROGRAMS=(~/screensavers/screensaver-*)
