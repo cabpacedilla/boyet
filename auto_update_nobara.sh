@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-# This script will automatically upgrade upgradeable packages in Fedora.
+# This script will automatically update updateable packages in Fedora.
 # Modified from the original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and includes security updates of pinned packages.
 
@@ -7,7 +7,7 @@ LOGFILE_GENERAL=~/scriptlogs/general_update_log.txt
 LOGFILE_PINNED=~/scriptlogs/pinned_pkgs_update_log.txt
 SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_pkgs_update_log.txt
 FILTERED_LOGFILE=~/scriptlogs/filtered_pkgs_update_log.txt
-LIST=~/scriptlogs/upgradeable.txt
+LIST=~/scriptlogs/updateable.txt
 PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
 
 # Function to clean up temporary files
@@ -47,7 +47,7 @@ check_security_updates() {
 NON_SECURITY_COUNT=0
 
 while true; do
-    notify-send "Auto-updates" "Checking system updates."
+    notify-send -t 0 "Auto-updates" "Checking system updates."
 
     # Check for updates and store in temp file, skipping first two lines
     sudo dnf update nobara-updater --refresh -y
@@ -57,9 +57,9 @@ while true; do
     if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
         # Process the temporary list
         cat "$LIST.tmp" > "$LIST"
-        UPGRADES=$(wc -l < "$LIST")
+        UPDATES=$(wc -l < "$LIST")
 
-        if [ "$UPGRADES" -gt 0 ]; then
+        if [ "$UPDATES" -gt 0 ]; then
             FILTERED_LIST=""
 
             # Unpin packages if there are security updates
@@ -97,10 +97,10 @@ while true; do
 #             notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
 
             # Log filtered packages for debugging
-            echo "Filtered list of packages to upgrade: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
+            echo "Filtered list of packages to update: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
             echo "Number of non-security packages to be updated: $NON_SECURITY_COUNT" >> "$LOGFILE_GENERAL"
 
-            # If there are any packages to upgrade, proceed
+            # If there are any packages to update, proceed
             if [ -n "$FILTERED_LIST" ]; then
                 NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
                 notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
@@ -115,18 +115,18 @@ while true; do
                     if [ "$CTR" -gt "$NON_SECURITY_COUNT" ]; then
                         break
                     elif [ "$package_name" = "Obsoleting" ] || [ "$package_name" = "" ]; then
-                        continue
+                        break
                     fi
 
-                    # Perform the upgrade for each package
-#                     if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+                    # Perform the update for each package
+#                   if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                     if sudo dnf update --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             UPDATED_PILTERED_PKGS+=("$package_name")
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$LOGFILE_GENERAL"
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name upgraded successfully." >> "$FILTERED_LOGFILE"
-                            notify-send "Auto-updates" "$package_name upgraded successfully."
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name updated successfully." >> "$LOGFILE_GENERAL"
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name updated successfully." >> "$FILTERED_LOGFILE"
+                            notify-send "Auto-updates" "$package_name updated successfully."
                             CTR=$((CTR + 1))
                             if [ "$CTR" -gt "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting" ]; then
                                 break
@@ -134,10 +134,10 @@ while true; do
                                 continue
                             fi
                         else
-                            notify-send "Auto-updates" "Error: $package_name failed to upgrade. Check logs."
+                            notify-send "Auto-updates" "Error: $package_name failed to update. Check logs."
                         fi
                     else
-                        notify-send "Auto-updates" "Error during upgrade of $package_name. Check logs."
+                        notify-send "Auto-updates" "Error during update of $package_name. Check logs."
                     fi
                 done <<< "$FILTERED_LIST"
 
@@ -147,9 +147,11 @@ while true; do
                         unique_items["$pkg"]=1 # Add each item as a key
                     done
 
+                    local keys=("${!unique_items[@]}")
+
                     # Join the unique items into a newline-separated string
                     IFS=$'\n'
-                    UPDATED_LIST="${!unique_items[@]}"
+                    UPDATED_LIST=$(printf "%s\n" "${keys[@]}" | sort)
                     unset IFS # Reset IFS to default
                     notify-send -t 0 "Auto-updates" "System is updated. The following packages were successfully updated:\n$UPDATED_LIST"
                     UPDATED_LIST=()
@@ -176,11 +178,11 @@ while true; do
                     notify-send "Auto-updates" "Error during cache cleanup. Check logs."
                 fi
             else
-                notify-send "Auto-updates" "No packages to upgrade."
+                notify-send "Auto-updates" "No packages to updated."
             fi
         fi
     elif [ $CHECK_EXIT -eq 0 ]; then
-        notify-send "Auto-updates" "System is already up to date."
+        notify-send -t 0 "Auto-updates" "System is already up to date."
     else
         notify-send "Auto-updates" "Error checking for updates! See $LOGFILE_GENERAL."
         echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: dnf check-update failed with exit code $CHECK_EXIT" >> "$LOGFILE_GENERAL"
