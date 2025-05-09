@@ -29,7 +29,7 @@ pin_packages() {
 
 # Function to check for security updates
 check_security_updates() {
-    local SEC_UPDATES_PINNED_PKGS=()
+    SEC_UPDATES_PINNED_PKGS=()
     for pkg in "${PINNED_PACKAGES[@]}"; do
         if sudo dnf check-update --security | grep -q "$pkg"; then
             notify-send "Security update available for $pkg"
@@ -64,14 +64,30 @@ while true; do
 
             # Unpin packages if there are security updates
             if check_security_updates; then
-                notify-send "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying security updates of pinned packages..."
-                unpin_packages
-                sudo dnf upgrade --security -y
-                notify-send "Security Updates" "Security updates of pinned packages applied successfully."
-                echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]} applied successfully." >> "$SEC_LOGFILE_PINNED"
-                pin_packages
+            timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+            notify-send -t 0 "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying updates..."
+
+            unpin_packages
+            for pkg in "${SEC_UPDATES_PINNED_PKGS[@]}"; do
+                if sudo dnf upgrade --security -y "$pkg" 2>> "$SEC_LOGFILE_PINNED"; then
+                    if rpm -q "$pkg" &>/dev/null; then
+                        echo "$timestamp - Security update applied successfully: $pkg" >> "$SEC_LOGFILE_PINNED"
+                        notify-send "Security Updates" "$pkg updated successfully."
+                    else
+                        echo "$timestamp - ERROR: $pkg failed to install after upgrade." >> "$SEC_LOGFILE_PINNED"
+                        notify-send -t 0 "Security Updates" "ERROR: $pkg failed to install after upgrade."
+                    fi
+                else
+                    echo "$timestamp - ERROR: Failed to apply security update to $pkg" >> "$SEC_LOGFILE_PINNED"
+                    notify-send -t 0 "Security Updates" "ERROR: Failed to apply security update to $pkg" >> "$SEC_LOGFILE_PINNED"
+                fi
+            done
+
+            echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[@]} applied successfully." >> "$SEC_LOGFILE_PINNED"
+            notify-send -t 0 "Security Updates" "Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[@]} applied successfully."
+            pin_packages
             else
-                notify-send "Auto-updates" "No security updates of pinned packages found."
+                notify-send -t 0 "Auto-updates" "No security updates of pinned packages found."
             fi
 
             > $LOGFILE_PINNED
