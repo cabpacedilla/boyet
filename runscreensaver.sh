@@ -16,8 +16,6 @@ IDLE_TIMEOUT=1         # Timeout in minutes after which the system is considered
 SCREENSAVER_SCRIPT="/home/claiveapa/bin/rand_screensavers.sh"
 RESUME_HANDLER_SCRIPT="/home/claiveapa/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"  # Temporary file to track idle state
-BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-OPTIMAL=39321
 
 # Function to log status for debugging
 log_status() {
@@ -50,7 +48,6 @@ start_swayidle() {
     swayidle -w timeout $((IDLE_TIMEOUT * 60)) 'echo idle > /tmp/sway_idle_status' resume 'echo active > /tmp/sway_idle_status && ~/bin/resume_handler.sh'
 }
 
-echo $OPTIMAL | sudo tee $BRIGHT_PATH
 # Start swayidle to track idle status and run screensaver when idle
 start_swayidle &
 
@@ -67,7 +64,7 @@ done
 rand_screensavers.sh
 ------------------------
 #!/usr/bin/bash
-# This script runs randomly selected screensaver programs every 15 seconds
+# This script runs randomly selected rss-glx programs every minute.
 
 LOGFILE=~/scriptlogs/idle_log.txt
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
@@ -111,8 +108,11 @@ resume_handler.sh
 #!/usr/bin/bash
 LOGFILE=~/scriptlogs/screensaver_log.txt
 LID_PATH="/proc/acpi/button/lid/LID0/state"
+BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
+OPTIMAL=39321
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> $LOGFILE
+echo $OPTIMAL | sudo tee $BRIGHT_PATH
 
 # Function to get the lid state
 get_lid_state() {
