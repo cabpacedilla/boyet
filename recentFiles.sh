@@ -19,7 +19,7 @@ while true; do
 	fi
 
 	# Extract recent file paths from the recently-used.xbel file and cleanup path percent encoding
-	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $2}' "$RECENTLY_XBEL_FILE" | 
+	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $3}' "$RECENTLY_XBEL_FILE" | 
 	sed -e 's/%20/ /g' \
 	-e 's/%2F/ /g' \
 	-e 's/%3A/ /g' \
