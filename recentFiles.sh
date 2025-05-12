@@ -19,30 +19,33 @@ while true; do
 	fi
 
 	# Extract recent file paths from the recently-used.xbel file and cleanup path percent encoding
-	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $3}' "$RECENTLY_XBEL_FILE" | 
-	sed -e 's/%20/ /g' \
-	-e 's/%2F/ /g' \
-	-e 's/%3A/ /g' \
-	-e 's/%2C/ /g' \
-	-e 's/%3F/ /g' \
-	-e 's/%23/ /g' \
-	-e 's/%26/ /g' \
-	-e 's/%2B/ /g' \
-	-e 's/%3D/ /g' \
-	-e 's/%40/ /g' \
-	-e 's/%2D/ /g' \
-	-e 's/%28/ /g' \
-	-e 's/%29/ /g' \
-	-e 's/%25/ /g' \
-	-e 's/%5B/ /g' \
-	-e 's/%5D/ /g' \
-	-e 's/%7B/ /g' \
-	-e 's/%7D/ /g' \
-	-e 's/%7E/ /g' \
-	-e 's/%2A/ /g' \
-	-e 's/%2D/ /g' \
-	-e 's/%2E/ /g' \
-	-e 's/%5C/ /g' )
+# 	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $3}' "$RECENTLY_XBEL_FILE" |
+	RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
+  sed 's|file://||' |
+  sed -e 's/%0A//g' \
+      -e 's/%20/ /g' \
+      -e 's/%2F/\//g' \
+      -e 's/%3A/:/g' \
+      -e 's/%2C/,/g' \
+      -e 's/%3F/?/g' \
+      -e 's/%23/#/g' \
+      -e 's/%26/\&/g' \
+      -e 's/%2B/+/g' \
+      -e 's/%3D/=/g' \
+      -e 's/%40/@/g' \
+      -e 's/%2D/-/g' \
+      -e 's/%28/(/g' \
+      -e 's/%29/)/g' \
+      -e 's/%25/%/g' \
+      -e 's/%5B/[/g' \
+      -e 's/%5D/]/g' \
+      -e 's/%7B/{/g' \
+      -e 's/%7D/}/g' \
+      -e 's/%7E/~/g' \
+      -e 's/%2A/*/g' \
+      -e 's/%2E/\./g' \
+      -e 's/%5C/\\/g' |
+  sed 's|/ *|/|g' )
 
 	# Save recent files to RECENT_FILES_LIST
 	echo "$RECENT_FILES" > "$RECENT_FILES_LIST"
@@ -83,7 +86,7 @@ while true; do
 	# Check if selected file is a directory or file
 	if [[ -d "$SELECTED_FILE" ]]; then
 		# Open the folder with a file manager
-		dolphin "$SELECTED_FILE" &
+		pcmanfm-qt "$SELECTED_FILE" &
 	elif [[ -f "$SELECTED_FILE" ]]; then
 		# Open the file with the preferred application
 		xdg-open "$SELECTED_FILE" &
@@ -91,3 +94,4 @@ while true; do
 		notify-send "Path does not exist: $SELECTED_FILE" &
 	fi
 done
+
