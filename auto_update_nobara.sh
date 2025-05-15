@@ -108,18 +108,14 @@ while true; do
                 fi
             done < "$LIST"
 
-            # Notify-send the content of general updates for pinned packages
-#             NOTIFY_PACKAGES=$(cat "$LOGFILE_PINNED")
-#             notify-send "Updates for pinned packages" "$NOTIFY_PACKAGES"
-
             # Log filtered packages for debugging
-            echo "Filtered list of packages to update: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
             echo "Number of non-security packages to be updated: $NON_SECURITY_COUNT" >> "$LOGFILE_GENERAL"
+            echo "Filtered list of packages to update: $FILTERED_LIST" >> "$LOGFILE_GENERAL"
 
             # If there are any packages to update, proceed
             if [ -n "$FILTERED_LIST" ]; then
                 NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
-                notify-send "Auto-updates" "Updates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
+                notify-send "Auto-updates" "Number of non-security packages to be updated: $NON_SECURITY_COUNT\nUpdates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
                 notify-send -t 0 "Auto-updates" "Update in progress..."
 
                 CTR=0
