@@ -3,11 +3,6 @@
 # Modified from the original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and includes security updates of pinned packages.
 
-#!/usr/bin/bash
-# This script will automatically update updateable packages in Fedora.
-# Modified from the original script by Claive Alvin P. Acedilla.
-# Runs as soon as any updates are available and includes security updates of pinned packages.
-
 LOGFILE_GENERAL=~/scriptlogs/general_update_log.txt
 LOGFILE_PINNED=~/scriptlogs/pinned_pkgs_update_log.txt
 SEC_LOGFILE_PINNED=~/scriptlogs/sec_pinned_pkgs_update_log.txt
