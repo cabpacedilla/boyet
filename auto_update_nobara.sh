@@ -1,4 +1,9 @@
 #!/usr/bin/bash
+# This script will automatically update updateable packages in Nobara Linux.
+# Modified from the original script by Claive Alvin P. Acedilla.
+# Runs as soon as any updates are available and includes security updates of pinned packages.
+
+#!/usr/bin/bash
 # This script will automatically update updateable packages in Fedora.
 # Modified from the original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and includes security updates of pinned packages.
@@ -132,7 +137,8 @@ while true; do
 
                     # Perform the update for each package
 #                   if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
-                    if sudo dnf update --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
+                    if notify-send "Auto-updates" "Updating package $package_name" && \
+                        sudo dnf update --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
                             UPDATED_PILTERED_PKGS+=("$package_name")
@@ -203,3 +209,4 @@ while true; do
     rm -f "$LIST.tmp"  # Ensure temp file cleanup
     sleep 1h  # Wait before next check
 done
+
