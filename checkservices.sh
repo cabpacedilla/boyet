@@ -12,7 +12,6 @@
 # 6. Reboot the laptop and login
 # 7. The script will run the process if the process is not running
 
-#!/usr/bin/bash
 while true; do
 
 declare -a SERVICES=("blueman-applet" "nm-applet")
