@@ -15,27 +15,23 @@
 
 #!/usr/bin/bash
 while true; do
-    # 1. Set memory free percentage limit
-    MEMFREE_PERCENTAGE_LIMIT=10
+# 1. Set memory free limit
+MEMFREE_LIMIT=1440
+	
+# 2. Get total free memory size in megabytes(MB) 
+MEMFREE=$(free -m | awk 'NR==2 {print $7}')
 
-    # 2. Get total memory and free memory size in megabytes (MB)
-    TOTAL_MEM=$(free -m | awk 'NR==2 {print $2}')
-    FREE_MEM=$(free -m | awk 'NR==2 {print $7}')
+# 3. Check if free memory is less or equals to desired low free memory space in megabytes
+if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then    
+   # 4. get top processes consuming system memory and show notification with the top 10 memory consuming processes
+#    TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
+   TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; if ($5 !~ /konsole/) printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
+  
+	konsole -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes: \n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+fi
 
-    # 3. Calculate the percentage of free memory
-    FREE_MEM_PERCENTAGE=$((FREE_MEM * 100 / TOTAL_MEM))
-
-    # 4. Check if free memory percentage is less or equal to desired low free memory percentage
-    if [ "$FREE_MEM_PERCENTAGE" -le "$MEMFREE_PERCENTAGE_LIMIT" ]; then
-        # 5. Get top processes consuming system memory and show notification with the top 10 memory consuming processes
-        TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
-
-        konsole -e bash -c "echo -e \"Low memory alert: RAM has only $FREE_MEM_PERCENTAGE% free memory left. Free high memory consuming processes: \n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
-    fi
-
-    # 6. Sleep for 30 seconds
-    sleep 30
+# 4. sleep for 30 seconds
+sleep 30
 done
-
 
 
