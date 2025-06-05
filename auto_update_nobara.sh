@@ -10,12 +10,15 @@ FILTERED_LOGFILE=~/scriptlogs/filtered_pkgs_update_log.txt
 LIST=~/scriptlogs/updateable.txt
 PINNED_PACKAGES=("audacity" "falkon" "geany" "gimp" "inkscape" "libreoffice" "rsync" "thunderbird" "mpv" "vim" "vlc")
 
+# Ensure log directories exist
+mkdir -p ~/scriptlogs
+
 # Function to clean up temporary files
 cleanup() {
     rm -f "$LIST.tmp"
     notify-send "Auto-updates" "Update terminated. Cleaned up temporary files."
 }
-trap cleanup EXIT  # Ensures cleanup on exit
+trap cleanup EXIT # Ensures cleanup on exit
 
 # Function to unpin packages
 unpin_packages() {
@@ -38,23 +41,45 @@ check_security_updates() {
     done
 
     if [ ${#SEC_UPDATES_PINNED_PKGS[@]} -gt 0 ]; then
-        echo "${SEC_UPDATES_PINNED_PKGS[@]}"  # Security update found
+        echo "${SEC_UPDATES_PINNED_PKGS[@]}" # Security update found
     else
-        return 1  # No security updates found
+        return 1 # No security updates found
     fi
 }
 
 NON_SECURITY_COUNT=0
 
+# Initial clean and refresh operations ---
+notify-send "Auto-updates" "Performing initial repository synchronization and cache cleanup."
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Performing initial repository synchronization and cache cleanup." >> "$LOGFILE_GENERAL"
+
+if sudo dnf clean all 2>> "$LOGFILE_GENERAL"; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Package manager cache cleaned successfully." >> "$LOGFILE_GENERAL"
+    notify-send "Auto-updates" "Package manager cache cleaned."
+else
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Initial cache cleanup failed. Check logs." >> "$LOGFILE_GENERAL"
+    notify-send -t 0 "Auto-updates" "ERROR: Initial cache cleanup failed. Check logs."
+fi
+
+# --refresh below will re-sync repositories.
+# We also update nobara-updater here to ensure the updater itself is current.
+if sudo dnf update nobara-updater --refresh -y 2>> "$LOGFILE_GENERAL"; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Repositories re-synchronized and nobara-updater checked." >> "$LOGFILE_GENERAL"
+    notify-send "Auto-updates" "Repositories synchronized."
+else
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Initial repository refresh failed. Check logs." >> "$LOGFILE_GENERAL"
+    notify-send -t 0 "Auto-updates" "ERROR: Initial repository refresh failed. Check logs."
+fi
+
+
 while true; do
     notify-send -t 0 "Auto-updates" "Checking system updates."
 
     # Check for updates and store in temp file, skipping first two lines
-    sudo dnf update nobara-updater --refresh -y
     sudo dnf check-update > "$LIST.tmp"
     CHECK_EXIT=$?
 
-    if [ $CHECK_EXIT -eq 100 ]; then  # Updates available
+    if [ $CHECK_EXIT -eq 100 ]; then # Updates available
         # Process the temporary list
         cat "$LIST.tmp" > "$LIST"
         UPDATES=$(wc -l < "$LIST")
@@ -64,28 +89,28 @@ while true; do
 
             # Unpin packages if there are security updates
             if check_security_updates; then
-            timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-            notify-send -t 0 "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying updates..."
+                timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+                notify-send -t 0 "Security Updates" "Security updates available for pinned packages: ${SEC_UPDATES_PINNED_PKGS[*]}. Applying updates..."
 
-            unpin_packages
-            for pkg in "${SEC_UPDATES_PINNED_PKGS[@]}"; do
-                if sudo dnf upgrade --security -y "$pkg" 2>> "$SEC_LOGFILE_PINNED"; then
-                    if rpm -q "$pkg" &>/dev/null; then
-                        echo "$timestamp - Security update applied successfully: $pkg" >> "$SEC_LOGFILE_PINNED"
-                        notify-send "Security Updates" "$pkg updated successfully."
+                unpin_packages
+                for pkg in "${SEC_UPDATES_PINNED_PKGS[@]}"; do
+                    if sudo dnf upgrade --security -y "$pkg" 2>> "$SEC_LOGFILE_PINNED"; then
+                        if rpm -q "$pkg" &>/dev/null; then
+                            echo "$timestamp - Security update applied successfully: $pkg" >> "$SEC_LOGFILE_PINNED"
+                            notify-send "Security Updates" "$pkg updated successfully."
+                        else
+                            echo "$timestamp - ERROR: $pkg failed to install after upgrade." >> "$SEC_LOGFILE_PINNED"
+                            notify-send -t 0 "Security Updates" "ERROR: $pkg failed to install after upgrade."
+                        fi
                     else
-                        echo "$timestamp - ERROR: $pkg failed to install after upgrade." >> "$SEC_LOGFILE_PINNED"
-                        notify-send -t 0 "Security Updates" "ERROR: $pkg failed to install after upgrade."
+                        echo "$timestamp - ERROR: Failed to apply security update to $pkg" >> "$SEC_LOGFILE_PINNED"
+                        notify-send -t 0 "Security Updates" "ERROR: Failed to apply security update to $pkg"
                     fi
-                else
-                    echo "$timestamp - ERROR: Failed to apply security update to $pkg" >> "$SEC_LOGFILE_PINNED"
-                    notify-send -t 0 "Security Updates" "ERROR: Failed to apply security update to $pkg" >> "$SEC_LOGFILE_PINNED"
-                fi
-            done
+                done
 
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[@]} applied successfully." >> "$SEC_LOGFILE_PINNED"
-            notify-send -t 0 "Security Updates" "Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[@]} applied successfully."
-            pin_packages
+                echo "$(date '+%Y-%m-%d %H:%M:%S') - Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[@]} applied successfully." >> "$SEC_LOGFILE_PINNED"
+                notify-send -t 0 "Security Updates" "Security updates of pinned packages: ${SEC_UPDATES_PINNED_PKGS[@]} applied successfully."
+                pin_packages
             else
                 notify-send -t 0 "Auto-updates" "No security updates of pinned packages found."
             fi
@@ -95,7 +120,7 @@ while true; do
                 include=true
                 for pinned in "${PINNED_PACKAGES[@]}"; do
                     # Check if the package name matches any pinned package
-                    if echo "$line" | grep "$pinned"; then
+                    if echo "$line" | grep -q "^${pinned}\."; then # Added regex anchor for exact match
                         include=false
                         echo "$(date '+%Y-%m-%d %H:%M:%S') - Pinned package update: $line" >> "$LOGFILE_PINNED"
                         continue
@@ -119,44 +144,39 @@ while true; do
                 notify-send -t 0 "Auto-updates" "Update in progress..."
 
                 CTR=0
+                UPDATED_FILTERED_PKGS=() # Initialize array for updated packages
                 # Process each package one at a time
-                while read -r package; do
+                while read -r package_line; do
                     # Extract the package name from each line (first word)
-                    #package_name=$(echo "$package" | awk -F '-' '{print $1}')
-                    package_name=$(echo "$package" | awk '{print $1}')
-                    if [ "$CTR" -gt "$NON_SECURITY_COUNT" ]; then
-                        break
-                    elif [ "$package_name" = "Obsoleting" ] || [ "$package_name" = "" ]; then
-                        break
+                    package_name=$(echo "$package_line" | awk '{print $1}')
+
+                    # Skip empty lines or "Obsoleting"
+                    if [ -z "$package_name" ] || [[ "$package_name" == "Obsoleting" ]]; then
+                        continue
                     fi
 
-                    # Perform the update for each package
-#                   if sudo dnf upgrade --skip-unavailable --no-best --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                     if notify-send "Auto-updates" "Updating package $package_name" && \
                         sudo dnf update --allowerasing -y "$package_name" 2>> "$LOGFILE_GENERAL"; then
                         # Verify successful installation
                         if rpm -q "$package_name" &>/dev/null; then
-                            UPDATED_PILTERED_PKGS+=("$package_name")
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name updated successfully." >> "$LOGFILE_GENERAL"
-                            echo "$(date '+%Y-%m-%d %H:%M:%S') -" "Auto-updates" "$package_name updated successfully." >> "$FILTERED_LOGFILE"
+                            UPDATED_FILTERED_PKGS+=("$package_name")
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') - Auto-updates: $package_name updated successfully." >> "$LOGFILE_GENERAL"
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') - Auto-updates: $package_name updated successfully." >> "$FILTERED_LOGFILE"
                             notify-send "Auto-updates" "$package_name updated successfully."
                             CTR=$((CTR + 1))
-                            if [ "$CTR" -gt "$NON_SECURITY_COUNT" ] && [ "$package_name" = "Obsoleting" ]; then
-                                break
-                            else
-                                continue
-                            fi
                         else
-                            notify-send "Auto-updates" "Error: $package_name failed to update. Check logs."
+                            notify-send "Auto-updates" "Error: $package_name failed to install after update. Check logs."
+                            echo "$(date '+%Y-%m-%d %H:%M:%S') - Error: $package_name failed to install after update. Check logs." >> "$LOGFILE_GENERAL"
                         fi
                     else
                         notify-send "Auto-updates" "Error during update of $package_name. Check logs."
+                        echo "$(date '+%Y-%m-%d %H:%M:%S') - Error during update of $package_name. Check logs." >> "$LOGFILE_GENERAL"
                     fi
                 done <<< "$FILTERED_LIST"
 
-                if [ ${#UPDATED_PILTERED_PKGS[@]} -gt 0 ]; then
+                if [ ${#UPDATED_FILTERED_PKGS[@]} -gt 0 ]; then
                     declare -A unique_items # Create an associative array
-                    for pkg in "${UPDATED_PILTERED_PKGS[@]}"; do
+                    for pkg in "${UPDATED_FILTERED_PKGS[@]}"; do
                         unique_items["$pkg"]=1 # Add each item as a key
                     done
 
@@ -167,31 +187,30 @@ while true; do
                     UPDATED_LIST=$(printf "%s\n" "${keys[@]}" | sort)
                     unset IFS # Reset IFS to default
                     notify-send -t 0 "Auto-updates" "System is updated. The following packages were successfully updated:\n$UPDATED_LIST"
-                    UPDATED_LIST=()
                 else
                     notify-send "Auto-updates" "No packages were updated."
                 fi
 
                 # Remove unused packages
                 if sudo dnf -y autoremove 2>> "$LOGFILE_GENERAL"; then
-                    # Notify user about autoremove
-                    echo "Auto-updates" "Auto-removed unused packages" >> "$LOGFILE_GENERAL"
-                    notify-send "Auto-updates" "Auto-removed unused packages"
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Auto-removed unused packages." >> "$LOGFILE_GENERAL"
+                    notify-send "Auto-updates" "Auto-removed unused packages."
                 else
-                    # Error handling for autoremove
                     notify-send "Auto-updates" "Error during autoremove. Check logs."
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Error during autoremove. Check logs." >> "$LOGFILE_GENERAL"
                 fi
 
-                # Clean up package manager cache
+                # The final dnf clean all is kept here to ensure a clean state after all updates
+                # but the initial clean is the primary change.
                 if sudo dnf clean all 2>> "$LOGFILE_GENERAL"; then
-                    # Notify user about cleanup
-                    echo "Auto-updates" "Package manager cache cleaned" >> "$LOGFILE_GENERAL"
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Final package manager cache cleaned." >> "$LOGFILE_GENERAL"
+                    notify-send "Auto-updates" "Final package manager cache cleaned."
                 else
-                    # Error handling for cache cleanup
-                    notify-send "Auto-updates" "Error during cache cleanup. Check logs."
+                    notify-send "Auto-updates" "Error during final cache cleanup. Check logs."
+                    echo "$(date '+%Y-%m-%d %H:%M:%S') - Error during final cache cleanup. Check logs." >> "$LOGFILE_GENERAL"
                 fi
             else
-                notify-send "Auto-updates" "No packages to updated."
+                notify-send "Auto-updates" "No non-pinned packages to update." # Changed message for clarity
             fi
         fi
     elif [ $CHECK_EXIT -eq 0 ]; then
@@ -201,7 +220,6 @@ while true; do
         echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: dnf check-update failed with exit code $CHECK_EXIT" >> "$LOGFILE_GENERAL"
     fi
 
-    rm -f "$LIST.tmp"  # Ensure temp file cleanup
-    sleep 1h  # Wait before next check
+    rm -f "$LIST.tmp" # Ensure temp file cleanup
+    sleep 1h # Wait before next check
 done
-
