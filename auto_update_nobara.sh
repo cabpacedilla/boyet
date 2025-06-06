@@ -50,7 +50,7 @@ check_security_updates() {
 NON_SECURITY_COUNT=0
 while true; do
     # Initial clean and refresh operations ---
-    notify-send "Auto-updates" "Performing initial repository synchronization and cache cleanup."
+    notify-send -t 0 "Auto-updates" "Performing initial repository synchronization and cache cleanup."
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Performing initial repository synchronization and cache cleanup." >> "$LOGFILE_GENERAL"
 
     if sudo dnf clean all 2>> "$LOGFILE_GENERAL"; then
@@ -65,7 +65,7 @@ while true; do
     # We also update nobara-updater here to ensure the updater itself is current.
     if sudo dnf update nobara-updater --refresh -y 2>> "$LOGFILE_GENERAL"; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Repositories re-synchronized and nobara-updater checked." >> "$LOGFILE_GENERAL"
-        notify-send "Auto-updates" "Repositories synchronized."
+        notify-send -t 0 "Auto-updates" "Repositories synchronized."
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Initial repository refresh failed. Check logs." >> "$LOGFILE_GENERAL"
         notify-send -t 0 "Auto-updates" "ERROR: Initial repository refresh failed. Check logs."
