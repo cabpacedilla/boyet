@@ -209,7 +209,7 @@ while true; do
                     echo "$(date '+%Y-%m-%d %H:%M:%S') - Error during final cache cleanup. Check logs." >> "$LOGFILE_GENERAL"
                 fi
             else
-                notify-send "Auto-updates" "No non-pinned packages to update." # Changed message for clarity
+                notify-send -t 0 "Auto-updates" "No non-pinned packages to update." # Changed message for clarity
             fi
         fi
     elif [ $CHECK_EXIT -eq 0 ]; then
