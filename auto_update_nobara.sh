@@ -178,13 +178,14 @@ while true; do
                         unique_items["$pkg"]=1 # Add each item as a key
                     done
 
-                    local keys=("${!unique_items[@]}")
+                    keys=("${!unique_items[@]}")
+                    package_count=${#keys[@]}
 
                     # Join the unique items into a newline-separated string
                     IFS=$'\n'
                     UPDATED_LIST=$(printf "%s\n" "${keys[@]}" | sort)
                     unset IFS # Reset IFS to default
-                    notify-send -t 0 "Auto-updates" "System is updated. The following packages were successfully updated:\n$UPDATED_LIST"
+                    notify-send -t 0 "Auto-updates" "System is updated. The following $package_count packages were successfully updated:\n$UPDATED_LIST"
                 else
                     notify-send "Auto-updates" "No packages were updated."
                 fi
