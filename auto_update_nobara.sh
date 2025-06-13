@@ -34,12 +34,12 @@ pin_packages() {
 check_security_updates() {
     # Capture the security updates just once
     local SECURITY_UPDATES
-    SECURITY_UPDATES=$(sudo dnf check-update --security | awk '{print $1}' | sort)
+    SECURITY_UPDATES=$(sudo dnf check-update --security)
 
     SEC_UPDATES_PINNED_PKGS=()
 
     for pkg in "${PINNED_PACKAGES[@]}"; do
-        if echo "$SECURITY_UPDATES" | grep -qx "$pkg"; then
+        if echo "$SECURITY_UPDATES" | grep -q "$pkg"; then
             notify-send "Security update available for $pkg"
             SEC_UPDATES_PINNED_PKGS+=("$pkg")
         fi
@@ -51,7 +51,6 @@ check_security_updates() {
         return 1
     fi
 }
-
 
 NON_SECURITY_COUNT=0
 while true; do
