@@ -65,7 +65,7 @@ while true; do
     # We also update nobara-updater here to ensure the updater itself is current.
     if sudo dnf update nobara-updater --refresh -y 2>> "$LOGFILE_GENERAL"; then
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Repositories re-synchronized and nobara-updater checked." >> "$LOGFILE_GENERAL"
-        notify-send -t 0 "Auto-updates" "Repositories synchronized."
+        notify-send "Auto-updates" "Repositories synchronized."
     else
         echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Initial repository refresh failed. Check logs." >> "$LOGFILE_GENERAL"
         notify-send -t 0 "Auto-updates" "ERROR: Initial repository refresh failed. Check logs."
@@ -138,7 +138,7 @@ while true; do
             # If there are any packages to update, proceed
             if [ -n "$FILTERED_LIST" ]; then
                 NOTIFY_PACKAGES=$(echo "$FILTERED_LIST" | awk '{printf "%s %s\n", $1, $2}')
-                notify-send "Auto-updates" "Number of non-security packages to be updated: $NON_SECURITY_COUNT\nUpdates available (excluding pinned packages):\n${NOTIFY_PACKAGES}"
+                notify-send "Auto-updates" "Number of non-security packages to be updated: $NON_SECURITY_COUNT\nUpdates available (excluding pinned packages):\n$FILTERED_LIST"
                 notify-send -t 0 "Auto-updates" "Update in progress..."
 
                 CTR=0
