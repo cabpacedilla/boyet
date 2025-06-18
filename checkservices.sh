@@ -75,7 +75,7 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
 	APP_CTR=$((APP_CTR + 1))
 done
 	
-declare -a SCRIPTS=("autosync" "autobrightness" "auto_update_nobara" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "monitor_failures" "runscreensaver" "weather_alarm")
+declare -a SCRIPTS=("autosync" "auto_update_nobara" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "monitor_failures" "runscreensaver" "weather_alarm")
 
 MIN_ID=1
 NO_ID=0
@@ -85,7 +85,7 @@ while true; do
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
 	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
-	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
+	SCRIPT=$(command -v "${SCRIPT_NAME}")
 	IDS=$(pgrep -c "$SCRIPT_NAME")
 	PROCS=$(pidof -x "$SCRIPT")
 
@@ -101,8 +101,9 @@ while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
    # If script is not running, run the script. Else, do nothing.
 	elif [ "$IDS" -eq "$NO_ID" ]; then
 		notify-send --app-name "Check services:" "$SCRIPT_NAME is not running. Please check if $SCRIPT_NAME process is running"
-		if [ -x "$SCRIPT" ]; then
-			"$SCRIPT" &
+		SCRIPT_PATH="$HOME/Documents/bin/${SCRIPT_NAME}.sh"
+		if [ -x "$SCRIPT_PATH" ]; then
+			"$SCRIPT_PATH" &
 			notify-send --app-name "Check services:" "$SCRIPT_NAME is running"
 		fi
 	else
@@ -113,3 +114,4 @@ done
 
 sleep 1s
 done
+
