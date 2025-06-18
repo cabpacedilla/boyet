@@ -9,7 +9,7 @@ while true; do
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
 	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
-	SCRIPT=$(command -v "${SCRIPT_NAME}")
+	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
 	IDS=$(pgrep -c "$SCRIPT_NAME")
 	PROCS=$(pidof -x "$SCRIPT")
 
@@ -38,4 +38,5 @@ done
 
 sleep 1s
 done
+
 
