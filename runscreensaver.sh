@@ -106,13 +106,13 @@ fi
 resume_handler.sh
 ------------------
 #!/usr/bin/bash
-LOGFILE=~/scriptlogs/screensaver_log.txt
+LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
 LID_PATH="/proc/acpi/button/lid/LID0/state"
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-OPTIMAL=39321
+OPTIMAL=52428
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> $LOGFILE
-echo $OPTIMAL | sudo tee $BRIGHT_PATH
+brightnessctl --device=amdgpu_bl0 set 80%
 
 # Function to get the lid state
 get_lid_state() {
@@ -135,10 +135,11 @@ is_media_playing() {
 
 if ! is_media_playing && [ "$(get_lid_state)" == "open" ]; then
     # Kill any running screensaver programs
-    pkill -9 -f "/home/claiveapa/bin/rand_screensavers.sh"  # Force Kill the loop!
+    pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"  # Force Kill the loop!
     pkill -9 -f screensaver- # Force Kill the screensaver
     qdbus org.kde.screensaver /ScreenSaver Lock
 else
     :
 fi
+
 
