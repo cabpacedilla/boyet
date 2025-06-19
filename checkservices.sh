@@ -75,7 +75,7 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
 	APP_CTR=$((APP_CTR + 1))
 done
 	
-declare -a SCRIPTS=("autosync" "auto_update_nobara" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "monitor_failures" "runscreensaver" "weather_alarm")
+declare -a SCRIPTS=("autosync" "auto_update" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "runscreensaver" "weather_alarm")
 
 MIN_ID=1
 NO_ID=0
@@ -87,15 +87,19 @@ while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
 	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
 	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
-	IDS=$(pgrep -fcx "$SCRIPT_NAME")
-	PROCS=$(pgrep -fx "$SCRIPT")
+	IDS=$(pgrep -fc "$SCRIPT_NAME")
+	PROCS=$(pidof -x "$SCRIPT")
 
    # If number of processes is more than 1, leave only one and kill the rest
    if [ "$IDS" -gt "$MIN_ID" ]; then
+		declare -a SCRIPTSARR
 		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"
 		i=0
-  		while [ "${SCRIPTSARR[$i]}" != "${SCRIPTSARR[-1]}" ]; do
-  	   	kill "${SCRIPTSARR[$i]}"
+		last_index=$(( ${#SCRIPTSARR[@]} - 1 ))
+		last_value="${SCRIPTSARR[$last_index]}"
+		while [ "${SCRIPTSARR[$i]}" != "$last_value" ]; do
+			echo "${SCRIPTSARR[$i]}"
+			kill "${SCRIPTSARR[$i]}"
      		notify-send --app-name "Check services:" "$SCRIPT_NAME instance is already running."
 			i=$((i + 1))
 		done
