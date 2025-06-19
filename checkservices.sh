@@ -79,9 +79,10 @@ declare -a SCRIPTS=("autosync" "auto_update_nobara" "autobrightness" "backlisten
 
 MIN_ID=1
 NO_ID=0
-SCRIPTS_CTR=0
 
 while true; do
+SCRIPTS_CTR=0
+
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
 	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
