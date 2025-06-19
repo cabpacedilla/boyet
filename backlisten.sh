@@ -4,8 +4,8 @@ while true; do
 MIN_ID=1
 NO_ID=0
 
-CHECK_SERVICES_IDS=$(pgrep -c "checkservices")
-CHECK_SERVICES_PROC=$(pidof -x "checkservices.sh")
+CHECK_SERVICES_IDS=$(pgrep -fcx "checkservices")
+CHECK_SERVICES_PROC=$(pgrep -fx "checkservices.sh")
 
 if [ "$CHECK_SERVICES_IDS" -gt $MIN_ID ]; then
    declare -a CHECK_SERVICESARR
