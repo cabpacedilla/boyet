@@ -4,15 +4,19 @@ while true; do
 MIN_ID=1
 NO_ID=0
 
-IDS=$(pgrep -c "checkservices")
-PROCS=$(pidof -x "checkservices.sh")
+SCRIPT_NAME="checkservices"
+SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
+IDS=$(pgrep -fc "$SCRIPT_NAME")
+PROCS=$(pidof -x "$SCRIPT")
 
 if [ "$IDS" -gt "$MIN_ID" ]; then
    declare -a CHECK_SERVICESARR
    IFS=' ' read -r -a CHECK_SERVICESARR <<< "$PROCS"
    i=0
-	while [ "${CHECK_SERVICESARR[$i]}" != "${CHECK_SERVICESARR[-1]}" ]; do
-	   echo "${CHECK_SERVICESARR[$i]}"
+	last_index=$(( ${#CHECK_SERVICESARR[@]} - 1 ))
+	last_value="${CHECK_SERVICESARR[$last_index]}"
+		while [ "${CHECK_SERVICESARR[$i]}" != "$last_value" ]; do
+		echo "${CHECK_SERVICESARR[$i]}"
 		kill "${CHECK_SERVICESARR[$i]}"
 		notify-send -t 10000 --app-name "Check services:" "checkservices instance is already running."
 		i=$((i + 1))
