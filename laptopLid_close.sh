@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 # This script will activate screen lock when the laptop lid will be closed for auto lid close security in icewm window manager in Linux
 # This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
