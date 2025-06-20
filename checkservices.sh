@@ -75,7 +75,7 @@ while [ "$APP_CTR" -lt "${#APPS[@]}" ]; do
 	APP_CTR=$((APP_CTR + 1))
 done
 	
-declare -a SCRIPTS=("autosync" "auto_update" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "runscreensaver" "weather_alarm")
+declare -a SCRIPTS=("autosync" "auto_update" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "monfailures" "runscreensaver" "weather_alarm")
 
 MIN_ID=1
 NO_ID=0
@@ -85,10 +85,10 @@ SCRIPTS_CTR=0
 
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
-	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
-	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
-	IDS=$(pgrep -fc "$SCRIPT_NAME")
-	PROCS=$(pidof -x "$SCRIPT")
+	SCRIPT_NAME="${SCRIPTS[$SCRIPTS_CTR]}"
+	SCRIPT="/home/claiveapa/Documents/bin/${SCRIPT_NAME}.sh"
+	IDS=$(pgrep -fc "/bin/bash $SCRIPT")
+	PROCS=$(pgrep -f "/bin/bash $SCRIPT")
 
    # If number of processes is more than 1, leave only one and kill the rest
    if [ "$IDS" -gt "$MIN_ID" ]; then
@@ -119,3 +119,4 @@ done
 
 sleep 1s
 done
+
