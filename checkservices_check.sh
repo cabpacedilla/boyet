@@ -1,24 +1,44 @@
 #!/usr/bin/bash
-declare -a SCRIPTS=("autosync" "auto_update_nobara" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "monitor_failures" "runscreensaver" "weather_alarm")
+# This script will check if a process is running. If the process is not running, it will run the process.
+# This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# December 2020
+
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like checkService.sh
+# 4. Make file executable with chmod +x checkService.sh command
+# 5. Add the checkService.sh command in Startup applications
+# 6. Reboot the laptop and login
+# 7. The script will run the process if the process is not running
+
+# declare -a SERVICES=("blueman-applet" "nm-appletbasha")
+# declare -a APPS=("Skype" "Thunderbird")
+declare -a SCRIPTS=("autosync" "auto_update" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "monfailures" "runscreensaver" "weather_alarm")
 
 MIN_ID=1
 NO_ID=0
-SCRIPTS_CTR=0
 
 while true; do
+SCRIPTS_CTR=0
+
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
-	SCRIPT_NAME=$(basename "${SCRIPTS[$SCRIPTS_CTR]}")
-	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
-	IDS=$(pgrep -c "$SCRIPT_NAME")
-	PROCS=$(pidof -x "$SCRIPT")
+	SCRIPT_NAME="${SCRIPTS[$SCRIPTS_CTR]}"
+	SCRIPT="/home/claiveapa/Documents/bin/${SCRIPT_NAME}.sh"
+	IDS=$(pgrep -fc "/bin/bash $SCRIPT")
+	PROCS=$(pgrep -f "/bin/bash $SCRIPT")
 
    # If number of processes is more than 1, leave only one and kill the rest
    if [ "$IDS" -gt "$MIN_ID" ]; then
+		declare -a SCRIPTSARR
 		IFS=' ' read -r -a SCRIPTSARR <<< "$PROCS"
 		i=0
-  		while [ "${SCRIPTSARR[$i]}" != "${SCRIPTSARR[-1]}" ]; do
-  	   	kill "${SCRIPTSARR[$i]}"
+		last_index=$(( ${#SCRIPTSARR[@]} - 1 ))
+		last_value="${SCRIPTSARR[$last_index]}"
+		while [ "${SCRIPTSARR[$i]}" != "$last_value" ]; do
+			echo "${SCRIPTSARR[$i]}"
+			kill "${SCRIPTSARR[$i]}"
      		notify-send --app-name "Check services:" "$SCRIPT_NAME instance is already running."
 			i=$((i + 1))
 		done
@@ -38,5 +58,4 @@ done
 
 sleep 1s
 done
-
 
