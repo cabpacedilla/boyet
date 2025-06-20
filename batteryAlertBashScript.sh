@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 # This script will alert when battery level is below or equal 40% and will notify when battery level is above or equal 80% to optimize laptop battery life.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # September 2020
