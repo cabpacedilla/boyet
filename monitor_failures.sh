@@ -1,75 +1,147 @@
-#!/bin/bash
+#!/usr/bin/bash
 # monitor_fedora_failures.sh
-#
-# This script monitors key Fedora system logs for errors and failures in real time.
-# It checks the log files:
-#   - /var/log/messages : general system messages on Fedora
-#   - /var/log/secure   : authentication and security-related logs
-#
-# It also monitors the systemd journal for error-level logs.
-#
-# You can modify the KEYWORDS and LOGFILES arrays as needed.
+# Monitors Fedora KDE 6.3 logs for serious and critical system failures.
 
-# Path to the alert log file (modify as needed)
-ALERT_LOG=~/scriptlogs/monitor_alerts.log
+ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
+PIDFILE="$HOME/scriptlogs/monitor.pid"
+mkdir -p "$(dirname "$ALERT_LOG")"
 
-# Keywords to search for in log entries (case-insensitive)
-KEYWORDS="error|fail|panic|segfault|OOM"
+if [ -f "$PIDFILE" ]; then
+    OLD_PID=$(cat "$PIDFILE")
+    if kill -0 "$OLD_PID" 2>/dev/null; then
+        echo "Monitor script is already running with PID $OLD_PID"
+        exit 1
+    else
+        echo "Removing stale PID file"
+        rm -f "$PIDFILE"
+    fi
+fi
+echo $$ > "$PIDFILE"
 
-# Array of Fedora-specific log files to monitor.
+# Critical and serious error patterns
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|emergency mode|rescue mode|thermal.*shutdown|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault"
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|plasma.*segfault|systemd.*failed|mount.*failed|disk.*error|memory.*error|temperature.*critical|network.*unreachable|authentication.*failed.*repeatedly|swap.*exhausted|compositor.*crashed|drkonqi|plasma.*core dumped"
+
 LOGFILES=(
-    "/var/log/messages"   # General system messages
-    "/var/log/secure"     # Security and authentication logs
-    # Optionally, add other logs, e.g., "/var/log/audit/audit.log"
+    "/var/log/messages"
+    "/var/log/secure"
+    "/var/log/Xorg.0.log"
+    "/var/log/audit/audit.log"
 )
 
-# Array to store background process IDs so we can clean them up on exit.
 pids=()
 
-# Function to monitor a specific log file
+send_notification() {
+    local message="$1"
+    local urgency="$2"
+    local active_user=$(who | grep '(:0)' | awk '{print $1}' | head -1)
+    if [ -n "$active_user" ]; then
+        local user_display=$(who | grep "$active_user" | grep '(:0)' | awk '{print $5}' | tr -d '()')
+        if [ -n "$user_display" ]; then
+            sudo -u "$active_user" DISPLAY="$user_display" notify-send \
+                --urgency="$urgency" \
+                --icon=dialog-error \
+                --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
+        fi
+    fi
+    if [ "$USER" != "root" ]; then
+        notify-send --urgency="$urgency" --icon=dialog-error \
+            --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
+    fi
+}
+
+check_error_severity() {
+    local line="$1"
+    if echo "$line" | grep -Eqi "$SHOW_STOPPER"; then
+        echo "CRITICAL"
+    elif echo "$line" | grep -Eqi "$SERIOUS_FAILURES"; then
+        echo "SERIOUS"
+    else
+        echo "IGNORE"
+    fi
+}
+
+process_alert() {
+    local source="$1"
+    local line="$2"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local hostname
+    hostname=$(hostname)
+    local severity
+    severity=$(check_error_severity "$line")
+
+    case "$severity" in
+        "CRITICAL")
+            echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
+            echo "CRITICAL: $line"
+            if ! echo "$line" | grep -Eiq "screensaver"; then
+                send_notification "🚨 CRITICAL error: $(echo "$line" | cut -c1-60)..." "critical"
+            fi
+            ;;
+        "SERIOUS")
+            echo "$timestamp [SERIOUS] $source: $line" >> "$ALERT_LOG"
+            echo "SERIOUS: $line"
+            ;;
+    esac
+}
+
 monitor_log_file() {
     local logfile="$1"
     if [ ! -f "$logfile" ]; then
         echo "Log file '$logfile' not found. Skipping..."
         return
     fi
-    echo "Monitoring $logfile for failures..."
-    # Use tail -F to follow the file even if it is rotated
-    sudo tail -n 0 -F "$logfile" | while read -r line; do
-        if echo "$line" | grep -Ei "$KEYWORDS" > /dev/null; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') [ALERT] $logfile: $line" >> "$ALERT_LOG"
-            # Additional actions can be added here (e.g., email alerts)
+    echo "Monitoring $logfile..."
+    sudo tail -n 0 -F "$logfile" 2>/dev/null | while IFS= read -r line; do
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "$logfile" "$line"
         fi
     done &
     pids+=($!)
 }
 
-# Monitor each specified log file
 for logfile in "${LOGFILES[@]}"; do
     monitor_log_file "$logfile"
 done
 
-# Check if journalctl is available and monitor systemd journal logs
 if command -v journalctl > /dev/null; then
-    echo "Monitoring systemd journal for error logs..."
-    # -f: follow log output, -p 3: only show priority "error" and above
-    journalctl -f -p 3 | while read -r line; do
-        echo "$(date '+%Y-%m-%d %H:%M:%S') [ALERT] journal: $line" >> "$ALERT_LOG"
+    echo "Monitoring systemd journal..."
+    journalctl -f -p 3 --no-pager | while IFS= read -r line; do
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "systemd-journal" "$line"
+        fi
     done &
     pids+=($!)
 fi
 
-# Cleanup function to kill background monitoring processes on exit
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    dmesg -w 2>/dev/null | while IFS= read -r line; do
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "kernel-dmesg" "$line"
+        fi
+    done &
+    pids+=($!)
+fi
+
 cleanup() {
-    echo "Terminating monitoring processes..."
+    echo "Stopping monitoring..."
     for pid in "${pids[@]}"; do
         kill "$pid" 2>/dev/null
     done
+    rm -f "$PIDFILE"
+    echo "Clean exit."
     exit 0
 }
 
-# Trap SIGINT and SIGTERM signals (e.g., Ctrl+C) to run cleanup
-trap cleanup SIGINT SIGTERM
+trap cleanup SIGINT SIGTERM SIGHUP EXIT
 
-# Wait indefinitely so background processes continue to run
+send_notification "System monitor started (CRITICAL notifications only)" "low"
+
+echo "=== Fedora KDE System Monitor Running ==="
+echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
 wait
