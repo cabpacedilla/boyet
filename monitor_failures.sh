@@ -73,15 +73,12 @@ process_alert() {
 
     case "$severity" in
         "CRITICAL")
-            echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
-            echo "CRITICAL: $line"
             if ! echo "$line" | grep -Eiq "screensaver"; then
-                send_notification "🚨 CRITICAL error: $(echo "$line" | cut -c1-60)..." "critical"
+                echo "$timestamp [CRITICAL] $source: $line" > "$ALERT_LOG"
             fi
             ;;
         "SERIOUS")
-            echo "$timestamp [SERIOUS] $source: $line" >> "$ALERT_LOG"
-            echo "SERIOUS: $line"
+            echo "$timestamp [SERIOUS] $source: $line" > "$ALERT_LOG"
             ;;
     esac
 }
