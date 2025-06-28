@@ -5,8 +5,8 @@
 # call script to launch in a terminal konsole -e /home/claiveapa/Documents/bin/recentFiles.sh
 
 # Define file paths
-RECENT_FILES_LIST=~/scriptlogs/recentFiles.txt
-TAIL_LIST=~/scriptlogs/reverseRecent.txt
+RECENT_FILES_LIST="$HOME/scriptlogs/recentFiles.txt"
+TAIL_LIST="$HOME/scriptlogs/reverseRecent.txt"
 RECENTLY_XBEL_FILE=~/.local/share/recently-used.xbel
 
 # Infinite loop to continuously check recent files
@@ -20,7 +20,7 @@ while true; do
 
 	# Extract recent file paths from the recently-used.xbel file and cleanup path percent encoding
 # 	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $3}' "$RECENTLY_XBEL_FILE" |
-	RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
+RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
   sed 's|file://||' |
   sed -e 's/%0A//g' \
       -e 's/%20/ /g' \
@@ -44,8 +44,12 @@ while true; do
       -e 's/%7E/~/g' \
       -e 's/%2A/*/g' \
       -e 's/%2E/\./g' \
-      -e 's/%5C/\\/g' |
-  sed 's|/ *|/|g' )
+      -e 's/%5C/\\/g' \
+      -e 's/%27/'\''/g' \
+      -e 's/%22/"/g' \
+      -e 's/%3C/</g' \
+      -e 's/%3E/>/g' \
+      -e 's/%7C/|/g')
 
 	# Save recent files to RECENT_FILES_LIST
 	echo "$RECENT_FILES" > "$RECENT_FILES_LIST"
