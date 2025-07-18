@@ -24,7 +24,7 @@
 # Path to lid state file
 LID_PATH="/proc/acpi/button/lid/LID0/state"
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-OPTIMAL=4095
+OPTIMAL=49961
 
 # Function to check if HDMI is connected
 check_hdmi() {
