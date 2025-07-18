@@ -166,7 +166,7 @@ resume_handler.sh
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
 LID_PATH="/proc/acpi/button/lid/LID0/state"
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-OPTIMAL=52428
+OPTIMAL=49961
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> $LOGFILE
 brightnessctl --device=amdgpu_bl0 set 80%
