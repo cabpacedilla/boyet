@@ -1,26 +1,26 @@
 #!/usr/bin/bash
 # monitor_fedora_failures.sh
-# Monitors Fedora KDE 6.3 logs for serious and critical system failures.
+# Monitors Fedora KDE 6.3 logs for critical and serious system failures in real-time.
 
 ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
-mkdir -p "$(dirname "$ALERT_LOG")"
 
-if [ -f "$PIDFILE" ]; then
-    OLD_PID=$(cat "$PIDFILE")
-    if kill -0 "$OLD_PID" 2>/dev/null; then
-        echo "Monitor script is already running with PID $OLD_PID"
-        exit 1
-    else
-        echo "Removing stale PID file"
-        rm -f "$PIDFILE"
-    fi
-fi
-echo $$ > "$PIDFILE"
+# Optional: Prevent duplicate instances
+# mkdir -p "$(dirname "$ALERT_LOG")"
+# if [ -f "$PIDFILE" ]; then
+#     OLD_PID=$(cat "$PIDFILE")
+#     if kill -0 "$OLD_PID" 2>/dev/null; then
+#         echo "Monitor script is already running with PID $OLD_PID"
+#         exit 1
+#     else
+#         echo "Removing stale PID file"
+#         rm -f "$PIDFILE"
+#     fi
+# fi
+# echo $$ > "$PIDFILE"
 
-# Critical and serious error patterns
-SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|emergency mode|rescue mode|thermal.*shutdown|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault"
-SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|plasma.*segfault|systemd.*failed|mount.*failed|disk.*error|memory.*error|temperature.*critical|network.*unreachable|authentication.*failed.*repeatedly|swap.*exhausted|compositor.*crashed|drkonqi|plasma.*core dumped"
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted"
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full"
 
 LOGFILES=(
     "/var/log/messages"
@@ -44,6 +44,7 @@ send_notification() {
                 --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
         fi
     fi
+
     if [ "$USER" != "root" ]; then
         notify-send --urgency="$urgency" --icon=dialog-error \
             --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
@@ -66,19 +67,18 @@ process_alert() {
     local line="$2"
     local timestamp
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    local hostname
-    hostname=$(hostname)
     local severity
     severity=$(check_error_severity "$line")
 
     case "$severity" in
         "CRITICAL")
             if ! echo "$line" | grep -Eiq "screensaver"; then
-                echo "$timestamp [CRITICAL] $source: $line" > "$ALERT_LOG"
+                echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
+                send_notification "$line" "critical"
             fi
             ;;
         "SERIOUS")
-            echo "$timestamp [SERIOUS] $source: $line" > "$ALERT_LOG"
+            echo "$timestamp [SERIOUS] $source: $line" >> "$ALERT_LOG"
             ;;
     esac
 }
@@ -89,13 +89,25 @@ monitor_log_file() {
         echo "Log file '$logfile' not found. Skipping..."
         return
     fi
-    echo "Monitoring $logfile..."
-    sudo tail -n 0 -F "$logfile" 2>/dev/null | while IFS= read -r line; do
-        severity=$(check_error_severity "$line")
-        if [ "$severity" != "IGNORE" ]; then
-            process_alert "$logfile" "$line"
-        fi
-    done &
+
+    echo "Monitoring $logfile with inotify..."
+
+    (
+        tail -n 0 -F "$logfile" 2>/dev/null | while IFS= read -r line; do
+            severity=$(check_error_severity "$line")
+            if [ "$severity" != "IGNORE" ]; then
+                process_alert "$logfile" "$line"
+            fi
+        done
+    ) &
+    pids+=($!)
+
+    (
+        while inotifywait -e modify "$logfile" >/dev/null 2>&1; do
+            :
+            # Keeps watching for modifications
+        done
+    ) &
     pids+=($!)
 }
 
@@ -141,4 +153,16 @@ send_notification "System monitor started (CRITICAL notifications only)" "low"
 
 echo "=== Fedora KDE System Monitor Running ==="
 echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
+
+# Optional: Show existing critical alerts once at startup
+if [ -f "$ALERT_LOG" ]; then
+    CRITICAL_LOGS=$(grep "\[CRITICAL\]" "$ALERT_LOG")
+    if [ -n "$CRITICAL_LOGS" ]; then
+        konsole -e bash -c "cat <<EOF
+$CRITICAL_LOGS
+EOF
+read -p 'Press Enter to close...'" &
+    fi
+fi
+
 wait
