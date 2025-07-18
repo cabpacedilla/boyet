@@ -69,7 +69,7 @@ rand_screensavers.sh
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
 MINIMAL=0
-OPTIMAL=39321
+OPTIMAL=49961
 
 # --- UPDATED LOCATION FOR SCREENSAVER LISTS ---
 # File to store the list of screensavers that have NOT yet been played in the current cycle
