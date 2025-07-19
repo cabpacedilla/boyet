@@ -2,8 +2,21 @@
 # This script is used to monitor and access recently used files
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # June 2024
-# Call this script with another script to launch in a terminal like  konsole -e /home/claiveapa/Documents/bin/recentFiles.sh
-# then add the calling script in your keyboard shortcuts settings
+# call script to launch in a terminal konsole -e /home/claiveapa/Documents/bin/recentFiles.sh
+
+# Relaunch in terminal if not running interactively
+if [[ ! -t 0 ]]; then
+    TERMINALS=("xdg-terminal" "gnome-terminal" "konsole" "xfce4-terminal" "xterm" "lxterminal" "tilix" "mate-terminal" "deepin-terminal" "alacritty" "urxvt")
+    for term in "${TERMINALS[@]}"; do
+        if command -v "$term" >/dev/null 2>&1; then
+            "$term" -e "$0" &
+            exit 0
+        fi
+    done
+    notify-send "Error" "No supported terminal emulator found to launch script." &
+    exit 1
+fi
+
 
 # Define file paths
 RECENT_FILES_LIST="$HOME/scriptlogs/recentFiles.txt"
@@ -15,42 +28,42 @@ while true; do
 
 	# Ensure the recently-used.xbel file exists
 	if [[ ! -f "$RECENTLY_XBEL_FILE" ]]; then
-	  notify-send "File $RECENTLY_XBEL_FILE does not exist." &
-	  exit 1
+		notify-send "File $RECENTLY_XBEL_FILE does not exist." &
+		exit 1
 	fi
 
 	# Extract recent file paths from the recently-used.xbel file and cleanup path percent encoding
 # 	RECENT_FILES=$(awk -F 'file://|" ' '/file:\/\// {print $3}' "$RECENTLY_XBEL_FILE" |
-RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
-  sed 's|file://||' |
-  sed -e 's/%0A//g' \
-      -e 's/%20/ /g' \
-      -e 's/%2F/\//g' \
-      -e 's/%3A/:/g' \
-      -e 's/%2C/,/g' \
-      -e 's/%3F/?/g' \
-      -e 's/%23/#/g' \
-      -e 's/%26/\&/g' \
-      -e 's/%2B/+/g' \
-      -e 's/%3D/=/g' \
-      -e 's/%40/@/g' \
-      -e 's/%2D/-/g' \
-      -e 's/%28/(/g' \
-      -e 's/%29/)/g' \
-      -e 's/%25/%/g' \
-      -e 's/%5B/[/g' \
-      -e 's/%5D/]/g' \
-      -e 's/%7B/{/g' \
-      -e 's/%7D/}/g' \
-      -e 's/%7E/~/g' \
-      -e 's/%2A/*/g' \
-      -e 's/%2E/\./g' \
-      -e 's/%5C/\\/g' \
-      -e 's/%27/'\''/g' \
-      -e 's/%22/"/g' \
-      -e 's/%3C/</g' \
-      -e 's/%3E/>/g' \
-      -e 's/%7C/|/g')
+	RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
+	sed 's|file://||' |
+	sed -e 's/%0A//g' \
+		-e 's/%20/ /g' \
+		-e 's/%2F/\//g' \
+		-e 's/%3A/:/g' \
+		-e 's/%2C/,/g' \
+		-e 's/%3F/?/g' \
+		-e 's/%23/#/g' \
+		-e 's/%26/\&/g' \
+		-e 's/%2B/+/g' \
+		-e 's/%3D/=/g' \
+		-e 's/%40/@/g' \
+		-e 's/%2D/-/g' \
+		-e 's/%28/(/g' \
+		-e 's/%29/)/g' \
+		-e 's/%25/%/g' \
+		-e 's/%5B/[/g' \
+		-e 's/%5D/]/g' \
+		-e 's/%7B/{/g' \
+		-e 's/%7D/}/g' \
+		-e 's/%7E/~/g' \
+		-e 's/%2A/*/g' \
+		-e 's/%2E/\./g' \
+		-e 's/%5C/\\/g' \
+		-e 's/%27/'\''/g' \
+		-e 's/%22/"/g' \
+		-e 's/%3C/</g' \
+		-e 's/%3E/>/g' \
+		-e 's/%7C/|/g')
 
 	# Save recent files to RECENT_FILES_LIST
 	echo "$RECENT_FILES" > "$RECENT_FILES_LIST"
@@ -91,7 +104,7 @@ RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
 	# Check if selected file is a directory or file
 	if [[ -d "$SELECTED_FILE" ]]; then
 		# Open the folder with a file manager
-		pcmanfm-qt "$SELECTED_FILE" &
+		dolphin "$SELECTED_FILE" &
 	elif [[ -f "$SELECTED_FILE" ]]; then
 		# Open the file with the preferred application
 		xdg-open "$SELECTED_FILE" &
