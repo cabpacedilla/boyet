@@ -18,7 +18,7 @@
 notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &
 
 # Terminal list for flexibility across desktop environments
-TERMINALS=("gnome-terminal" "xfce4-terminal" "xterm" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
+TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
 
 # Flag to indicate if it's the first run
 first_run=true
