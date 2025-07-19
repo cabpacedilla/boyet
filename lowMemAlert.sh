@@ -13,6 +13,8 @@
 # 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
 # 8. Low memory alert message will be displayed
 
+TERMINALS=("xdg-terminal" "gnome-terminal" "konsole" "xfce4-terminal" "xterm" "lxterminal" "tilix" "mate-terminal" "deepin-terminal" "alacritty" "urxvt")
+
 #!/usr/bin/bash
 while true; do
 # 1. Set memory free limit
@@ -27,7 +29,19 @@ if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then
 #    TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
    TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; if ($5 !~ /konsole/) printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
   
-	konsole -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes: \n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+
+   launched=false
+   for term in "${TERMINALS[@]}"; do
+      if command -v "$term" >/dev/null 2>&1; then
+         "$term" -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+         launched=true
+         break
+      fi
+   done
+
+   if [ "$launched" = false ]; then
+      notify-send "Low Memory Alert" "No supported terminal emulator found to display memory usage."
+   fi
 fi
 
 # 4. sleep for 30 seconds
