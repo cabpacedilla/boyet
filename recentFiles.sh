@@ -6,7 +6,7 @@
 
 # Relaunch in terminal if not running interactively
 if [[ ! -t 0 ]]; then
-    TERMINALS=("xdg-terminal" "gnome-terminal" "konsole" "xfce4-terminal" "xterm" "lxterminal" "tilix" "mate-terminal" "deepin-terminal" "alacritty" "urxvt")
+    TERMINALS=("gnome-terminal" "konsole" "xfce4-terminal" "xterm" "lxterminal" "tilix" "mate-terminal" "deepin-terminal" "alacritty" "urxvt")
     for term in "${TERMINALS[@]}"; do
         if command -v "$term" >/dev/null 2>&1; then
             "$term" -e "$0" &
