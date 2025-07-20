@@ -14,7 +14,21 @@
 
 # declare -a SERVICES=("blueman-applet" "nm-appletbasha")
 # declare -a APPS=("Skype" "Thunderbird")
-declare -a SCRIPTS=("autosync" "autobrightness" "backlisten" "batteryAlertBashScript" "battery_usage" "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you" "keyLocked" "laptopLid_close" "lowMemAlert" "runscreensaver" "weather_alarm")
+declare -a SCRIPTS=(
+    "autosync"
+    "autobrightness"
+    "backlisten"
+    "batteryAlertBashScript"
+    "battery_usage"
+    "btrfs_balance_quarterly"
+    "btrfs_scrub_monthly"
+    "fortune4you"
+    "keyLocked"
+    "laptopLid_close"
+    "lowMemAlert"
+    "runscreensaver"
+    "weather_alarm"
+)
 
 MIN_ID=1
 NO_ID=0
@@ -25,7 +39,8 @@ SCRIPTS_CTR=0
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
 	SCRIPT_NAME="${SCRIPTS[$SCRIPTS_CTR]}"
-	SCRIPT="/home/claiveapa/Documents/bin/${SCRIPT_NAME}.sh"
+# 	SCRIPT="/usr/bin/bash /home/claiveapa/Documents/bin/${SCRIPT_NAME}.sh"
+	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
 	IDS=$(pgrep -fc "$SCRIPT_NAME")
 	PROCS=$(pidof -x "$SCRIPT")
 
@@ -58,4 +73,3 @@ done
 
 sleep 1s
 done
-
