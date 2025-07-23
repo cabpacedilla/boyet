@@ -136,7 +136,10 @@ while true; do
 		if command -v "$fm_cmd" >/dev/null 2>&1; then
 			FOUND_FILE_MANAGER="$fm_cmd"
 			break # Found an executable file manager, stop searchingss
-	elif [[ -f "$SELECTED_FILE" ]]; then
+		fi
+	done
+
+	if [[ -f "$SELECTED_FILE" ]]; then
 		# Open the file with the preferred application using xdg-open
 		xdg-open "$SELECTED_FILE" &
 	else
