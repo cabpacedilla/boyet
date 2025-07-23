@@ -115,11 +115,27 @@ while true; do
 
 	# Get the selected file
 	SELECTED_FILE="${RECENT_FILES_ARRAY[SEQUENCE_NUM - 1]}"
+	# Open the folder with a file manager, being flexible for different DEs
 
-	# Check if selected file is a directory or file
-	if [[ -d "$SELECTED_FILE" ]]; then
-		# Open the folder with a file manager (Dolphin for KDE)
-		dolphin "$SELECTED_FILE" &
+	# List of common file managers in a general preferred order.
+	# This order prioritizes commonly used managers in case multiple are installed.
+	declare -a FILE_MANAGER_CANDIDATES=(
+		"dolphin"    # KDE Plasma (e.g., Kubuntu, openSUSE KDE)
+		"nautilus"   # GNOME (e.g., Ubuntu, Fedora Workstation)
+		"nemo"       # Cinnamon (e.g., Linux Mint Cinnamon)
+		"caja"       # MATE (e.g., Linux Mint MATE, Ubuntu MATE)
+		"thunar"     # XFCE (e.g., Xubuntu, Linux Mint XFCE)
+		"pcmanfm-qt" # LXQt (e.g., Lubuntu, Fedora LXQt)
+		"pcmanfm"    # LXDE (older Lubuntu, various lightweight setups)
+	)
+
+	FOUND_FILE_MANAGER=""
+
+	# Iterate through candidates and use the first one found that exists
+	for fm_cmd in "${FILE_MANAGER_CANDIDATES[@]}"; do
+		if command -v "$fm_cmd" >/dev/null 2>&1; then
+			FOUND_FILE_MANAGER="$fm_cmd"
+			break # Found an executable file manager, stop searchingss
 	elif [[ -f "$SELECTED_FILE" ]]; then
 		# Open the file with the preferred application using xdg-open
 		xdg-open "$SELECTED_FILE" &
