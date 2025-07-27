@@ -169,7 +169,6 @@ BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
 OPTIMAL=49961
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> $LOGFILE
-brightnessctl --device=amdgpu_bl0 set 80%
 
 # Function to get the lid state
 get_lid_state() {
@@ -195,8 +194,12 @@ if ! is_media_playing && [ "$(get_lid_state)" == "open" ]; then
     pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"  # Force Kill the loop!
     pkill -9 -f screensaver- # Force Kill the screensaver
     qdbus org.kde.screensaver /ScreenSaver Lock
+    brightnessctl --device=amdgpu_bl0 set 80%
 else
     :
 fi
+
+
+
 
 
