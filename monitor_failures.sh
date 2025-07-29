@@ -155,14 +155,39 @@ echo "=== Fedora KDE System Monitor Running ==="
 echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
 
 # Optional: Show existing critical alerts once at startup
-if [ -f "$ALERT_LOG" ]; then
+open_terminal_with_logs() {
     CRITICAL_LOGS=$(grep "\[CRITICAL\]" "$ALERT_LOG")
-    if [ -n "$CRITICAL_LOGS" ]; then
-        konsole -e bash -c "cat <<EOF
+    [ -z "$CRITICAL_LOGS" ] && return
+
+    TERM_CMDS=(
+        "konsole"
+        "gnome-terminal"
+        "xfce4-terminal"
+        "tilix"
+        "xterm"
+        "lxterminal"
+        "mate-terminal"
+        "alacritty"
+        "terminator"
+        "urxvt"
+        "kitty"
+    )
+
+    for term in "${TERM_CMDS[@]}"; do
+        if command -v "$term" > /dev/null; then
+            "$term" -e bash -c "cat <<EOF
 $CRITICAL_LOGS
 EOF
 read -p 'Press Enter to close...'" &
-    fi
+            return
+        fi
+    done
+
+    echo "No compatible terminal found to display critical logs."
+}
+
+if [ -f "$ALERT_LOG" ]; then
+    open_terminal_with_logs
 fi
 
 wait
