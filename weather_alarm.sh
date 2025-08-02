@@ -11,8 +11,6 @@
 # 5. Add the weatheralarm.sh command in Startup applications
 # 6. Reboot the laptop
 
-#!/usr/bin/bash
-
 notify-temp()
 {
 	case "$1" in 
