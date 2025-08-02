@@ -4,12 +4,12 @@
 ORIGIN=~/Documents/
 DESTINATION=/run/media/claiveapa/Data/claive/Documents/nobara/
 while inotifywait -r -e modify,create $ORIGIN; do
-	TIME=$(date +"%I:%M %p")
+	BACKUP_TIME=$(date +"%I:%M %p")
 	rsync -avz --protect-args "$ORIGIN" "$DESTINATION"
 	if [ $? = 0 ]; then
-		notify-send --app-name "Auto-backup:    $TIME" "Backup sync was successful."
+		notify-send --app-name "Auto-backup:    $BACKUP_TIME" "Backup sync was successful."
 	else
-		notify-send --app-name "Auto-backup:    $TIME""Backup sync encountered an error."
+		notify-send --app-name "Auto-backup:    $BACKUP_TIME""Backup sync encountered an error."
 	fi
    #sudo rsync -avHAX ~/Documents/testfiles/ /mnt/backup/ --delete
    #sudo tar cvf /mnt/backup/tarball$DATE ~/Documents/testfiles/*
