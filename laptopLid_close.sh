@@ -23,8 +23,7 @@
 
 # Path to lid state file
 LID_PATH="/proc/acpi/button/lid/LID0/state"
-BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-OPTIMAL=49961
+OPTIMAL_BRIGHTNESS=49961
 
 # Function to check if HDMI is connected
 check_hdmi() {
@@ -47,7 +46,7 @@ while true; do
     # Check lid state and HDMI connection
     if [ "$(get_lid_state)" == "closed" ] && [ -z  "$(check_hdmi)" ]; then
         # Lock screen and suspend if no HDMI is connected and lid is closed
-        echo $OPTIMAL | sudo tee $BRIGHT_PATH
+        brightnessctl --device=amdgpu_bl0 set 80%
         #xscreensaver-command --lock
         systemctl suspend
     else
@@ -56,9 +55,3 @@ while true; do
 
     sleep 0.1
 done
-
-
-
-
-
-
