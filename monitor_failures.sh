@@ -5,20 +5,6 @@
 ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
 
-# Optional: Prevent duplicate instances
-# mkdir -p "$(dirname "$ALERT_LOG")"
-# if [ -f "$PIDFILE" ]; then
-#     OLD_PID=$(cat "$PIDFILE")
-#     if kill -0 "$OLD_PID" 2>/dev/null; then
-#         echo "Monitor script is already running with PID $OLD_PID"
-#         exit 1
-#     else
-#         echo "Removing stale PID file"
-#         rm -f "$PIDFILE"
-#     fi
-# fi
-# echo $$ > "$PIDFILE"
-
 SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted"
 SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full"
 
@@ -102,13 +88,6 @@ monitor_log_file() {
     ) &
     pids+=($!)
 
-    (
-        while inotifywait -e modify "$logfile" >/dev/null 2>&1; do
-            :
-            # Keeps watching for modifications
-        done
-    ) &
-    pids+=($!)
 }
 
 for logfile in "${LOGFILES[@]}"; do
@@ -189,5 +168,6 @@ read -p 'Press Enter to close...'" &
 if [ -f "$ALERT_LOG" ]; then
     open_terminal_with_logs
 fi
+
 
 wait
