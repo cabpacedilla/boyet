@@ -8,8 +8,7 @@ brightness_check()
 {
 	BRIGHTNESS=$(cat $BRIGHT_PATH)
 	if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
-		:
-# 		brightnessctl --device=amdgpu_bl0 set 80%
+		brightnessctl --device=amdgpu_bl0 set 80%
 	else
 		:
 	fi
