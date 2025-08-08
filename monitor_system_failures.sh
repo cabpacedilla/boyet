@@ -2,6 +2,31 @@
 # monitor_system_failures.sh
 # Monitors critical and serious system failures across popular Linux distros.
 
+# ---------------------------
+# To run this as a systemd service:
+# 1. Place this script at: /home/claiveapa/Documents/bin/monitor_system_failures.sh
+# 2. Make it executable: chmod +x /home/claiveapa/Documents/bin/monitor_system_failures.sh
+# 3. Create this unit file at: ~/.config/systemd/user/system-monitor-failures.service
+#
+# [Unit]
+# Description=System Failure Monitor
+# After=network.target
+#
+# [Service]
+# Type=simple
+# ExecStart=/home/claiveapa/Documents/bin/monitor_system_failures.sh
+# Restart=always
+# RestartSec=5
+#
+# [Install]
+# WantedBy=default.target
+#
+# 4. Enable and start it:
+#    systemctl --user daemon-reexec
+#    systemctl --user daemon-reload
+#    systemctl --user enable --now system-monitor-failures.service
+# ---------------------------
+
 ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
 mkdir -p "$(dirname "$ALERT_LOG")"
@@ -91,31 +116,39 @@ monitor_log_file() {
     pids+=($!)
 }
 
-for logfile in "${LOGFILES[@]}"; do
-    monitor_log_file "$logfile"
-done
-
-if command -v journalctl > /dev/null; then
-    echo "Monitoring systemd journal..."
+monitor_journal() {
     journalctl -f -p 3 --no-pager | while IFS= read -r line; do
         local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "systemd-journal" "$line"
         fi
-    done &
-    pids+=($!)
-fi
+    done
+}
 
-if command -v dmesg > /dev/null; then
-    echo "Monitoring dmesg..."
+monitor_dmesg() {
     dmesg -w 2>/dev/null | while IFS= read -r line; do
         local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "kernel-dmesg" "$line"
         fi
-    done &
+    done
+}
+
+for logfile in "${LOGFILES[@]}"; do
+    monitor_log_file "$logfile"
+done
+
+if command -v journalctl > /dev/null; then
+    echo "Monitoring systemd journal..."
+    monitor_journal &
+    pids+=($!)
+fi
+
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    monitor_dmesg &
     pids+=($!)
 fi
 
