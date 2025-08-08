@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # fedora-proactive-sec.sh
-# Proactive Fedora/Nobara Security Monitor with Real-time Alerts
+# Proactive Fedora/Nobara Security Monitor with Real-time Alerts and False Positive Filtering
 
 mkdir -p "$HOME/scriptlogs"
 LOGFILE="$HOME/scriptlogs/fedora-sec-proactive.log"
@@ -10,6 +10,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# ===== Utility Functions =====
 notify() {
   notify-send "🛡️ Fedora Proactive Security" "$1"
 }
@@ -32,12 +33,11 @@ startup_notify() {
   log_info "Security monitor started at $(date)"
 }
 
-# Enable auditd and add proactive audit rules
+# ===== Enable and Configure auditd =====
 enable_auditd() {
   sudo systemctl enable --now auditd
   log_info "auditd service enabled."
 
-  # Add proactive rules if not yet present
   AUDIT_RULES="/etc/audit/rules.d/proactive.rules"
   if [ ! -f "$AUDIT_RULES" ]; then
     sudo tee "$AUDIT_RULES" > /dev/null <<EOF
@@ -55,16 +55,46 @@ EOF
   fi
 }
 
+# ===== Known harmless patterns to ignore =====
+false_positive_patterns=(
+  "Call to Suspend failed"
+  "gnome-shell.*no suitable screen"
+  "pulseaudio.*Connection refused"
+  "systemd-logind.*failed to idle"
+  "org.freedesktop.DBus.Error"
+)
+
+is_false_positive() {
+  local line="$1"
+  for pattern in "${false_positive_patterns[@]}"; do
+    if echo "$line" | grep -qiE "$pattern"; then
+      return 0  # true → it's a false positive
+    fi
+  done
+  return 1  # false → it's a real alert
+}
+
+# ===== Real-time Log Monitoring =====
 monitor_logs_proactively() {
   log_info "Monitoring logs in real-time for threats..."
 
-  journalctl -f -p err..emerg | while read -r line; do
-    if echo "$line" | grep -E -i "segfault|unauthorized|denied|failed|attack|exploit|rootkit|brute"; then
-      log_warn "Real-time log alert: $line"
+  # Combined real-time security log monitor for:
+  # - High priority system logs (err..emerg)
+  # - Fail2ban events
+  # - Firewalld events
+  journalctl -f -p err..emerg -u fail2ban -u firewalld |
+  while read -r line; do
+    if echo "$line" | grep -E -i \
+      "segfault|unauthorized|denied|failed|attack|exploit|rootkit|brute|ban|unban|blocked|drop|reject|port|zone|rule"; then
+      if ! is_false_positive "$line"; then
+        log_warn "Real-time log alert: $line"
+      fi
     fi
   done
+
 }
 
+# ===== Critical Services Check =====
 monitor_system_services() {
   critical_services=(auditd fail2ban firewalld)
   for service in "${critical_services[@]}"; do
@@ -76,6 +106,7 @@ monitor_system_services() {
   done
 }
 
+# ===== Real-time Auditd Alerts =====
 real_time_audit_alerts() {
   log_info "Watching audit logs in real-time..."
 
@@ -86,7 +117,7 @@ real_time_audit_alerts() {
   done
 }
 
-# Main proactive loop
+# ===== Main =====
 startup_notify
 enable_auditd
 monitor_system_services &
