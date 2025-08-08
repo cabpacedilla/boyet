@@ -2,31 +2,6 @@
 # monitor_system_failures.sh
 # Monitors critical and serious system failures across popular Linux distros.
 
-# ---------------------------
-# To run this as a systemd service:
-# 1. Place this script at: /home/claiveapa/Documents/bin/monitor_system_failures.sh
-# 2. Make it executable: chmod +x /home/claiveapa/Documents/bin/monitor_system_failures.sh
-# 3. Create this unit file at: ~/.config/systemd/user/system-monitor-failures.service
-#
-# [Unit]
-# Description=System Failure Monitor
-# After=network.target
-#
-# [Service]
-# Type=simple
-# ExecStart=/home/claiveapa/Documents/bin/monitor_system_failures.sh
-# Restart=always
-# RestartSec=5
-#
-# [Install]
-# WantedBy=default.target
-#
-# 4. Enable and start it:
-#    systemctl --user daemon-reexec
-#    systemctl --user daemon-reload
-#    systemctl --user enable --now system-monitor-failures.service
-# ---------------------------
-
 ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
 mkdir -p "$(dirname "$ALERT_LOG")"
