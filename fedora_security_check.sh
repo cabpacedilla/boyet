@@ -1,39 +1,17 @@
 #!/bin/bash
 
-# fedora-sec-check.sh
-# Modular Fedora/Nobara Security Audit Script
-# Color-coded, log-based, and real-time desktop notifications
-#
-# To run this script as a service:
-# 1. Save this script as: /usr/local/bin/fedora-sec-check.sh
-# 2. Make it executable: chmod +x /usr/local/bin/fedora-sec-check.sh
-# 3. Create the systemd service file at /etc/systemd/system/fedora-sec-check.service with the content:
-#    [Unit]
-#    Description=Fedora Security Check Script
-#    After=network.target
-#
-#    [Service]
-#    Type=simple
-#    ExecStart=/usr/local/bin/fedora-sec-check.sh
-#    Restart=always
-#    RestartSec=3600
-#    StandardOutput=journal
-#
-#    [Install]
-#    WantedBy=multi-user.target
-# 4. Reload systemd: sudo systemctl daemon-reexec && sudo systemctl daemon-reload
-# 5. Enable the service: sudo systemctl enable fedora-sec-check.service
-# 6. Start the service: sudo systemctl start fedora-sec-check.service
+# fedora-proactive-sec.sh
+# Proactive Fedora/Nobara Security Monitor with Real-time Alerts
 
 mkdir -p "$HOME/scriptlogs"
-LOGFILE="$HOME/scriptlogs/fedora-sec-audit.log"
+LOGFILE="$HOME/scriptlogs/fedora-sec-proactive.log"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
 notify() {
-  notify-send "🛡️ Fedora Security Check" "$1"
+  notify-send "🛡️ Fedora Proactive Security" "$1"
 }
 
 log_info() {
@@ -50,193 +28,67 @@ log_warn() {
 }
 
 startup_notify() {
-  notify "Fedora Security Check started. Monitoring for breaches..."
-  log_info "Security audit started at $(date)"
+  notify "🛡️ Proactive Security Monitor started"
+  log_info "Security monitor started at $(date)"
 }
 
-section_header() {
-  echo -e "\n========= $1 =========\n" >> "$LOGFILE"
-}
+# Enable auditd and add proactive audit rules
+enable_auditd() {
+  sudo systemctl enable --now auditd
+  log_info "auditd service enabled."
 
-chkrootkit_check() {
-  section_header "CHKROOTKIT"
-  log_info "Running chkrootkit..."
-  output=$(sudo /usr/bin/chkrootkit)
-  echo "$output" >> "$LOGFILE"
-  if echo "$output" | grep -q 'INFECTED'; then
-    log_warn "chkrootkit found infection!"
+  # Add proactive rules if not yet present
+  AUDIT_RULES="/etc/audit/rules.d/proactive.rules"
+  if [ ! -f "$AUDIT_RULES" ]; then
+    sudo tee "$AUDIT_RULES" > /dev/null <<EOF
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/sudoers -p wa -k sudoers_changes
+-w /etc/ssh/sshd_config -p wa -k ssh_config_changes
+-w /bin/su -p x -k su_exec
+-a exit,always -F arch=b64 -S execve -k exec_watched
+EOF
+    sudo augenrules --load
+    log_success "auditd proactive rules applied."
   else
-    log_success "chkrootkit reports clean."
+    log_info "auditd proactive rules already present."
   fi
 }
 
-aide_check() {
-  section_header "AIDE"
-  log_info "Running AIDE integrity check..."
-  output=$(sudo /usr/bin/aide --check)
-  echo "$output" >> "$LOGFILE"
-  if echo "$output" | grep -q 'found differences'; then
-    log_warn "AIDE detected file changes!"
-  else
-    log_success "AIDE reports no changes."
-  fi
+monitor_logs_proactively() {
+  log_info "Monitoring logs in real-time for threats..."
+
+  journalctl -f -p err..emerg | while read -r line; do
+    if echo "$line" | grep -E -i "segfault|unauthorized|denied|failed|attack|exploit|rootkit|brute"; then
+      log_warn "Real-time log alert: $line"
+    fi
+  done
 }
 
-analyze_logs() {
-  section_header "CRITICAL LOGS"
-  log_info "Checking logs for critical alerts..."
-  output=$(sudo journalctl -p err..alert --since "2 days ago")
-  echo "$output" >> "$LOGFILE"
-  if [ -n "$output" ]; then
-    log_warn "Critical log entries found!"
-  else
-    log_success "No recent critical logs."
-  fi
+monitor_system_services() {
+  critical_services=(auditd fail2ban firewalld)
+  for service in "${critical_services[@]}"; do
+    if ! systemctl is-active --quiet "$service"; then
+      log_warn "CRITICAL: $service is not running!"
+    else
+      log_success "$service is running."
+    fi
+  done
 }
 
-network_check() {
-  section_header "NETWORK"
-  log_info "Checking open ports and connections..."
-  sudo /usr/bin/ss -tulnp >> "$LOGFILE"
-  sudo lsof -i >> "$LOGFILE"
-  log_success "Network scan completed."
+real_time_audit_alerts() {
+  log_info "Watching audit logs in real-time..."
+
+  ausearch -i --input-logs --checkpoint="/tmp/audit_checkpoint" | while read -r line; do
+    if echo "$line" | grep -E "passwd_changes|shadow_changes|su_exec|exec_watched|sudoers_changes"; then
+      log_warn "AUDIT ALERT: $line"
+    fi
+  done
 }
 
-clamav_scan() {
-  section_header "CLAMAV"
-  log_info "Updating and scanning with ClamAV..."
-  sudo freshclam >> "$LOGFILE" 2>&1
-  output=$(sudo clamscan -r /)
-  echo "$output" >> "$LOGFILE"
-  if echo "$output" | grep -q 'Infected files: [^0]'; then
-    log_warn "ClamAV found malware!"
-  else
-    log_success "ClamAV scan clean."
-  fi
-}
-
-package_check() {
-  section_header "PACKAGE INTEGRITY"
-  log_info "Checking for unauthorized packages..."
-  rpm -qa --last | head >> "$LOGFILE"
-  rpm -Va >> "$LOGFILE"
-  dnf repoquery --unavailable --installed >> "$LOGFILE"
-  log_success "Package audit complete."
-}
-
-check_users() {
-  section_header "USER ACCOUNTS"
-  log_info "Checking user accounts..."
-  cat /etc/passwd >> "$LOGFILE"
-  log_success "User list saved."
-}
-
-check_sudo_usage() {
-  section_header "SUDO USAGE"
-  log_info "Checking sudo usage..."
-  sudo grep sudo /var/log/secure >> "$LOGFILE"
-  log_success "Sudo history logged."
-}
-
-check_user_history() {
-  section_header "SHELL HISTORY"
-  log_info "Backing up shell history files..."
-  cp ~/.bash_history "$HOME/scriptlogs/bash_history_$USER" 2>/dev/null
-  sudo cp /root/.bash_history "$HOME/scriptlogs/bash_history_root" 2>/dev/null
-  log_success "History files backed up."
-}
-
-check_services() {
-  section_header "ACTIVE SERVICES"
-  log_info "Listing active systemd services..."
-  systemctl list-units --type=service >> "$LOGFILE"
-  log_success "Service list logged."
-}
-
-check_enabled_services() {
-  section_header "ENABLED SERVICES AT BOOT"
-  log_info "Listing enabled services at boot..."
-  systemctl list-unit-files --state=enabled >> "$LOGFILE"
-  log_success "Enabled services logged."
-}
-
-lynis_audit() {
-  section_header "LYNIS"
-  log_info "Running Lynis audit..."
-  output=$(sudo lynis audit system)
-  echo "$output" >> "$LOGFILE"
-  log_success "Lynis audit complete."
-}
-
-security_updates() {
-  section_header "SECURITY UPDATES"
-  log_info "Checking for CVE security updates..."
-  sudo dnf updateinfo list security all >> "$LOGFILE"
-  log_success "Security update list complete."
-}
-
-check_auditd() {
-  section_header "AUDITD STATUS"
-  log_info "Checking auditd status..."
-  if systemctl is-active --quiet auditd; then
-    log_success "auditd is running."
-  else
-    log_warn "auditd is NOT running! Real-time syscall tracking disabled."
-  fi
-}
-
-check_fail2ban() {
-  section_header "FAIL2BAN STATUS"
-  log_info "Checking fail2ban status..."
-  if systemctl is-active --quiet fail2ban; then
-    log_success "fail2ban is active (brute-force protection enabled)."
-  else
-    log_warn "fail2ban is NOT running! Brute-force attack prevention disabled."
-  fi
-}
-
-check_psacct() {
-  section_header "PSACCT/ACCT STATUS"
-  log_info "Checking psacct/acct status..."
-  if systemctl is-active --quiet psacct || systemctl is-active --quiet acct; then
-    log_success "psacct/acct is running (user activity tracking enabled)."
-  else
-    log_warn "psacct/acct is NOT running! User command auditing disabled."
-  fi
-}
-
-run_logwatch() {
-  section_header "LOGWATCH SUMMARY"
-  log_info "Running logwatch for summary..."
-  output=$(sudo /usr/bin/logwatch --detail Low --range yesterday --service All --mailto root)
-  echo "$output" >> "$LOGFILE"
-  log_success "Logwatch summary generated."
-}
-
-run_all_checks() {
-  startup_notify
-  aide_check
-  analyze_logs
-  network_check
-  clamav_scan
-  package_check
-  check_users
-  check_sudo_usage
-  check_user_history
-  check_services
-  check_enabled_services
-  lynis_audit
-  security_updates
-  check_auditd
-  check_fail2ban
-  check_psacct
-  run_logwatch
-  log_info "All security checks completed."
-  notify "Fedora Security Check completed."
-}
-
-# Infinite loop with hourly interval
-while true; do
-  run_all_checks
-  sleep 3600
-done
+# Main proactive loop
+startup_notify
+enable_auditd
+monitor_system_services &
+monitor_logs_proactively &
+real_time_audit_alerts
