@@ -34,7 +34,7 @@ startup_notify() {
 }
 
 section_header() {
-  echo -e "\n========= $1 =========\n" >> "$LOGFILE"
+  echo -e "\n========= $1 ($(date '+%Y-%m-%d %H:%M:%S')) =========\n" >> "$LOGFILE"
 }
 
 chkrootkit_check() {
