@@ -61,7 +61,7 @@ while true; do
 done
 
 
-rand_screensavers.sh
+randscreensavers.sh
 ------------------------
 #!/usr/bin/bash
 # This script runs randomly selected rss-glx programs every minute.
@@ -116,7 +116,7 @@ if ! is_media_playing; then
     # Kill the previous screensaver if it is running
     pkill -9 -f screensaver- # Force Kill the screensaver
 
-    echo $MINIMAL | sudo tee $BRIGHT_PATH &
+    brightnessctl --device=amdgpu_bl0 set 0%
     sleep 0.1
 
     # Read the available screensavers from the unplayed list
@@ -152,12 +152,14 @@ if ! is_media_playing; then
     # Run the screensaver
     "$RANDOM_PROGRAM" &
     sleep 0.5
-    echo $OPTIMAL | sudo tee $BRIGHT_PATH
+    brightnessctl --device=amdgpu_bl0 set 90%
 
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media player is running, skipping screensaver" >> "$LOGFILE"
+    # If media is playing, ensure brightness is optimal and no screensaver is running
+#     echo $OPTIMAL | sudo tee $BRIGHT_PATH
+#     pkill -9 -f screensaver- # Force Kill any running screensaver
 fi
-
 
 
 resume_handler.sh
