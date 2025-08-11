@@ -187,8 +187,9 @@ check_psacct() {
 run_logwatch() {
   section_header "LOGWATCH SUMMARY"
   log_info "Running logwatch for summary..."
-  output=$(sudo /usr/bin/logwatch --detail Low --range yesterday --service All --mailto root)
-  echo "$output" >> "$LOGFILE"
+  REPORT_FILE="$HOME/scriptlogs/logwatch_report.txt"
+  logwatch --detail Low --range yesterday --service All --output stdout > "$REPORT_FILE"
+  notify-send "Logwatch Report" "Report saved to $REPORT_FILE"
   log_success "Logwatch summary generated."
 }
 
