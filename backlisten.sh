@@ -1,40 +1,32 @@
 #!/usr/bin/bash
+
+SCRIPT_NAME="checkservices.sh"
+SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
+MIN_INSTANCES=1
+COOLDOWN=1   # seconds between checks
+
 while true; do
+    # Find all running processes for the script with bash
+    PROCS=$(pgrep -f "/usr/bin/bash $SCRIPT_PATH")
+    NUM_RUNNING=$(echo "$PROCS" | wc -w)
 
-MIN_ID=1
-NO_ID=0
+    if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
+        # More than one instance? Kill extras and notify
+        PROC_ARRAY=($PROCS)
+        LAST_INDEX=$(( ${#PROC_ARRAY[@]} - 1 ))
+        for i in $(seq 0 $((LAST_INDEX - 1))); do
+            kill "${PROC_ARRAY[$i]}"
+            notify-send -t 10000 --app-name "Check services" "Extra checkservices instance killed: PID ${PROC_ARRAY[$i]}"
+        done
+    else
+        # Script not running, start it
+        if [ -x "$SCRIPT_PATH" ]; then
+            "$SCRIPT_PATH" &
+            notify-send -t 10000 --app-name "Check services" "checkservices started."
+        else
+            notify-send --app-name "Check services" "checkservices script not found or not executable!"
+        fi
+    fi
 
-SCRIPT_NAME="checkservices"
-SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
-NUM_RUNNING_INSTANCES=$(pgrep -fc "$SCRIPT_NAME")
-PROCS=$(pidof -x "$SCRIPT")
-
-if [ "$NUM_RUNNING_INSTANCES" -gt "$MIN_ID" ]; then
-   declare -a CHECK_SERVICES_PIDS
-   IFS=' ' read -r -a CHECK_SERVICES_PIDS <<< "$PROCS"
-   i=0
-	last_index=$(( ${#CHECK_SERVICES_PIDS[@]} - 1 ))
-	last_value="${CHECK_SERVICES_PIDS[$last_index]}"
-		while [ "${CHECK_SERVICES_PIDS[$i]}" != "$last_value" ]; do
-		echo "${CHECK_SERVICES_PIDS[$i]}"
-		kill "${CHECK_SERVICES_PIDS[$i]}"
-		notify-send -t 10000 --app-name "Check services:" "checkservices instance is already running."
-		i=$((i + 1))
-	done
-
-#elif [ "$CHECK_SERVICES_IDS" -eq $NO_ID ] && [ -z "$CHECK_SERVICES_PROC" ]; then
-elif [ "$NUM_RUNNING_INSTANCES" -eq "$NO_ID" ]; then
-	notify-send --app-name "Check services:" "checkservices is not running. Please check if checkservices process is running"
-	SCRIPT_PATH="$HOME/Documents/bin/${SCRIPT_NAME}.sh"
-	if [ -x "$SCRIPT_PATH" ]; then
-		"$SCRIPT_PATH" &
-		notify-send -t 10000 --app-name "Check services:" "checkservices is running"
-	fi
-else
-	:
-fi
-
-sleep 1s
-
+    sleep "$COOLDOWN"
 done
-
