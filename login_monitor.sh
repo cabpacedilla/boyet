@@ -48,20 +48,19 @@ while read -r LINE; do
     # --- SSH ---
     if [[ "$LINE" =~ "sshd" || "$LINE" =~ "sshd-session" ]]; then
         if [[ "$LINE" =~ "Accepted " ]]; then
-            USER=$(echo "$LINE" | awk '{print $9}')
-            MSG="User: $USER | Time: $TS"
+            USER=$(echo "$LINE" | awk '{print $9}')   # sometimes wrong
+            # safer way: extract "for <user>" and "from <ip>"
+            USER=$(echo "$LINE" | grep -oP "for \K[^ ]+")
+            IP=$(echo "$LINE" | grep -oP "from \K[^ ]+")
+            MSG="User: $USER | From: $IP | Time: $TS"
             echo -e "${GREEN}[SSH SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
             send_alert "✅ SSH Login Success" "$MSG" critical
         elif [[ "$LINE" =~ "Failed password" ]]; then
-            USER=$(echo "$LINE" | awk '{print $9}')
-            MSG="User: $USER | Time: $TS"
+            USER=$(echo "$LINE" | grep -oP "for \K[^ ]+")
+            IP=$(echo "$LINE" | grep -oP "from \K[^ ]+")
+            MSG="User: $USER | From: $IP | Time: $TS"
             echo -e "${RED}[SSH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
             send_alert "❌ SSH Login Failed" "$MSG" critical
-        elif [[ "$LINE" =~ "authentication failure" ]]; then
-            USER=$(echo "$LINE" | grep -oP "user=\K[^ ]+")
-            MSG="User: $USER | Time: $TS"
-            echo -e "${RED}[SSH AUTH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
-            send_alert "❌ SSH Authentication Failure" "$MSG" critical
         fi
     fi
 
