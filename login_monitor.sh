@@ -33,7 +33,7 @@ echo "[$(date '+%F %T')] Starting login monitor..." | tee -a "$LOGFILE"
 notify-send "🛡️ Login Monitor" "Starting login monitor..."
 
 journalctl -f -n0 -o short-iso --since now \
-  _COMM=sshd _COMM=sudo _COMM=su | \
+  _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su | \
 while read -r LINE; do
     NOW=$(date +%s)
     TS=$(date '+%F %T')
@@ -46,17 +46,25 @@ while read -r LINE; do
     last_event[$EVENT_ID]=$NOW
 
     # --- SSH ---
-    if [[ "$LINE" =~ "sshd" && "$LINE" =~ "Accepted " ]]; then
-        USER=$(echo "$LINE" | awk '{print $9}')
-        MSG="User: $USER | Time: $TS"
-        echo -e "${GREEN}[SSH SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
-        send_alert "✅ SSH Login" "$MSG" critical
-    elif [[ "$LINE" =~ "sshd" && "$LINE" =~ "Failed password" ]]; then
-        USER=$(echo "$LINE" | awk '{print $9}')
-        MSG="User: $USER | Time: $TS"
-        echo -e "${RED}[SSH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
-        send_alert "❌ SSH Login Failed" "$MSG" critical
+    if [[ "$LINE" =~ "sshd" || "$LINE" =~ "sshd-session" ]]; then
+        if [[ "$LINE" =~ "Accepted " ]]; then
+            USER=$(echo "$LINE" | awk '{print $9}')
+            MSG="User: $USER | Time: $TS"
+            echo -e "${GREEN}[SSH SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "✅ SSH Login Success" "$MSG" critical
+        elif [[ "$LINE" =~ "Failed password" ]]; then
+            USER=$(echo "$LINE" | awk '{print $9}')
+            MSG="User: $USER | Time: $TS"
+            echo -e "${RED}[SSH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "❌ SSH Login Failed" "$MSG" critical
+        elif [[ "$LINE" =~ "authentication failure" ]]; then
+            USER=$(echo "$LINE" | grep -oP "user=\K[^ ]+")
+            MSG="User: $USER | Time: $TS"
+            echo -e "${RED}[SSH AUTH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "❌ SSH Authentication Failure" "$MSG" critical
+        fi
     fi
+
 
     # --- SUDO ---
     if [[ "$LINE" =~ "sudo" && "$LINE" =~ "session opened" ]]; then
@@ -82,7 +90,7 @@ while read -r LINE; do
         USER=$(echo "$LINE" | grep -oP "by \K[^ ]+")
         MSG="User: $USER | Time: $TS"
         echo -e "${GREEN}[SU SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
-        send_alert "✅ su Login" "$MSG" critical
+        send_alert "✅ su Login Success" "$MSG" critical
     elif [[ "$LINE" =~ " su[" && "$LINE" =~ "authentication failure" ]]; then
         USER=$(echo "$LINE" | grep -oP "user=\K[^ ]+")
         MSG="User: $USER | Time: $TS"
