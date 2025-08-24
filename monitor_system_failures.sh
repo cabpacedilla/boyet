@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+\#!/usr/bin/env bash
 # monitor_system_failures.sh
 # Monitors critical and serious system failures across popular Linux distros.
 
@@ -63,6 +63,7 @@ process_alert() {
             if ! echo "$line" | grep -Eiq "screensaver"; then
                 echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
                 send_notification "$line" "critical"
+                open_terminal_with_logs   # 👈 open terminal when CRITICAL happens
             fi
             ;;
         "SERIOUS")
@@ -111,39 +112,6 @@ monitor_dmesg() {
     done
 }
 
-for logfile in "${LOGFILES[@]}"; do
-    monitor_log_file "$logfile"
-done
-
-if command -v journalctl > /dev/null; then
-    echo "Monitoring systemd journal..."
-    monitor_journal &
-    pids+=($!)
-fi
-
-if command -v dmesg > /dev/null; then
-    echo "Monitoring dmesg..."
-    monitor_dmesg &
-    pids+=($!)
-fi
-
-cleanup() {
-    echo "Stopping monitoring..."
-    for pid in "${pids[@]}"; do
-        kill "$pid" 2>/dev/null
-    done
-    rm -f "$PIDFILE"
-    echo "Clean exit."
-    exit 0
-}
-
-trap cleanup SIGINT SIGTERM SIGHUP EXIT
-
-send_notification "System monitor started (CRITICAL notifications only)" "low"
-
-echo "=== Linux System Monitor Running ==="
-echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
-
 open_terminal_with_logs() {
     [ -f "$ALERT_LOG" ] || return
     local CRITICAL_LOGS
@@ -179,5 +147,40 @@ read -p 'Press Enter to close...'" &
     echo "No compatible terminal found to display critical logs."
 }
 
-open_terminal_with_logs
+# === Script starts here ===
+
+for logfile in "${LOGFILES[@]}"; do
+    monitor_log_file "$logfile"
+done
+
+if command -v journalctl > /dev/null; then
+    echo "Monitoring systemd journal..."
+    monitor_journal &
+    pids+=($!)
+fi
+
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    monitor_dmesg &
+    pids+=($!)
+fi
+
+cleanup() {
+    echo "Stopping monitoring..."
+    for pid in "${pids[@]}"; do
+        kill "$pid" 2>/dev/null
+    done
+    rm -f "$PIDFILE"
+    echo "Clean exit."
+    exit 0
+}
+
+trap cleanup SIGINT SIGTERM SIGHUP EXIT
+
+send_notification "System monitor started (CRITICAL notifications only)" "low"
+open_terminal_with_logs   # 👈 also open once at startup if logs already exist
+
+echo "=== Linux System Monitor Running ==="
+echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
+
 wait
