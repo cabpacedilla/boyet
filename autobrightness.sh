@@ -1,21 +1,11 @@
-#!/usr/bin/bash
-
-BRIGHT_PATH=/sys/class/backlight/amdgpu_bl0/brightness
-#OPTIMAL=200 # for ubuntu
+#!/bin/bash
+BRIGHT_PATH=/sys/class/backlight/amdgpu_bl1/brightness
 OPTIMAL_BRIGHTNESS=56206
 
-brightness_check()
-{
-	BRIGHTNESS=$(cat $BRIGHT_PATH)
-	if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
-		brightnessctl --device=amdgpu_bl0 set 80%
-	else
-		:
-	fi
-}
-
-brightnessctl --device=amdgpu_bl0 set 90%
-brightness_check
-while inotifywait -e modify $BRIGHT_PATH; do
-	brightness_check
+while true; do
+    BRIGHTNESS=$(cat "$BRIGHT_PATH")
+    if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
+        brightnessctl --device=amdgpu_bl1 set 90%
+    fi
+    sleep 5 # Check every 5 seconds
 done
