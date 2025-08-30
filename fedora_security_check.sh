@@ -78,10 +78,6 @@ is_false_positive() {
 monitor_logs_proactively() {
   log_info "Monitoring logs in real-time for threats..."
 
-  # Combined real-time security log monitor for:
-  # - High priority system logs (err..emerg)
-  # - Fail2ban events
-  # - Firewalld events
   journalctl -f -p err..emerg -u fail2ban -u firewalld |
   while read -r line; do
     if echo "$line" | grep -E -i \
@@ -91,7 +87,6 @@ monitor_logs_proactively() {
       fi
     fi
   done
-
 }
 
 # ===== Critical Services Check =====
@@ -119,7 +114,15 @@ real_time_audit_alerts() {
 
 # ===== Main =====
 startup_notify
+
+echo -e "\n===== ENABLE AUDITD ===== $(date) =====" | tee -a "$LOGFILE"
 enable_auditd
+
+echo -e "\n===== CRITICAL SERVICES CHECK ===== $(date) =====" | tee -a "$LOGFILE"
 monitor_system_services &
+
+echo -e "\n===== REAL-TIME LOG MONITORING ===== $(date) =====" | tee -a "$LOGFILE"
 monitor_logs_proactively &
+
+echo -e "\n===== REAL-TIME AUDITD ALERTS ===== $(date) =====" | tee -a "$LOGFILE"
 real_time_audit_alerts
