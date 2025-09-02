@@ -73,7 +73,17 @@ clamav_scan() {
   log_info "Running ClamAV malware scan..."
   if command -v clamscan &>/dev/null; then
     sudo freshclam
-    sudo clamscan -r --bell -i / 2>&1 | tee -a "$LOGFILE"
+    # Run with low priority, exclude pseudo-filesystems to prevent lockups
+    sudo nice -n 19 ionice -c2 -n7 clamscan -r -i \
+      --bell \
+      --exclude-dir="^/proc" \
+      --exclude-dir="^/sys" \
+      --exclude-dir="^/dev" \
+      --exclude-dir="^/run" \
+      --exclude-dir="^/tmp" \
+      --exclude-dir="^/var/log" \
+      /home /media \
+      2>&1 | tee -a "$LOGFILE"
     log_success "ClamAV scan finished."
   else
     log_warn "ClamAV not installed. Install with: sudo dnf install clamav -y"
