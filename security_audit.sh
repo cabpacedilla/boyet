@@ -43,6 +43,7 @@ check_permissions() {
     ["/etc/sudoers"]="440"
   )
 
+  local issues=0
   for file in "${!files[@]}"; do
     if [ -f "$file" ]; then
       perms=$(stat -c "%a" "$file")
@@ -50,9 +51,14 @@ check_permissions() {
         log_success "$file permissions are secure ($perms)."
       else
         log_warn "$file permissions are $perms (should be ${files[$file]})."
+        issues=1
       fi
     fi
   done
+
+  if [ $issues -eq 1 ]; then
+    notify "⚠️ Security Audit: Permission issues found. See log."
+  fi
 }
 
 # ===== Check Rootkits with chkrootkit =====
@@ -60,7 +66,10 @@ check_rootkits() {
   echo -e "\n===== ROOTKIT SCAN ===== $(date) =====" | tee -a "$LOGFILE"
   log_info "Running rootkit check with chkrootkit..."
   if command -v chkrootkit &>/dev/null; then
-    sudo chkrootkit 2>&1 | tee -a "$LOGFILE"
+    output=$(sudo chkrootkit 2>&1 | tee -a "$LOGFILE")
+    if echo "$output" | grep -q "INFECTED"; then
+      notify "🚨 Security Audit: Rootkit suspicion detected!"
+    fi
     log_success "chkrootkit scan complete."
   else
     log_warn "chkrootkit not installed. Install with: sudo dnf install chkrootkit -y"
@@ -73,8 +82,7 @@ clamav_scan() {
   log_info "Running ClamAV malware scan..."
   if command -v clamscan &>/dev/null; then
     sudo freshclam
-    # Run with low priority, exclude pseudo-filesystems to prevent lockups
-    sudo nice -n 19 ionice -c2 -n7 clamscan -r -i \
+    output=$(sudo nice -n 19 ionice -c2 -n7 clamscan -r -i \
       --bell \
       --exclude-dir="^/proc" \
       --exclude-dir="^/sys" \
@@ -82,8 +90,11 @@ clamav_scan() {
       --exclude-dir="^/run" \
       --exclude-dir="^/tmp" \
       --exclude-dir="^/var/log" \
-      /home /media \
-      2>&1 | tee -a "$LOGFILE"
+      /home /tmp 2>&1 | tee -a "$LOGFILE")
+
+    if echo "$output" | grep -q "Infected files: [1-9]"; then
+      notify "🦠 Security Audit: Malware detected by ClamAV!"
+    fi
     log_success "ClamAV scan finished."
   else
     log_warn "ClamAV not installed. Install with: sudo dnf install clamav -y"
