@@ -10,10 +10,13 @@ SCRIPTS=(
     "btrfs_balance_quarterly"
     "btrfs_scrub_monthly"
     "fortune4you"
+    "hot_parts"
     "keyLocked"
     "laptopLid_close"
+    "login_monitor"
     "lowMemAlert"
     "runscreensaver"
+    "security_check"
     "weather_alarm"
 )
 
@@ -31,7 +34,7 @@ while true; do
         fi
 
         # Get all PIDs of this script
-        PROCS=($(pgrep -f "$SCRIPT_PATH"))
+        PROCS=($(pgrep -f "${SCRIPT_NAME}.sh"))
         NUM_RUNNING=${#PROCS[@]}
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
