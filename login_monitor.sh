@@ -13,8 +13,8 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Export so notify-send works in GUI
-export DISPLAY=:0
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+# export DISPLAY=:0
+# export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 
 # Cooldown seconds for identical repeated messages
 COOLDOWN=5
@@ -25,12 +25,12 @@ send_alert() {
     TITLE="$1"
     MSG="$2"
     URGENCY="$3"
-    notify-send "$TITLE" "$MSG" -u "$URGENCY"
+    notify-send "$TITLE" "$MSG" -u "$URGENCY" &
     echo "[$(date '+%F %T')] [$TITLE] $MSG" >> "$LOGFILE"
 }
 
 echo "[$(date '+%F %T')] Starting login monitor..." | tee -a "$LOGFILE"
-notify-send "Login Monitor" "Starting login monitor..."
+notify-send "Login Monitor" "Starting login monitor..." &
 
 journalctl -f -n0 -o short-iso --since now \
   _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su | \
