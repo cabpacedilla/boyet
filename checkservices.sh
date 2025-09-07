@@ -17,7 +17,7 @@ SCRIPTS=(
     "weather_alarm"
 )
 
-COOLDOWN=1  # seconds between checks
+COOLDOWN=2  # seconds between checks
 MIN_INSTANCES=1
 
 while true; do
