@@ -1,18 +1,26 @@
 #!/usr/bin/env bash
 # hot_parts.sh - Detect hot components inside the computer (CPU, GPU, thermal zones)
 # Author: Claive Alvin P. Acedilla (modified with ChatGPT help)
+# Added signal handling, logging, and error resilience.
 
-while true; do
+LOGFILE="$HOME/scriptlogs/hot_parts.log"
+mkdir -p "$(dirname "$LOGFILE")"
 
-THRESHOLD=75   # Warning temperature in Celsius
+# Trap signals so the script exits cleanly and logs why
+trap 'echo "$(date) - Script received SIGTERM, exiting..." >> "$LOGFILE"; exit 0' TERM
+trap 'echo "$(date) - Script received SIGINT, exiting..." >> "$LOGFILE"; exit 0' INT
+
+THRESHOLD=95   # Warning temperature in Celsius
 NOTIFY=true    # Set to false if you don't want desktop notifications
 
 print_alert() {
     local part=$1
     local temp=$2
-    echo "🔥 Hot: $part — ${temp}°C"
+    echo "$(date) 🔥 Hot: $part — ${temp}°C" | tee -a "$LOGFILE"
     if $NOTIFY; then
-        notify-send "🔥 Overheating Alert" "$part is at ${temp}°C"
+        # Protect against notify-send crashing
+        notify-send "🔥 Overheating Alert" "$part is at ${temp}°C" 2>>"$LOGFILE" || \
+            echo "$(date) ⚠️ notify-send failed" >> "$LOGFILE" &
     fi
 }
 
@@ -38,11 +46,10 @@ check_cpu() {
 
 check_amd_gpu() {
     for hwmon in /sys/class/drm/card*/device/hwmon/hwmon*/temp1_input; do
-        if [[ -f "$hwmon" ]]; then
-            temp=$(( $(cat "$hwmon") / 1000 ))
-            if (( temp > THRESHOLD )); then
-                print_alert "AMD GPU" "$temp"
-            fi
+        [[ -f "$hwmon" ]] || continue
+        temp=$(( $(cat "$hwmon" 2>/dev/null) / 1000 ))
+        if (( temp > THRESHOLD )); then
+            print_alert "AMD GPU" "$temp"
         fi
     done
 }
@@ -59,19 +66,23 @@ check_nvidia_gpu() {
 check_thermal_zones() {
     for t in /sys/class/thermal/thermal_zone*/temp; do
         [[ -f "$t" ]] || continue
-        name=$(cat "$(dirname "$t")/type")
-        temp=$(( $(cat "$t") / 1000 ))
+        name=$(cat "$(dirname "$t")/type" 2>/dev/null)
+        temp=$(( $(cat "$t" 2>/dev/null) / 1000 ))
         if (( temp > THRESHOLD )); then
             print_alert "$name" "$temp"
         fi
     done
 }
 
-echo "🔎 Checking system temperatures..."
-check_cpu
-check_amd_gpu
-check_nvidia_gpu
-check_thermal_zones
-echo "✅ Done."
+while true; do
+    echo "$(date) 🔎 Checking system temperatures..." >> "$LOGFILE"
 
+    # Run checks safely
+    check_cpu
+    check_amd_gpu
+    check_nvidia_gpu
+    check_thermal_zones
+
+    echo "$(date) ✅ Done." >> "$LOGFILE"
+    sleep 1
 done
