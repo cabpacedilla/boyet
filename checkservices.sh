@@ -35,18 +35,18 @@ while true; do
             continue
         fi
 
-        # Detect running processes by name (handles both ./script.sh and bash script.sh)
-        PROCS=($(pgrep -f "$SCRIPT_NAME"))
+        # Detect running processes by full path
+        PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
         NUM_RUNNING=${#PROCS[@]}
 
         echo "DEBUG: Checking $SCRIPT_NAME → PIDs: ${PROCS[*]:-none}"
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
-            # Kill extra instances, keep the newest
-            for i in $(seq 0 $((NUM_RUNNING - MIN_INSTANCES - 1))); do
-                kill "${PROCS[$i]}"
-                notify-send -t 5000 --app-name "CheckServices" \
-                    "Extra $SCRIPT_NAME killed: PID ${PROCS[$i]}" &
+            # Kill older ones, keep the newest
+            PIDS_TO_KILL=$(ps -o pid= --sort=start_time -p "${PROCS[@]}" | head -n -$MIN_INSTANCES)
+            for pid in $PIDS_TO_KILL; do
+                kill "$pid"
+                notify-send -t 5000 --app-name "CheckServices" "Extra $SCRIPT_NAME killed: PID $pid" &
             done
         elif [ "$NUM_RUNNING" -lt "$MIN_INSTANCES" ]; then
             "$SCRIPT_PATH" &
