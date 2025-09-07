@@ -12,7 +12,7 @@ NC='\033[0m'
 
 # ===== Utility Functions =====
 notify() {
-  notify-send "🛡️ Fedora Proactive Security" "$1"
+  notify-send "🛡️ Fedora Proactive Security" "$1" &
 }
 
 log_info() {
