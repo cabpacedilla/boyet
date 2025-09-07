@@ -2,6 +2,8 @@
 # hot_parts.sh - Detect hot components inside the computer (CPU, GPU, thermal zones)
 # Author: Claive Alvin P. Acedilla (modified with ChatGPT help)
 
+while true; do
+
 THRESHOLD=75   # Warning temperature in Celsius
 NOTIFY=true    # Set to false if you don't want desktop notifications
 
@@ -71,3 +73,5 @@ check_amd_gpu
 check_nvidia_gpu
 check_thermal_zones
 echo "✅ Done."
+
+done
