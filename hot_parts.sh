@@ -14,10 +14,10 @@ NOTIFY=true    # Enable desktop notifications
 # Get safe threshold depending on sensor name
 get_threshold() {
     case "$1" in
-        *cpu*|*k10temp*|*amdgpu*) echo 90 ;;   # CPU/GPU critical
+        *cpu*|*k10temp*|*amdgpu*) echo 95 ;;   # CPU/GPU critical
         *nvme*)                   echo 75 ;;   # NVMe SSDs throttle earlier
         *BAT*|*bat*)              echo 50 ;;   # Batteries should stay cool
-        *acpitz*|*pch*)           echo 90 ;;   # ACPI/Chipset zones
+        *acpitz*|*pch*)           echo 95 ;;   # ACPI/Chipset zones
         *)                        echo 85 ;;   # Fallback
     esac
 }
