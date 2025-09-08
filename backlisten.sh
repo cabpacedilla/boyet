@@ -16,15 +16,15 @@ while true; do
         LAST_INDEX=$(( ${#PROC_ARRAY[@]} - 1 ))
         for i in $(seq 0 $((LAST_INDEX - 1))); do
             kill "${PROC_ARRAY[$i]}"
-            notify-send -t 10000 --app-name "Check services" "Extra checkservices instance killed: PID ${PROC_ARRAY[$i]}" &
+            notify-send -t 10000 --app-name "💀 Check services" "Extra checkservices instance killed: PID ${PROC_ARRAY[$i]}" &
         done
     else
         # Script not running, start it
         if [ -x "$SCRIPT_PATH" ]; then
             "$SCRIPT_PATH" &
-            notify-send -t 10000 --app-name "Check services" "checkservices started." &
+            notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
         else
-            notify-send --app-name "Check services" "checkservices script not found or not executable!" &
+            notify-send --app-name "⚠️ Check services" "checkservices script not found or not executable!" &
         fi
     fi
 
