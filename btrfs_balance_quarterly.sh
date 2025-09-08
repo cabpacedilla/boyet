@@ -19,10 +19,10 @@ while true; do
 
     if [ "$DIFF_DAYS" -eq 0 ]; then
         echo -e "\n[$(date)] Starting Btrfs balance on /" | tee -a "$LOGFILE"
-        notify-send "Btrfs Balance" "Starting Btrfs balance on / at $(date)."
+        notify-send "✅ Btrfs Balance" "Starting Btrfs balance on / at $(date)."
         sudo btrfs balance start / >> "$LOGFILE" 2>&1
         echo "[$(date)] Btrfs balance completed" | tee -a "$LOGFILE"
-        notify-send "Btrfs Balance" "Btrfs balance completed at $(date)."
+        notify-send "✅ Btrfs Balance" "Btrfs balance completed at $(date)."
         date +%s > "$LAST_RUN_FILE"
     else
         echo -e "\n[$(date)] Less than 4 months since last balance. Skipping." | tee -a "$LOGFILE"

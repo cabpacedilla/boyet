@@ -23,7 +23,7 @@
 
 # Path to lid state file
 LID_PATH="/proc/acpi/button/lid/LID0/state"
-OPTIMAL_BRIGHTNESS=49961
+OPTIMAL_BRIGHTNESS=56206
 
 # Function to check if HDMI is connected
 check_hdmi() {

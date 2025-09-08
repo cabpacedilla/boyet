@@ -39,13 +39,13 @@ while true; do
     # Notify based on LED mask value
     case "$LED_MASK" in
         "$CAPS_LOCK")
-            notify-send -t 9000 --app-name "Key lock:" "Caps lock is on."
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Caps lock is on."
             ;;
         "$NUM_LOCK")
-            notify-send -t 9000 --app-name "Key lock:" "Num lock is on."
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Num lock is on."
             ;;
         "$CAPSNUM_LOCK")
-            notify-send -t 9000 --app-name "Key lock:" "Caps lock and Num lock are on."
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Caps lock and Num lock are on."
             ;;
         "$NO_LOCK")
             # Do nothing

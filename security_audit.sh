@@ -107,4 +107,4 @@ check_permissions
 check_rootkits
 clamav_scan
 echo -e "\n===== FEDORA SECURITY AUDIT COMPLETED ===== $(date) =====" | tee -a "$LOGFILE"
-notify "Security audit completed. Check $LOGFILE for details."
+notify "✅ Security audit completed. Check $LOGFILE for details."

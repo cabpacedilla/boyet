@@ -25,7 +25,7 @@ log_success() {
 
 log_warn() {
   echo -e "${RED}[WARN]${NC} $1" | tee -a "$LOGFILE"
-  notify "$1"
+  notify "⚠️ $1"
 }
 
 startup_notify() {

@@ -15,7 +15,7 @@
 #!/bin/bash
 
 # Start the monitoring
-notify-send "Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &
+notify-send "✅ Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &
 
 # Terminal list for flexibility across desktop environments
 TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
@@ -58,7 +58,7 @@ while true; do
 
         # If no terminal was found, notify the user
         if [ "$launched" = false ]; then
-            notify-send "Battery Usage Alert" "No supported terminal emulator found to display power usage."
+            notify-send "⚠️ Battery Usage Alert" "No supported terminal emulator found to display power usage."
         fi
     fi
 done

@@ -34,14 +34,14 @@ if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then
    launched=false
    for term in "${TERMINALS[@]}"; do
       if command -v "$term" >/dev/null 2>&1; then
-         "$term" -e bash -c "echo -e \"Low memory alert: RAM has low free memory. Free high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+         "$term" -e bash -c "echo -e \"⚠️ Low memory alert: RAM has low free memory. Free high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
          launched=true
          break
       fi
    done
 
    if [ "$launched" = false ]; then
-      notify-send "Low Memory Alert" "No supported terminal emulator found to display memory usage."
+      notify-send "⚠️ Low Memory Alert" "No supported terminal emulator found to display memory usage."
    fi
 fi
 
