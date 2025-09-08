@@ -4,6 +4,9 @@
 # Now also copies ~/Documents/bin/ into the repo before syncing
 # Author: Claive Alvin P. Acedilla (modified)
 
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 # -----------------------------
 # Configuration
 # -----------------------------
