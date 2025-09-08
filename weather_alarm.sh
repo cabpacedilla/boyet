@@ -30,7 +30,7 @@ notify-temp() {
             ;;
     esac
 
-    notify-send -u critical --app-name "Weather warning: $TIME" "$EMOJI It's very $1 and $WEATHER outside. $WARNING"
+    notify-send -u critical --app-name "$EMOJI Weather warning: $TIME" "It's very $1 and $WEATHER outside. $WARNING"
 }
 
 notify-rain() {
@@ -82,7 +82,7 @@ notify-uv() {
             ;;
     esac
 
-    notify-send -u critical --app-name "Weather warning: $TIME" "$EMOJI It's $WEATHER outside and the UV index is $UV. $WARNING"
+    notify-send -u critical --app-name "$EMOJI Weather warning: $TIME" "It's $WEATHER outside and the UV index is $UV. $WARNING"
 }
 
 while true; do
