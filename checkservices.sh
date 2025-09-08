@@ -46,11 +46,11 @@ while true; do
             PIDS_TO_KILL=$(ps -o pid= --sort=start_time -p "${PROCS[@]}" | head -n -$MIN_INSTANCES)
             for pid in $PIDS_TO_KILL; do
                 kill "$pid"
-                notify-send -t 5000 --app-name "CheckServices" "Extra $SCRIPT_NAME killed: PID $pid" &
+                notify-send -t 5000 --app-name "💀 CheckServices" "Extra $SCRIPT_NAME killed: PID $pid" &
             done
         elif [ "$NUM_RUNNING" -lt "$MIN_INSTANCES" ]; then
             "$SCRIPT_PATH" &
-            notify-send -t 5000 --app-name "CheckServices" "$SCRIPT_NAME started."
+            notify-send -t 5000 --app-name "✅ CheckServices" "$SCRIPT_NAME started."
         fi
     done
 
