@@ -9,8 +9,18 @@ mkdir -p "$(dirname "$LOGFILE")"
 trap 'echo "$(date) - SIGTERM received, exiting..." >> "$LOGFILE"; exit 0' TERM
 trap 'echo "$(date) - SIGINT received, exiting..." >> "$LOGFILE"; exit 0' INT
 
-THRESHOLD=95   # Default warning temperature in °C
 NOTIFY=true    # Enable desktop notifications
+
+# Get safe threshold depending on sensor name
+get_threshold() {
+    case "$1" in
+        *cpu*|*k10temp*|*amdgpu*) echo 90 ;;   # CPU/GPU critical
+        *nvme*)                   echo 75 ;;   # NVMe SSDs throttle earlier
+        *BAT*|*bat*)              echo 50 ;;   # Batteries should stay cool
+        *acpitz*|*pch*)           echo 90 ;;   # ACPI/Chipset zones
+        *)                        echo 85 ;;   # Fallback
+    esac
+}
 
 print_alert() {
     local part=$1
@@ -31,8 +41,9 @@ check_hwmon() {
         for tfile in "$dir"/temp*_input; do
             [[ -f "$tfile" ]] || continue
             temp=$(( $(cat "$tfile") / 1000 ))
+            threshold=$(get_threshold "$name")
 
-            if (( temp > THRESHOLD )); then
+            if (( temp > threshold )); then
                 label="${name}"
                 # If a label file exists (temp1_label, temp2_label, etc.), use it
                 lfile="${tfile%_*}_label"
