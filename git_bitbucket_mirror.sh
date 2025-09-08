@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # git_mirror_safe.sh
-# Safely sync GitHub master branch to multiple mirrors with auto force-push fallback
-# Now also copies ~/Documents/bin/ into the repo before syncing
+# Sync GitHub master branch to multiple mirrors with direct force-push
+# Copies ~/Documents/bin/ into the repo before syncing
 # Author: Claive Alvin P. Acedilla (modified)
 
 export LANG=en_US.UTF-8
@@ -23,63 +23,39 @@ LOCKFILE="/tmp/git_mirror_safe.lock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
 
+# -----------------------------
+# Copy latest files to repo
+# -----------------------------
+echo "$(date) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$LOGFILE"
+cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
+
 cd "$REPO_DIR" || { echo "$(date) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
 
 # -----------------------------
-# Copy latest scripts to repo
+# Stage & commit local changes
 # -----------------------------
-echo "$(date) - Copying files from $SOURCE_DIR to $REPO_DIR (overwrite enabled)..." | tee -a "$LOGFILE"
-if ! yes | cp -rf "$SOURCE_DIR"/* "$REPO_DIR"/; then
-    echo "$(date) - ERROR: Failed to copy files from $SOURCE_DIR" | tee -a "$LOGFILE"
-    notify-send "⚠️ Git Mirror Failed" "Copying from $SOURCE_DIR failed. See log."
-    exit 1
+git add -A
+if git diff --cached --quiet && git diff --quiet; then
+    echo "$(date) - No changes to commit." | tee -a "$LOGFILE"
+else
+    echo "$(date) - Committing new changes..." | tee -a "$LOGFILE"
+    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')"
 fi
 
 # -----------------------------
-# Fetch latest from GitHub
-# -----------------------------
-echo "$(date) - Fetching $BRANCH from $GITHUB_REMOTE..." | tee -a "$LOGFILE"
-if ! git fetch "$GITHUB_REMOTE" "$BRANCH"; then
-    echo "$(date) - ERROR: Failed to fetch from $GITHUB_REMOTE" | tee -a "$LOGFILE"
-    notify-send "⚠️ Git Mirror Failed" "Fetching from $GITHUB_REMOTE failed. See log."
-    exit 1
-fi
-
-# -----------------------------
-# Reset local branch to GitHub
-# -----------------------------
-echo "$(date) - Resetting local $BRANCH to match $GITHUB_REMOTE/$BRANCH..." | tee -a "$LOGFILE"
-if ! git reset --hard "$GITHUB_REMOTE/$BRANCH"; then
-    echo "$(date) - ERROR: Failed to reset local branch" | tee -a "$LOGFILE"
-    notify-send "⚠️ Git Mirror Failed" "Resetting local branch failed. See log."
-    exit 1
-fi
-
-# -----------------------------
-# Push to mirrors with fallback
+# Force push to all remotes
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
-for MIRROR in "${MIRRORS[@]}"; do
-    echo "$(date) - Pushing to $MIRROR/$BRANCH..." | tee -a "$LOGFILE"
-    if git push "$MIRROR" "$BRANCH" 2>&1 | tee /tmp/git_push_$MIRROR.log; then
-        echo "$(date) - ✅ Successfully mirrored to $MIRROR" | tee -a "$LOGFILE"
-        SUCCESS+=("$MIRROR ✅")
+for REMOTE in "$GITHUB_REMOTE" "${MIRRORS[@]}"; do
+    echo "$(date) - Force pushing to $REMOTE/$BRANCH..." | tee -a "$LOGFILE"
+    if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
+        echo "$(date) - ✅ Force push succeeded to $REMOTE" | tee -a "$LOGFILE"
+        SUCCESS+=("$REMOTE ✅")
     else
-        if grep -q "non-fast-forward" /tmp/git_push_$MIRROR.log; then
-            echo "$(date) - ⚠️ Non-fast-forward detected for $MIRROR. Retrying with --force..." | tee -a "$LOGFILE"
-            if git push --force "$MIRROR" "$BRANCH"; then
-                echo "$(date) - ✅ Force push succeeded to $MIRROR" | tee -a "$LOGFILE"
-                SUCCESS+=("$MIRROR ✅ (force)")
-            else
-                echo "$(date) - ❌ Force push failed to $MIRROR" | tee -a "$LOGFILE"
-                FAIL+=("$MIRROR ❌")
-            fi
-        else
-            echo "$(date) - ❌ Push to $MIRROR failed (not a non-fast-forward issue)" | tee -a "$LOGFILE"
-            FAIL+=("$MIRROR ❌")
-        fi
+        echo "$(date) - ❌ Force push failed to $REMOTE" | tee -a "$LOGFILE"
+        FAIL+=("$REMOTE ❌")
     fi
 done
 

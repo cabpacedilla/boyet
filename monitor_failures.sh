@@ -6,9 +6,9 @@ ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
 mkdir -p "$(dirname "$ALERT_LOG")"
 
-SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted"
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted|task hung|blocked for more than|rcu_sched detected stalls|rcu: INFO"
 
-SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full"
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full|DMA error|bus error|timeout|hung task"
 
 LOGFILES=(
     "/var/log/syslog"           # Debian-based
@@ -91,31 +91,39 @@ monitor_log_file() {
     pids+=($!)
 }
 
-for logfile in "${LOGFILES[@]}"; do
-    monitor_log_file "$logfile"
-done
-
-if command -v journalctl > /dev/null; then
-    echo "Monitoring systemd journal..."
+monitor_journal() {
     journalctl -f -p 3 --no-pager | while IFS= read -r line; do
         local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "systemd-journal" "$line"
         fi
-    done &
-    pids+=($!)
-fi
+    done
+}
 
-if command -v dmesg > /dev/null; then
-    echo "Monitoring dmesg..."
+monitor_dmesg() {
     dmesg -w 2>/dev/null | while IFS= read -r line; do
         local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "kernel-dmesg" "$line"
         fi
-    done &
+    done
+}
+
+for logfile in "${LOGFILES[@]}"; do
+    monitor_log_file "$logfile"
+done
+
+if command -v journalctl > /dev/null; then
+    echo "Monitoring systemd journal..."
+    monitor_journal &
+    pids+=($!)
+fi
+
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    monitor_dmesg &
     pids+=($!)
 fi
 

@@ -9,7 +9,7 @@ mkdir -p "$(dirname "$LOGFILE")"
 trap 'echo "$(date) - SIGTERM received, exiting..." >> "$LOGFILE"; exit 0' TERM
 trap 'echo "$(date) - SIGINT received, exiting..." >> "$LOGFILE"; exit 0' INT
 
-THRESHOLD=90   # Default warning temperature in °C
+THRESHOLD=95   # Default warning temperature in °C
 NOTIFY=true    # Enable desktop notifications
 
 print_alert() {

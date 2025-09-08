@@ -5,7 +5,7 @@ while true; do
 # notify-send -u critical --app-name "Fortune:" "$(fortune)"
 kdialog --title "Fortune" --msgbox "$(fortune)" &
 
-# Sleep in random seconds
+# Sleep in random time
 sleep "$(shuf -i1200-1500 -n1)"
 
 done
