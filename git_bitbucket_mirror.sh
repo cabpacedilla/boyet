@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# git_mirror_safe.sh
 # Sync GitHub master branch to multiple mirrors
 # Copies ~/Documents/bin/ into the repo before syncing
 # Author: Claive Alvin P. Acedilla (modified)
