@@ -1,203 +1,159 @@
 #!/usr/bin/bash
-# This script will alert when humidity, wind, rain and UV are above normal. Data will be taken from wttr.in
-# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
-# October 2022
 
-# Steps for the task:
-# 1. Create a bin directory inside your home directory
-# 2. Change directory to the bin directory
-# 3. Create the bash script file below with nano or gedit and save it with a filename like weatheralarm.sh
-# 4. Make file executable with chmod +x weatheralarm.sh command
-# 5. Add the weatheralarm.sh command in Startup applications
-# 6. Reboot the laptop
+# Weather Warning Script with Collation (KDE version)
+# Written by Claive Alvin P. Acedilla + merged improvements
+# Features:
+#  - Auto-detect location via IP + reverse geocoding
+#  - Falls back to manual prompt if needed
+#  - Logs location and weather fetch attempts
+#  - Runs every 15 minutes in loop
+#  - Weather warnings (Humidity, Heat, Rain, UV) with categories
+#  - Collates warnings if more than one
+#  - Uses KDE kdialog passive popups instead of notify-send
 
-notify-temp() {
-    case "$1" in
-        "humid")
-            WARNING="Stay in an airy place."
-            EMOJI="💧"   # Humidity
-            ;;
-        "hot")
-            WARNING="Stay in a cooler place."
-            EMOJI="🔥"   # High temperature
-            ;;
-        "windy")
-            WARNING="Stay inside."
-            EMOJI="🌬️"  # Windy
-            ;;
-        *)
-            EMOJI=""
-            ;;
-    esac
+LOG_DIR="$HOME/scriptlogs"
+mkdir -p "$LOG_DIR"
+LOCATION_FILE="$LOG_DIR/current_location.txt"
+LOCATION_LOG="$LOG_DIR/location_log.txt"
+WEATHER_LOG="$LOG_DIR/weather_fetch_log.txt"
 
-    notify-send -u critical --app-name "$EMOJI Weather warning: $TIME" "It's very $1 and $WEATHER outside. $WARNING"
+# 🔍 Detect location
+get_location() {
+    LAT=$(curl -s ipinfo.io/loc | cut -d, -f1)
+    LON=$(curl -s ipinfo.io/loc | cut -d, -f2)
+    if [[ -n "$LAT" && -n "$LON" ]]; then
+        LOCATION=$(curl -s "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
+                   | jq -r '.address.city // .address.town // .address.village // .address.state')
+        if [[ -n "$LOCATION" && "$LOCATION" != "null" ]]; then
+            echo "Location resolved via ipinfo + nominatim: $LOCATION" >> "$LOCATION_LOG"
+            echo "$LOCATION" > "$LOCATION_FILE"
+            return
+        fi
+    fi
+
+    # fallback ip-api
+    LOCATION=$(curl -s ip-api.com/json | jq -r '.city')
+    if [[ -n "$LOCATION" && "$LOCATION" != "null" ]]; then
+        echo "Location resolved via ip-api: $LOCATION" >> "$LOCATION_LOG"
+        echo "$LOCATION" > "$LOCATION_FILE"
+        return
+    fi
+
+    # fallback ipinfo city
+    LOCATION=$(curl -s ipinfo.io/city)
+    if [[ -n "$LOCATION" && "$LOCATION" != "null" ]]; then
+        echo "Location resolved via ipinfo city: $LOCATION" >> "$LOCATION_LOG"
+        echo "$LOCATION" > "$LOCATION_FILE"
+        return
+    fi
+
+    # cached
+    if [[ -f "$LOCATION_FILE" ]]; then
+        LOCATION=$(cat "$LOCATION_FILE")
+        echo "Using cached location: $LOCATION" >> "$LOCATION_LOG"
+        return
+    fi
+
+    # user prompt
+    if command -v kdialog >/dev/null 2>&1; then
+        LOCATION=$(kdialog --inputbox "Enter your location:")
+    else
+        read -rp "Enter your location: " LOCATION
+    fi
+    echo "User entered location: $LOCATION" >> "$LOCATION_LOG"
+    echo "$LOCATION" > "$LOCATION_FILE"
 }
 
-notify-rain() {
-    case "$1" in
-        "raining lightly")
-            WARNING="Use an umbrella or wear a raincoat."
-            EMOJI="🌦️"   # Light rain
-            ;;
-        "raining moderately")
-            WARNING="Use an umbrella or wear a raincoat."
-            EMOJI="🌧️"   # Moderate rain
-            ;;
-        "raining heavily")
-            WARNING="Be warned for flooding and landslides. Stay in a safe place."
-            EMOJI="🌧️🌊"  # Heavy rain / flooding
-            ;;
-        "raining violently")
-            WARNING="Be warned for flooding and landslides. Stay in a safe place."
-            EMOJI="🌩️🌊"  # Storm / violent rain
-            ;;
-        *)
-            EMOJI=""
-            ;;
-    esac
-
-    notify-send -u critical --app-name "Weather warning: $TIME" "$EMOJI It's $1 outside. $WARNING"
+# 🔔 Notification helper (KDE popup)
+send_notification() {
+    local title="$1"
+    local message="$2"
+    kdialog --passivepopup "$message" 10 --title "$title"
 }
 
-notify-uv() {
-    case "$1" in
-        "mod-uv")
-            WARNING="Use sunscreen and wear protective clothing."
-            EMOJI="🧴"
-            ;;
-        "high-uv")
-            WARNING="Use sunscreen, sunglasses, and protective clothing."
-            EMOJI="🧴😎"
-            ;;
-        "very-uv")
-            WARNING="Use sunscreen, sunglasses, and stay in the shade."
-            EMOJI="🧴😎🏠"
-            ;;
-        "extreme-uv")
-            WARNING="Stay indoors and protect yourself fully."
-            EMOJI="🧴😎🏠"
-            ;;
-        *)
-            EMOJI=""
-            ;;
-    esac
-
-    notify-send -u critical --app-name "$EMOJI Weather warning: $TIME" "It's $WEATHER outside and the UV index is $UV. $WARNING"
+# 🌤 Weather fetch
+get_weather() {
+    LOCATION=$(cat "$LOCATION_FILE" 2>/dev/null || echo "Cebu")
+    LOCATION_QUERY=$(echo "$LOCATION" | tr ' ' '_')
+    DATA=$(curl -s "wttr.in/$LOCATION_QUERY?format=%t,%h,%p,%w,%U")
+    TEMP=$(echo "$DATA" | cut -d, -f1 | tr -d '+°C')
+    HUMIDITY=$(echo "$DATA" | cut -d, -f2 | tr -d '%')
+    PRECIP=$(echo "$DATA" | cut -d, -f3 | tr -d 'mm')
+    WIND=$(echo "$DATA" | cut -d, -f4)
+    UV=$(echo "$DATA" | cut -d, -f5)
+    echo "Weather fetched for $LOCATION: $DATA" >> "$WEATHER_LOG"
 }
 
+# 📦 Collation arrays
+WARNINGS=()
+EMOJIS=()
+
+add_warning() {
+    local emoji="$1"
+    local text="$2"
+    WARNINGS+=("$text")
+    EMOJIS+=("$emoji")
+}
+
+send_collated_warnings() {
+    local count=${#WARNINGS[@]}
+    if [[ $count -eq 1 ]]; then
+        send_notification "${EMOJIS[0]} Weather Warning" "${WARNINGS[0]}"
+    elif [[ $count -gt 1 ]]; then
+        local now=$(date +"%I:%M %p")
+        local joined_emojis=$(printf "%s" "${EMOJIS[@]}" | tr -d '\n')
+        local message="Weather warnings for $LOCATION:\n"
+        for i in "${!WARNINGS[@]}"; do
+            message+="\n- ${WARNINGS[$i]}"
+        done
+        send_notification "$joined_emojis Weather Alert: $now" "$message"
+    fi
+    WARNINGS=()
+    EMOJIS=()
+}
+
+
+# ⚠️ Weather checks
+check_conditions() {
+    # Humidity
+    if (( HUMIDITY > 80 )); then
+        add_warning "💧" "Very humid (${HUMIDITY}%) - Stay in an airy place."
+    fi
+    # Heat
+    if (( TEMP > 34 )); then
+        add_warning "🔥" "Very hot (${TEMP}°C) - Stay in a cooler place."
+    fi
+    # Rain
+    if (( $(echo "$PRECIP > 0" | bc -l) )); then
+        if (( $(echo "$PRECIP < 2" | bc -l) )); then
+            add_warning "🌦️" "Light rain (${PRECIP}mm) - Use an umbrella."
+        elif (( $(echo "$PRECIP < 10" | bc -l) )); then
+            add_warning "🌧️" "Moderate rain (${PRECIP}mm) - Wear raincoat."
+        elif (( $(echo "$PRECIP < 50" | bc -l) )); then
+            add_warning "⛈️" "Heavy rain (${PRECIP}mm) - Stay safe indoors."
+        else
+            add_warning "🌪️" "Violent rain (${PRECIP}mm) - Extreme caution!"
+        fi
+    fi
+    # UV
+    if (( UV > 2 )); then
+        if (( UV <= 5 )); then
+            add_warning "😎" "Moderate UV ($UV) - Use sunscreen."
+        elif (( UV <= 7 )); then
+            add_warning "🧴" "High UV ($UV) - Wear sunglasses, sunscreen."
+        elif (( UV <= 10 )); then
+            add_warning "🧢" "Very high UV ($UV) - Avoid direct sun."
+        else
+            add_warning "☢️" "Extreme UV ($UV) - Stay indoors if possible."
+        fi
+    fi
+    send_collated_warnings
+}
+
+# 🔁 Loop
 while true; do
-TIME=$(date +"%I:%M %p")
-
-WEATHER_FILE=~/scriptlogs/weather.txt
-VERY_HUMID=85
-HIGH_TEMP=33
-STRONG_WIND=50
-NO_RAIN=0.0
-LIGHT_RAIN=2.5
-HEAVY_RAIN=7.6
-VIOLENT_RAIN=50
-LOW_UV=2
-MOD_UV=6
-HIGH_UV=8
-VERY_UV=11
-
-curl wttr.in/Cebu?format="%l:+%h+%t+%w+%p+%u+%C" --silent --max-time 3 > $WEATHER_FILE
-
-if [ $(echo $?) != "0" ]; then
-	sleep 15m
-fi
-
-WEATHER=$(cut -d\  -f7- < $WEATHER_FILE)
-WEATHER=$(echo "$WEATHER" | tr '[:upper:]' '[:lower:]')
-
-if [ -z "${WEATHER}" ]; then
-	continue
-else
-	notify-send --app-name "🌤️ Weather update:    $TIME" "The weather is $WEATHER."
-fi
-
-HUMID=$(awk '{print $2}' < $WEATHER_FILE)
-HUMID=${HUMID:0:-1}
-if [ "$HUMID" -ge "$VERY_HUMID" ]; then
-   notify-temp humid
-else
-   :
-fi
-
-TEMP=$(awk '{print $3}' < $WEATHER_FILE)
-TEMP=${TEMP:1:-2}
-if [ "$TEMP" -ge "$HIGH_TEMP" ]; then
-	notify-temp hot
-else
-   :
-fi
-
-WIND=$(awk '{print $4}' < $WEATHER_FILE)
-WIND=${WIND:1:-4}
-if [ "$WIND" -ge "$STRONG_WIND" ]; then
-  notify-temp windy
-else
-   :
-fi
-
-RAINFALL=$(awk '{print $5}' < $WEATHER_FILE)
-RAINFALL=${RAINFALL:0:-2}
-
-if [ "$RAINFALL" = "$NO_RAIN" ]; then
-   :
-fi
-
-RAIN_IS_MORE_THAN_NO_RAIN=$(echo "$RAINFALL > $NO_RAIN" | bc)
-RAIN_IS_LESS_THAN_LIGHT=$(echo "$RAINFALL < $LIGHT_RAIN" | bc)
-if [ "$RAIN_IS_LESS_THAN_LIGHT" -eq 1 ] && [ "$RAIN_IS_MORE_THAN_NO_RAIN" -eq 1 ] ; then
-   notify-rain "raining lightly"
-fi
-
-RAIN_IS_MORE_THAN_LIGHT=$(echo "$RAINFALL > $LIGHT_RAIN" | bc)
-RAIN_IS_LESS_THAN_HEAVY=$(echo "$RAINFALL < $HEAVY_RAIN" | bc)
-if [ "$RAIN_IS_MORE_THAN_LIGHT" -eq 1 ] && [ "$RAIN_IS_LESS_THAN_HEAVY" -eq 1 ]; then
-   notify-rain "raining moderately"
-fi
-
-RAIN_IS_MORE_THAN_HEAVY=$(echo "$RAINFALL > $HEAVY_RAIN" | bc)
-RAIN_IS_LESS_THAN_VIOLENT=$(echo "$RAINFALL < $VIOLENT_RAIN" | bc)
-if [ "$RAIN_IS_MORE_THAN_HEAVY" -eq 1 ]  && [ "$RAIN_IS_LESS_THAN_VIOLENT" -eq 1 ]; then
-   notify-rain "raining heavily"
-fi
-
-RAIN_IS_MORE_VIOLENT=$(echo "$RAINFALL > $VIOLENT_RAIN" | bc)
-if [ "$RAIN_IS_MORE_VIOLENT" -eq 1 ]; then
-   notify-rain "raining violently"
-fi
-
-UV=$(awk '{print $6}' < $WEATHER_FILE)
-
-if [ "$UV" -le "$LOW_UV" ]; then
-	:
-fi
-
-UV_IS_MORE_THAN_LOW=$(echo "$UV > $LOW_UV" | bc)
-UV_IS_LESS_THAN_MOD=$(echo "$UV < $MOD_UV" | bc)
-if [ "$UV_IS_MORE_THAN_LOW" -eq 1 ] && [ "$UV_IS_LESS_THAN_MOD" -eq 1 ] ; then
-   notify-uv mod-uv
-fi
-
-UV_IS_MORE_THAN_MOD=$(echo "$UV > $MOD_UV" | bc)
-UV_IS_LESS_THAN_HIGH=$(echo "$UV < $HIGH_UV" | bc)
-if [ "$UV_IS_MORE_THAN_MOD" -eq 1 ] && [ "$UV_IS_LESS_THAN_HIGH" -eq 1 ] ; then
-   notify-uv high-uv
-fi
-
-UV_IS_MORE_THAN_HIGH=$(echo "$UV > $HIGH_UV" | bc)
-UV_IS_LESS_THAN_VERY=$(echo "$UV < $VERY_UV" | bc)
-if [ "$UV_IS_MORE_THAN_HIGH" -eq 1 ] && [ "$UV_IS_LESS_THAN_VERY" -eq 1 ] ; then
-   notify-uv very-uv
-fi
-
-UV_IS_MORE_THAN_VERY=$(echo "$UV > $VERY_UV" | bc)
-if [ "$UV_IS_MORE_THAN_VERY" -eq 1 ]; then
-   notify-uv extreme-uv
-fi
-
-sleep 15m
+    get_location
+    get_weather
+    check_conditions
+    sleep 15m
 done
