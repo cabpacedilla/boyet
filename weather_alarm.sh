@@ -5,12 +5,10 @@ WARNINGS=()
 EMOJIS=()
 
 get_location() {
-    # Get latitude and longitude from ipinfo.io
     LOC=$(curl -s ipinfo.io/loc)  # returns "lat,lon"
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
 
-    # Reverse geocode to get city name only
     CITY=$(curl -s "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
         | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"')
 
@@ -19,6 +17,11 @@ get_location() {
 
 get_weather() {
     DATA=$(curl -s "http://api.weatherapi.com/v1/current.json?key=$API_KEY&q=${LAT},${LON}&aqi=no")
+
+    if [[ -z "$DATA" || "$DATA" == *"error"* ]]; then
+        echo "Failed to fetch weather data. Check API key or internet connection."
+        exit 1
+    fi
 
     WEATHER=$(echo "$DATA" | jq -r '.current.condition.text')
     TEMP_C=$(echo "$DATA" | jq -r '.current.temp_c')
@@ -34,50 +37,50 @@ check_conditions() {
     WARNINGS=()
     EMOJIS=()
 
-    # Temperature warnings
+    # Temperature
     if (( $(echo "$TEMP_C > 34" | bc -l) )); then
-        WARNINGS+=("High temperature (${TEMP_C}°C) - Stay cool.")
+        WARNINGS+=("🔥 High temperature (${TEMP_C}°C) - Stay cool.")
         EMOJIS+=("🔥")
     fi
 
-    # Humidity warnings
-    if (( $(echo "$HUMIDITY > 80" | bc -l) )); then
-        WARNINGS+=("High humidity ($HUMIDITY%) - Stay in airy place.")
+    # Humidity
+    if (( HUMIDITY > 80 )); then
+        WARNINGS+=("💧 High humidity ($HUMIDITY%) - Stay in airy place.")
         EMOJIS+=("💧")
     fi
 
-    # Wind warnings
+    # Wind
     if (( $(echo "$WIND_KPH > 40" | bc -l) )); then
-        WARNINGS+=("Strong wind (${WIND_KPH}kph) - Stay inside.")
+        WARNINGS+=("🌬️ Strong wind (${WIND_KPH}kph) - Stay inside.")
         EMOJIS+=("🌬️")
     fi
 
-    # Rain warnings
+    # Rain
     if (( $(echo "$PRECIP_MM > 0" | bc -l) )); then
         if (( $(echo "$PRECIP_MM <= 2.5" | bc -l) )); then
-            WARNINGS+=("Light rain (${PRECIP_MM} mm) - Use umbrella.")
+            WARNINGS+=("🌦 Light rain (${PRECIP_MM} mm) - Use umbrella.")
             EMOJIS+=("🌦")
         elif (( $(echo "$PRECIP_MM <= 10" | bc -l) )); then
-            WARNINGS+=("Moderate rain (${PRECIP_MM} mm) - Wear raincoat.")
+            WARNINGS+=("🌧 Moderate rain (${PRECIP_MM} mm) - Wear raincoat.")
             EMOJIS+=("🌧")
         else
-            WARNINGS+=("Heavy rain (${PRECIP_MM} mm) - Stay safe indoors.")
+            WARNINGS+=("🌩 Heavy rain (${PRECIP_MM} mm) - Stay safe indoors.")
             EMOJIS+=("🌩")
         fi
     fi
 
-    # UV warnings
+    # UV
     if (( $(echo "$UV >= 3 && $UV < 6" | bc -l) )); then
-        WARNINGS+=("Moderate UV ($UV) - Use sunscreen.")
+        WARNINGS+=("🧴 Moderate UV ($UV) - Use sunscreen.")
         EMOJIS+=("🧴")
     elif (( $(echo "$UV >= 6 && $UV < 8" | bc -l) )); then
-        WARNINGS+=("High UV ($UV) - Sunscreen & sunglasses recommended.")
+        WARNINGS+=("🧴😎 High UV ($UV) - Sunscreen & sunglasses recommended.")
         EMOJIS+=("🧴😎")
     elif (( $(echo "$UV >= 8 && $UV < 11" | bc -l) )); then
-        WARNINGS+=("Very High UV ($UV) - Stay in shade & protect skin.")
+        WARNINGS+=("🧴😎🏠 Very High UV ($UV) - Stay in shade & protect skin.")
         EMOJIS+=("🧴😎🏠")
     elif (( $(echo "$UV >= 11" | bc -l) )); then
-        WARNINGS+=("Extreme UV ($UV) - Stay indoors & fully protect yourself.")
+        WARNINGS+=("🧴😎🏠 Extreme UV ($UV) - Stay indoors & fully protect yourself.")
         EMOJIS+=("🧴😎🏠")
     fi
 }
@@ -89,17 +92,14 @@ send_notifications() {
         return
     fi
 
-    # Join emojis for title
-    local joined_emojis=$(printf "%s" "${EMOJIS[@]}" | tr -d '\n')
-
-    # Build collated message with bullets
-    local message="Weather warnings for $CITY:"
-    for w in "${WARNINGS[@]}"; do
-        message+="\n• $w"
+    # Combine warnings into single bulleted message
+    MESSAGE=""
+    for warning in "${WARNINGS[@]}"; do
+        MESSAGE+="• $warning"$'\n'
     done
 
-    # Send a single passive popup with all warnings
-    kdialog --passivepopup "$(echo -e "$message")" 15 --title "$joined_emojis Weather Alert"
+    TITLE="🌦 Weather $CITY"
+    kdialog --passivepopup "$MESSAGE" 10 --title "$TITLE"
 }
 
 main() {
@@ -110,3 +110,5 @@ main() {
 }
 
 main
+
+sleep 15m
