@@ -5,12 +5,24 @@ API_KEY="98ddb8a158f24a1596882148251309"
 WARNINGS=()
 EMOJIS=()
 
-# Variables to control which data to show in the normal section
+# Control which data to show in normal section
 SHOW_TEMP=true
 SHOW_HUMIDITY=true
 SHOW_WIND=true
 SHOW_PRECIP=true
 SHOW_UV=true
+
+# Detect notification command
+get_notifier() {
+    if command -v kdialog &>/dev/null; then
+        NOTIFIER="kdialog"
+    elif command -v notify-send &>/dev/null; then
+        NOTIFIER="notify-send"
+    else
+        echo "No supported notification command found (kdialog or notify-send)."
+        exit 1
+    fi
+}
 
 get_location() {
     LOC=$(curl -s ipinfo.io/loc)
@@ -26,14 +38,13 @@ get_location() {
 get_weather() {
     DATA=$(curl -s "http://api.weatherapi.com/v1/current.json?key=$API_KEY&q=$LAT,$LON&aqi=no")
 
-    # Extract fields
     TEMP_C=$(jq -r '.current.temp_c' <<< "$DATA")
     HUMIDITY=$(jq -r '.current.humidity' <<< "$DATA")
     WIND_KPH=$(jq -r '.current.wind_kph' <<< "$DATA")
     PRECIP_MM=$(jq -r '.current.precip_mm' <<< "$DATA")
     UV=$(jq -r '.current.uv' <<< "$DATA")
 
-    echo "Weather fetched for $CITY: Temp=${TEMP_C}°C, Humidity=${HUMIDITY}%, Wind=${WIND_KPH} kph, Precip=${PRECIP_MM} mm, UV=${UV}"
+    echo "Weather fetched for $CITY: Temp=${TEMP_C}°C, Humidity=${HUMIDITY}%, Wind=${WIND_KPH} kph, Rain=${PRECIP_MM} mm, UV=${UV}"
 }
 
 check_conditions() {
@@ -86,7 +97,7 @@ check_conditions() {
         EMOJIS+=("🔴")
         SHOW_UV=false
     else
-        SHOW_UV=false  # Hide low UV
+        SHOW_UV=false
     fi
 }
 
@@ -95,6 +106,7 @@ send_notifications() {
         for warning in "${WARNINGS[@]}"; do
             MESSAGE+="• $warning"$'\n'
         done
+        MESSAGE+=$'\n'
     fi
 
     $SHOW_TEMP && MESSAGE+="• Temp: ${TEMP_C}°C\n"
@@ -104,8 +116,17 @@ send_notifications() {
     $SHOW_UV && MESSAGE+="• UV: ${UV}\n"
 
     TITLE="⛅ Weather $CITY"
-    # Persistent dialog until manually closed
-    kdialog --passivepopup "$MESSAGE" --title "$TITLE"
+
+    case "$NOTIFIER" in
+        kdialog)
+            # kdialog display on notification area
+            kdialog --passivepopup "$MESSAGE" --title "$TITLE"
+            ;;
+        notify-send)
+            # GNOME-style passive notification (timeout 15s)
+            notify-send "$TITLE" "$MESSAGE" -u critical -t 15000
+            ;;
+    esac
 }
 
 main() {
@@ -115,8 +136,10 @@ main() {
     send_notifications
 }
 
+get_notifier
+
 # Loop every 15 minutes
 while true; do
     main
-    sleep 900  # 15 minutes
+    sleep 900
 done
