@@ -97,11 +97,11 @@ send_notifications() {
         done
     fi
 
-    $SHOW_TEMP && MESSAGE+="• Temperature: ${TEMP_C}°C\n"
-    $SHOW_HUMIDITY && MESSAGE+="• Humidity: ${HUMIDITY}%\n"
+    $SHOW_TEMP && MESSAGE+="• Temp: ${TEMP_C}°C\n"
+    $SHOW_HUMIDITY && MESSAGE+="• Hum: ${HUMIDITY}%\n"
     $SHOW_WIND && MESSAGE+="• Wind: ${WIND_KPH} kph\n"
-    $SHOW_PRECIP && MESSAGE+="• Precipitation: ${PRECIP_MM} mm\n"
-    $SHOW_UV && MESSAGE+="• UV Index: ${UV}\n"
+    $SHOW_PRECIP && MESSAGE+="• Rain: ${PRECIP_MM} mm\n"
+    $SHOW_UV && MESSAGE+="• UV: ${UV}\n"
 
     TITLE="⛅ Weather $CITY"
     # Persistent dialog until manually closed
