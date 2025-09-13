@@ -6,9 +6,10 @@ ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
 mkdir -p "$(dirname "$ALERT_LOG")"
 
-SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted"
+# === Patterns for detection ===
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted|task hung|blocked for more than|rcu_sched detected stalls|rcu: INFO"
 
-SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full"
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full|DMA error|bus error|timeout|hung task"
 
 LOGFILES=(
     "/var/log/syslog"           # Debian-based
@@ -20,12 +21,24 @@ LOGFILES=(
 
 pids=()
 
+# === Notification handling ===
 send_notification() {
     local message="$1"
     local urgency="$2"
-    local active_user=$(who | grep '(:0)' | awk '{print $1}' | head -n 1)
+
+    # truncate to 500 chars to prevent KDE notify crashes
+    message=$(echo "$message" | cut -c1-500)
+
+    if [ -z "$message" ]; then
+        return
+    fi
+
+    local active_user
+    active_user=$(who | grep '(:0)' | awk '{print $1}' | head -n 1)
+
     if [ -n "$active_user" ]; then
-        local user_display=$(who | grep "$active_user" | grep '(:0)' | awk '{print $5}' | tr -d '()')
+        local user_display
+        user_display=$(who | grep "$active_user" | grep '(:0)' | awk '{print $5}' | tr -d '()')
         if [ -n "$user_display" ]; then
             sudo -u "$active_user" DISPLAY="$user_display" notify-send \
                 --urgency="$urgency" --icon=dialog-error \
@@ -33,12 +46,14 @@ send_notification() {
         fi
     fi
 
+    # fallback if running as user
     if [ "$USER" != "root" ]; then
         notify-send --urgency="$urgency" --icon=dialog-error \
             --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
     fi
 }
 
+# === Severity classification ===
 check_error_severity() {
     local line="$1"
     if echo "$line" | grep -Eqi "$SHOW_STOPPER"; then
@@ -50,6 +65,7 @@ check_error_severity() {
     fi
 }
 
+# === Processing alerts ===
 process_alert() {
     local source="$1"
     local line="$2"
@@ -63,6 +79,7 @@ process_alert() {
             if ! echo "$line" | grep -Eiq "screensaver"; then
                 echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
                 send_notification "$line" "critical"
+                open_terminal_with_logs   # auto-open logs on CRITICAL
             fi
             ;;
         "SERIOUS")
@@ -71,6 +88,7 @@ process_alert() {
     esac
 }
 
+# === Monitoring functions ===
 monitor_log_file() {
     local logfile="$1"
     if [ ! -f "$logfile" ]; then
@@ -91,55 +109,31 @@ monitor_log_file() {
     pids+=($!)
 }
 
-for logfile in "${LOGFILES[@]}"; do
-    monitor_log_file "$logfile"
-done
-
-if command -v journalctl > /dev/null; then
-    echo "Monitoring systemd journal..."
+monitor_journal() {
     journalctl -f -p 3 --no-pager | while IFS= read -r line; do
         local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "systemd-journal" "$line"
         fi
-    done &
-    pids+=($!)
-fi
+    done
+}
 
-if command -v dmesg > /dev/null; then
-    echo "Monitoring dmesg..."
+monitor_dmesg() {
     dmesg -w 2>/dev/null | while IFS= read -r line; do
         local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "kernel-dmesg" "$line"
         fi
-    done &
-    pids+=($!)
-fi
-
-cleanup() {
-    echo "Stopping monitoring..."
-    for pid in "${pids[@]}"; do
-        kill "$pid" 2>/dev/null
     done
-    rm -f "$PIDFILE"
-    echo "Clean exit."
-    exit 0
 }
 
-trap cleanup SIGINT SIGTERM SIGHUP EXIT
-
-send_notification "System monitor started (CRITICAL notifications only)" "low"
-
-echo "=== Linux System Monitor Running ==="
-echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
-
+# === Terminal popup for CRITICAL logs ===
 open_terminal_with_logs() {
     [ -f "$ALERT_LOG" ] || return
     local CRITICAL_LOGS
-    CRITICAL_LOGS=$(grep "\[CRITICAL\]" "$ALERT_LOG")
+    CRITICAL_LOGS=$(grep "\[CRITICAL\]" "$ALERT_LOG" | tail -n 20)  # last 20 only
     [ -z "$CRITICAL_LOGS" ] && return
 
     TERM_CMDS=(
@@ -160,10 +154,7 @@ open_terminal_with_logs() {
 
     for term in "${TERM_CMDS[@]}"; do
         if command -v "$term" > /dev/null; then
-            "$term" -e bash -c "cat <<EOF
-$CRITICAL_LOGS
-EOF
-read -p 'Press Enter to close...'" &
+            "$term" -e bash -c "echo '=== CRITICAL LOGS ==='; echo \"$CRITICAL_LOGS\"; echo; read -p 'Press Enter to close...'" &
             return
         fi
     done
@@ -171,5 +162,39 @@ read -p 'Press Enter to close...'" &
     echo "No compatible terminal found to display critical logs."
 }
 
-open_terminal_with_logs
+# === Script starts here ===
+for logfile in "${LOGFILES[@]}"; do
+    monitor_log_file "$logfile"
+done
+
+if command -v journalctl > /dev/null; then
+    echo "Monitoring systemd journal..."
+    monitor_journal &
+    pids+=($!)
+fi
+
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    monitor_dmesg &
+    pids+=($!)
+fi
+
+cleanup() {
+    echo "Stopping monitoring..."
+    for pid in "${pids[@]}"; do
+        kill "$pid" 2>/dev/null
+    done
+    rm -f "$PIDFILE"
+    echo "Clean exit."
+    exit 0
+}
+
+trap cleanup SIGINT SIGTERM SIGHUP EXIT
+
+send_notification "System monitor started (CRITICAL notifications only)" "low"
+open_terminal_with_logs   # show logs if old CRITICAL events exist
+
+echo "=== Linux System Monitor Running ==="
+echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
+
 wait
