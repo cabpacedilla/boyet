@@ -15,6 +15,7 @@ SCRIPTS=(
     "keyLocked"
     "laptopLid_close"
     "login_monitor"
+    "low_disk_space"
     "lowMemAlert"
     "runscreensaver"
     "security_check"
