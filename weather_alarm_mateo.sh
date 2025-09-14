@@ -36,23 +36,30 @@ calculate_feels_like() {
     local T="$1" H="$2" W="$3"
     local HI="$T"
 
-    if (( $(echo "$T >= 27 && $H > 40" | bc -l) )); then
-        HI=$(echo "
-            scale=4
-            T=$T; R=$H
-            -8.784695 + 1.61139411*T + 2.338549*R - 0.14611605*T*R \
-            - 0.012308094*T*T - 0.016424828*R*R \
-            + 0.002211732*T*T*R + 0.00072546*T*R*R - 0.000003582*T*T*R*R
-        " | bc -l)
-        (( $(echo "$HI < $T" | bc -l) )) && HI="$T"
+    # Heat Index Calculation for temperatures >= 27°C
+    if [[ "$(echo "$T >= 27 && $H > 40" | bc -l)" -eq 1 ]]; then
+        HI=$(bc -l <<-END_BC
+		scale=4
+		T=$T; R=$H
+		-8.784695 + 1.61139411*T + 2.338549*R - 0.14611605*T*R - 0.012308094*T*T - 0.016424828*R*R + 0.002211732*T*T*R + 0.00072546*T*R*R - 0.000003582*T*T*R*R
+		END_BC
+		)
+        # Ensure heat index is not less than the actual temperature
+        if [[ "$(echo "$HI < $T" | bc -l)" -eq 1 ]]; then
+            HI="$T"
+        fi
     fi
-    if (( $(echo "$T <= 10 && $W >= 5" | bc -l) )); then
-        HI=$(echo "
-            scale=4
-            13.12 + 0.6215*$T - 11.37*($W^0.16) + 0.3965*$T*($W^0.16)
-        " | bc -l)
+
+    # Wind Chill Calculation for temperatures <= 10°C
+    if [[ "$(echo "$T <= 10 && $W >= 5" | bc -l)" -eq 1 ]]; then
+        HI=$(bc -l <<-END_BC
+		scale=4
+		13.12 + 0.6215*$T - 11.37*($W^0.16) + 0.3965*$T*($W^0.16)
+		END_BC
+		)
     fi
-    # Round to 2 decimals
+
+    # Round the final result to two decimal places and return it
     printf "%.2f" "$HI"
 }
 
@@ -305,9 +312,7 @@ send_notifications() {
     done
 
     # Today's High/Low temperature advice
-    if (( $(echo "$FORECAST_MAX_TEMP >= 30" | bc -l) )); then
-        high_advice=$(give_advice heat_mild)
-    elif (( $(echo "$FORECAST_MAX_TEMP >= 35" | bc -l) )); then
+    if (( $(echo "$FORECAST_MAX_TEMP >= 35" | bc -l) )); then
         high_advice=$(give_advice heat_high)
     else
         high_advice=$(give_advice heat_mild)
@@ -315,8 +320,6 @@ send_notifications() {
 
     if (( $(echo "$FORECAST_MIN_TEMP <= 0" | bc -l) )); then
         low_advice=$(give_advice cold_extreme)
-    elif (( $(echo "$FORECAST_MIN_TEMP <= 10" | bc -l) )); then
-        low_advice=$(give_advice cold_mild)
     else
         low_advice=$(give_advice cold_mild)
     fi
