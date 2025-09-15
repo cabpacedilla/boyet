@@ -36,32 +36,24 @@ calculate_feels_like() {
     local T="$1" H="$2" W="$3"
     local HI="$T"
 
-    # Heat Index Calculation for temperatures >= 27°C
-    if [[ "$(echo "$T >= 27 && $H > 40" | bc -l)" -eq 1 ]]; then
-        HI=$(bc -l <<-END_BC
-		scale=4
-		T=$T; R=$H
-		-8.784695 + 1.61139411*T + 2.338549*R - 0.14611605*T*R - 0.012308094*T*T - 0.016424828*R*R + 0.002211732*T*T*R + 0.00072546*T*R*R - 0.000003582*T*T*R*R
-		END_BC
-		)
-        # Ensure heat index is not less than the actual temperature
-        if [[ "$(echo "$HI < $T" | bc -l)" -eq 1 ]]; then
+    # Heat Index (>=27°C, >40% humidity)
+    if (( $(echo "$T >= 27 && $H > 40" | bc -l) )); then
+        HI=$(echo "scale=4; -8.784695 + 1.61139411*$T + 2.338549*$H - 0.14611605*$T*$H - 0.012308094*$T*$T - 0.016424828*$H*$H + 0.002211732*$T*$T*$H + 0.00072546*$T*$H*$H - 0.000003582*$T*$T*$H*$H" | bc -l)
+
+        # Prevent HI < actual temperature
+        if (( $(echo "$HI < $T" | bc -l) )); then
             HI="$T"
         fi
     fi
 
-    # Wind Chill Calculation for temperatures <= 10°C
-    if [[ "$(echo "$T <= 10 && $W >= 5" | bc -l)" -eq 1 ]]; then
-        HI=$(bc -l <<-END_BC
-		scale=4
-		13.12 + 0.6215*$T - 11.37*($W^0.16) + 0.3965*$T*($W^0.16)
-		END_BC
-		)
+    # Wind Chill (<=10°C, wind >=5 km/h)
+    if (( $(echo "$T <= 10 && $W >= 5" | bc -l) )); then
+        HI=$(echo "scale=4; 13.12 + 0.6215*$T - 11.37*($W^0.16) + 0.3965*$T*($W^0.16)" | bc -l)
     fi
 
-    # Round the final result to two decimal places and return it
     printf "%.2f" "$HI"
 }
+
 
 # ------------------------
 # Enhanced Advice generator with intensity levels
