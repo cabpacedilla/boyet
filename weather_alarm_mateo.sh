@@ -394,8 +394,8 @@ send_notifications() {
     # ------------------------
     # Send notification
     # ------------------------
-#     notify-send "Weather Update - $CITY" "$MESSAGE"
-    kdialog --title "Weather Update - $CITY" --msgbox "$MESSAGE"
+    notify-send "Weather Update - $CITY" "$MESSAGE"
+#     kdialog --title "Weather Update - $CITY" --msgbox "$MESSAGE"
     echo -e "$MESSAGE"
 }
 
