@@ -146,7 +146,8 @@ get_weather() {
     NEXT3_TEMP=()
     NEXT3_TIME=()
     for i in 1 2 3; do
-        idx=$((HOUR_INDEX+i))
+        # Use 10# to force decimal arithmetic
+        idx=$((10#$HOUR_INDEX+i))
         # wrap around total hours (48 for 2-day hourly)
         idx=$(( idx % $(echo "$DATA" | jq -r '.hourly.time | length') ))
         r=$(echo "$DATA" | jq -r ".hourly.precipitation[$idx]")
@@ -164,10 +165,12 @@ get_weather() {
 send_notifications() {
     MESSAGE=""
 
+    # ------------------------
     # Alerts (current dangerous conditions with intensity levels)
+    # ------------------------
     ALERTS=()
 
-    # Temperature alerts
+    # --- Temperature alerts ---
     if (( $(echo "$FEELS_LIKE >= 40" | bc -l) )); then
         ALERTS+=("🔥 Extreme heat (${FEELS_LIKE}°C) → $(give_advice heat_extreme)")
     elif (( $(echo "$FEELS_LIKE >= 35" | bc -l) )); then
@@ -182,7 +185,7 @@ send_notifications() {
         ALERTS+=("🧥 Chilly (${FEELS_LIKE}°C) → $(give_advice cold_mild)")
     fi
 
-    # Humidity alerts
+    # --- Humidity alerts ---
     if (( $(echo "$HUMIDITY >= 90" | bc -l) )); then
         ALERTS+=("💦 Extreme humidity (${HUMIDITY}%) → $(give_advice humidity_extreme)")
     elif (( $(echo "$HUMIDITY >= 80" | bc -l) )); then
@@ -191,7 +194,7 @@ send_notifications() {
         ALERTS+=("💧 Humid (${HUMIDITY}%) → $(give_advice humidity_moderate)")
     fi
 
-    # Rain alerts
+    # --- Rain alerts ---
     if (( $(echo "$PRECIP_MM > 0" | bc -l) )); then
         if (( $(echo "$PRECIP_MM >= 7.6" | bc -l) )); then
             ALERTS+=("🌧️ Heavy rain (${PRECIP_MM} mm/h) → $(give_advice rain_heavy)")
@@ -202,7 +205,7 @@ send_notifications() {
         fi
     fi
 
-    # Wind alerts
+    # --- Wind alerts ---
     if (( $(echo "$WIND_KPH >= 62" | bc -l) )); then
         ALERTS+=("🌪️ Storm wind (${WIND_KPH} km/h) → $(give_advice wind_storm)")
     elif (( $(echo "$WIND_KPH >= 39" | bc -l) )); then
@@ -213,7 +216,7 @@ send_notifications() {
         ALERTS+=("💨 Light breeze (${WIND_KPH} km/h) → $(give_advice wind_light)")
     fi
 
-    # UV alerts
+    # --- UV alerts ---
     if (( $(echo "$UV >= 11" | bc -l) )); then
         ALERTS+=("🔥 Extreme UV (${UV}) → $(give_advice uv_extreme)")
     elif (( $(echo "$UV >= 8" | bc -l) )); then
@@ -224,7 +227,7 @@ send_notifications() {
         ALERTS+=("☀️ Low UV (${UV}) → $(give_advice uv_low)")
     fi
 
-    # Weather code-based alerts
+    # --- Weather code-based alerts ---
     case "$WEATHER_CODE" in
         95|96|99) ALERTS+=("⛈ Thunderstorm → $(give_advice thunderstorm)") ;;
         45|48) ALERTS+=("🌫 Fog → $(give_advice fog)") ;;
@@ -232,7 +235,7 @@ send_notifications() {
     esac
 
     # ------------------------
-    # Build message
+    # Build alert message
     # ------------------------
     if (( ${#ALERTS[@]} > 0 )); then
         MESSAGE+="🚨 Alerts:\n"
@@ -242,55 +245,25 @@ send_notifications() {
         MESSAGE+="\n"
     fi
 
-    # Current conditions (exclude duplicated alerts)
+    # ------------------------
+    # Current conditions (avoid duplication with alerts)
+    # ------------------------
     MESSAGE+="📊 Current:\n"
 
-    # Temperature
-    temp_alert_exists=0
-    for alert in "${ALERTS[@]}"; do
-        if [[ "$alert" == *"heat"* || "$alert" == *"cold"* || "$alert" == *"Warm"* || "$alert" == *"Chilly"* ]]; then
-            temp_alert_exists=1
-            break
-        fi
-    done
-    [[ $temp_alert_exists -eq 0 ]] && MESSAGE+="• Temp: ${TEMP_C}°C (Feels like ${FEELS_LIKE}°C 🌡)\n"
-
-    # Humidity
-    humidity_alert_exists=0
-    for alert in "${ALERTS[@]}"; do
-        if [[ "$alert" == *"humidity"* || "$alert" == *"Humid"* ]]; then
-            humidity_alert_exists=1
-            break
-        fi
-    done
-    [[ $humidity_alert_exists -eq 0 ]] && MESSAGE+="• Humidity: ${HUMIDITY}%\n"
-
+    [[ ! ${ALERTS[*]} =~ "heat" && ! ${ALERTS[*]} =~ "cold" ]] && \
+        MESSAGE+="• Temp: ${TEMP_C}°C (Feels like ${FEELS_LIKE}°C 🌡)\n"
+    [[ ! ${ALERTS[*]} =~ "humidity" ]] && \
+        MESSAGE+="• Humidity: ${HUMIDITY}%\n"
     MESSAGE+="• Wind: ${WIND_KPH} km/h\n"
-
-    # Rain
-    rain_alert_exists=0
-    for alert in "${ALERTS[@]}"; do
-        if [[ "$alert" == *"rain"* || "$alert" == *"Rain"* ]]; then
-            rain_alert_exists=1
-            break
-        fi
-    done
-    [[ $rain_alert_exists -eq 0 ]] && MESSAGE+="• Rain: ${PRECIP_MM} mm\n"
-
-    # UV
-    uv_alert_exists=0
-    for alert in "${ALERTS[@]}"; do
-        if [[ "$alert" == *"UV"* ]]; then
-            uv_alert_exists=1
-            break
-        fi
-    done
-    [[ $uv_alert_exists -eq 0 ]] && MESSAGE+="• UV Index: $UV\n"
+    [[ ! ${ALERTS[*]} =~ "rain" ]] && \
+        MESSAGE+="• Rain: ${PRECIP_MM} mm\n"
+    [[ ! ${ALERTS[*]} =~ "UV" ]] && \
+        MESSAGE+="• UV Index: $UV\n"
 
     MESSAGE+="\n"
 
     # ------------------------
-    # Forecast: next 3h + daily high/low + peak UV
+    # Forecast: next 3h
     # ------------------------
     MESSAGE+="📅 Forecast:\n"
     for i in "${!NEXT3_RAIN[@]}"; do
@@ -311,15 +284,17 @@ send_notifications() {
         fi
     done
 
-    # Today's High/Low temperature advice
+    # --- Today's High/Low temperature advice ---
     if (( $(echo "$FORECAST_MAX_TEMP >= 35" | bc -l) )); then
         high_advice=$(give_advice heat_high)
+#     elif (( $(echo "$FORECAST_MAX_TEMP >= 30" | bc -l) )); then
     else
         high_advice=$(give_advice heat_mild)
     fi
 
     if (( $(echo "$FORECAST_MIN_TEMP <= 0" | bc -l) )); then
         low_advice=$(give_advice cold_extreme)
+#     elif (( $(echo "$FORECAST_MIN_TEMP <= 10" | bc -l) )); then
     else
         low_advice=$(give_advice cold_mild)
     fi
@@ -327,7 +302,7 @@ send_notifications() {
     MESSAGE+="• Today's High: ${FORECAST_MAX_TEMP}°C 🌡 ($high_advice)\n"
     MESSAGE+="• Today's Low: ${FORECAST_MIN_TEMP}°C 🧥 ($low_advice)\n"
 
-    # Peak UV advice
+    # --- Peak UV advice ---
     if (( $(echo "$FORECAST_MAX_UV >= 11" | bc -l) )); then
         uv_advice=$(give_advice uv_extreme)
     elif (( $(echo "$FORECAST_MAX_UV >= 8" | bc -l) )); then
@@ -337,12 +312,15 @@ send_notifications() {
     else
         uv_advice=$(give_advice uv_low)
     fi
-
     MESSAGE+="• Peak UV Today: ${FORECAST_MAX_UV} 🔆 ($uv_advice)\n"
 
+    # ------------------------
+    # Send notification
+    # ------------------------
     TITLE="⛅ Weather $CITY"
-    notify-send -u critical "$TITLE" "$MESSAGE"
+    notify-send -u critical "$TITLE" "$(echo -e "$MESSAGE")"
 }
+
 
 # ------------------------
 # Main loop
