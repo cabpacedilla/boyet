@@ -345,7 +345,7 @@ send_notifications() {
         MESSAGE+="• Temp: ${TEMP_C}°C (Feels like ${FEELS_LIKE}°C 🌡)\n"
     [[ ! ${ALERTS[*]} =~ "humidity" ]] && \
         MESSAGE+="• Humidity: ${HUMIDITY}%\n"
-    MESSAGE+="• Wind: ${WIND_KPH} km/h (Dir: ${WIND_DIR} ${WIND_DEG}°)\n"
+    MESSAGE+="• Wind: ${WIND_KPH} km/h ${WIND_DIR} ${WIND_DEG}°\n"
     [[ ! ${ALERTS[*]} =~ "rain" ]] && \
         MESSAGE+="• Rain: ${PRECIP_MM} mm\n"
     [[ ! ${ALERTS[*]} =~ "UV" ]] && \

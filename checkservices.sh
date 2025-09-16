@@ -19,7 +19,7 @@ SCRIPTS=(
     "lowMemAlert"
     "runscreensaver"
     "security_check"
-    "weather_alarm_mateo"
+    "weather_alarm"
 )
 
 COOLDOWN=2   # seconds between checks
