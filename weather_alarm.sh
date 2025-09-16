@@ -12,9 +12,19 @@ ALERT_WINDOW=30    # Minutes before astronomical events
 # ------------------------
 deg_to_dir() {
     local deg="$1"
-    local dirs=("North" "Northeast" "East" "Southeast" "South" "Southwest" "West" "Northwest")
+    # Validate input
+    if ! [[ "$deg" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+        echo "Unknown"
+        return 1
+    fi
+
+    # Normalize to 0-360
+    deg=$(echo "scale=0; ($deg + 360) % 360" | bc -l)
+
+    local directions=("N" "NE" "E" "SE" "S" "SW" "W" "NW")
     local idx=$(( (deg + 22) / 45 % 8 ))
-    echo "${dirs[$idx]}"
+
+    echo "${directions[$idx]}"
 }
 
 calculate_feels_like() {
