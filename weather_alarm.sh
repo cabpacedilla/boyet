@@ -286,7 +286,7 @@ send_notifications() {
     # Get current local hour at location
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
     # Loop through next 6 hours, skip the current hour
-    for i in {2..4}; do
+    for i in {1..3}; do
         hr_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[0].hour[$((10#$LOCAL_HOUR + i))].time" | cut -d' ' -f2)
         hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[0].hour[$((10#$LOCAL_HOUR + i))].temp_c")
         hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[0].hour[$((10#$LOCAL_HOUR + i))].precip_mm")
