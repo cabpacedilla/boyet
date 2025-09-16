@@ -180,12 +180,23 @@ generate_alerts() {
     (( $(echo "$UV >= 3 && $UV < 6" | bc -l) )) && ALERTS+=("🔆 Moderate UV ($UV) → $(give_advice uv_moderate)")
 
     # Pollution
+    # Pollution
     case "$AQI" in
-        0) ALERTS+=("🌫 Light pollution (AQI $AQI)") ;;
-        1) ALERTS+=("🌫 Moderate pollution (AQI $AQI) → $(give_advice pollution_moderate)") ;;
-        2) ALERTS+=("☠️ Poor air quality (AQI $AQI) → $(give_advice pollution_high)") ;;
-        3) ALERTS+=("☠️ Very Unhealthy (AQI $AQI) → $(give_advice pollution_very_unhealthy)") ;;
-        4) ALERTS+=("☠️☠️ Hazardous (AQI $AQI) → $(give_advice pollution_extreme)") ;;
+        0)
+            # No alert, show in Current section later
+            ;;
+        1)
+            ALERTS+=("🌫 Moderate pollution (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_moderate)")
+            ;;
+        2)
+            ALERTS+=("☠️ Poor air quality (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_high)")
+            ;;
+        3)
+            ALERTS+=("☠️ Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_very_unhealthy)")
+            ;;
+        4)
+            ALERTS+=("☠️☠️ Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_extreme)")
+            ;;
     esac
 
     # Weather phenomena
