@@ -310,9 +310,7 @@ send_notifications() {
     MESSAGE+="🌙 Moonrise: $MOONRISE | 🌘 Moonset: $MOONSET\n"
     MESSAGE+="🌔 Moon Phase: $MOON_PHASE\n"
 
-#     notify-send "Weather Update - $CITY" "$MESSAGE"
-    kdialog --passivepopup "$MESSAGE" --title "Weather Update - $CITY"
-#     kdialog --title "Weather Update - $CITY" --msgbox "$MESSAGE"
+    notify-send -u critical "Weather Update - $CITY" "$MESSAGE"
     echo -e "$MESSAGE"
 }
 
