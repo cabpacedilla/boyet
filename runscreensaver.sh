@@ -1,77 +1,63 @@
-#!/bin/bash
+#!/usr/bin/bash
+# This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
+
+# Ensure environment variables are set (important when started via KDE autostart)
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 
 # Configuration
-INTERVAL=120
-LEVELS=$(seq 80 1 100)
-LAST_ALERT=0
-MOUNT_POINT="/"
-LOG_FILE="$HOME/scriptlogs/disk_monitor.log"
-MAX_LOG_SIZE=$((10 * 1024 * 1024))  # 10MB
-MAX_OLD_LOGS=5  # Keep up to 5 old log files
+LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
+IDLE_TIMEOUT=1         # Timeout in minutes after which the system is considered idle
+SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
+RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
+IDLE_STATUS_FILE="/tmp/sway_idle_status"
 
-# Create log directory if it doesn't exist
-mkdir -p "$(dirname "$LOG_FILE")"
+mkdir -p "$(dirname "$LOGFILE")"
 
-# Function to log messages with timestamp
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+# Initialize idle state as active (avoid stale "idle" leftover)
+echo "active" > "$IDLE_STATUS_FILE"
+
+# --- Helper functions ---
+
+log_status() {
+    echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
-# Improved log rotation function with timestamping
-rotate_log() {
-    if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
-        # Create timestamped backup instead of simple .old
-        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
-        BACKUP_FILE="${LOG_FILE}.${TIMESTAMP}.old"
-        mv "$LOG_FILE" "$BACKUP_FILE"
-        log_message "LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")"
+check_idle_status() {
+    if [[ -f "$IDLE_STATUS_FILE" ]]; then
+        idle_status=$(<"$IDLE_STATUS_FILE")
+        echo "$(date) - Idle status: $idle_status" >> "$LOGFILE"
 
-        # Clean up old logs (keep only MAX_OLD_LOGS)
-        ls -t "${LOG_FILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+        if [[ "$idle_status" == "idle" ]]; then
+            if ! pgrep -f "screensaver-" >/dev/null; then
+                echo "$(date) - System is idle, starting screensaver..." >> "$LOGFILE"
+                "$SCREENSAVER_SCRIPT" &
+            fi
+        else
+            if pgrep -f "screensaver-" >/dev/null; then
+                echo "$(date) - System is active, stopping screensaver..." >> "$LOGFILE"
+                pkill -f "screensaver-"
+            fi
+        fi
+    else
+        echo "$(date) - $IDLE_STATUS_FILE not found! swayidle may not be running correctly." >> "$LOGFILE"
     fi
 }
 
-# Initial log entry
-log_message "=== Disk Monitoring Script Started ==="
-log_message "Monitoring mount point: $MOUNT_POINT"
-log_message "Check interval: $INTERVAL seconds"
-log_message "Alert thresholds: 80% to 100%"
-log_message "Max log size: $((MAX_LOG_SIZE / 1024 / 1024))MB"
-log_message "Max old logs to keep: $MAX_OLD_LOGS"
+start_swayidle() {
+    echo "$(date) - Starting swayidle with timeout $((IDLE_TIMEOUT * 60)) seconds..." >> "$LOGFILE"
+    swayidle -w \
+        timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+        resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+}
 
-# Main monitoring loop
+# Start swayidle to track idle status and run screensaver when idle
+start_swayidle &
+
+# Main loop to continuously check idle status
 while true; do
-    # Rotate log if it's too large
-    rotate_log
-
-    # Get current disk usage percentage
-    if ! USED_PERCENT=$(df "$MOUNT_POINT" | awk 'NR==2 {print $5}' | sed 's/%//'); then
-        log_message "ERROR: Failed to get disk usage for $MOUNT_POINT"
-        sleep $INTERVAL
-        continue
-    fi
-
-    # Check against all threshold levels
-    for LEVEL in $LEVELS; do
-        if [ "$USED_PERCENT" -ge "$LEVEL" ] && [ "$LAST_ALERT" -lt "$LEVEL" ]; then
-            # Send desktop notification (if GUI environment)
-            notify-send --urgency=critical --app-name "Low disk space" \
-                        "Disk usage on $MOUNT_POINT has reached ${USED_PERCENT}%. Threshold: ${LEVEL}%."
-
-            # Log the alert
-            log_message "ALERT: Disk usage ${USED_PERCENT}% >= ${LEVEL}% threshold"
-            LAST_ALERT=$LEVEL
-        fi
-    done
-
-    # Check if usage dropped below 80% (recovery condition)
-    if [ "$USED_PERCENT" -lt 80 ]; then
-        if [ "$LAST_ALERT" -ne 0 ]; then
-            log_message "INFO: Disk usage normalized to ${USED_PERCENT}%"
-        fi
-        LAST_ALERT=0
-    fi
-
-    # Wait for next check
-    sleep $INTERVAL
+    log_status
+    check_idle_status
+    sleep 15 # Check every 15 seconds for idle status (you can adjust this duration)
 done
