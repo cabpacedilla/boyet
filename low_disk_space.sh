@@ -1,6 +1,6 @@
 #!/bin/bash
 
-INTERVAL=10
+INTERVAL=120
 # Levels from 80% to 90%
 LEVELS=$(seq 80 1 90)
 LAST_ALERT=0
