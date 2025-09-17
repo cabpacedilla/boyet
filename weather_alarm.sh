@@ -4,7 +4,7 @@
 
 API_KEY="98ddb8a158f24a1596882148251309"
 BASE_URL="http://api.weatherapi.com/v1"
-INTERVAL=900       # 15 minutes
+INTERVAL=1800       # 15 minutes
 ALERT_WINDOW=30    # Minutes before astronomical events
 
 # ------------------------
@@ -88,8 +88,8 @@ give_advice() {
         "sunset") echo "Sunset soon" ;;
         "moonrise") echo "Moonrise soon" ;;
         "moonset") echo "Moonset soon" ;;
-        "full_moon") echo "Full Moon" ;;
-        "new_moon") echo "New Moon" ;;
+        "full_moon") echo "Full Moon tonight!" ;;
+        "new_moon") echo "New Moon phase." ;;
         "first_quarter") echo "First Quarter Moon" ;;
         "last_quarter") echo "Last Quarter Moon" ;;
         "eclipse") echo "Eclipse today" ;;
@@ -224,8 +224,8 @@ generate_astronomy_alerts() {
     fi
 
     case "$MOON_PHASE" in
-        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice fullmoon)") ;;
-        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice newmoon)") ;;
+        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice full_moon)") ;;
+        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
     esac
 }
 

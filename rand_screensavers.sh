@@ -36,7 +36,7 @@ rotate_log
 
 if ! is_media_playing; then
         # Kill the previous screensaver if it is running
-        pkill -9 -f screensaver- # Force Kill the screensaver
+#         pkill -9 -f screensaver- # Force Kill the screensaver
 
         brightnessctl --device=amdgpu_bl1 set 0% &
         sleep 0.1
