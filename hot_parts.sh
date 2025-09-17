@@ -4,7 +4,7 @@
 # Uses sysfs for temperature monitoring. No lm-sensors required.
 
 LOGFILE="$HOME/scriptlogs/hot_parts.log"
-MAX_LOG_SIZE=$((10 * 1024 * 1024))  # 10MB max log size
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB max log size
 MAX_OLD_LOGS=3                      # Keep 3 old log files
 mkdir -p "$(dirname "$LOGFILE")"
 
