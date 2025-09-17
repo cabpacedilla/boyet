@@ -180,7 +180,6 @@ generate_alerts() {
     (( $(echo "$UV >= 3 && $UV < 6" | bc -l) )) && ALERTS+=("🔆 Moderate UV ($UV) → $(give_advice uv_moderate)")
 
     # Pollution
-    # Pollution
     case "$AQI" in
         0)
             # No alert, show in Current section later
