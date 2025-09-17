@@ -8,7 +8,9 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 
 # Configuration
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
-IDLE_TIMEOUT=1         # Timeout in minutes after which the system is considered idle
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB max log size
+MAX_OLD_LOGS=3                      # Keep 3 old log files
+IDLE_TIMEOUT=1                      # Timeout in minutes after which the system is considered idle
 SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
 RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"
@@ -19,8 +21,22 @@ mkdir -p "$(dirname "$LOGFILE")"
 echo "active" > "$IDLE_STATUS_FILE"
 
 # --- Helper functions ---
+# --- Log rotation function ---
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
+        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+        BACKUP_FILE="${LOGFILE}.${TIMESTAMP}.old"
+        mv "$LOGFILE" "$BACKUP_FILE"
+        echo "$(date) - LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")" >> "$LOGFILE"
 
+        # Clean up old logs (keep only MAX_OLD_LOGS)
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
+}
+
+# --- Helper functions ---
 log_status() {
+    rotate_log  # Check log rotation before writing
     echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
