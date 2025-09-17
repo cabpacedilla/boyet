@@ -9,7 +9,7 @@ LOG_FILE="$HOME/scriptlogs/disk_monitor.log"
 MAX_LOG_SIZE=$((50 * 1024 * 1024))
 MAX_OLD_LOGS=5
 USER_DIRS_CHECK=true
-USER_DIRS=("/home/*" "/root")
+USER_DIRS=("/home" "/root")
 TOP_USERS_LIMIT=5
 
 # Create log directory if it doesn't exist
@@ -53,7 +53,7 @@ get_user_space_for_alert() {
             while IFS= read -r line; do
                 if [ -n "$line" ] && [ $count -lt 3 ]; then
                     size=$(echo "$line" | awk '{print $1}')
-                    user=$(echo "$line" | awk '{print $2}')
+                    user=$(echo "$line" | awk '{$1=""; print $0}' | sed 's/^ //')
                     alert_info+="• ${user##*/}: $size\n"
                     ((count++))
                 fi
@@ -112,13 +112,14 @@ while true; do
             USER_SPACE_INFO=$(get_user_space_for_alert)
 
             # Create alert message with space usage
-            ALERT_MESSAGE="Disk usage: ${USED_PERCENT}% (Threshold: ${LEVEL}%)"
+            ALERT_MESSAGE="Disk usage has reached ${USED_PERCENT}%. Threshold: ${LEVEL}%."
 
+            # Add top space-using users if available
             if [ -n "$USER_SPACE_INFO" ]; then
                 ALERT_MESSAGE+="\n\nTop space users:\n${USER_SPACE_INFO}"
             fi
 
-            # Send desktop notification with space usage info
+            # Send desktop notification
             notify-send --urgency=critical --app-name "Low disk space" "$ALERT_MESSAGE"
 
             # Log the alert with full user space details
@@ -148,7 +149,7 @@ while true; do
 
             # Add space usage summary to recovery message
             if [ "$USER_DIRS_CHECK" = true ]; then
-                TOP_USER=$(find "${USER_DIRS[0]}" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n 1)
+                TOP_USER=$(find "/home" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n 1)
                 if [ -n "$TOP_USER" ]; then
                     RECOVERY_MESSAGE+="\nLargest user: $TOP_USER"
                 fi
