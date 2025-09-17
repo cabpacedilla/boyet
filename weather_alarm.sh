@@ -209,27 +209,26 @@ generate_alerts() {
 # Astronomy alerts (localtime aware)
 # ------------------------
 generate_astronomy_alerts() {
-    local now=$(date +%H:%M)
-    to_minutes() { echo $((10#${1:0:2}*60 + 10#${1:3:2})); }
-    now_min=$(to_minutes "$now")
-    sunrise_min=$(to_minutes "$SUNRISE")
-    sunset_min=$(to_minutes "$SUNSET")
-    moonrise_min=$(to_minutes "$MOONRISE")
-    moonset_min=$(to_minutes "$MOONSET")
+    local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
+    local hour=${localtime%:*}
+    local minute=${localtime#*:}
+    local now=$((10#$hour * 60 + 10#$minute))
 
-    (( now_min >= sunrise_min - ALERT_WINDOW && now_min <= sunrise_min )) && ALERTS+=("🌅 Sunrise at $SUNRISE → $(give_advice sunrise)")
-    (( now_min >= sunset_min - ALERT_WINDOW && now_min <= sunset_min )) && ALERTS+=("🌇 Sunset at $SUNSET → $(give_advice sunset)")
-    (( now_min >= moonrise_min - ALERT_WINDOW && now_min <= moonrise_min )) && ALERTS+=("🌙 Moonrise at $MOONRISE → $(give_advice moonrise)")
-    (( now_min >= moonset_min - ALERT_WINDOW && now_min <= moonset_min )) && ALERTS+=("🌘 Moonset at $MOONSET → $(give_advice moonset)")
+    local sunrise_minutes=$(date -d "$SUNRISE" +%H:%M | awk -F: '{print ($1 * 60) + $2}')
+    local sunset_minutes=$(date -d "$SUNSET" +%H:%M | awk -F: '{print ($1 * 60) + $2}')
+
+    if (( now >= sunrise_minutes - 30 && now <= sunrise_minutes )); then
+        ALERTS+=("🌅 Sunrise soon → $(give_advice sunrise)")
+    elif (( now >= sunset_minutes - 30 && now <= sunset_minutes )); then
+        ALERTS+=("🌇 Sunset soon → $(give_advice sunset)")
+    fi
 
     case "$MOON_PHASE" in
-        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
-        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice full_moon)") ;;
-        "First Quarter") ALERTS+=("🌓 First Quarter → $(give_advice first_quarter)") ;;
-        "Last Quarter") ALERTS+=("🌗 Last Quarter → $(give_advice last_quarter)") ;;
+        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice fullmoon)") ;;
+        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice newmoon)") ;;
     esac
-    [[ -n "$ECLIPSE" ]] && ALERTS+=("☀️🌒 Eclipse today → $(give_advice eclipse)")
 }
+
 
 # ------------------------
 # Notifications
