@@ -286,9 +286,17 @@ send_notifications() {
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
     # Loop through next 6 hours, skip the current hour
     for i in {1..3}; do
-        hr_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[0].hour[$((10#$LOCAL_HOUR + i))].time" | cut -d' ' -f2)
-        hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[0].hour[$((10#$LOCAL_HOUR + i))].temp_c")
-        hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[0].hour[$((10#$LOCAL_HOUR + i))].precip_mm")
+        idx=$((10#$LOCAL_HOUR + i))
+        day=0
+        if (( idx > 23 )); then
+            idx=$((idx - 24))
+            day=1
+        fi
+
+        hr_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].time" | cut -d' ' -f2)
+        hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
+        hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
+
         hr_advice=""
         if (( $(echo "$hr_rain >= 20" | bc -l) )); then
             hr_advice=$(give_advice rain_heavy)
@@ -297,6 +305,7 @@ send_notifications() {
         elif (( $(echo "$hr_rain > 0 && $hr_rain < 5" | bc -l) )); then
             hr_advice=$(give_advice rain_light)
         fi
+
         MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm"
         [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice"
         MESSAGE+="\n"

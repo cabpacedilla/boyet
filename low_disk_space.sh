@@ -12,6 +12,12 @@ USER_DIRS_CHECK=true
 USER_DIRS=("/home" "/root")
 TOP_USERS_LIMIT=5
 
+# Safe directory names (no spaces, no special chars)
+SAFE_USER_DIRS=()
+for dir in "${USER_DIRS[@]}"; do
+    SAFE_USER_DIRS+=("$(printf '%q' "$dir")")
+done
+
 # Create log directory if it doesn't exist
 mkdir -p "$(dirname "$LOG_FILE")"
 
@@ -20,66 +26,105 @@ log_message() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
 }
 
-# Improved log rotation function with timestamping
+# Safe log rotation function
 rotate_log() {
     if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
         TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
         BACKUP_FILE="${LOG_FILE}.${TIMESTAMP}.old"
         mv "$LOG_FILE" "$BACKUP_FILE"
+        # Create new log file immediately to prevent race conditions
+        touch "$LOG_FILE"
         log_message "LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")"
-        ls -t "${LOG_FILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+        # Safe cleanup with error handling
+        ls -t "${LOG_FILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs -r rm -f --
     fi
 }
 
-# Function to get user directory sizes (formatted for alerts)
+# Safe function to get user directory sizes
 get_user_space_usage() {
     local top_users=""
-    for user_dir in ${USER_DIRS[@]}; do
+    for user_dir in "${SAFE_USER_DIRS[@]}"; do
         if [ -d "$user_dir" ]; then
-            top_users+=$(find "$user_dir" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n $TOP_USERS_LIMIT)
-            top_users+="\n"
+            # Use temporary file to avoid large command substitution
+            local temp_file=$(mktemp)
+            find "$user_dir" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | \
+                sort -hr | head -n $TOP_USERS_LIMIT > "$temp_file"
+
+            if [ -s "$temp_file" ]; then
+                top_users+=$(cat "$temp_file")
+                top_users+=$'\n'
+            fi
+            rm -f "$temp_file"
         fi
     done
-    echo -e "$top_users"
+    echo -n "$top_users"
 }
 
-# Function to get user space usage for notifications (compact format)
+# Safe function for notifications
 get_user_space_for_alert() {
     local alert_info=""
     local count=0
 
-    for user_dir in ${USER_DIRS[@]}; do
-        if [ -d "$user_dir" ]; then
-            while IFS= read -r line; do
-                if [ -n "$line" ] && [ $count -lt 3 ]; then
+    for user_dir in "${SAFE_USER_DIRS[@]}"; do
+        if [ -d "$user_dir" ] && [ $count -lt 3 ]; then
+            # Use temporary file for safe processing
+            local temp_file=$(mktemp)
+            find "$user_dir" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | \
+                sort -hr | head -n 3 > "$temp_file"
+
+            while IFS= read -r line && [ $count -lt 3 ]; do
+                if [ -n "$line" ]; then
                     size=$(echo "$line" | awk '{print $1}')
                     user=$(echo "$line" | awk '{$1=""; print $0}' | sed 's/^ //')
-                    alert_info+="• ${user##*/}: $size\n"
+                    # Truncate long paths for safety
+                    user_short=${user##*/}
+                    user_short=${user_short:0:30}  # Limit to 30 chars
+                    alert_info+="• $user_short: $size\n"
                     ((count++))
                 fi
-            done <<< $(find "$user_dir" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n 3)
+            done < "$temp_file"
+            rm -f "$temp_file"
         fi
     done
 
-    echo -e "$alert_info"
+    echo -n "$alert_info"
 }
 
-# Function to check and log user space usage
+# Safe user space checking
 check_user_space() {
     if [ "$USER_DIRS_CHECK" = true ]; then
         local user_usage=$(get_user_space_usage)
         if [ -n "$user_usage" ]; then
             log_message "TOP USER SPACE USAGE:"
+            # Use temporary file to avoid large here documents
+            local temp_file=$(mktemp)
+            echo -n "$user_usage" > "$temp_file"
             while IFS= read -r line; do
                 if [ -n "$line" ]; then
                     log_message "  $line"
                 fi
-            done <<< "$user_usage"
+            done < "$temp_file"
+            rm -f "$temp_file"
         fi
     fi
 }
 
-# Initial log entry
+# Safe notification function
+safe_notify_send() {
+    local urgency="$1"
+    local app_name="$2"
+    local message="$3"
+
+    # Truncate very long messages
+    if [ ${#message} -gt 1000 ]; then
+        message="${message:0:997}..."
+    fi
+
+    notify-send --urgency="$urgency" --app-name "$app_name" "$message" 2>/dev/null || true
+}
+
+# Initial setup
+rotate_log
 log_message "=== Disk Monitoring Script Started ==="
 log_message "Monitoring mount point: $MOUNT_POINT"
 log_message "Check interval: $INTERVAL seconds"
@@ -92,18 +137,24 @@ log_message "User directory monitoring: $USER_DIRS_CHECK"
 while true; do
     rotate_log
 
-    # Get current disk usage percentage
-    if ! USED_PERCENT=$(df "$MOUNT_POINT" | awk 'NR==2 {print $5}' | sed 's/%//'); then
+    # Safe disk usage check
+    if ! USED_PERCENT=$(df "$MOUNT_POINT" 2>/dev/null | awk 'NR==2 {print $5}' | sed 's/%//'); then
         log_message "ERROR: Failed to get disk usage for $MOUNT_POINT"
+        sleep $INTERVAL
+        continue
+    fi
+
+    # Check if we got a valid number
+    if ! [[ "$USED_PERCENT" =~ ^[0-9]+$ ]]; then
+        log_message "ERROR: Invalid disk usage value: $USED_PERCENT"
         sleep $INTERVAL
         continue
     fi
 
     # Check user space usage on alert conditions or periodically
     if [ "$USED_PERCENT" -ge 80 ] || [ "$(date +%M)" -le 1 ]; then
-       check_user_space
+        check_user_space
     fi
-
 
     # Check against all threshold levels
     for LEVEL in $LEVELS; do
@@ -119,24 +170,11 @@ while true; do
                 ALERT_MESSAGE+="\n\nTop space users:\n${USER_SPACE_INFO}"
             fi
 
-            # Send desktop notification
-            notify-send --urgency=critical --app-name "Low disk space" "$ALERT_MESSAGE"
+            # Send safe desktop notification
+            safe_notify_send "critical" "Low disk space" "$ALERT_MESSAGE"
 
-            # Log the alert with full user space details
+            # Log the alert
             log_message "ALERT: Disk usage ${USED_PERCENT}% >= ${LEVEL}% threshold"
-
-            # Log detailed user space info
-            if [ "$USED_PERCENT" -ge 85 ]; then
-                DETAILED_USAGE=$(get_user_space_usage)
-                if [ -n "$DETAILED_USAGE" ]; then
-                    log_message "DETAILED SPACE USAGE:"
-                    while IFS= read -r line; do
-                        if [ -n "$line" ]; then
-                            log_message "  $line"
-                        fi
-                    done <<< "$DETAILED_USAGE"
-                fi
-            fi
 
             LAST_ALERT=$LEVEL
         fi
@@ -151,11 +189,13 @@ while true; do
             if [ "$USER_DIRS_CHECK" = true ]; then
                 TOP_USER=$(find "/home" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n 1)
                 if [ -n "$TOP_USER" ]; then
-                    RECOVERY_MESSAGE+="\nLargest user: $TOP_USER"
+                    # Truncate long user info
+                    TOP_USER_SHORT=$(echo "$TOP_USER" | cut -c1-50)
+                    RECOVERY_MESSAGE+="\nLargest user: $TOP_USER_SHORT"
                 fi
             fi
 
-            notify-send --urgency=normal --app-name "Disk space normal" "$RECOVERY_MESSAGE"
+            safe_notify_send "normal" "Disk space normal" "$RECOVERY_MESSAGE"
             log_message "INFO: Disk usage normalized to ${USED_PERCENT}%"
         fi
         LAST_ALERT=0
