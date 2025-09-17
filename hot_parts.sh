@@ -4,7 +4,22 @@
 # Uses sysfs for temperature monitoring. No lm-sensors required.
 
 LOGFILE="$HOME/scriptlogs/hot_parts.log"
+MAX_LOG_SIZE=$((10 * 1024 * 1024))  # 10MB max log size
+MAX_OLD_LOGS=3                      # Keep 3 old log files
 mkdir -p "$(dirname "$LOGFILE")"
+
+# Log rotation function
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
+        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+        BACKUP_FILE="${LOGFILE}.${TIMESTAMP}.old"
+        mv "$LOGFILE" "$BACKUP_FILE"
+        echo "$(date) - LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")" >> "$LOGFILE"
+
+        # Clean up old logs (keep only MAX_OLD_LOGS)
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
+}
 
 trap 'echo "$(date) - SIGTERM received, exiting..." >> "$LOGFILE"; exit 0' TERM
 trap 'echo "$(date) - SIGINT received, exiting..." >> "$LOGFILE"; exit 0' INT
@@ -55,7 +70,15 @@ check_hwmon() {
     done
 }
 
+# Initial log entry with configuration
+rotate_log
+echo "=== Hot Parts Monitor Started ===" >> "$LOGFILE"
+echo "$(date) - Configuration: MAX_LOG_SIZE=$((MAX_LOG_SIZE/1024/1024))MB, MAX_OLD_LOGS=$MAX_OLD_LOGS" >> "$LOGFILE"
+echo "$(date) - Monitoring interval: 5 seconds" >> "$LOGFILE"
+echo "$(date) - Notifications enabled: $NOTIFY" >> "$LOGFILE"
+
 while true; do
+    rotate_log  # Check log rotation at start of each cycle
     echo "$(date) 🔎 Checking system temperatures..." >> "$LOGFILE"
     check_hwmon
     echo "$(date) ✅ Done." >> "$LOGFILE"
