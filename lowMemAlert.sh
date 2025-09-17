@@ -1,55 +1,79 @@
-#!/usr/bin/bash
-# Low Memory Alert Script (percentage-based)
-# Alerts when free memory (available) is less than or equal to a percentage limit of total RAM
-# Assembled and written by Claive Alvin P. Acedilla. Can be copied, modified, and redistributed.
-# October 2020
+#!/bin/bash
 
-# Steps for the task:
-# 1. Create a bin directory inside your home directory
-# 2. Change directory to the bin directory
-# 3. Create the bash script file below with nano or gedit and save it with a filename like lowMemAlert.sh
-# 4. Make file executable with chmod +x lowMemAlert.sh command
-# 5. Add the lowMemAlert.sh command in Startup applications
-# 6. Reboot the laptop
-# 7. Log in and simulate low memory scenario by running many high memory consuming processes
-# 8. Low memory alert message will be displayed
+# Configuration
+INTERVAL=120
+LEVELS=$(seq 80 1 100)
+LAST_ALERT=0
+MOUNT_POINT="/"
+LOG_FILE="$HOME/scriptlogs/disk_monitor.log"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 10MB
+MAX_OLD_LOGS=5  # Keep up to 5 old log files
 
-TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
+# Create log directory if it doesn't exist
+mkdir -p "$(dirname "$LOG_FILE")"
 
+# Function to log messages with timestamp
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
+# Improved log rotation function with timestamping
+rotate_log() {
+    if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
+        # Create timestamped backup instead of simple .old
+        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+        BACKUP_FILE="${LOG_FILE}.${TIMESTAMP}.old"
+        mv "$LOG_FILE" "$BACKUP_FILE"
+        log_message "LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")"
+
+        # Clean up old logs (keep only MAX_OLD_LOGS)
+        ls -t "${LOG_FILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
+}
+
+# Initial log entry
+log_message "=== Disk Monitoring Script Started ==="
+log_message "Monitoring mount point: $MOUNT_POINT"
+log_message "Check interval: $INTERVAL seconds"
+log_message "Alert thresholds: 80% to 100%"
+log_message "Max log size: $((MAX_LOG_SIZE / 1024 / 1024))MB"
+log_message "Max old logs to keep: $MAX_OLD_LOGS"
+
+# Main monitoring loop
 while true; do
-    # 1. Set your free memory percentage limit (e.g., 15 means 15% of total RAM)
-    MEMFREE_LIMIT_PERCENT=15
+    # Rotate log if it's too large
+    rotate_log
 
-    # 2. Get total and available memory in MB
-    TOTAL_MEM=$(free -m | awk 'NR==2 {print $2}')
-    MEMFREE=$(free -m | awk 'NR==2 {print $7}')
-
-    # 3. Compute threshold in MB
-    THRESHOLD=$(( TOTAL_MEM * MEMFREE_LIMIT_PERCENT / 100 ))
-
-    # 4. Check if free memory is below or equal to threshold
-    if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$THRESHOLD" ]; then
-        # Get top 10 memory-consuming processes
-        TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | \
-            awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " ";
-                  if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "...";
-                  if ($5 !~ /konsole/)
-                      printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
-
-        launched=false
-        for term in "${TERMINALS[@]}"; do
-            if command -v "$term" >/dev/null 2>&1; then
-                "$term" -e bash -c "echo -e \"⚠️ Low memory alert: RAM below ${MEMFREE_LIMIT_PERCENT}%.\nFree high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
-                launched=true
-                break
-            fi
-        done
-
-        if [ "$launched" = false ]; then
-            notify-send "⚠️ Low Memory Alert" "RAM below ${MEMFREE_LIMIT_PERCENT}%. No supported terminal emulator found."
-        fi
+    # Get current disk usage percentage
+    if ! USED_PERCENT=$(df "$MOUNT_POINT" | awk 'NR==2 {print $5}' | sed 's/%//'); then
+        log_message "ERROR: Failed to get disk usage for $MOUNT_POINT"
+        sleep $INTERVAL
+        continue
     fi
 
-    # 5. Sleep for 30 seconds before checking again
-    sleep 30
+    # Check against all threshold levels
+    for LEVEL in $LEVELS; do
+        if [ "$USED_PERCENT" -ge "$LEVEL" ] && [ "$LAST_ALERT" -lt "$LEVEL" ]; then
+            # Send desktop notification (if GUI environment)
+            notify-send --urgency=critical --app-name "Low disk space" \
+                        "Disk usage on $MOUNT_POINT has reached ${USED_PERCENT}%. Threshold: ${LEVEL}%."
+
+            # Log the alert
+            log_message "ALERT: Disk usage ${USED_PERCENT}% >= ${LEVEL}% threshold"
+            LAST_ALERT=$LEVEL
+        fi
+    done
+
+    # Check if usage dropped below 80% (recovery condition)
+    if [ "$USED_PERCENT" -lt 80 ]; then
+        if [ "$LAST_ALERT" -ne 0 ]; then
+            log_message "INFO: Disk usage normalized to ${USED_PERCENT}%"
+            notify-send --urgency=normal --app-name "Disk space normal" \
+                       "Disk usage on $MOUNT_POINT is now ${USED_PERCENT}%"
+        fi
+        LAST_ALERT=0
+    fi
+
+    # Wait for next check
+    sleep $INTERVAL
 done
