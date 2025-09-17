@@ -7,9 +7,9 @@ PIDFILE="$HOME/scriptlogs/monitor.pid"
 mkdir -p "$(dirname "$ALERT_LOG")"
 
 # === Patterns for detection ===
-SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted|task hung|blocked for more than|rcu_sched detected stalls|rcu: INFO"
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*(shutdown|trip)|ACPI.*error|hardware error|fatal|segfault|out of memory|OOM killer|swap.*exhausted|filesystem.*readonly|journal aborted|journal.*disk.*full|no space left on device|ENOSPC|dracut.*failed|emergency mode|rescue mode|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|task hung|blocked for more than|rcu_sched detected stalls|rcu: INFO|SMART.*failure|smartd.*error"
 
-SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full|DMA error|bus error|timeout|hung task"
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|systemd.*failed|service.*failed|unit.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|dns.*failed|name.*resolution.*failed|connection refused|timeout|authentication.*failed.*repeatedly|sudo:.*authentication failure|ssh.*connection.*failed|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|DMA error|bus error|rpm.*error|dnf.*error|apt.*error|dpkg.*error|zypper.*error"
 
 LOGFILES=(
     "/var/log/syslog"           # Debian-based
