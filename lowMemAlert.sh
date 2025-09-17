@@ -1,164 +1,55 @@
-#!/bin/bash
+#!/usr/bin/bash
+# Low Memory Alert Script (percentage-based)
+# Alerts when free memory (available) is less than or equal to a percentage limit of total RAM
+# Assembled and written by Claive Alvin P. Acedilla. Can be copied, modified, and redistributed.
+# October 2020
 
-# Configuration
-INTERVAL=120
-LEVELS=$(seq 80 1 100)
-LAST_ALERT=0
-MOUNT_POINT="/"
-LOG_FILE="$HOME/scriptlogs/disk_monitor.log"
-MAX_LOG_SIZE=$((50 * 1024 * 1024))
-MAX_OLD_LOGS=5
-USER_DIRS_CHECK=true
-USER_DIRS=("/home/*" "/root")
-TOP_USERS_LIMIT=5
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like lowMemAlert.sh
+# 4. Make file executable with chmod +x lowMemAlert.sh command
+# 5. Add the lowMemAlert.sh command in Startup applications
+# 6. Reboot the laptop
+# 7. Log in and simulate low memory scenario by running many high memory consuming processes
+# 8. Low memory alert message will be displayed
 
-# Create log directory if it doesn't exist
-mkdir -p "$(dirname "$LOG_FILE")"
+TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
 
-# Function to log messages with timestamp
-log_message() {
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
-}
-
-# Improved log rotation function with timestamping
-rotate_log() {
-    if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
-        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
-        BACKUP_FILE="${LOG_FILE}.${TIMESTAMP}.old"
-        mv "$LOG_FILE" "$BACKUP_FILE"
-        log_message "LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")"
-        ls -t "${LOG_FILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
-    fi
-}
-
-# Function to get user directory sizes (formatted for alerts)
-get_user_space_usage() {
-    local top_users=""
-    for user_dir in ${USER_DIRS[@]}; do
-        if [ -d "$user_dir" ]; then
-            top_users+=$(find "$user_dir" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n $TOP_USERS_LIMIT)
-            top_users+="\n"
-        fi
-    done
-    echo -e "$top_users"
-}
-
-# Function to get user space usage for notifications (compact format)
-get_user_space_for_alert() {
-    local alert_info=""
-    local count=0
-
-    for user_dir in ${USER_DIRS[@]}; do
-        if [ -d "$user_dir" ]; then
-            while IFS= read -r line; do
-                if [ -n "$line" ] && [ $count -lt 3 ]; then
-                    size=$(echo "$line" | awk '{print $1}')
-                    user=$(echo "$line" | awk '{print $2}')
-                    alert_info+="• ${user##*/}: $size\n"
-                    ((count++))
-                fi
-            done <<< $(find "$user_dir" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n 3)
-        fi
-    done
-
-    echo -e "$alert_info"
-}
-
-# Function to check and log user space usage
-check_user_space() {
-    if [ "$USER_DIRS_CHECK" = true ]; then
-        local user_usage=$(get_user_space_usage)
-        if [ -n "$user_usage" ]; then
-            log_message "TOP USER SPACE USAGE:"
-            while IFS= read -r line; do
-                if [ -n "$line" ]; then
-                    log_message "  $line"
-                fi
-            done <<< "$user_usage"
-        fi
-    fi
-}
-
-# Initial log entry
-log_message "=== Disk Monitoring Script Started ==="
-log_message "Monitoring mount point: $MOUNT_POINT"
-log_message "Check interval: $INTERVAL seconds"
-log_message "Alert thresholds: 80% to 100%"
-log_message "Max log size: $((MAX_LOG_SIZE / 1024 / 1024))MB"
-log_message "Max old logs to keep: $MAX_OLD_LOGS"
-log_message "User directory monitoring: $USER_DIRS_CHECK"
-
-# Main monitoring loop
 while true; do
-    rotate_log
+    # 1. Set your free memory percentage limit (e.g., 15 means 15% of total RAM)
+    MEMFREE_LIMIT_PERCENT=15
 
-    # Get current disk usage percentage
-    if ! USED_PERCENT=$(df "$MOUNT_POINT" | awk 'NR==2 {print $5}' | sed 's/%//'); then
-        log_message "ERROR: Failed to get disk usage for $MOUNT_POINT"
-        sleep $INTERVAL
-        continue
-    fi
+    # 2. Get total and available memory in MB
+    TOTAL_MEM=$(free -m | awk 'NR==2 {print $2}')
+    MEMFREE=$(free -m | awk 'NR==2 {print $7}')
 
-    # Check user space usage on alert conditions or periodically
-    if [ "$USED_PERCENT" -ge 80 ] || [ "$(date +%M)" -le 1 ]; then
-       check_user_space
-    fi
+    # 3. Compute threshold in MB
+    THRESHOLD=$(( TOTAL_MEM * MEMFREE_LIMIT_PERCENT / 100 ))
 
+    # 4. Check if free memory is below or equal to threshold
+    if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$THRESHOLD" ]; then
+        # Get top 10 memory-consuming processes
+        TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | \
+            awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " ";
+                  if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "...";
+                  if ($5 !~ /konsole/)
+                      printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
 
-    # Check against all threshold levels
-    for LEVEL in $LEVELS; do
-        if [ "$USED_PERCENT" -ge "$LEVEL" ] && [ "$LAST_ALERT" -lt "$LEVEL" ]; then
-            # Get user space info for alerts
-            USER_SPACE_INFO=$(get_user_space_for_alert)
-
-            # Create alert message with space usage
-            ALERT_MESSAGE="Disk usage: ${USED_PERCENT}% (Threshold: ${LEVEL}%)"
-
-            if [ -n "$USER_SPACE_INFO" ]; then
-                ALERT_MESSAGE+="\n\nTop space users:\n${USER_SPACE_INFO}"
+        launched=false
+        for term in "${TERMINALS[@]}"; do
+            if command -v "$term" >/dev/null 2>&1; then
+                "$term" -e bash -c "echo -e \"⚠️ Low memory alert: RAM below ${MEMFREE_LIMIT_PERCENT}%.\nFree high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+                launched=true
+                break
             fi
+        done
 
-            # Send desktop notification with space usage info
-            notify-send --urgency=critical --app-name "Low disk space" "$ALERT_MESSAGE"
-
-            # Log the alert with full user space details
-            log_message "ALERT: Disk usage ${USED_PERCENT}% >= ${LEVEL}% threshold"
-
-            # Log detailed user space info
-            if [ "$USED_PERCENT" -ge 85 ]; then
-                DETAILED_USAGE=$(get_user_space_usage)
-                if [ -n "$DETAILED_USAGE" ]; then
-                    log_message "DETAILED SPACE USAGE:"
-                    while IFS= read -r line; do
-                        if [ -n "$line" ]; then
-                            log_message "  $line"
-                        fi
-                    done <<< "$DETAILED_USAGE"
-                fi
-            fi
-
-            LAST_ALERT=$LEVEL
+        if [ "$launched" = false ]; then
+            notify-send "⚠️ Low Memory Alert" "RAM below ${MEMFREE_LIMIT_PERCENT}%. No supported terminal emulator found."
         fi
-    done
-
-    # Check if usage dropped below 80% (recovery condition)
-    if [ "$USED_PERCENT" -lt 80 ]; then
-        if [ "$LAST_ALERT" -ne 0 ]; then
-            RECOVERY_MESSAGE="Disk usage normalized to ${USED_PERCENT}%"
-
-            # Add space usage summary to recovery message
-            if [ "$USER_DIRS_CHECK" = true ]; then
-                TOP_USER=$(find "${USER_DIRS[0]}" -maxdepth 1 -type d -exec du -sh {} \; 2>/dev/null | sort -hr | head -n 1)
-                if [ -n "$TOP_USER" ]; then
-                    RECOVERY_MESSAGE+="\nLargest user: $TOP_USER"
-                fi
-            fi
-
-            notify-send --urgency=normal --app-name "Disk space normal" "$RECOVERY_MESSAGE"
-            log_message "INFO: Disk usage normalized to ${USED_PERCENT}%"
-        fi
-        LAST_ALERT=0
     fi
 
-    sleep $INTERVAL
+    # 5. Sleep for 30 seconds before checking again
+    sleep 30
 done
