@@ -3,9 +3,22 @@
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
 BRIGHT_PATH=/sys/class/backlight/amdgpu_bl1/brightness
-MINIMAL=0
-OPTIMAL=39321
 
+# Create log directory if it doesn't exist
+mkdir -p "$(dirname "$LOGFILE")"
+
+# Log rotation function
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
+        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+        BACKUP_FILE="${LOGFILE}.${TIMESTAMP}.old"
+        mv "$LOGFILE" "$BACKUP_FILE"
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")" >> "$LOGFILE"
+
+        # Clean up old logs (keep only MAX_OLD_LOGS)
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
+}
 
 # Function to check if a media player is running
 is_media_playing() {
@@ -18,11 +31,14 @@ is_media_playing() {
     fi
 }
 
+# Check log rotation before any logging
+rotate_log
+
 if ! is_media_playing; then
         # Kill the previous screensaver if it is running
         pkill -9 -f screensaver- # Force Kill the screensaver
 
-        echo $MINIMAL | sudo tee $BRIGHT_PATH &
+        brightnessctl --device=amdgpu_bl1 set 0% &
         sleep 0.1
 
         SCREENSAVER_PROGRAMS=(~/screensavers/screensaver-*)
@@ -31,8 +47,8 @@ if ! is_media_playing; then
 
         # Run the screensaver
          "$RANDOM_PROGRAM" &
+         brightnessctl --device=amdgpu_bl1 set 90%
          sleep 0.5
-         echo $OPTIMAL | sudo tee $BRIGHT_PATH
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media player is running, skipping screensaver" >> "$LOGFILE"
 fi
