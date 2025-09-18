@@ -1,55 +1,49 @@
 #!/usr/bin/bash
-# Low Memory Alert Script (percentage-based)
-# Alerts when free memory (available) is less than or equal to a percentage limit of total RAM
-# Assembled and written by Claive Alvin P. Acedilla. Can be copied, modified, and redistributed.
-# October 2020
+# Low Memory Alert Script (Clean notify-send + log rotation)
+# Alerts when free RAM drops below a percentage threshold
+# Author: Claive Alvin P. Acedilla
 
-# Steps for the task:
-# 1. Create a bin directory inside your home directory
-# 2. Change directory to the bin directory
-# 3. Create the bash script file below with nano or gedit and save it with a filename like lowMemAlert.sh
-# 4. Make file executable with chmod +x lowMemAlert.sh command
-# 5. Add the lowMemAlert.sh command in Startup applications
-# 6. Reboot the laptop
-# 7. Log in and simulate low memory scenario by running many high memory consuming processes
-# 8. Low memory alert message will be displayed
+# --------------------------
+# User-configurable settings
+MEMFREE_LIMIT_PERCENT=15       # Threshold (%)
+CHECK_INTERVAL=30              # Seconds
+MAX_PROCESSES=5                # Top memory-consuming processes to display
+LOG_FILE="$HOME/lowMemAlert.log"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50 MB in bytes
 
-TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
-
+# --------------------------
 while true; do
-    # 1. Set your free memory percentage limit (e.g., 15 means 15% of total RAM)
-    MEMFREE_LIMIT_PERCENT=15
-
-    # 2. Get total and available memory in MB
+    # Get total and available memory in MB
     TOTAL_MEM=$(free -m | awk 'NR==2 {print $2}')
     MEMFREE=$(free -m | awk 'NR==2 {print $7}')
-
-    # 3. Compute threshold in MB
     THRESHOLD=$(( TOTAL_MEM * MEMFREE_LIMIT_PERCENT / 100 ))
 
-    # 4. Check if free memory is below or equal to threshold
+    # Check if free memory is below or equal to threshold
     if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$THRESHOLD" ]; then
-        # Get top 10 memory-consuming processes
-        TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | \
-            awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " ";
-                  if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "...";
-                  if ($5 !~ /konsole/)
-                      printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
+        TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
-        launched=false
-        for term in "${TERMINALS[@]}"; do
-            if command -v "$term" >/dev/null 2>&1; then
-                "$term" -e bash -c "echo -e \"⚠️ Low memory alert: RAM below ${MEMFREE_LIMIT_PERCENT}%.\nFree high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
-                launched=true
-                break
-            fi
-        done
+        # Get top memory-consuming processes (only command names)
+        TOP_PROCESSES=$(ps -eo %mem,comm --sort=-%mem | head -n $((MAX_PROCESSES + 1)) | \
+            awk 'NR>1 {printf "%s: %.0f%%\n", $2, $1}')
 
-        if [ "$launched" = false ]; then
-            notify-send "⚠️ Low Memory Alert" "RAM below ${MEMFREE_LIMIT_PERCENT}%. No supported terminal emulator found."
+        # Build notification message
+        NOTIF="RAM below ${MEMFREE_LIMIT_PERCENT}%.
+        Top memory users:
+        $TOP_PROCESSES"
+
+        # Send desktop notification
+        notify-send -u critical "⚠️ Low Memory Alert" "$NOTIF"
+
+        # --------------------------
+        # Log rotation by file size
+        if [ -f "$LOG_FILE" ] && [ $(stat -c%s "$LOG_FILE") -gt "$MAX_LOG_SIZE" ]; then
+            mv "$LOG_FILE" "$LOG_FILE.$(date '+%Y%m%d_%H%M%S')"
+            touch "$LOG_FILE"
         fi
+
+        # Append alert to log
+        echo -e "[$TIMESTAMP] $NOTIF\n" >> "$LOG_FILE"
     fi
 
-    # 5. Sleep for 30 seconds before checking again
-    sleep 30
+    sleep "$CHECK_INTERVAL"
 done
