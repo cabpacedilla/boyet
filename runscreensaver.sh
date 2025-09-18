@@ -17,6 +17,8 @@ IDLE_STATUS_FILE="/tmp/sway_idle_status"
 
 mkdir -p "$(dirname "$LOGFILE")"
 
+# --- Helper functions ---
+
 # Initialize idle state as active (avoid stale "idle" leftover)
 echo "active" > "$IDLE_STATUS_FILE"
 
@@ -46,15 +48,13 @@ check_idle_status() {
         echo "$(date) - Idle status: $idle_status" >> "$LOGFILE"
 
         if [[ "$idle_status" == "idle" ]]; then
-            if ! pgrep -f "screensaver-" >/dev/null; then
-                echo "$(date) - System is idle, starting screensaver..." >> "$LOGFILE"
-                "$SCREENSAVER_SCRIPT" &
-            fi
+            echo "$(date) - System is idle, running screensaver..." >> "$LOGFILE"
+            # Kill old screensaver (if still running) before starting a new one
+            pkill -f "screensaver-" 2>/dev/null
+            "$SCREENSAVER_SCRIPT" &
         else
-            if pgrep -f "screensaver-" >/dev/null; then
-                echo "$(date) - System is active, stopping screensaver..." >> "$LOGFILE"
-                pkill -f "screensaver-"
-            fi
+            echo "$(date) - System is active, ensuring screensaver is stopped..." >> "$LOGFILE"
+            pkill -f "screensaver-" 2>/dev/null
         fi
     else
         echo "$(date) - $IDLE_STATUS_FILE not found! swayidle may not be running correctly." >> "$LOGFILE"
@@ -74,6 +74,8 @@ start_swayidle &
 # Main loop to continuously check idle status
 while true; do
     log_status
+    pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
+    pkill -9 -f "screensaver-"             # Force kill any running screensaver
     check_idle_status
     sleep 15 # Check every 15 seconds for idle status (you can adjust this duration)
 done

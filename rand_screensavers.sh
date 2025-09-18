@@ -20,6 +20,7 @@ rotate_log() {
     fi
 }
 
+
 # Function to check if a media player is running
 is_media_playing() {
     local MEDIA_PLAY
@@ -31,12 +32,9 @@ is_media_playing() {
     fi
 }
 
-# Check log rotation before any logging
-rotate_log
-
 if ! is_media_playing; then
         # Kill the previous screensaver if it is running
-#         pkill -9 -f screensaver- # Force Kill the screensaver
+        pkill -9 -f screensaver- # Force Kill the screensaver
 
         brightnessctl --device=amdgpu_bl1 set 0% &
         sleep 0.1
@@ -47,8 +45,8 @@ if ! is_media_playing; then
 
         # Run the screensaver
          "$RANDOM_PROGRAM" &
-         brightnessctl --device=amdgpu_bl1 set 90%
          sleep 0.5
+         brightnessctl --device=amdgpu_bl1 set 90%
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media player is running, skipping screensaver" >> "$LOGFILE"
 fi
