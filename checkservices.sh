@@ -11,7 +11,7 @@ SCRIPTS=(
     "btrfs_balance_quarterly"
     "btrfs_scrub_monthly"
     "fortune4you"
-    "hot_parts"
+#     "hot_parts"
     "keyLocked"
     "laptopLid_close"
     "login_monitor"
