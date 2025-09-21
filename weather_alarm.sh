@@ -233,13 +233,13 @@ send_notifications() {
     fi
 
     MESSAGE+="📊 Current ($CITY):\n"
-    MESSAGE+="• Temp: $TEMP_C°C (Feels: $FEELS°C)\n"
-    MESSAGE+="• Humidity: $HUMIDITY%\n"
-    MESSAGE+="• Wind: $WIND_KPH km/h ($WIND_DIR)\n"
-    MESSAGE+="• Rain: $PRECIP mm\n"
-    MESSAGE+="• UV: $UV\n"
-    MESSAGE+="• Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³)\n"
-    MESSAGE+="• Visibility: $VIS km\n\n"
+    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(comfort_temp "$TEMP_C" "$FEELS")\n"
+    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(comfort_humidity "$HUMIDITY")\n"
+    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(comfort_wind "$WIND_KPH")\n"
+    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(comfort_rain "$PRECIP")\n"
+    MESSAGE+="• 🌞 UV: $UV → $(comfort_uv "$UV")\n"
+    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(comfort_pollution "$AQI")\n"
+    MESSAGE+="• 👁 Visibility: $VIS km → $(comfort_visibility "$VIS")\n\n"
 
     MESSAGE+="📅 Forecast:\n"
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
