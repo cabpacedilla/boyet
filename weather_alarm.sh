@@ -8,6 +8,7 @@
 # - Keeps comfort values (feels-like, humidity, etc.) in "Current" only,
 #   NOT as alerts
 # - Optional logging to ~/weather_log.txt
+# - Added missing comfort functions
 
 API_KEY="98ddb8a158f24a1596882148251309"
 BASE_URL="http://api.weatherapi.com/v1"
@@ -44,6 +45,122 @@ calculate_feels_like() {
     fi
     printf "%.1f" "$HI"
 }
+
+# ------------------------
+# Unified Weather Assessment System
+# ------------------------
+assess_weather() {
+    local type="$1" value="$2" unit="$3"
+    local level advice emoji alert_threshold=0
+
+    case "$type" in
+        "temperature")
+            if (( $(echo "$value >= 40" | bc -l) )); then
+                level="extreme_heat"; advice=$(give_advice heat_extreme); emoji="🔥"; alert_threshold=1
+            elif (( $(echo "$value >= 35" | bc -l) )); then
+                level="high_heat"; advice=$(give_advice heat_extreme); emoji="🔥"
+            elif (( $(echo "$value >= 30" | bc -l) )); then
+                level="moderate_heat"; advice=$(give_advice heat_high); emoji="🌡"
+            elif (( $(echo "$value >= 25" | bc -l) )); then
+                level="mild_heat"; advice=$(give_advice heat_mild); emoji="🌤"
+            elif (( $(echo "$value >= 20" | bc -l) )); then
+                level="pleasant"; advice=$(give_advice heat_low); emoji="😊"
+            elif (( $(echo "$value >= 15" | bc -l) )); then
+                level="cool"; advice=$(give_advice cold_low); emoji="🧥"
+            elif (( $(echo "$value >= 5" | bc -l) )); then
+                level="cold"; advice=$(give_advice cold_mild); emoji="❄️"
+            elif (( $(echo "$value >= 0" | bc -l) )); then
+                level="very_cold"; advice=$(give_advice cold_high); emoji="🥶"
+            else
+                level="extreme_cold"; advice=$(give_advice cold_extreme); emoji="🥶"; alert_threshold=1
+            fi
+            ;;
+        "rain")
+            if (( $(echo "$value >= 50" | bc -l) )); then
+                level="storm"; advice=$(give_advice rain_storm); emoji="⛈"; alert_threshold=1
+            elif (( $(echo "$value >= 20" | bc -l) )); then
+                level="heavy"; advice=$(give_advice rain_heavy); emoji="🌧"; alert_threshold=1
+            elif (( $(echo "$value >= 5" | bc -l) )); then
+                level="moderate"; advice=$(give_advice rain_moderate); emoji="🌧"; alert_threshold=1
+            elif (( $(echo "$value > 0" | bc -l) )); then
+                level="light"; advice=$(give_advice rain_light); emoji="🌦"
+            else
+                level="none"; advice=$(give_advice rain_none); emoji="☀️"
+            fi
+            ;;
+        "wind")
+            if (( $(echo "$value >= 80" | bc -l) )); then
+                level="storm"; advice=$(give_advice wind_storm); emoji="🌪"; alert_threshold=1
+            elif (( $(echo "$value >= 40" | bc -l) )); then
+                level="strong"; advice=$(give_advice wind_strong); emoji="💨"; alert_threshold=1
+            elif (( $(echo "$value >= 20" | bc -l) )); then
+                level="moderate"; advice=$(give_advice wind_moderate); emoji="💨"
+            elif (( $(echo "$value >= 10" | bc -l) )); then
+                level="light"; advice=$(give_advice wind_light); emoji="🍃"
+            else
+                level="calm"; advice=$(give_advice wind_none); emoji="🌀"
+            fi
+            ;;
+        "uv")
+            if (( $(echo "$value >= 8" | bc -l) )); then
+                level="extreme"; advice=$(give_advice uv_extreme); emoji="🔥"; alert_threshold=1
+            elif (( $(echo "$value >= 6" | bc -l) )); then
+                level="high"; advice=$(give_advice uv_high); emoji="😎"; alert_threshold=1
+            elif (( $(echo "$value >= 3" | bc -l) )); then
+                level="moderate"; advice=$(give_advice uv_moderate); emoji="🌞"
+            else
+                level="low"; advice=$(give_advice uv_low); emoji="🌤"
+            fi
+            ;;
+        "pollution")
+            case "$value" in
+                1) level="good"; advice="Air quality is good"; emoji="🌿" ;;
+                2) level="light"; advice=$(give_advice pollution_light); emoji="🙂" ;;
+                3) level="moderate"; advice=$(give_advice pollution_moderate); emoji="🌫" ;;
+                4) level="unhealthy"; advice=$(give_advice pollution_high); emoji="☠️"; alert_threshold=1 ;;
+                5) level="very_unhealthy"; advice=$(give_advice pollution_very_unhealthy); emoji="☠️"; alert_threshold=1 ;;
+                6) level="hazardous"; advice=$(give_advice pollution_extreme); emoji="☠️☠️"; alert_threshold=1 ;;
+                *) level="unknown"; advice="Air quality unknown"; emoji="❓" ;;
+            esac
+            ;;
+        "humidity")
+            if (( $(echo "$value >= 85" | bc -l) )); then
+                level="extreme"; advice=$(give_advice humidity_extreme); emoji="💦"
+            elif (( $(echo "$value >= 70" | bc -l) )); then
+                level="high"; advice=$(give_advice humidity_high); emoji="💧"
+            elif (( $(echo "$value >= 50" | bc -l) )); then
+                level="moderate"; advice=$(give_advice humidity_moderate); emoji="💧"
+            else
+                level="low"; advice=$(give_advice humidity_low); emoji="🏜"
+            fi
+            ;;
+        "visibility")
+            if (( $(echo "$value >= 10" | bc -l) )); then
+                level="excellent"; advice="Excellent visibility"; emoji="👁"
+            elif (( $(echo "$value >= 5" | bc -l) )); then
+                level="good"; advice="Good visibility"; emoji="👁"
+            elif (( $(echo "$value >= 2" | bc -l) )); then
+                level="moderate"; advice="Moderate visibility"; emoji="🌫"
+            elif (( $(echo "$value >= 1" | bc -l) )); then
+                level="poor"; advice="Poor visibility"; emoji="🌫"
+            else
+                level="very_poor"; advice="Very poor visibility"; emoji="🌫"
+            fi
+            ;;
+    esac
+
+    # Return format: level|advice|emoji|alert_threshold|value|unit
+    echo "$level|$advice|$emoji|$alert_threshold|$value|$unit"
+}
+
+# Convenience functions for backward compatibility
+comfort_temp() { assess_weather "temperature" "$1" "°C" | cut -d'|' -f2; }
+comfort_humidity() { assess_weather "humidity" "$1" "%" | cut -d'|' -f2; }
+comfort_wind() { assess_weather "wind" "$1" "km/h" | cut -d'|' -f2; }
+comfort_rain() { assess_weather "rain" "$1" "mm" | cut -d'|' -f2; }
+comfort_uv() { assess_weather "uv" "$1" "" | cut -d'|' -f2; }
+comfort_pollution() { assess_weather "pollution" "$1" "AQI" | cut -d'|' -f2; }
+comfort_visibility() { assess_weather "visibility" "$1" "km" | cut -d'|' -f2; }
 
 # ------------------------
 # Advice (unchanged from original)
@@ -157,38 +274,77 @@ get_weather() {
 generate_alerts() {
     ALERTS=()
 
-    # Only keep hazard alerts (comfort shown later in Current section)
+    # Temperature alerts
+    temp_result=$(assess_weather "temperature" "$TEMP_C" "°C")
+    alert_flag=$(echo "$temp_result" | cut -d'|' -f4)
+    if [[ "$alert_flag" == "1" ]]; then
+        emoji=$(echo "$temp_result" | cut -d'|' -f3)
+        advice=$(echo "$temp_result" | cut -d'|' -f2)
+        level=$(echo "$temp_result" | cut -d'|' -f1)
+        case "$level" in
+            "extreme_heat") ALERTS+=("$emoji Extreme heat ($TEMP_C°C) → $advice") ;;
+            "extreme_cold") ALERTS+=("$emoji Extreme cold ($TEMP_C°C) → $advice") ;;
+        esac
+    fi
 
-    # Extreme hot/cold
-    (( $(echo "$TEMP_C >= 40" | bc -l) )) && ALERTS+=("🔥 Extreme heat ($TEMP_C°C) → $(give_advice heat_extreme)")
-    (( $(echo "$TEMP_C < 0" | bc -l) )) && ALERTS+=("🥶 Extreme cold ($TEMP_C°C) → $(give_advice cold_extreme)")
+    # Rain alerts
+    rain_result=$(assess_weather "rain" "$PRECIP" "mm")
+    alert_flag=$(echo "$rain_result" | cut -d'|' -f4)
+    if [[ "$alert_flag" == "1" ]]; then
+        emoji=$(echo "$rain_result" | cut -d'|' -f3)
+        advice=$(echo "$rain_result" | cut -d'|' -f2)
+        level=$(echo "$rain_result" | cut -d'|' -f1)
+        case "$level" in
+            "storm") ALERTS+=("$emoji Storming ($PRECIP mm) → $advice") ;;
+            "heavy") ALERTS+=("🌧 Heavy rain ($PRECIP mm) → $advice") ;;
+            "moderate") ALERTS+=("🌧 Moderate rain ($PRECIP mm) → $advice") ;;
+        esac
+    fi
 
-    # Rain
-    (( $(echo "$PRECIP >= 50" | bc -l) )) && ALERTS+=("⛈ Storming ($PRECIP mm) → $(give_advice rain_storm)")
-    (( $(echo "$PRECIP >= 20 && $PRECIP < 50" | bc -l) )) && ALERTS+=("🌧 Heavy rain ($PRECIP mm) → $(give_advice rain_heavy)")
-    (( $(echo "$PRECIP >= 5 && $PRECIP < 20" | bc -l) )) && ALERTS+=("🌧 Moderate rain ($PRECIP mm) → $(give_advice rain_moderate)")
+    # Wind alerts
+    wind_result=$(assess_weather "wind" "$WIND_KPH" "km/h")
+    alert_flag=$(echo "$wind_result" | cut -d'|' -f4)
+    if [[ "$alert_flag" == "1" ]]; then
+        emoji=$(echo "$wind_result" | cut -d'|' -f3)
+        advice=$(echo "$wind_result" | cut -d'|' -f2)
+        level=$(echo "$wind_result" | cut -d'|' -f1)
+        case "$level" in
+            "storm") ALERTS+=("🌪 Storm-force wind ($WIND_KPH km/h) → $advice") ;;
+            "strong") ALERTS+=("💨 Strong wind ($WIND_KPH km/h) → $advice") ;;
+        esac
+    fi
 
-    # Wind
-    (( $(echo "$WIND_KPH >= 80" | bc -l) )) && ALERTS+=("🌪 Storm-force wind ($WIND_KPH km/h) → $(give_advice wind_storm)")
-    (( $(echo "$WIND_KPH >= 40 && $WIND_KPH < 80" | bc -l) )) && ALERTS+=("💨 Strong wind ($WIND_KPH km/h) → $(give_advice wind_strong)")
+    # UV alerts
+    uv_result=$(assess_weather "uv" "$UV" "")
+    alert_flag=$(echo "$uv_result" | cut -d'|' -f4)
+    if [[ "$alert_flag" == "1" ]]; then
+        emoji=$(echo "$uv_result" | cut -d'|' -f3)
+        advice=$(echo "$uv_result" | cut -d'|' -f2)
+        level=$(echo "$uv_result" | cut -d'|' -f1)
+        case "$level" in
+            "extreme") ALERTS+=("$emoji Extreme UV ($UV) → $advice") ;;
+            "high") ALERTS+=("😎 High UV ($UV) → $advice") ;;
+        esac
+    fi
 
-    # UV
-    (( $(echo "$UV >= 8" | bc -l) )) && ALERTS+=("🔥 Extreme UV ($UV) → $(give_advice uv_extreme)")
-    (( $(echo "$UV >= 6 && $UV < 8" | bc -l) )) && ALERTS+=("😎 High UV ($UV) → $(give_advice uv_high)")
+    # Pollution alerts
+    pollution_result=$(assess_weather "pollution" "$AQI" "AQI")
+    alert_flag=$(echo "$pollution_result" | cut -d'|' -f4)
+    if [[ "$alert_flag" == "1" ]]; then
+        emoji=$(echo "$pollution_result" | cut -d'|' -f3)
+        advice=$(echo "$pollution_result" | cut -d'|' -f2)
+        level=$(echo "$pollution_result" | cut -d'|' -f1)
+        case "$level" in
+            "unhealthy") ALERTS+=("$emoji Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+            "very_unhealthy") ALERTS+=("$emoji Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+            "hazardous") ALERTS+=("$emoji Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+        esac
+    fi
 
-     # Pollution (EPA index 1–6, skip 1 = Good)
-    case "$AQI" in
-        2) ALERTS+=("🙂 Light pollution (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_light)") ;;
-        3) ALERTS+=("🌫 Moderate pollution (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_moderate)") ;;
-        4) ALERTS+=("☠️ Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_high)") ;;
-        5) ALERTS+=("☠️ Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_very_unhealthy)") ;;
-        6) ALERTS+=("☠️☠️ Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_extreme)") ;;
-    esac
-
-    # Weather phenomena
+    # Weather phenomena (unchanged)
     [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
     [[ "$CONDITION" =~ [Ff]og ]] && ALERTS+=("🌫 Fog detected → $(give_advice fog)")
-    [[ "$CONDITION" =~ [Ss]now ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
+    [[ "$CONDITION" =~ [Ss]snow ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
 }
 
 # ------------------------
