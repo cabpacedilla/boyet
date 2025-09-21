@@ -462,7 +462,7 @@ send_notifications() {
     MESSAGE+="🌙 Moonrise: $MOONRISE | 🌘 Moonset: $MOONSET\n"
     MESSAGE+="🌔 Moon Phase: $MOON_PHASE\n"
 
-    notify-send -u critical "Weather Update - $CITY ($(date +%I:%M%p))" "$MESSAGE"
+    notify-send -u critical "Weather Update - $CITY ($(date +%-I:%M))" "$MESSAGE"
     echo -e "$MESSAGE" | tee -a "$LOG_FILE"
 }
 
