@@ -1,19 +1,33 @@
 #!/usr/bin/env bash
-# Weather Alarm Script - Human-Advice Version (Fixed & Tweaked)
+# Weather Alarm Script - Complete Version
 # Dependencies: curl, jq, bc, notify-send
-# Fixes:
-# - Corrected wind chill calculation (no ^ in bc, replaced with exp/ln)
-# - Portable sunrise/sunset parsing (avoids GNU date-only syntax)
-# - Proper AQI mapping (EPA index values clarified)
-# - Keeps comfort values (feels-like, humidity, etc.) in "Current" only,
-#   NOT as alerts
-# - Optional logging to ~/weather_log.txt
-# - Added missing comfort functions
+# Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
 
-API_KEY="98ddb8a158f24a1596882148251309"
+# ------------------------
+# Configuration & API Key Management
+# ------------------------
+if [[ -n "$WEATHER_API_KEY" ]]; then
+    API_KEY="$WEATHER_API_KEY"
+elif [[ -f "$HOME/.config/weather/api_key" ]]; then
+    API_KEY=$(cat "$HOME/.config/weather/api_key" 2>/dev/null | tr -d '\n\r')
+elif command -v secret-tool >/dev/null 2>&1; then
+    API_KEY=$(secret-tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
+else
+    echo "Weather API key not found. Please set it using:"
+    echo "export WEATHER_API_KEY='your_key_here' in ~/.bashrc"
+    exit 1
+fi
+
+# Validate API key (check length and alphanumeric characters)
+if [[ ${#API_KEY} -ne 30 ]] || [[ ! "$API_KEY" =~ ^[a-zA-Z0-9]+$ ]]; then
+    echo "Error: Invalid API key format. WeatherAPI keys should be 32 alphanumeric characters."
+    echo "Your key length: ${#API_KEY} characters"
+    exit 1
+fi
+
 BASE_URL="http://api.weatherapi.com/v1"
-INTERVAL=1800       # 30 minutes
-ALERT_WINDOW=30     # Minutes before astronomical events
+INTERVAL=1800
+ALERT_WINDOW=30
 LOG_FILE="$HOME/weather_log.txt"
 
 # ------------------------
@@ -31,19 +45,34 @@ deg_to_dir() {
     echo "${directions[$idx]}"
 }
 
-calculate_feels_like() {
-    local T="$1" H="$2" W="$3"
-    local HI="$T"
-    if (( $(echo "$T >= 27 && $H > 40" | bc -l) )); then
-        HI=$(echo "scale=2; -8.784695 + 1.61139411*$T + 2.338549*$H - 0.14611605*$T*$H - 0.012308094*$T*$T - 0.016424828*$H*$H + 0.002211732*$T*$T*$H + 0.00072546*$T*$H*$H - 0.000003582*$T*$T*$H*$H" | bc -l)
-        (( $(echo "$HI < $T" | bc -l) )) && HI="$T"
+check_api_response() {
+    local response="$1"
+    local endpoint="$2"
+
+    if [[ -z "$response" ]]; then
+        echo "Error: Empty response from $endpoint API"
+        return 1
     fi
-    if (( $(echo "$T <= 10 && $W >= 5" | bc -l) )); then
-        # Replace W^0.16 with exp(0.16*ln(W))
-        local W016=$(echo "e(l($W)*0.16)" | bc -l)
-        HI=$(echo "scale=2; 13.12 + 0.6215*$T - 11.37*$W016 + 0.3965*$T*$W016" | bc -l)
+
+    local error=$(echo "$response" | jq -r '.error.message // empty' 2>/dev/null)
+    if [[ -n "$error" ]]; then
+        case "$error" in
+            *"API key"*|*"Invalid key"*)
+                echo "Error: Invalid API key. Please check your WeatherAPI key."
+                exit 1 ;;
+            *"exceed"*|*"limit"*)
+                echo "Error: API rate limit exceeded."
+                return 1 ;;
+            *"Invalid location"*)
+                echo "Error: Invalid location detected."
+                return 1 ;;
+            *)
+                echo "API Error: $error"
+                return 1 ;;
+        esac
     fi
-    printf "%.1f" "$HI"
+
+    return 0
 }
 
 # ------------------------
@@ -149,11 +178,9 @@ assess_weather() {
             ;;
     esac
 
-    # Return format: level|advice|emoji|alert_threshold|value|unit
     echo "$level|$advice|$emoji|$alert_threshold|$value|$unit"
 }
 
-# Convenience functions for backward compatibility
 comfort_temp() { assess_weather "temperature" "$1" "°C" | cut -d'|' -f2; }
 comfort_humidity() { assess_weather "humidity" "$1" "%" | cut -d'|' -f2; }
 comfort_wind() { assess_weather "wind" "$1" "km/h" | cut -d'|' -f2; }
@@ -162,68 +189,57 @@ comfort_uv() { assess_weather "uv" "$1" "" | cut -d'|' -f2; }
 comfort_pollution() { assess_weather "pollution" "$1" "AQI" | cut -d'|' -f2; }
 comfort_visibility() { assess_weather "visibility" "$1" "km" | cut -d'|' -f2; }
 
-# ------------------------
-# Advice (unchanged from original)
-# ------------------------
 give_advice() {
     case "$1" in
-        # Temperature
-        "heat_extreme") echo "Stay indoors; use AC, hydrate constantly" ;;
-        "heat_high") echo "Avoid direct sun; drink plenty of water" ;;
-        "heat_mild") echo "Hydrate to stay comfortable" ;;
-        "heat_low") echo "Enjoy the pleasant weather" ;;
-        "cold_extreme") echo "Limit outdoor time; wear multiple layers" ;;
-        "cold_high") echo "Dress warmly with a heavy coat" ;;
-        "cold_mild") echo "A light jacket is recommended" ;;
-        "cold_low") echo "Dress comfortably for a mild day" ;;
-        # Humidity
-        "humidity_extreme") echo "Use AC or dehumidifier indoors" ;;
-        "humidity_high") echo "Stay cool; avoid strenuous activity" ;;
-        "humidity_moderate") echo "The air feels a bit heavy" ;;
-        "humidity_low") echo "Stay hydrated; air may be dry" ;;
-        # Rain
-        "rain_storm") echo "Seek shelter; avoid travel" ;;
-        "rain_heavy") echo "Stay indoors; flash flood risk" ;;
-        "rain_moderate") echo "Use an umbrella for moderate rain" ;;
-        "rain_light") echo "Light rain, an umbrella should suffice" ;;
-        "rain_none") echo "No rain expected" ;;
-        # Wind
-        "wind_storm") echo "Stay indoors; risk of damage" ;;
-        "wind_strong") echo "Be cautious; secure outdoor items" ;;
-        "wind_moderate") echo "A steady, noticeable breeze" ;;
-        "wind_light") echo "Gentle breeze, pleasant conditions" ;;
-        "wind_none") echo "Calm winds" ;;
-        # UV
-        "uv_extreme") echo "Maximum protection; stay in the shade" ;;
-        "uv_high") echo "Apply sunscreen; wear hat and sunglasses" ;;
-        "uv_moderate") echo "Take precautions; wear sunscreen" ;;
-        "uv_low") echo "Low risk; enjoy the sun" ;;
-        # Pollution
-        "pollution_extreme") echo "Hazardous air quality, stay indoors" ;;
-        "pollution_very_unhealthy") echo "Very unhealthy, avoid outdoor activities" ;;
-        "pollution_high") echo "Poor air quality, limit outdoor exposure" ;;
-        "pollution_moderate") echo "Moderate pollution, stay cautious" ;;
-        "pollution_light") echo "Air quality is mostly fine, but sensitive groups may want to limit outdoor activity" ;;
-        # Weather phenomena
-        "thunderstorm") echo "Thunderstorm, stay indoors" ;;
-        "fog") echo "Low visibility, drive carefully" ;;
-        "snow") echo "Snowy conditions, dress warmly and drive safely" ;;
-        # Astronomy
-        "sunrise") echo "Sunrise soon" ;;
-        "sunset") echo "Sunset soon" ;;
-        "moonrise") echo "Moonrise soon" ;;
-        "moonset") echo "Moonset soon" ;;
-        "full_moon") echo "Full Moon tonight!" ;;
-        "new_moon") echo "New Moon phase." ;;
-        "first_quarter") echo "First Quarter Moon" ;;
-        "last_quarter") echo "Last Quarter Moon" ;;
-        "eclipse") echo "Eclipse today" ;;
+        "heat_extreme") echo "Stay indoors, hydrate" ;;
+        "heat_high") echo "Avoid sun, drink water" ;;
+        "heat_mild") echo "Stay hydrated" ;;
+        "heat_low") echo "Pleasant weather" ;;
+        "cold_extreme") echo "Layer up, limit outdoors" ;;
+        "cold_high") echo "Heavy coat needed" ;;
+        "cold_mild") echo "Light jacket recommended" ;;
+        "cold_low") echo "Dress comfortably" ;;
+        "humidity_extreme") echo "Use AC/dehumidifier" ;;
+        "humidity_high") echo "Stay cool" ;;
+        "humidity_moderate") echo "Slightly heavy air" ;;
+        "humidity_low") echo "Dry air" ;;
+        "rain_storm") echo "Seek shelter" ;;
+        "rain_heavy") echo "Stay indoors" ;;
+        "rain_moderate") echo "Umbrella needed" ;;
+        "rain_light") echo "Light drizzle" ;;
+        "rain_none") echo "No rain" ;;
+        "wind_storm") echo "Stay indoors" ;;
+        "wind_strong") echo "Secure items" ;;
+        "wind_moderate") echo "Steady breeze" ;;
+        "wind_light") echo "Gentle breeze" ;;
+        "wind_none") echo "Calm" ;;
+        "uv_extreme") echo "Stay in shade" ;;
+        "uv_high") echo "Sunscreen + hat" ;;
+        "uv_moderate") echo "Use sunscreen" ;;
+        "uv_low") echo "Safe sun exposure" ;;
+        "pollution_extreme") echo "Stay indoors" ;;
+        "pollution_very_unhealthy") echo "Avoid outdoors" ;;
+        "pollution_high") echo "Limit exposure" ;;
+        "pollution_moderate") echo "Use caution" ;;
+        "pollution_light") echo "Mostly fine air" ;;
+        "thunderstorm") echo "Stay inside" ;;
+        "fog") echo "Drive carefully" ;;
+        "snow") echo "Dress warm" ;;
+        "sunrise") echo "Start your day fresh" ;;
+		"sunset") echo "Relax and enjoy the evening" ;;
+		"moonrise") echo "Look up at the rising Moon" ;;
+		"moonset") echo "Catch the Moon before it sets" ;;
+		"full_moon") echo "Perfect night for stargazing" ;;
+		"new_moon") echo "Ideal time to spot faint stars" ;;
+		"first_quarter") echo "Half-lit Moon in the sky" ;;
+		"last_quarter") echo "Waning Moon for night observation" ;;
+		"eclipse") echo "Don't miss this celestial event" ;;
         *) echo "" ;;
     esac
 }
 
 # ------------------------
-# Location detection with fallbacks
+# Location detection
 # ------------------------
 get_location() {
     LOC=$(curl -s ipinfo.io/loc 2>/dev/null)
@@ -240,8 +256,18 @@ get_location() {
 # Fetch weather & astronomy
 # ------------------------
 get_weather() {
-    FORECAST=$(curl -s "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
-    ASTRONOMY=$(curl -s "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
+    FORECAST=$(curl -s --connect-timeout 10 --max-time 30 "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
+    if ! check_api_response "$FORECAST" "forecast"; then
+        echo "Failed to fetch weather data. Retrying in 5 minutes..."
+        sleep 300
+        return 1
+    fi
+
+    ASTRONOMY=$(curl -s --connect-timeout 10 --max-time 30 "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
+    if ! check_api_response "$ASTRONOMY" "astronomy"; then
+        echo "Warning: Failed to fetch astronomy data. Continuing with weather only..."
+        ASTRONOMY='{"astronomy":{"astro":{"sunrise":"","sunset":"","moonrise":"","moonset":"","moon_phase":""}}}'
+    fi
 
     TEMP_C=$(echo "$FORECAST" | jq -r '.current.temp_c // 0')
     FEELS=$(echo "$FORECAST" | jq -r '.current.feelslike_c // 0')
@@ -265,7 +291,8 @@ get_weather() {
     MOONRISE=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.moonrise // ""')
     MOONSET=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.moonset // ""')
     MOON_PHASE=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.moon_phase // ""')
-    ECLIPSE=""  # optional
+
+    return 0
 }
 
 # ------------------------
@@ -274,7 +301,6 @@ get_weather() {
 generate_alerts() {
     ALERTS=()
 
-    # Temperature alerts
     temp_result=$(assess_weather "temperature" "$TEMP_C" "°C")
     alert_flag=$(echo "$temp_result" | cut -d'|' -f4)
     if [[ "$alert_flag" == "1" ]]; then
@@ -287,7 +313,6 @@ generate_alerts() {
         esac
     fi
 
-    # Rain alerts
     rain_result=$(assess_weather "rain" "$PRECIP" "mm")
     alert_flag=$(echo "$rain_result" | cut -d'|' -f4)
     if [[ "$alert_flag" == "1" ]]; then
@@ -301,7 +326,6 @@ generate_alerts() {
         esac
     fi
 
-    # Wind alerts
     wind_result=$(assess_weather "wind" "$WIND_KPH" "km/h")
     alert_flag=$(echo "$wind_result" | cut -d'|' -f4)
     if [[ "$alert_flag" == "1" ]]; then
@@ -314,7 +338,6 @@ generate_alerts() {
         esac
     fi
 
-    # UV alerts
     uv_result=$(assess_weather "uv" "$UV" "")
     alert_flag=$(echo "$uv_result" | cut -d'|' -f4)
     if [[ "$alert_flag" == "1" ]]; then
@@ -327,7 +350,6 @@ generate_alerts() {
         esac
     fi
 
-    # Pollution alerts
     pollution_result=$(assess_weather "pollution" "$AQI" "AQI")
     alert_flag=$(echo "$pollution_result" | cut -d'|' -f4)
     if [[ "$alert_flag" == "1" ]]; then
@@ -341,14 +363,13 @@ generate_alerts() {
         esac
     fi
 
-    # Weather phenomena (unchanged)
     [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
     [[ "$CONDITION" =~ [Ff]og ]] && ALERTS+=("🌫 Fog detected → $(give_advice fog)")
-    [[ "$CONDITION" =~ [Ss]snow ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
+    [[ "$CONDITION" =~ [Ss]now ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
 }
 
 # ------------------------
-# Astronomy alerts (portable)
+# Astronomy alerts
 # ------------------------
 generate_astronomy_alerts() {
     local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
@@ -356,19 +377,31 @@ generate_astronomy_alerts() {
     local minute=${localtime#*:}
     local now=$((10#$hour * 60 + 10#$minute))
 
-    # Convert sunrise/sunset with awk instead of GNU date parsing
     local sunrise_minutes=$(echo "$SUNRISE" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
     local sunset_minutes=$(echo "$SUNSET" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
 
+    # Moonrise and moonset in minutes
+    local moonrise_minutes=$(echo "$MOONRISE" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
+    local moonset_minutes=$(echo "$MOONSET" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
+
+    # Sunrise/Sunset alerts
     if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
-        ALERTS+=("🌅 Sunrise soon → $(give_advice sunrise)")
+        ALERTS+=("Sunrise soon → $(give_advice sunrise)")
     elif (( now >= sunset_minutes - ALERT_WINDOW && now <= sunset_minutes )); then
-        ALERTS+=("🌇 Sunset soon → $(give_advice sunset)")
+        ALERTS+=("Sunset soon → $(give_advice sunset)")
+    fi
+
+    # Moonrise/Moonset alerts
+    if (( now >= moonrise_minutes - ALERT_WINDOW && now <= moonrise_minutes )); then
+        ALERTS+=("Moonrise soon → $(give_advice moonrise)")
+    elif (( now >= moonset_minutes - ALERT_WINDOW && now <= moonset_minutes )); then
+        ALERTS+=("Moonset soon → $(give_advice moonset)")
     fi
 
     case "$MOON_PHASE" in
-        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice full_moon)") ;;
-        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
+        "Full Moon") ALERTS+=("Full Moon → $(give_advice full_moon)") ;;
+		"New Moon") ALERTS+=("New Moon → $(give_advice new_moon)") ;;
+		"Eclipse") ALERTS+=("Eclipse today → $(give_advice eclipse)") ;;
     esac
 }
 
@@ -438,11 +471,29 @@ send_notifications() {
 # ------------------------
 main() {
     get_location
+
+    if [[ -z "$LAT" ]] || [[ -z "$LON" ]] || [[ "$LAT" == "null" ]] || [[ "$LON" == "null" ]]; then
+        echo "Error: Could not determine location. Please check your internet connection."
+        exit 1
+    fi
+
+    echo "Starting weather monitoring for $CITY ($LAT,$LON)"
+    echo "API calls every $((INTERVAL/60)) minutes. Logs saved to: $LOG_FILE"
+
     while true; do
-        get_weather
-        send_notifications
+        if get_weather; then
+            send_notifications
+            echo "$(date): Weather update sent successfully"
+        else
+            echo "$(date): Weather update failed, will retry next cycle"
+        fi
         sleep "$INTERVAL"
     done
 }
+
+if [[ "$1" == "--setup" ]]; then
+    echo "API key should be set in ~/.bashrc as: export WEATHER_API_KEY='your_key_here'"
+    exit 0
+fi
 
 main
