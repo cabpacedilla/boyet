@@ -454,8 +454,8 @@ send_notifications() {
         [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice"
         MESSAGE+="\n"
     done
-    MESSAGE+="• High: $MAX_TEMP°C, Low: $MIN_TEMP°C\n"
-    MESSAGE+="• Peak UV: $PEAK_UV$( [[ $(echo "$PEAK_UV >= 3" | bc -l) -eq 1 ]] && echo " → $(give_advice uv_moderate)" )\n\n"
+    MESSAGE+="🌡 High: $MAX_TEMP°C, Low: $MIN_TEMP°C\n"
+    MESSAGE+="🌞 Peak UV: $PEAK_UV$( [[ $(echo "$PEAK_UV >= 3" | bc -l) -eq 1 ]] && echo " → $(give_advice uv_moderate)" )\n\n"
 
     MESSAGE+="🌌 Astronomy:\n"
     MESSAGE+="🌅 Sunrise: $SUNRISE | 🌇 Sunset: $SUNSET\n"
