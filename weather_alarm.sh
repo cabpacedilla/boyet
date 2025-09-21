@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Weather Alarm Script - Complete Version
+# Weather Alarm Script
 # Dependencies: curl, jq, bc, notify-send
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
 
