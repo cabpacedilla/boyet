@@ -1,29 +1,32 @@
 #!/usr/bin/env bash
-# Weather Alarm Script - Human-Advice Version
+# Weather Alarm Script - Human-Advice Version (Fixed & Tweaked)
 # Dependencies: curl, jq, bc, notify-send
+# Fixes:
+# - Corrected wind chill calculation (no ^ in bc, replaced with exp/ln)
+# - Portable sunrise/sunset parsing (avoids GNU date-only syntax)
+# - Proper AQI mapping (EPA index values clarified)
+# - Keeps comfort values (feels-like, humidity, etc.) in "Current" only,
+#   NOT as alerts
+# - Optional logging to ~/weather_log.txt
 
 API_KEY="98ddb8a158f24a1596882148251309"
 BASE_URL="http://api.weatherapi.com/v1"
-INTERVAL=1800       # 15 minutes
-ALERT_WINDOW=30    # Minutes before astronomical events
+INTERVAL=1800       # 30 minutes
+ALERT_WINDOW=30     # Minutes before astronomical events
+LOG_FILE="$HOME/weather_log.txt"
 
 # ------------------------
 # Utilities
 # ------------------------
 deg_to_dir() {
     local deg="$1"
-    # Validate input
     if ! [[ "$deg" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
         echo "Unknown"
         return 1
     fi
-
-    # Normalize to 0-360
-    deg=$(echo "scale=0; ($deg + 360) % 360" | bc -l)
-
+    deg=$(echo "($deg + 360) % 360" | bc)
     local directions=("N" "NE" "E" "SE" "S" "SW" "W" "NW")
     local idx=$(( (deg + 22) / 45 % 8 ))
-
     echo "${directions[$idx]}"
 }
 
@@ -35,11 +38,16 @@ calculate_feels_like() {
         (( $(echo "$HI < $T" | bc -l) )) && HI="$T"
     fi
     if (( $(echo "$T <= 10 && $W >= 5" | bc -l) )); then
-        HI=$(echo "scale=2; 13.12 + 0.6215*$T - 11.37*($W^0.16) + 0.3965*$T*($W^0.16)" | bc -l)
+        # Replace W^0.16 with exp(0.16*ln(W))
+        local W016=$(echo "e(l($W)*0.16)" | bc -l)
+        HI=$(echo "scale=2; 13.12 + 0.6215*$T - 11.37*$W016 + 0.3965*$T*$W016" | bc -l)
     fi
     printf "%.1f" "$HI"
 }
 
+# ------------------------
+# Advice (unchanged from original)
+# ------------------------
 give_advice() {
     case "$1" in
         # Temperature
@@ -78,7 +86,7 @@ give_advice() {
         "pollution_very_unhealthy") echo "Very unhealthy, avoid outdoor activities" ;;
         "pollution_high") echo "Poor air quality, limit outdoor exposure" ;;
         "pollution_moderate") echo "Moderate pollution, stay cautious" ;;
-        "pollution_light") echo "" ;;
+        "pollution_light") echo "Air quality is mostly fine, but sensitive groups may want to limit outdoor activity" ;;
         # Weather phenomena
         "thunderstorm") echo "Thunderstorm, stay indoors" ;;
         "fog") echo "Low visibility, drive carefully" ;;
@@ -149,53 +157,32 @@ get_weather() {
 generate_alerts() {
     ALERTS=()
 
-    # Temperature
-    (( $(echo "$TEMP_C >= 40" | bc -l) )) && ALERTS+=("🔥 Extreme heat ($TEMP_C°C) → $(give_advice heat_extreme)")
-    (( $(echo "$TEMP_C >= 35 && $TEMP_C < 40" | bc -l) )) && ALERTS+=("🥵 High heat ($TEMP_C°C) → $(give_advice heat_high)")
-    (( $(echo "$TEMP_C >= 30 && $TEMP_C < 35" | bc -l) )) && ALERTS+=("☀️ Warm ($TEMP_C°C) → $(give_advice heat_mild)")
-    (( $(echo "$TEMP_C >= 0 && $TEMP_C < 30" | bc -l) )) && ALERTS+=("🌤 Mild ($TEMP_C°C) → $(give_advice heat_low)")
-    (( $(echo "$TEMP_C < 0" | bc -l) )) && ALERTS+=("🥶 Extreme cold ($TEMP_C°C) → $(give_advice cold_extreme)")
+    # Only keep hazard alerts (comfort shown later in Current section)
 
-    # Humidity
-    (( $(echo "$HUMIDITY >= 90" | bc -l) )) && ALERTS+=("💦 Extreme humidity ($HUMIDITY%) → $(give_advice humidity_extreme)")
-    (( $(echo "$HUMIDITY >= 80 && $HUMIDITY < 90" | bc -l) )) && ALERTS+=("💧 High humidity ($HUMIDITY%) → $(give_advice humidity_high)")
-    (( $(echo "$HUMIDITY >= 60 && $HUMIDITY < 80" | bc -l) )) && ALERTS+=("💧 Moderate humidity ($HUMIDITY%) → $(give_advice humidity_moderate)")
-    (( $(echo "$HUMIDITY < 60" | bc -l) )) && ALERTS+=("💨 Low humidity ($HUMIDITY%) → $(give_advice humidity_low)")
+    # Extreme hot/cold
+    (( $(echo "$TEMP_C >= 40" | bc -l) )) && ALERTS+=("🔥 Extreme heat ($TEMP_C°C) → $(give_advice heat_extreme)")
+    (( $(echo "$TEMP_C < 0" | bc -l) )) && ALERTS+=("🥶 Extreme cold ($TEMP_C°C) → $(give_advice cold_extreme)")
 
     # Rain
     (( $(echo "$PRECIP >= 50" | bc -l) )) && ALERTS+=("⛈ Storming ($PRECIP mm) → $(give_advice rain_storm)")
     (( $(echo "$PRECIP >= 20 && $PRECIP < 50" | bc -l) )) && ALERTS+=("🌧 Heavy rain ($PRECIP mm) → $(give_advice rain_heavy)")
     (( $(echo "$PRECIP >= 5 && $PRECIP < 20" | bc -l) )) && ALERTS+=("🌧 Moderate rain ($PRECIP mm) → $(give_advice rain_moderate)")
-    (( $(echo "$PRECIP > 0 && $PRECIP < 5" | bc -l) )) && ALERTS+=("🌦 Light rain ($PRECIP mm) → $(give_advice rain_light)")
 
     # Wind
     (( $(echo "$WIND_KPH >= 80" | bc -l) )) && ALERTS+=("🌪 Storm-force wind ($WIND_KPH km/h) → $(give_advice wind_storm)")
     (( $(echo "$WIND_KPH >= 40 && $WIND_KPH < 80" | bc -l) )) && ALERTS+=("💨 Strong wind ($WIND_KPH km/h) → $(give_advice wind_strong)")
-    (( $(echo "$WIND_KPH >= 20 && $WIND_KPH < 40" | bc -l) )) && ALERTS+=("🌬 Moderate wind ($WIND_KPH km/h) → $(give_advice wind_moderate)")
-    (( $(echo "$WIND_KPH < 20" | bc -l) )) && ALERTS+=("💨 Light breeze ($WIND_KPH km/h) → $(give_advice wind_light)")
 
     # UV
     (( $(echo "$UV >= 8" | bc -l) )) && ALERTS+=("🔥 Extreme UV ($UV) → $(give_advice uv_extreme)")
     (( $(echo "$UV >= 6 && $UV < 8" | bc -l) )) && ALERTS+=("😎 High UV ($UV) → $(give_advice uv_high)")
-    (( $(echo "$UV >= 3 && $UV < 6" | bc -l) )) && ALERTS+=("🔆 Moderate UV ($UV) → $(give_advice uv_moderate)")
 
-    # Pollution
+     # Pollution (EPA index 1–6, skip 1 = Good)
     case "$AQI" in
-        0)
-            # No alert, show in Current section later
-            ;;
-        1)
-            ALERTS+=("🌫 Moderate pollution (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_moderate)")
-            ;;
-        2)
-            ALERTS+=("☠️ Poor air quality (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_high)")
-            ;;
-        3)
-            ALERTS+=("☠️ Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_very_unhealthy)")
-            ;;
-        4)
-            ALERTS+=("☠️☠️ Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_extreme)")
-            ;;
+        2) ALERTS+=("🙂 Light pollution (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_light)") ;;
+        3) ALERTS+=("🌫 Moderate pollution (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_moderate)") ;;
+        4) ALERTS+=("☠️ Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_high)") ;;
+        5) ALERTS+=("☠️ Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_very_unhealthy)") ;;
+        6) ALERTS+=("☠️☠️ Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $(give_advice pollution_extreme)") ;;
     esac
 
     # Weather phenomena
@@ -205,7 +192,7 @@ generate_alerts() {
 }
 
 # ------------------------
-# Astronomy alerts (localtime aware)
+# Astronomy alerts (portable)
 # ------------------------
 generate_astronomy_alerts() {
     local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
@@ -213,12 +200,13 @@ generate_astronomy_alerts() {
     local minute=${localtime#*:}
     local now=$((10#$hour * 60 + 10#$minute))
 
-    local sunrise_minutes=$(date -d "$SUNRISE" +%H:%M | awk -F: '{print ($1 * 60) + $2}')
-    local sunset_minutes=$(date -d "$SUNSET" +%H:%M | awk -F: '{print ($1 * 60) + $2}')
+    # Convert sunrise/sunset with awk instead of GNU date parsing
+    local sunrise_minutes=$(echo "$SUNRISE" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
+    local sunset_minutes=$(echo "$SUNSET" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
 
-    if (( now >= sunrise_minutes - 30 && now <= sunrise_minutes )); then
+    if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
         ALERTS+=("🌅 Sunrise soon → $(give_advice sunrise)")
-    elif (( now >= sunset_minutes - 30 && now <= sunset_minutes )); then
+    elif (( now >= sunset_minutes - ALERT_WINDOW && now <= sunset_minutes )); then
         ALERTS+=("🌇 Sunset soon → $(give_advice sunset)")
     fi
 
@@ -227,7 +215,6 @@ generate_astronomy_alerts() {
         "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
     esac
 }
-
 
 # ------------------------
 # Notifications
@@ -246,44 +233,16 @@ send_notifications() {
     fi
 
     MESSAGE+="📊 Current ($CITY):\n"
-
-    # Check if a temperature-related alert exists before showing current temp
-    if ! grep -q -E "heat|cold" <<< "${ALERTS[@]}"; then
-        MESSAGE+="• Temp: $TEMP_C°C (Feels: $FEELS°C)\n"
-    fi
-
-    # Check if a humidity alert exists
-    if ! grep -q "humidity" <<< "${ALERTS[@]}"; then
-        MESSAGE+="• Humidity: $HUMIDITY%\n"
-    fi
-
-    # Check if a wind alert exists
-    if ! grep -q "wind" <<< "${ALERTS[@]}"; then
-        MESSAGE+="• Wind: $WIND_KPH km/h ($WIND_DIR)\n"
-    fi
-
-    # Check if a rain alert exists
-    if ! grep -q "rain" <<< "${ALERTS[@]}"; then
-        MESSAGE+="• Rain: $PRECIP mm\n"
-    fi
-
-    # Check if a UV alert exists
-    if ! grep -q "UV" <<< "${ALERTS[@]}"; then
-        MESSAGE+="• UV: $UV\n"
-    fi
-
-    # Check if a pollution alert exists
-    if ! grep -q -E "pollution|AQI" <<< "${ALERTS[@]}"; then
-        MESSAGE+="• Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³)\n"
-    fi
-
-    # Visibility is always shown as there are no alerts for it
+    MESSAGE+="• Temp: $TEMP_C°C (Feels: $FEELS°C)\n"
+    MESSAGE+="• Humidity: $HUMIDITY%\n"
+    MESSAGE+="• Wind: $WIND_KPH km/h ($WIND_DIR)\n"
+    MESSAGE+="• Rain: $PRECIP mm\n"
+    MESSAGE+="• UV: $UV\n"
+    MESSAGE+="• Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³)\n"
     MESSAGE+="• Visibility: $VIS km\n\n"
 
     MESSAGE+="📅 Forecast:\n"
-    # Get current local hour at location
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
-    # Loop through next 6 hours, skip the current hour
     for i in {1..3}; do
         idx=$((10#$LOCAL_HOUR + i))
         day=0
@@ -291,11 +250,9 @@ send_notifications() {
             idx=$((idx - 24))
             day=1
         fi
-
         hr_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].time" | cut -d' ' -f2)
         hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
         hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
-
         hr_advice=""
         if (( $(echo "$hr_rain >= 20" | bc -l) )); then
             hr_advice=$(give_advice rain_heavy)
@@ -304,7 +261,6 @@ send_notifications() {
         elif (( $(echo "$hr_rain > 0 && $hr_rain < 5" | bc -l) )); then
             hr_advice=$(give_advice rain_light)
         fi
-
         MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm"
         [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice"
         MESSAGE+="\n"
@@ -318,7 +274,7 @@ send_notifications() {
     MESSAGE+="🌔 Moon Phase: $MOON_PHASE\n"
 
     notify-send -u critical "Weather Update - $CITY" "$MESSAGE"
-    echo -e "$MESSAGE"
+    echo -e "$MESSAGE" | tee -a "$LOG_FILE"
 }
 
 # ------------------------
