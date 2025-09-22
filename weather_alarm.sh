@@ -76,6 +76,58 @@ check_api_response() {
 }
 
 # ------------------------
+# Advice System
+# ------------------------
+give_advice() {
+    case "$1" in
+        "heat_extreme") echo "Stay indoors, hydrate" ;;
+        "heat_high") echo "Avoid sun, drink water" ;;
+        "heat_mild") echo "Stay hydrated" ;;
+        "heat_low") echo "Pleasant weather" ;;
+        "cold_extreme") echo "Layer up, limit outdoors" ;;
+        "cold_high") echo "Heavy coat needed" ;;
+        "cold_mild") echo "Light jacket recommended" ;;
+        "cold_low") echo "Dress comfortably" ;;
+        "humidity_extreme") echo "Use AC/dehumidifier" ;;
+        "humidity_high") echo "Stay cool" ;;
+        "humidity_moderate") echo "Slightly heavy air" ;;
+        "humidity_low") echo "Dry air" ;;
+        "rain_storm") echo "Seek shelter" ;;
+        "rain_heavy") echo "Stay indoors" ;;
+        "rain_moderate") echo "Umbrella needed" ;;
+        "rain_light") echo "Light drizzle" ;;
+        "rain_none") echo "No rain" ;;
+        "wind_storm") echo "Stay indoors" ;;
+        "wind_strong") echo "Secure items" ;;
+        "wind_moderate") echo "Steady breeze" ;;
+        "wind_light") echo "Gentle breeze" ;;
+        "wind_none") echo "Calm" ;;
+        "uv_extreme") echo "Stay in shade" ;;
+        "uv_high") echo "Sunscreen + hat" ;;
+        "uv_moderate") echo "Use sunscreen" ;;
+        "uv_low") echo "Safe sun exposure" ;;
+        "pollution_extreme") echo "Stay indoors" ;;
+        "pollution_very_unhealthy") echo "Avoid outdoors" ;;
+        "pollution_high") echo "Limit exposure" ;;
+        "pollution_moderate") echo "Use caution" ;;
+        "pollution_light") echo "Mostly fine air" ;;
+        "thunderstorm") echo "Stay inside" ;;
+        "fog") echo "Drive carefully" ;;
+        "snow") echo "Dress warm" ;;
+        "sunrise") echo "Start your day fresh" ;;
+        "sunset") echo "Relax and enjoy the evening" ;;
+        "moonrise") echo "Look up at the rising Moon" ;;
+        "moonset") echo "Catch the Moon before it sets" ;;
+        "full_moon") echo "Perfect night for stargazing" ;;
+        "new_moon") echo "Ideal time to spot faint stars" ;;
+        "first_quarter") echo "Half-lit Moon in the sky" ;;
+        "last_quarter") echo "Waning Moon for night observation" ;;
+        "eclipse") echo "Don't miss this celestial event" ;;
+        *) echo "" ;;
+    esac
+}
+
+# ------------------------
 # Unified Weather Assessment System
 # ------------------------
 assess_weather() {
@@ -87,11 +139,11 @@ assess_weather() {
             if (( $(echo "$value >= 40" | bc -l) )); then
                 level="extreme_heat"; advice=$(give_advice heat_extreme); emoji="🔥"; alert_threshold=1
             elif (( $(echo "$value >= 35" | bc -l) )); then
-                level="high_heat"; advice=$(give_advice heat_extreme); emoji="🔥"
+                level="high_heat"; advice=$(give_advice heat_high); emoji="🔥"
             elif (( $(echo "$value >= 30" | bc -l) )); then
-                level="moderate_heat"; advice=$(give_advice heat_high); emoji="🌡"
+                level="moderate_heat"; advice=$(give_advice heat_mild); emoji="🌡"
             elif (( $(echo "$value >= 25" | bc -l) )); then
-                level="mild_heat"; advice=$(give_advice heat_mild); emoji="🌤"
+                level="mild_heat"; advice=$(give_advice heat_low); emoji="🌤"
             elif (( $(echo "$value >= 20" | bc -l) )); then
                 level="pleasant"; advice=$(give_advice heat_low); emoji="😊"
             elif (( $(echo "$value >= 15" | bc -l) )); then
@@ -181,61 +233,27 @@ assess_weather() {
     echo "$level|$advice|$emoji|$alert_threshold|$value|$unit"
 }
 
-comfort_temp() { assess_weather "temperature" "$1" "°C" | cut -d'|' -f2; }
-comfort_humidity() { assess_weather "humidity" "$1" "%" | cut -d'|' -f2; }
-comfort_wind() { assess_weather "wind" "$1" "km/h" | cut -d'|' -f2; }
-comfort_rain() { assess_weather "rain" "$1" "mm" | cut -d'|' -f2; }
-comfort_uv() { assess_weather "uv" "$1" "" | cut -d'|' -f2; }
-comfort_pollution() { assess_weather "pollution" "$1" "AQI" | cut -d'|' -f2; }
-comfort_visibility() { assess_weather "visibility" "$1" "km" | cut -d'|' -f2; }
+# ------------------------
+# Simplified Assessment Functions
+# ------------------------
+get_advice() {
+    local assessment=$(assess_weather "$1" "$2" "$3")
+    echo "$assessment" | cut -d'|' -f2
+}
 
-give_advice() {
-    case "$1" in
-        "heat_extreme") echo "Stay indoors, hydrate" ;;
-        "heat_high") echo "Avoid sun, drink water" ;;
-        "heat_mild") echo "Stay hydrated" ;;
-        "heat_low") echo "Pleasant weather" ;;
-        "cold_extreme") echo "Layer up, limit outdoors" ;;
-        "cold_high") echo "Heavy coat needed" ;;
-        "cold_mild") echo "Light jacket recommended" ;;
-        "cold_low") echo "Dress comfortably" ;;
-        "humidity_extreme") echo "Use AC/dehumidifier" ;;
-        "humidity_high") echo "Stay cool" ;;
-        "humidity_moderate") echo "Slightly heavy air" ;;
-        "humidity_low") echo "Dry air" ;;
-        "rain_storm") echo "Seek shelter" ;;
-        "rain_heavy") echo "Stay indoors" ;;
-        "rain_moderate") echo "Umbrella needed" ;;
-        "rain_light") echo "Light drizzle" ;;
-        "rain_none") echo "No rain" ;;
-        "wind_storm") echo "Stay indoors" ;;
-        "wind_strong") echo "Secure items" ;;
-        "wind_moderate") echo "Steady breeze" ;;
-        "wind_light") echo "Gentle breeze" ;;
-        "wind_none") echo "Calm" ;;
-        "uv_extreme") echo "Stay in shade" ;;
-        "uv_high") echo "Sunscreen + hat" ;;
-        "uv_moderate") echo "Use sunscreen" ;;
-        "uv_low") echo "Safe sun exposure" ;;
-        "pollution_extreme") echo "Stay indoors" ;;
-        "pollution_very_unhealthy") echo "Avoid outdoors" ;;
-        "pollution_high") echo "Limit exposure" ;;
-        "pollution_moderate") echo "Use caution" ;;
-        "pollution_light") echo "Mostly fine air" ;;
-        "thunderstorm") echo "Stay inside" ;;
-        "fog") echo "Drive carefully" ;;
-        "snow") echo "Dress warm" ;;
-        "sunrise") echo "Start your day fresh" ;;
-		"sunset") echo "Relax and enjoy the evening" ;;
-		"moonrise") echo "Look up at the rising Moon" ;;
-		"moonset") echo "Catch the Moon before it sets" ;;
-		"full_moon") echo "Perfect night for stargazing" ;;
-		"new_moon") echo "Ideal time to spot faint stars" ;;
-		"first_quarter") echo "Half-lit Moon in the sky" ;;
-		"last_quarter") echo "Waning Moon for night observation" ;;
-		"eclipse") echo "Don't miss this celestial event" ;;
-        *) echo "" ;;
-    esac
+get_alert_status() {
+    local assessment=$(assess_weather "$1" "$2" "$3")
+    echo "$assessment" | cut -d'|' -f4
+}
+
+get_emoji() {
+    local assessment=$(assess_weather "$1" "$2" "$3")
+    echo "$assessment" | cut -d'|' -f3
+}
+
+get_level() {
+    local assessment=$(assess_weather "$1" "$2" "$3")
+    echo "$assessment" | cut -d'|' -f1
 }
 
 # ------------------------
@@ -301,24 +319,22 @@ get_weather() {
 generate_alerts() {
     ALERTS=()
 
-    temp_result=$(assess_weather "temperature" "$TEMP_C" "°C")
-    alert_flag=$(echo "$temp_result" | cut -d'|' -f4)
-    if [[ "$alert_flag" == "1" ]]; then
-        emoji=$(echo "$temp_result" | cut -d'|' -f3)
-        advice=$(echo "$temp_result" | cut -d'|' -f2)
-        level=$(echo "$temp_result" | cut -d'|' -f1)
+    # Temperature alerts
+    if [[ "$(get_alert_status temperature "$TEMP_C")" == "1" ]]; then
+        emoji=$(get_emoji temperature "$TEMP_C")
+        advice=$(get_advice temperature "$TEMP_C")
+        level=$(get_level temperature "$TEMP_C")
         case "$level" in
             "extreme_heat") ALERTS+=("$emoji Extreme heat ($TEMP_C°C) → $advice") ;;
             "extreme_cold") ALERTS+=("$emoji Extreme cold ($TEMP_C°C) → $advice") ;;
         esac
     fi
 
-    rain_result=$(assess_weather "rain" "$PRECIP" "mm")
-    alert_flag=$(echo "$rain_result" | cut -d'|' -f4)
-    if [[ "$alert_flag" == "1" ]]; then
-        emoji=$(echo "$rain_result" | cut -d'|' -f3)
-        advice=$(echo "$rain_result" | cut -d'|' -f2)
-        level=$(echo "$rain_result" | cut -d'|' -f1)
+    # Rain alerts
+    if [[ "$(get_alert_status rain "$PRECIP")" == "1" ]]; then
+        emoji=$(get_emoji rain "$PRECIP")
+        advice=$(get_advice rain "$PRECIP")
+        level=$(get_level rain "$PRECIP")
         case "$level" in
             "storm") ALERTS+=("$emoji Storming ($PRECIP mm) → $advice") ;;
             "heavy") ALERTS+=("🌧 Heavy rain ($PRECIP mm) → $advice") ;;
@@ -326,36 +342,33 @@ generate_alerts() {
         esac
     fi
 
-    wind_result=$(assess_weather "wind" "$WIND_KPH" "km/h")
-    alert_flag=$(echo "$wind_result" | cut -d'|' -f4)
-    if [[ "$alert_flag" == "1" ]]; then
-        emoji=$(echo "$wind_result" | cut -d'|' -f3)
-        advice=$(echo "$wind_result" | cut -d'|' -f2)
-        level=$(echo "$wind_result" | cut -d'|' -f1)
+    # Wind alerts
+    if [[ "$(get_alert_status wind "$WIND_KPH")" == "1" ]]; then
+        emoji=$(get_emoji wind "$WIND_KPH")
+        advice=$(get_advice wind "$WIND_KPH")
+        level=$(get_level wind "$WIND_KPH")
         case "$level" in
             "storm") ALERTS+=("🌪 Storm-force wind ($WIND_KPH km/h) → $advice") ;;
             "strong") ALERTS+=("💨 Strong wind ($WIND_KPH km/h) → $advice") ;;
         esac
     fi
 
-    uv_result=$(assess_weather "uv" "$UV" "")
-    alert_flag=$(echo "$uv_result" | cut -d'|' -f4)
-    if [[ "$alert_flag" == "1" ]]; then
-        emoji=$(echo "$uv_result" | cut -d'|' -f3)
-        advice=$(echo "$uv_result" | cut -d'|' -f2)
-        level=$(echo "$uv_result" | cut -d'|' -f1)
+    # UV alerts
+    if [[ "$(get_alert_status uv "$UV")" == "1" ]]; then
+        emoji=$(get_emoji uv "$UV")
+        advice=$(get_advice uv "$UV")
+        level=$(get_level uv "$UV")
         case "$level" in
             "extreme") ALERTS+=("$emoji Extreme UV ($UV) → $advice") ;;
             "high") ALERTS+=("😎 High UV ($UV) → $advice") ;;
         esac
     fi
 
-    pollution_result=$(assess_weather "pollution" "$AQI" "AQI")
-    alert_flag=$(echo "$pollution_result" | cut -d'|' -f4)
-    if [[ "$alert_flag" == "1" ]]; then
-        emoji=$(echo "$pollution_result" | cut -d'|' -f3)
-        advice=$(echo "$pollution_result" | cut -d'|' -f2)
-        level=$(echo "$pollution_result" | cut -d'|' -f1)
+    # Pollution alerts
+    if [[ "$(get_alert_status pollution "$AQI")" == "1" ]]; then
+        emoji=$(get_emoji pollution "$AQI")
+        advice=$(get_advice pollution "$AQI")
+        level=$(get_level pollution "$AQI")
         case "$level" in
             "unhealthy") ALERTS+=("$emoji Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
             "very_unhealthy") ALERTS+=("$emoji Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
@@ -363,6 +376,7 @@ generate_alerts() {
         esac
     fi
 
+    # Condition-based alerts
     [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
     [[ "$CONDITION" =~ [Ff]og ]] && ALERTS+=("🌫 Fog detected → $(give_advice fog)")
     [[ "$CONDITION" =~ [Ss]now ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
@@ -400,8 +414,8 @@ generate_astronomy_alerts() {
 
     case "$MOON_PHASE" in
         "Full Moon") ALERTS+=("Full Moon → $(give_advice full_moon)") ;;
-		"New Moon") ALERTS+=("New Moon → $(give_advice new_moon)") ;;
-		"Eclipse") ALERTS+=("Eclipse today → $(give_advice eclipse)") ;;
+        "New Moon") ALERTS+=("New Moon → $(give_advice new_moon)") ;;
+        "Eclipse") ALERTS+=("Eclipse today → $(give_advice eclipse)") ;;
     esac
 }
 
@@ -422,13 +436,13 @@ send_notifications() {
     fi
 
     MESSAGE+="📊 Current ($CITY):\n"
-    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(comfort_temp "$TEMP_C" "$FEELS")\n"
-    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(comfort_humidity "$HUMIDITY")\n"
-    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(comfort_wind "$WIND_KPH")\n"
-    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(comfort_rain "$PRECIP")\n"
-    MESSAGE+="• 🌞 UV: $UV → $(comfort_uv "$UV")\n"
-    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(comfort_pollution "$AQI")\n"
-    MESSAGE+="• 👁 Visibility: $VIS km → $(comfort_visibility "$VIS")\n\n"
+    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(get_advice temperature "$TEMP_C")\n"
+    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(get_advice humidity "$HUMIDITY")\n"
+    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(get_advice wind "$WIND_KPH")\n"
+    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(get_advice rain "$PRECIP")\n"
+    MESSAGE+="• 🌞 UV: $UV → $(get_advice uv "$UV")\n"
+    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(get_advice pollution "$AQI")\n"
+    MESSAGE+="• 👁 Visibility: $VIS km → $(get_advice visibility "$VIS")\n\n"
 
     MESSAGE+="📅 Forecast:\n"
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
@@ -442,20 +456,21 @@ send_notifications() {
         hr_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].time" | cut -d' ' -f2)
         hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
         hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
-        hr_advice=""
-        if (( $(echo "$hr_rain >= 20" | bc -l) )); then
-            hr_advice=$(give_advice rain_heavy)
-        elif (( $(echo "$hr_rain >= 5 && $hr_rain < 20" | bc -l) )); then
-            hr_advice=$(give_advice rain_moderate)
-        elif (( $(echo "$hr_rain > 0 && $hr_rain < 5" | bc -l) )); then
-            hr_advice=$(give_advice rain_light)
-        fi
+        
+        # Use unified assessment system for rain advice
+        hr_advice=$(get_advice rain "$hr_rain")
+        
         MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm"
         [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice"
         MESSAGE+="\n"
     done
     MESSAGE+="🌡 High: $MAX_TEMP°C, Low: $MIN_TEMP°C\n"
-    MESSAGE+="🌞 Peak UV: $PEAK_UV$( [[ $(echo "$PEAK_UV >= 3" | bc -l) -eq 1 ]] && echo " → $(give_advice uv_moderate)" )\n\n"
+    
+    # Use unified assessment for peak UV
+    peak_uv_advice=$(get_advice uv "$PEAK_UV")
+    MESSAGE+="🌞 Peak UV: $PEAK_UV"
+    [[ "$peak_uv_advice" != "Safe sun exposure" ]] && MESSAGE+=" → $peak_uv_advice"
+    MESSAGE+="\n\n"
 
     MESSAGE+="🌌 Astronomy:\n"
     MESSAGE+="🌅 Sunrise: $SUNRISE | 🌇 Sunset: $SUNSET\n"
