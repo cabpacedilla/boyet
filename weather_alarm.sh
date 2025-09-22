@@ -45,6 +45,50 @@ deg_to_dir() {
     echo "${directions[$idx]}"
 }
 
+# Convert time string to minutes since midnight (handles both 12h and 24h formats)
+time_to_minutes() {
+    local time_str="$1"
+    local hour minute
+    
+    # Handle empty or invalid input
+    [[ -z "$time_str" ]] && { echo "0"; return 1; }
+    
+    # Check if it's 24-hour format (no AM/PM)
+    if [[ ! "$time_str" =~ (AM|PM|am|pm) ]]; then
+        # 24-hour format: HH:MM
+        hour=$(echo "$time_str" | cut -d: -f1 | tr -d ' ')
+        minute=$(echo "$time_str" | cut -d: -f2 | tr -d ' ')
+        
+        # Validate hour and minute
+        [[ ! "$hour" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
+        [[ ! "$minute" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
+        [[ $hour -gt 23 ]] && { echo "0"; return 1; }
+        [[ $minute -gt 59 ]] && { echo "0"; return 1; }
+        
+        echo $((10#$hour * 60 + 10#$minute))
+        return 0
+    fi
+    
+    # 12-hour format: H:MM AM/PM
+    hour=$(echo "$time_str" | cut -d: -f1 | tr -d ' ')
+    minute=$(echo "$time_str" | cut -d: -f2 | sed 's/[^0-9]//g')
+    
+    # Validate components
+    [[ ! "$hour" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
+    [[ ! "$minute" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
+    [[ $hour -gt 12 || $hour -lt 1 ]] && { echo "0"; return 1; }
+    [[ $minute -gt 59 ]] && { echo "0"; return 1; }
+    
+    # Convert to 24-hour format
+    if [[ "$time_str" =~ (AM|am) ]]; then
+        [[ $hour -eq 12 ]] && hour=0
+    elif [[ "$time_str" =~ (PM|pm) ]]; then
+        [[ $hour -ne 12 ]] && hour=$((hour + 12))
+    fi
+    
+    echo $((hour * 60 + 10#$minute))
+}
+
 check_api_response() {
     local response="$1"
     local endpoint="$2"
@@ -391,12 +435,12 @@ generate_astronomy_alerts() {
     local minute=${localtime#*:}
     local now=$((10#$hour * 60 + 10#$minute))
 
-    local sunrise_minutes=$(echo "$SUNRISE" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
-    local sunset_minutes=$(echo "$SUNSET" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
-
+    local sunrise_minutes=$(time_to_minutes "$SUNRISE")
+    local sunset_minutes=$(time_to_minutes "$SUNSET")
+    
     # Moonrise and moonset in minutes
-    local moonrise_minutes=$(echo "$MOONRISE" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
-    local moonset_minutes=$(echo "$MOONSET" | awk -F: '{h=$1; m=$2; if(h==12&&$0~/AM/){h=0} else if(h<12&&$0~/PM/){h+=12} sub(/AM|PM/,"",m); print (h*60)+m}')
+    local moonrise_minutes=$(time_to_minutes "$MOONRISE")
+    local moonset_minutes=$(time_to_minutes "$MOONSET")
 
     # Sunrise/Sunset alerts
     if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
