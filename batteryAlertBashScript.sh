@@ -43,7 +43,7 @@ do
 LOW_BATT=20
 HIGH_BATT=80
 FULL_BATT=100
-BRIGHTNESS=$(cat /sys/class/backlight/amdgpu_bl1/brightness)
+BRIGHTNESS=$(cat /sys/class/backlight/amdgpu_bl0/brighness)
 OPTIMAL_BRIGHTNESS=56206
 
 #1. Get battery level and state
@@ -57,7 +57,7 @@ if [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; then
 #3. If battery level is 40 or less and charging, do nothing
 elif { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Unknown," ]; }; then
 	if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
-      brightnessctl --device=amdgpu_bl1 set 90%
+      brightnessctl --device=amdgpu_bl0 set 90%
 	fi
 	:
    
@@ -68,7 +68,7 @@ elif { [ "$BATT_LEVEL" -ge "$HIGH_BATT" ] && [ "$BATT_STATE" = "Charging," ]; } 
 #5. If battery level is 80 or less and discharging, do nothing   
 elif { [ "$BATT_LEVEL" -le "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; } || { [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; }; then
 	if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
-      brightnessctl --device=amdgpu_bl1 set 90%
+      brightnessctl --device=amdgpu_bl0 set 90%
 	fi
 	:
 ##5. If battery level is 80 or more and discharging, do nothing 

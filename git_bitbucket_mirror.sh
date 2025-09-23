@@ -26,7 +26,7 @@ flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
 # Copy latest files to repo
 # -----------------------------
 echo "$(date) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$LOGFILE"
-cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
+\cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
 
 cd "$REPO_DIR" || { echo "$(date) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
 

@@ -39,7 +39,7 @@ if ! is_media_playing; then
         brightnessctl --device=amdgpu_bl1 set 0% &
         sleep 0.1
 
-        SCREENSAVER_PROGRAMS=(~/screensavers/screensaver-*)
+        SCREENSAVER_PROGRAMS=(~/Documents/screensaver-*)
         RANDOM_PROGRAM=${SCREENSAVER_PROGRAMS[RANDOM % ${#SCREENSAVER_PROGRAMS[@]}]}
         echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_PROGRAM" >> "$LOGFILE"
 

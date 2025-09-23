@@ -98,7 +98,6 @@ done
 if command -v journalctl > /dev/null; then
     echo "Monitoring systemd journal..."
     journalctl -f -p 3 --no-pager | while IFS= read -r line; do
-        local severity
         severity=$(check_error_severity "$line")
         if [ "$severity" != "IGNORE" ]; then
             process_alert "systemd-journal" "$line"
