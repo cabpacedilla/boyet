@@ -14,7 +14,7 @@ PLAYED_LIST="$HOME/scriptlogs/played_screensavers.txt"
 # --- END UPDATED LOCATION ---
 
 # Directory containing all screensaver programs
-SCREENSAVER_DIR="$HOME/screensavers"
+SCREENSAVER_DIR="$HOME/Documents/screensavers"
 
 # Ensure the log directory exists (this also covers the new list files)
 mkdir -p "$HOME/scriptlogs"
