@@ -2,6 +2,29 @@
 # Sync GitHub master branch to multiple mirrors
 # Copies ~/Documents/bin/ into the repo before syncing
 # Author: Claive Alvin P. Acedilla (modified)
+#
+# === Setup Instructions ===
+# 1. Generate an SSH key pair (if you haven't already):
+#    ssh-keygen -t ed25519 -C "your_email@example.com"
+#
+# 2. Start ssh-agent and add your private key:
+#    eval "$(ssh-agent -s)"
+#    ssh-add ~/.ssh/id_ed25519
+#
+# 3. Add your SSH public key (~/.ssh/id_ed25519.pub) to your remote Git hosts:
+#    - GitHub: https://github.com/settings/keys
+#    - Bitbucket: https://bitbucket.org/account/settings/ssh-keys/
+#    - SourceForge: https://sourceforge.net/account/ssh-keys/
+#
+# 4. Test SSH authentication for each remote:
+#    ssh -T git@github.com
+#    ssh -T git@bitbucket.org
+#    ssh -T cabpacedilla@git.code.sf.net
+#
+# 5. Configure git remotes inside your repo using SSH URLs:
+#    git remote set-url origin git@github.com:cabpacedilla/boyet.git
+#    git remote set-url bitbucket git@bitbucket.org:cabpa/boyet.git
+#    git remote set-url sourceforge ssh://cabpacedilla@git.code.sf.net/p/boyet/code
 
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
