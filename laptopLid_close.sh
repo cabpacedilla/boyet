@@ -46,7 +46,7 @@ while true; do
     # Check lid state and HDMI connection
     if [ "$(get_lid_state)" == "closed" ] && [ -z  "$(check_hdmi)" ]; then
         # Lock screen and suspend if no HDMI is connected and lid is closed
-        brightnessctl --device=amdgpu_bl0 set 80%
+        brightnessctl --device=amdgpu_bl1 set 80%
         #xscreensaver-command --lock
         systemctl suspend
     else

@@ -51,7 +51,7 @@ if ! is_media_playing; then
     # Kill the previous screensaver if it is running
     pkill -9 -f screensaver- # Force Kill the screensaver
 
-    brightnessctl --device=amdgpu_bl0 set 0%
+    brightnessctl --device=amdgpu_bl1 set 0%
     sleep 0.1
 
     # Read the available screensavers from the unplayed list
