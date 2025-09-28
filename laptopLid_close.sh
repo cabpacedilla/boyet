@@ -1,16 +1,16 @@
 #!/usr/bin/bash
-# This script will activate screen lock when the laptop lid is closed for auto lid-close security in IceWM.
-# Written by Claive Alvin P. Acedilla. Updated for dynamic brightness device handling.
+# Auto-lock & suspend laptop when lid is closed (unless HDMI is connected)
+# Written by Claive Alvin P. Acedilla — Updated for dynamic HDMI and brightness handling
 
 # ==================
 # Prerequisites:
 # - Install xscreensaver (optional, for screen locking)
-# - Add this script to ~/.icewm/startup (as: lid_close.sh &)
+# - Add this script to ~/.icewm/startup as: lid_close.sh &
 # ==================
 
-# Function to check if HDMI is connected
+# Function to check if any HDMI display is connected
 check_hdmi() {
-    xrandr | grep -q 'HDMI-1 connected'
+	xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}'
 }
 
 # Function to get the lid state
@@ -20,23 +20,20 @@ get_lid_state() {
     fi
 }
 
-# Detect backlight device (e.g. amdgpu_bl0, amdgpu_bl1)
-DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
-if [ -z "$DEVICE" ]; then
-    echo "No AMD GPU backlight device found. Brightness control will be skipped."
-fi
+# Detect the brightness device dynamically (e.g., amdgpu_bl0, amdgpu_bl1)
+BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
 # Main loop
 while true; do
     LID_STATE=$(get_lid_state)
 
     if [ "$LID_STATE" == "closed" ] && ! check_hdmi; then
-        # Set brightness if device is detected
-        if [ -n "$DEVICE" ]; then
-            brightnessctl -d "$DEVICE" set 90%
+        # If brightness device found, adjust brightness
+        if [ -n "$BRIGHT_DEVICE" ]; then
+            brightnessctl -d "$BRIGHT_DEVICE" set 90%
         fi
 
-        # Optional screen lock (uncomment if using xscreensaver)
+        # Optional: Lock screen with xscreensaver (uncomment if used)
         # xscreensaver-command --lock
 
         # Suspend the system
