@@ -2,8 +2,6 @@
 # This script runs randomly selected screensaver- programs every 15 seconds.
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
-MINIMAL=0
-OPTIMAL=49961
 
 # Automatically detect AMD GPU backlight device (e.g. amdgpu_bl0 or amdgpu_bl1)
 BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
