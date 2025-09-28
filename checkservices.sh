@@ -18,7 +18,6 @@ SCRIPTS=(
     "low_disk_space"
     "lowMemAlert"
     "prevent_screensaver"
-#     "runscreensaver"
     "security_check"
     "weather_alarm"
 )

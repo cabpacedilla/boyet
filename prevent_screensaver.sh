@@ -4,6 +4,10 @@ SCRIPT_NAME="runscreensaver.sh"
 SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
 MIN_INSTANCES=1
 
+LOCKFILE="/tmp/prevent_screensaver.lock"
+exec 200>"$LOCKFILE"
+flock -n 200 || exit 0
+
 # Function to check if media is playing
 is_media_playing() {
 	#MEDIA_PLAY=$(pacmd list-sink-inputs | grep -w "RUNNING" | awk '{ print $2 }')
