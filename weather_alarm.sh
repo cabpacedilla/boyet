@@ -438,28 +438,28 @@ generate_astronomy_alerts() {
     local sunrise_minutes=$(time_to_minutes "$SUNRISE")
     local sunset_minutes=$(time_to_minutes "$SUNSET")
     
-    # Moonrise and moonset in minutes
     local moonrise_minutes=$(time_to_minutes "$MOONRISE")
     local moonset_minutes=$(time_to_minutes "$MOONSET")
 
-    # Sunrise/Sunset alerts
+    # Sunrise/Sunset alerts with actual times
     if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
-        ALERTS+=("Sunrise soon → $(give_advice sunrise)")
+        ALERTS+=("☀️ Sunrise at $SUNRISE → $(give_advice sunrise)")
     elif (( now >= sunset_minutes - ALERT_WINDOW && now <= sunset_minutes )); then
-        ALERTS+=("Sunset soon → $(give_advice sunset)")
+        ALERTS+=("🌇 Sunset at $SUNSET → $(give_advice sunset)")
     fi
 
-    # Moonrise/Moonset alerts
+    # Moonrise/Moonset alerts with actual times
     if (( now >= moonrise_minutes - ALERT_WINDOW && now <= moonrise_minutes )); then
-        ALERTS+=("Moonrise soon → $(give_advice moonrise)")
+        ALERTS+=("🌙 Moonrise at $MOONRISE → $(give_advice moonrise)")
     elif (( now >= moonset_minutes - ALERT_WINDOW && now <= moonset_minutes )); then
-        ALERTS+=("Moonset soon → $(give_advice moonset)")
+        ALERTS+=("🌘 Moonset at $MOONSET → $(give_advice moonset)")
     fi
 
+    # Moon phase alerts (don't have a specific time)
     case "$MOON_PHASE" in
-        "Full Moon") ALERTS+=("Full Moon → $(give_advice full_moon)") ;;
-        "New Moon") ALERTS+=("New Moon → $(give_advice new_moon)") ;;
-        "Eclipse") ALERTS+=("Eclipse today → $(give_advice eclipse)") ;;
+        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice full_moon)") ;;
+        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
+        "Eclipse")  ALERTS+=("🌒 Eclipse today → $(give_advice eclipse)") ;;
     esac
 }
 
