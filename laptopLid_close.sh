@@ -1,44 +1,56 @@
-#!/usr/bin/bash
-# Auto-lock & suspend laptop when lid is closed (unless HDMI is connected)
-# Written by Claive Alvin P. Acedilla — Updated for dynamic HDMI and brightness handling
+#!/usr/bin/env bash
+# Auto suspend or disable internal screen based on lid and HDMI state
+# Author: Claive Alvin P. Acedilla (improved by ChatGPT)
+# Dependencies: xrandr, brightnessctl, systemd, optional: xscreensaver
 
-# ==================
-# Prerequisites:
-# - Install xscreensaver (optional, for screen locking)
-# - Add this script to ~/.icewm/startup as: lid_close.sh &
-# ==================
+# === Configuration ===
+LOG_FILE="$HOME/.lid_close.log"
 
-# Function to check if any HDMI display is connected
-check_hdmi() {
-	xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}'
-}
-
-# Function to get the lid state
-get_lid_state() {
-    if [ -f /proc/acpi/button/lid/LID0/state ]; then
-        awk '{print $2}' < /proc/acpi/button/lid/LID0/state
-    fi
-}
-
-# Detect the brightness device dynamically (e.g., amdgpu_bl0, amdgpu_bl1)
+# Detect internal display (usually eDP-1 or eDP-0)
+INTERNAL_DISPLAY=$(xrandr | grep -w connected | grep -Eo '^eDP[0-9]*')
 BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
-# Main loop
+# Get lid state
+get_lid_state() {
+    grep -q closed /proc/acpi/button/lid/LID0/state && echo "closed" || echo "open"
+}
+
+# Check HDMI connected
+is_hdmi_connected() {
+   xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}'
+}
+
+# Logging helper
+log() {
+    echo "[$(date)] $*" >> "$LOG_FILE"
+}
+
+PREV_STATE="unknown"
+
 while true; do
     LID_STATE=$(get_lid_state)
+    HDMI_CONNECTED=$(is_hdmi_connected && echo "yes" || echo "no")
 
-    if [ "$LID_STATE" == "closed" ] && ! check_hdmi; then
-        # If brightness device found, adjust brightness
-        if [ -n "$BRIGHT_DEVICE" ]; then
-            brightnessctl -d "$BRIGHT_DEVICE" set 90%
+    # Only react if state changed
+    CURRENT_STATE="${LID_STATE}_${HDMI_CONNECTED}"
+    if [[ "$CURRENT_STATE" != "$PREV_STATE" ]]; then
+        log "Lid: $LID_STATE, HDMI: $HDMI_CONNECTED"
+
+        if [[ "$LID_STATE" == "closed" && "$HDMI_CONNECTED" == "yes" ]]; then
+            log "Disabling internal display to prevent overheating..."
+            xrandr --output "$INTERNAL_DISPLAY" --off
+        elif [[ "$LID_STATE" == "closed" && "$HDMI_CONNECTED" == "no" ]]; then
+            log "Suspending system..."
+            [[ -n "$BRIGHT_DEVICE" ]] && brightnessctl -d "$BRIGHT_DEVICE" set 90%
+            # xscreensaver-command --lock  # Optional
+            systemctl suspend
+        elif [[ "$LID_STATE" == "open" ]]; then
+            log "Enabling internal display..."
+            xrandr --output "$INTERNAL_DISPLAY" --auto
         fi
 
-        # Optional: Lock screen with xscreensaver (uncomment if used)
-        # xscreensaver-command --lock
-
-        # Suspend the system
-        systemctl suspend
+        PREV_STATE="$CURRENT_STATE"
     fi
 
-    sleep 0.1
+    sleep 1
 done

@@ -31,7 +31,7 @@ while true; do
         first_run=false
     else
         # Get power consumption data from powertop
-        sudo powertop --time=2711 --html=powertop.html
+        sudo powertop --time=2700 --html=powertop.html
 
         # Extract top power consumers from the HTML file
         POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
