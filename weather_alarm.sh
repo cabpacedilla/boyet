@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Weather Alarm Script
+# Weather Alarm Script (enhanced multi‑day peaks)
 # Dependencies: curl, jq, bc, notify-send
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
 
@@ -10,19 +10,17 @@ if [[ -n "$WEATHER_API_KEY" ]]; then
     API_KEY="$WEATHER_API_KEY"
 elif [[ -f "$HOME/.config/weather/api_key" ]]; then
     API_KEY=$(cat "$HOME/.config/weather/api_key" 2>/dev/null | tr -d '\n\r')
-elif command -v secret-tool >/dev/null 2>&1; then
-    API_KEY=$(secret-tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
+elif command -v secret‑tool >/dev/null 2>&1; then
+    API_KEY=$(secret‑tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
 else
     echo "Weather API key not found. Please set it using:"
     echo "export WEATHER_API_KEY='your_key_here' in ~/.bashrc"
     exit 1
 fi
 
-# Validate API key (check length and alphanumeric characters)
-if [[ ${#API_KEY} -ne 30 ]] || [[ ! "$API_KEY" =~ ^[a-zA-Z0-9]+$ ]]; then
-    echo "Error: Invalid API key format. WeatherAPI keys should be 32 alphanumeric characters."
-    echo "Your key length: ${#API_KEY} characters"
-    exit 1
+# Validate API key (simple check)
+if [[ ${#API_KEY} -lt 20 ]]; then
+    echo "Warning: API key seems too short; double check it."
 fi
 
 BASE_URL="http://api.weatherapi.com/v1"
@@ -45,47 +43,36 @@ deg_to_dir() {
     echo "${directions[$idx]}"
 }
 
-# Convert time string to minutes since midnight (handles both 12h and 24h formats)
 time_to_minutes() {
     local time_str="$1"
     local hour minute
-    
-    # Handle empty or invalid input
+
     [[ -z "$time_str" ]] && { echo "0"; return 1; }
-    
-    # Check if it's 24-hour format (no AM/PM)
+
     if [[ ! "$time_str" =~ (AM|PM|am|pm) ]]; then
-        # 24-hour format: HH:MM
         hour=$(echo "$time_str" | cut -d: -f1 | tr -d ' ')
         minute=$(echo "$time_str" | cut -d: -f2 | tr -d ' ')
-        
-        # Validate hour and minute
         [[ ! "$hour" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
         [[ ! "$minute" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
         [[ $hour -gt 23 ]] && { echo "0"; return 1; }
         [[ $minute -gt 59 ]] && { echo "0"; return 1; }
-        
         echo $((10#$hour * 60 + 10#$minute))
         return 0
     fi
-    
-    # 12-hour format: H:MM AM/PM
+
     hour=$(echo "$time_str" | cut -d: -f1 | tr -d ' ')
     minute=$(echo "$time_str" | cut -d: -f2 | sed 's/[^0-9]//g')
-    
-    # Validate components
     [[ ! "$hour" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
     [[ ! "$minute" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
     [[ $hour -gt 12 || $hour -lt 1 ]] && { echo "0"; return 1; }
     [[ $minute -gt 59 ]] && { echo "0"; return 1; }
-    
-    # Convert to 24-hour format
+
     if [[ "$time_str" =~ (AM|am) ]]; then
         [[ $hour -eq 12 ]] && hour=0
     elif [[ "$time_str" =~ (PM|pm) ]]; then
         [[ $hour -ne 12 ]] && hour=$((hour + 12))
     fi
-    
+
     echo $((hour * 60 + 10#$minute))
 }
 
@@ -120,7 +107,7 @@ check_api_response() {
 }
 
 # ------------------------
-# Advice System
+# Advice System (unchanged)
 # ------------------------
 give_advice() {
     case "$1" in
@@ -171,9 +158,6 @@ give_advice() {
     esac
 }
 
-# ------------------------
-# Unified Weather Assessment System
-# ------------------------
 assess_weather() {
     local type="$1" value="$2" unit="$3"
     local level advice emoji alert_threshold=0
@@ -277,24 +261,18 @@ assess_weather() {
     echo "$level|$advice|$emoji|$alert_threshold|$value|$unit"
 }
 
-# ------------------------
-# Simplified Assessment Functions
-# ------------------------
 get_advice() {
     local assessment=$(assess_weather "$1" "$2" "$3")
     echo "$assessment" | cut -d'|' -f2
 }
-
 get_alert_status() {
     local assessment=$(assess_weather "$1" "$2" "$3")
     echo "$assessment" | cut -d'|' -f4
 }
-
 get_emoji() {
     local assessment=$(assess_weather "$1" "$2" "$3")
     echo "$assessment" | cut -d'|' -f3
 }
-
 get_level() {
     local assessment=$(assess_weather "$1" "$2" "$3")
     echo "$assessment" | cut -d'|' -f1
@@ -315,22 +293,25 @@ get_location() {
 }
 
 # ------------------------
-# Fetch weather & astronomy
+# Fetch weather data (forecast + astronomy)
 # ------------------------
 get_weather() {
-    FORECAST=$(curl -s --connect-timeout 10 --max-time 30 "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
+    FORECAST=$(curl -s --connect-timeout 10 --max-time 30 \
+        "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
     if ! check_api_response "$FORECAST" "forecast"; then
         echo "Failed to fetch weather data. Retrying in 5 minutes..."
         sleep 300
         return 1
     fi
 
-    ASTRONOMY=$(curl -s --connect-timeout 10 --max-time 30 "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
+    ASTRONOMY=$(curl -s --connect-timeout 10 --max-time 30 \
+        "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
     if ! check_api_response "$ASTRONOMY" "astronomy"; then
         echo "Warning: Failed to fetch astronomy data. Continuing with weather only..."
         ASTRONOMY='{"astronomy":{"astro":{"sunrise":"","sunset":"","moonrise":"","moonset":"","moon_phase":""}}}'
     fi
 
+    # Current conditions
     TEMP_C=$(echo "$FORECAST" | jq -r '.current.temp_c // 0')
     FEELS=$(echo "$FORECAST" | jq -r '.current.feelslike_c // 0')
     HUMIDITY=$(echo "$FORECAST" | jq -r '.current.humidity // 0')
@@ -344,6 +325,7 @@ get_weather() {
     AQI=$(echo "$FORECAST" | jq -r '.current.air_quality["us-epa-index"] // 0')
     PM25=$(echo "$FORECAST" | jq -r '.current.air_quality.pm2_5 // 0')
 
+    # For reference: daily summary (you may or may not use these)
     MAX_TEMP=$(echo "$FORECAST" | jq -r '.forecast.forecastday[0].day.maxtemp_c // 0')
     MIN_TEMP=$(echo "$FORECAST" | jq -r '.forecast.forecastday[0].day.mintemp_c // 0')
     PEAK_UV=$(echo "$FORECAST" | jq -r '.forecast.forecastday[0].day.uv // 0')
@@ -358,12 +340,42 @@ get_weather() {
 }
 
 # ------------------------
-# Generate alerts
+# Compute per‑day peaks & advice
+# ------------------------
+compute_daily_peaks() {
+    local forecast_json="$1"
+    local days_count=$(echo "$forecast_json" | jq -r '.forecast.forecastday | length')
+    DAILY_PEAKS=()
+
+    for (( di = 0; di < days_count; di++ )); do
+        local date=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].date")
+
+        local max_temp_time=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | max_by(.temp_c) | .time")
+        local max_temp_value=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | max_by(.temp_c) | .temp_c")
+
+        local min_temp_time=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | min_by(.temp_c) | .time")
+        local min_temp_value=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | min_by(.temp_c) | .temp_c")
+
+        local peak_uv_time=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | max_by(.uv) | .time")
+        local peak_uv_value=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | max_by(.uv) | .uv")
+
+        local max_rain_time=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | max_by(.precip_mm) | .time")
+        local max_rain_value=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$di].hour | max_by(.precip_mm) | .precip_mm")
+
+        local temp_advice=$(get_advice temperature "$max_temp_value")
+        local rain_advice=$(get_advice rain "$max_rain_value")
+        local uv_advice=$(get_advice uv "$peak_uv_value")
+
+        DAILY_PEAKS+=("$date → MaxTemp: $max_temp_value°C at $max_temp_time ($temp_advice) | MinTemp: $min_temp_value°C at $min_temp_time | PeakUV: $peak_uv_value at $peak_uv_time ($uv_advice) | Rain peak: $max_rain_value mm at $max_rain_time ($rain_advice)")
+    done
+}
+
+# ------------------------
+# Generate alerts & notifications
 # ------------------------
 generate_alerts() {
     ALERTS=()
 
-    # Temperature alerts
     if [[ "$(get_alert_status temperature "$TEMP_C")" == "1" ]]; then
         emoji=$(get_emoji temperature "$TEMP_C")
         advice=$(get_advice temperature "$TEMP_C")
@@ -374,7 +386,6 @@ generate_alerts() {
         esac
     fi
 
-    # Rain alerts
     if [[ "$(get_alert_status rain "$PRECIP")" == "1" ]]; then
         emoji=$(get_emoji rain "$PRECIP")
         advice=$(get_advice rain "$PRECIP")
@@ -386,7 +397,6 @@ generate_alerts() {
         esac
     fi
 
-    # Wind alerts
     if [[ "$(get_alert_status wind "$WIND_KPH")" == "1" ]]; then
         emoji=$(get_emoji wind "$WIND_KPH")
         advice=$(get_advice wind "$WIND_KPH")
@@ -397,7 +407,6 @@ generate_alerts() {
         esac
     fi
 
-    # UV alerts
     if [[ "$(get_alert_status uv "$UV")" == "1" ]]; then
         emoji=$(get_emoji uv "$UV")
         advice=$(get_advice uv "$UV")
@@ -408,7 +417,6 @@ generate_alerts() {
         esac
     fi
 
-    # Pollution alerts
     if [[ "$(get_alert_status pollution "$AQI")" == "1" ]]; then
         emoji=$(get_emoji pollution "$AQI")
         advice=$(get_advice pollution "$AQI")
@@ -420,15 +428,11 @@ generate_alerts() {
         esac
     fi
 
-    # Condition-based alerts
     [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
     [[ "$CONDITION" =~ [Ff]og ]] && ALERTS+=("🌫 Fog detected → $(give_advice fog)")
     [[ "$CONDITION" =~ [Ss]now ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
 }
 
-# ------------------------
-# Astronomy alerts
-# ------------------------
 generate_astronomy_alerts() {
     local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
     local hour=${localtime%:*}
@@ -437,38 +441,33 @@ generate_astronomy_alerts() {
 
     local sunrise_minutes=$(time_to_minutes "$SUNRISE")
     local sunset_minutes=$(time_to_minutes "$SUNSET")
-    
     local moonrise_minutes=$(time_to_minutes "$MOONRISE")
     local moonset_minutes=$(time_to_minutes "$MOONSET")
 
-    # Sunrise/Sunset alerts with actual times
     if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
         ALERTS+=("☀️ Sunrise at $SUNRISE → $(give_advice sunrise)")
     elif (( now >= sunset_minutes - ALERT_WINDOW && now <= sunset_minutes )); then
         ALERTS+=("🌇 Sunset at $SUNSET → $(give_advice sunset)")
     fi
 
-    # Moonrise/Moonset alerts with actual times
     if (( now >= moonrise_minutes - ALERT_WINDOW && now <= moonrise_minutes )); then
         ALERTS+=("🌙 Moonrise at $MOONRISE → $(give_advice moonrise)")
     elif (( now >= moonset_minutes - ALERT_WINDOW && now <= moonset_minutes )); then
         ALERTS+=("🌘 Moonset at $MOONSET → $(give_advice moonset)")
     fi
 
-    # Moon phase alerts (don't have a specific time)
     case "$MOON_PHASE" in
         "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice full_moon)") ;;
         "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
-        "Eclipse")  ALERTS+=("🌒 Eclipse today → $(give_advice eclipse)") ;;
+        "Eclipse") ALERTS+=("🌒 Eclipse today → $(give_advice eclipse)") ;;
     esac
 }
 
-# ------------------------
-# Notifications
-# ------------------------
 send_notifications() {
     generate_alerts
     generate_astronomy_alerts
+
+    compute_daily_peaks "$FORECAST"
 
     MESSAGE=""
     if [[ ${#ALERTS[@]} -gt 0 ]]; then
@@ -488,7 +487,7 @@ send_notifications() {
     MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(get_advice pollution "$AQI")\n"
     MESSAGE+="• 👁 Visibility: $VIS km → $(get_advice visibility "$VIS")\n\n"
 
-    MESSAGE+="📅 Forecast:\n"
+    MESSAGE+="📅 Upcoming Hours Forecast:\n"
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
     for i in {1..3}; do
         idx=$((10#$LOCAL_HOUR + i))
@@ -500,28 +499,46 @@ send_notifications() {
         hr_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].time" | cut -d' ' -f2)
         hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
         hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
-        
-        # Use unified assessment system for rain advice
         hr_advice=$(get_advice rain "$hr_rain")
-        
+
         MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm"
         [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice"
         MESSAGE+="\n"
     done
-    MESSAGE+="🌡 High: $MAX_TEMP°C, Low: $MIN_TEMP°C\n"
-    
-    # Use unified assessment for peak UV
-    peak_uv_advice=$(get_advice uv "$PEAK_UV")
-    MESSAGE+="🌞 Peak UV: $PEAK_UV"
-    [[ "$peak_uv_advice" != "Safe sun exposure" ]] && MESSAGE+=" → $peak_uv_advice"
-    MESSAGE+="\n\n"
+
+    MESSAGE+="\n📄 Daily Peaks:\n"
+    for i in 0 1; do
+        day_date=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].date")
+        
+        max_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].day.maxtemp_c")
+        min_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].day.mintemp_c")
+        peak_uv=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].day.uv")
+
+        # Find hour of max temp
+        max_temp_hour=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour[] | select(.temp_c == $max_temp) | .time" | head -n1 | cut -d' ' -f2)
+        min_temp_hour=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour[] | select(.temp_c == $min_temp) | .time" | head -n1 | cut -d' ' -f2)
+        uv_hour=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour[] | select(.uv == $peak_uv) | .time" | head -n1 | cut -d' ' -f2)
+
+        rain_peak=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour | max_by(.precip_mm) | .precip_mm")
+        rain_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour | max_by(.precip_mm) | .time" | cut -d' ' -f2)
+        rain_advice=$(get_advice rain "$rain_peak")
+        uv_advice=$(get_advice uv "$peak_uv")
+        temp_advice=$(get_advice temperature "$max_temp")
+
+        MESSAGE+="• $day_date:\n"
+        MESSAGE+="  - 🌡 Max Temp: ${max_temp}°C at $max_temp_hour → $temp_advice\n"
+        MESSAGE+="  - 🌡 Min Temp: ${min_temp}°C at $min_temp_hour\n"
+        MESSAGE+="  - 🌞 Peak UV: ${peak_uv} at $uv_hour → $uv_advice\n"
+        MESSAGE+="  - 🌧 Peak Rain: ${rain_peak} mm at $rain_time → $rain_advice\n\n"
+    done
 
     MESSAGE+="🌌 Astronomy:\n"
     MESSAGE+="🌅 Sunrise: $SUNRISE | 🌇 Sunset: $SUNSET\n"
     MESSAGE+="🌙 Moonrise: $MOONRISE | 🌘 Moonset: $MOONSET\n"
     MESSAGE+="🌔 Moon Phase: $MOON_PHASE\n"
 
-    notify-send -u critical "Weather Update - $CITY ($(date +%-I:%M))" "$MESSAGE"
+    #~ notify-send -u critical "Weather Update - $CITY ($(date +%-I:%M))" "$MESSAGE"
+    kdialog --title "Weather Update - $CITY ($(date +%-I:%M))" --msgbox "$MESSAGE" &
     echo -e "$MESSAGE" | tee -a "$LOG_FILE"
 }
 
