@@ -376,7 +376,6 @@ compute_daily_peaks() {
 generate_alerts() {
     ALERTS=()
 
-    # Temperature alerts
     if [[ "$(get_alert_status temperature "$TEMP_C")" == "1" ]]; then
         emoji=$(get_emoji temperature "$TEMP_C")
         advice=$(get_advice temperature "$TEMP_C")
@@ -387,7 +386,6 @@ generate_alerts() {
         esac
     fi
 
-    # Rain alerts
     if [[ "$(get_alert_status rain "$PRECIP")" == "1" ]]; then
         emoji=$(get_emoji rain "$PRECIP")
         advice=$(get_advice rain "$PRECIP")
@@ -400,7 +398,6 @@ generate_alerts() {
         esac
     fi
 
-    # Wind alerts
     if [[ "$(get_alert_status wind "$WIND_KPH")" == "1" ]]; then
         emoji=$(get_emoji wind "$WIND_KPH")
         advice=$(get_advice wind "$WIND_KPH")
@@ -411,7 +408,6 @@ generate_alerts() {
         esac
     fi
 
-    # UV alerts
     if [[ "$(get_alert_status uv "$UV")" == "1" ]]; then
         emoji=$(get_emoji uv "$UV")
         advice=$(get_advice uv "$UV")
@@ -422,37 +418,17 @@ generate_alerts() {
         esac
     fi
 
-    # Air quality alerts
     if [[ "$(get_alert_status pollution "$AQI")" == "1" ]]; then
         emoji=$(get_emoji pollution "$AQI")
         advice=$(get_advice pollution "$AQI")
         level=$(get_level pollution "$AQI")
         case "$level" in
-            "unhealthy") ALERTS+=("$emoji Unhealthy air (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
-            "very_unhealthy") ALERTS+=("$emoji Very unhealthy air (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
-            "hazardous") ALERTS+=("$emoji Hazardous air (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+            "unhealthy") ALERTS+=("$emoji Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+            "very_unhealthy") ALERTS+=("$emoji Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+            "hazardous") ALERTS+=("$emoji Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
         esac
     fi
 
-    # Humidity alerts (extreme conditions)
-    if (( $(echo "$HUMIDITY >= 85" | bc -l) )); then
-        emoji=$(get_emoji humidity "$HUMIDITY")
-        advice=$(get_advice humidity "$HUMIDITY")
-        ALERTS+=("$emoji Extreme humidity ($HUMIDITY%) → $advice")
-    fi
-
-    # Visibility alerts (poor conditions)
-    if (( $(echo "$VIS < 2" | bc -l) )); then
-        emoji=$(get_emoji visibility "$VIS")
-        advice=$(get_advice visibility "$VIS")
-        level=$(get_level visibility "$VIS")
-        case "$level" in
-            "very_poor") ALERTS+=("$emoji Very poor visibility ($VIS km) → $advice") ;;
-            "poor") ALERTS+=("$emoji Poor visibility ($VIS km) → $advice") ;;
-        esac
-    fi
-
-    # Weather condition alerts
     [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
     [[ "$CONDITION" =~ [Ff]og ]] && ALERTS+=("🌫 Fog detected → $(give_advice fog)")
     [[ "$CONDITION" =~ [Ss]now ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
@@ -504,11 +480,13 @@ send_notifications() {
     fi
 
     MESSAGE+="📊 Current ($CITY: $LAT, $LON):\n"
-	MESSAGE+="• $(get_emoji temperature "$TEMP_C") Temp: $TEMP_C°C (Feels: $FEELS°C) → $(get_advice temperature "$TEMP_C")\n"
-	MESSAGE+="• $(get_emoji humidity "$HUMIDITY") Humidity: $HUMIDITY% → $(get_advice humidity "$HUMIDITY")\n"
-	MESSAGE+="• $(get_emoji wind "$WIND_KPH") Wind: $WIND_KPH km/h ($WIND_DIR) → $(get_advice wind "$WIND_KPH")\n"
-	MESSAGE+="• $(get_emoji rain "$PRECIP") Rain: $PRECIP mm → $(get_advice rain "$PRECIP")\n"
-	MESSAGE+="• $(get_emoji uv "$UV") UV: $UV → $(get_advice uv "$UV")\n"
+    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(get_advice temperature "$TEMP_C") $(get_emoji temperature "$TEMP_C")\n"
+    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(get_advice humidity "$HUMIDITY") $(get_emoji humidity "$HUMIDITY")\n"
+    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(get_advice wind "$WIND_KPH") $(get_emoji wind "$WIND_KPH")\n"
+    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(get_advice rain "$PRECIP") $(get_emoji rain "$PRECIP")\n"
+    MESSAGE+="• 🌞 UV: $UV → $(get_advice uv "$UV") $(get_emoji uv "$UV")\n"
+    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(get_advice pollution "$AQI") $(get_emoji pollution "$AQI")\n"
+    MESSAGE+="• 👁 Visibility: $VIS km → $(get_advice visibility "$VIS") $(get_emoji visibility "$VIS")\n\n"
 
     MESSAGE+="📅 Upcoming Hours Forecast:\n"
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
@@ -523,9 +501,10 @@ send_notifications() {
         hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
         hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
         hr_advice=$(get_advice rain "$hr_rain")
+        hr_emoji=$(get_emoji rain "$hr_rain")
 
         MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm"
-        [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice"
+        [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice $hr_emoji"
         MESSAGE+="\n"
     done
 
@@ -545,14 +524,17 @@ send_notifications() {
         rain_peak=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour | max_by(.precip_mm) | .precip_mm")
         rain_time=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].hour | max_by(.precip_mm) | .time" | cut -d' ' -f2)
         rain_advice=$(get_advice rain "$rain_peak")
+        rain_emoji=$(get_emoji rain "$rain_peak")
         uv_advice=$(get_advice uv "$peak_uv")
+        uv_emoji=$(get_emoji uv "$peak_uv")
         temp_advice=$(get_advice temperature "$max_temp")
+        temp_emoji=$(get_emoji temperature "$max_temp")
 
         MESSAGE+="• $day_date:\n"
-        MESSAGE+="  - 🌡 Max Temp: ${max_temp}°C at $max_temp_hour → $temp_advice\n"
-        MESSAGE+="  - 🌡 Min Temp: ${min_temp}°C at $min_temp_hour → $temp_advice\n"
-        MESSAGE+="  - 🌞 Peak UV: ${peak_uv} at $uv_hour → $uv_advice\n"
-        MESSAGE+="  - 🌧 Peak Rain: ${rain_peak} mm at $rain_time → $rain_advice\n\n"
+        MESSAGE+="  - 🌡 Max Temp: ${max_temp}°C at $max_temp_hour → $temp_advice $temp_emoji\n"
+        MESSAGE+="  - 🌡 Min Temp: ${min_temp}°C at $min_temp_hour → $temp_advice $temp_emoji\n"
+        MESSAGE+="  - 🌞 Peak UV: ${peak_uv} at $uv_hour → $uv_advice $uv_emoji\n"
+        MESSAGE+="  - 🌧 Peak Rain: ${rain_peak} mm at $rain_time → $rain_advice $rain_emoji\n\n"
     done
 
     MESSAGE+="🌌 Astronomy:\n"
