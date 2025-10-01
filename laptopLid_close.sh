@@ -15,9 +15,9 @@ get_lid_state() {
     grep -q closed /proc/acpi/button/lid/LID0/state && echo "closed" || echo "open"
 }
 
-# Check HDMI connected
-is_hdmi_connected() {
-   xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}'
+# Get HDMI display name (if connected)
+get_hdmi_display() {
+    xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}'
 }
 
 # Logging helper
@@ -29,24 +29,35 @@ PREV_STATE="unknown"
 
 while true; do
     LID_STATE=$(get_lid_state)
-    HDMI_CONNECTED=$(is_hdmi_connected && echo "yes" || echo "no")
+    HDMI_DISPLAY=$(get_hdmi_display)
+    HDMI_CONNECTED="no"
 
-    # Only react if state changed
+    if [[ -n "$HDMI_DISPLAY" ]]; then
+        HDMI_CONNECTED="yes"
+    fi
+
     CURRENT_STATE="${LID_STATE}_${HDMI_CONNECTED}"
     if [[ "$CURRENT_STATE" != "$PREV_STATE" ]]; then
         log "Lid: $LID_STATE, HDMI: $HDMI_CONNECTED"
 
         if [[ "$LID_STATE" == "closed" && "$HDMI_CONNECTED" == "yes" ]]; then
-            log "Disabling internal display to prevent overheating..."
-            xrandr --output "$INTERNAL_DISPLAY" --off
+            log "Lid closed and HDMI connected. Switching to HDMI display only..."
+            sleep 1  # Give system time to register display change
+            xrandr --output "$INTERNAL_DISPLAY" --off \
+                   --output "$HDMI_DISPLAY" --auto --primary
+            log "Internal display disabled. HDMI active."
+        
         elif [[ "$LID_STATE" == "closed" && "$HDMI_CONNECTED" == "no" ]]; then
-            log "Suspending system..."
+            log "Lid closed and no HDMI connected. Suspending system..."
             [[ -n "$BRIGHT_DEVICE" ]] && brightnessctl -d "$BRIGHT_DEVICE" set 90%
-            # xscreensaver-command --lock  # Optional
+            # Optional: xscreensaver-command --lock
             systemctl suspend
+        
         elif [[ "$LID_STATE" == "open" ]]; then
-            log "Enabling internal display..."
+            log "Lid opened. Enabling internal display..."
             xrandr --output "$INTERNAL_DISPLAY" --auto
+            [[ -n "$HDMI_DISPLAY" ]] && xrandr --output "$HDMI_DISPLAY" --auto
+            log "Internal display enabled."
         fi
 
         PREV_STATE="$CURRENT_STATE"
