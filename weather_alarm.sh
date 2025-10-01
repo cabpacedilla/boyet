@@ -192,7 +192,7 @@ assess_weather() {
             elif (( $(echo "$value >= 5" | bc -l) )); then
                 level="moderate"; advice=$(give_advice rain_moderate); emoji="🌧"; alert_threshold=1
             elif (( $(echo "$value > 0" | bc -l) )); then
-                level="light"; advice=$(give_advice rain_light); emoji="🌦"
+                level="light"; advice=$(give_advice rain_light); emoji="🌦"; alert_threshold=1
             else
                 level="none"; advice=$(give_advice rain_none); emoji="☀️"
             fi
@@ -394,6 +394,7 @@ generate_alerts() {
             "storm") ALERTS+=("$emoji Storming ($PRECIP mm) → $advice") ;;
             "heavy") ALERTS+=("🌧 Heavy rain ($PRECIP mm) → $advice") ;;
             "moderate") ALERTS+=("🌧 Moderate rain ($PRECIP mm) → $advice") ;;
+            "light") ALERTS+=("🌦 Light rain ($PRECIP mm) → $advice") ;;
         esac
     fi
 
