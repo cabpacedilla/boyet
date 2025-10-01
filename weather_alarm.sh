@@ -479,7 +479,7 @@ send_notifications() {
         MESSAGE+="\n"
     fi
 
-    MESSAGE+="📊 Current ($CITY):\n"
+    MESSAGE+="📊 Current ($CITY: $LAT, $LON):\n"
     MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(get_advice temperature "$TEMP_C")\n"
     MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(get_advice humidity "$HUMIDITY")\n"
     MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(get_advice wind "$WIND_KPH")\n"
