@@ -528,7 +528,7 @@ send_notifications() {
 
         MESSAGE+="• $day_date:\n"
         MESSAGE+="  - 🌡 Max Temp: ${max_temp}°C at $max_temp_hour → $temp_advice\n"
-        MESSAGE+="  - 🌡 Min Temp: ${min_temp}°C at $min_temp_hour\n"
+        MESSAGE+="  - 🌡 Min Temp: ${min_temp}°C at $min_temp_hour → $temp_advice\n"
         MESSAGE+="  - 🌞 Peak UV: ${peak_uv} at $uv_hour → $uv_advice\n"
         MESSAGE+="  - 🌧 Peak Rain: ${rain_peak} mm at $rain_time → $rain_advice\n\n"
     done
