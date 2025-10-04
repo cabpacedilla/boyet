@@ -1,16 +1,64 @@
 #!/usr/bin/env bash
-# Low Memory Alert Script (with total usage check)
-# Alerts when free memory (available) <= threshold of total RAM
-# Shows top N memory consumers and total memory usage
-# Uses notify-send for alerts
+# Low Memory Alert Script (Robust + Diagnostic)
+# Works on any Linux distro, detects swapping, tracks per-process memory growth
 
-MEMFREE_LIMIT_PERCENT=15       # Alert threshold (%)
-CHECK_INTERVAL=30              # Seconds between checks
-MAX_PROCESSES=10               # Top N processes/trees to display
+MEMFREE_LIMIT_PERCENT=15
+CHECK_INTERVAL=30
+MAX_PROCESSES=10
 LOG_FILE="$HOME/lowmem_alert.log"
 MAX_LOG_SIZE=$((50 * 1024 * 1024))   # 50 MB
 
-# Rotate log if it grows too large
+# -----------------------------
+# Core detection: Get memory stats robustly
+# -----------------------------
+get_memory_stats() {
+    if command -v free >/dev/null 2>&1; then
+        read TOTAL_MEM MEMFREE < <(free -m | awk 'NR==2 {print $2, $7}')
+    elif [ -r /proc/meminfo ]; then
+        TOTAL_MEM=$(awk '/MemTotal:/ {print int($2/1024)}' /proc/meminfo)
+        MEMFREE=$(awk '/MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+    else
+        echo "Error: Cannot determine memory stats." >&2
+        exit 1
+    fi
+}
+
+# -----------------------------
+# Diagnostics: Swap detection
+# -----------------------------
+detect_swap_activity() {
+    SWAP_USED=$(awk '/SwapTotal:/ {total=$2} /SwapFree:/ {free=$2} END{print int((total-free)/1024)}' /proc/meminfo)
+    SWAP_TOTAL=$(awk '/SwapTotal:/ {print int($2/1024)}' /proc/meminfo)
+}
+
+# -----------------------------
+# Diagnostics: Per-process memory growth
+# -----------------------------
+track_process_memory_growth() {
+    PROC_MEM_FILE="$HOME/.proc_mem_usage"
+    ps -eo pid,comm,rss --no-headers | sort -k3 -nr > /tmp/current_mem_usage
+
+    if [ -f "$PROC_MEM_FILE" ]; then
+        echo "Memory growth since last check:"
+        join -1 1 -2 1 <(sort /tmp/current_mem_usage) "$PROC_MEM_FILE" | \
+            awk '{growth=$3-$4; if(growth>0) printf "%s (%s): +%.1f MB\n",$2,$1,growth/1024}'
+    fi
+
+    cp /tmp/current_mem_usage "$PROC_MEM_FILE"
+}
+
+# -----------------------------
+# Top memory consumers
+# -----------------------------
+get_top_processes() {
+    ps -eo pid,comm,%mem,rss --sort=-%mem --no-headers | head -n "$MAX_PROCESSES" | \
+        awk '{size_mb=$4/1024; size_str=(size_mb>=1024)?sprintf("%.1f GB",size_mb/1024):sprintf("%.0f MB",size_mb);
+              printf "PID %s (%s): %.2f%% (%s)\n",$1,$2,$3,size_str}'
+}
+
+# -----------------------------
+# Log rotation
+# -----------------------------
 rotate_log() {
     if [ -f "$LOG_FILE" ]; then
         LOG_SIZE=$(stat -c%s "$LOG_FILE")
@@ -21,52 +69,38 @@ rotate_log() {
     fi
 }
 
-# Get top processes (grouped by command)
-get_top_processes() {
-    ps -eo comm,%mem,rss --no-headers | \
-    awk -v total_mem="$TOTAL_MEM" '
-    {
-        mem[$1]+=$2;   # %mem by command
-        rss[$1]+=$3;   # rss in KB
-        count[$1]++;   # number of procs
-    }
-    END {
-        for (cmd in mem) {
-            size_mb = rss[cmd] / 1024;                # KB -> MB
-            size_str = (size_mb >= 1024) ? sprintf("%.1f GB", size_mb/1024) : sprintf("%.0f MB", size_mb);
-            printf "%s: %.2f%% (%s, %d proc)\n", cmd, mem[cmd], size_str, count[cmd];
-        }
-    }' | sort -k2 -nr | head -n "$MAX_PROCESSES"
+# -----------------------------
+# Notification
+# -----------------------------
+send_notification() {
+    local msg="$1"
+    notify-send -u critical "⚠ Low Memory Alert" "$msg"
 }
 
+# -----------------------------
+# Main loop
+# -----------------------------
 while true; do
-    TOTAL_MEM=$(free -m | awk 'NR==2 {print $2}')   # Total RAM MB
-    MEMFREE=$(free -m | awk 'NR==2 {print $7}')     # Available RAM MB
+    get_memory_stats
+    detect_swap_activity
+
     THRESHOLD=$(( TOTAL_MEM * MEMFREE_LIMIT_PERCENT / 100 ))
 
     if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$THRESHOLD" ]; then
         TOP_PROCESSES=$(get_top_processes)
+        track_process_memory_growth
 
-        # Calculate total used memory (all processes RSS)
-        TOTAL_USED=$(ps -eo rss --no-headers | awk '{sum+=$1} END {print sum}')
-        TOTAL_USED_MB=$(( TOTAL_USED / 1024 ))
-        TOTAL_USED_STR=$TOTAL_USED_MB
-        [ "$TOTAL_USED_MB" -ge 1024 ] && TOTAL_USED_STR="$(awk -v mb=$TOTAL_USED_MB 'BEGIN{printf "%.1f GB", mb/1024}') MB"
+        NOTIF="$(date '+%H:%M:%S')
+Total RAM: ${TOTAL_MEM} MB
+Available: ${MEMFREE} MB (Threshold: ${THRESHOLD} MB)
+Swap used: ${SWAP_USED} MB / ${SWAP_TOTAL} MB
 
-        NOTIF="Total used by processes: ${TOTAL_USED_MB} MB
-Available=${MEMFREE}MB (Threshold=${THRESHOLD}MB)
-Top memory users:
+Top memory consumers:
 $TOP_PROCESSES"
 
-        # Log
-        {
-            echo "[$(date)] $NOTIF"
-            echo
-        } >> "$LOG_FILE"
+        echo "[$(date)] $NOTIF" >> "$LOG_FILE"
         rotate_log
-
-        # Notify
-        notify-send -u critical "⚠ Low Memory Alert" "$NOTIF"
+        send_notification "$NOTIF"
     fi
 
     sleep "$CHECK_INTERVAL"
