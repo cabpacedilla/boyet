@@ -15,111 +15,80 @@ NC='\033[0m'
 
 # Pool of uncommon/random domains - EXPANDED
 POOL=(
-    # Obscure OS Projects
-    reactos.org syllable-os.org aros.org amigaos.net
-    morphos-team.net risc-os.org menuetos.net visopsys.org
-    
-    # Research/Academic
-    singularity-os.orgBareMetal-OS.com exokernel.org
-    microkernel.info capsicum-project.org
-    
-    # Retro Computing
-    atari.org commodore.ca zx-spectrum.net
-    amstrad-cpc.net sinclair.org
-    
-    # Embedded RTOS
-    freertos.org rt-thread.io threadx.io
-    nuttx.apache.org mynewt.apache.org
-    
+    # Alternative OS & Tech
+    templeos.org skyos.org visopsys.org redox-os.org
+
+    # Research / Academic
+    arxiv.org journals.plos.org mit.edu csail.mit.edu
+
+    # Retro Computing & Gaming
+    cpcwiki.eu retrocomputing.stackexchange.com amiga.resource.cx
+
+    # Embedded / IoT
+    zephyrproject.org tinkerforge.com mbed.org adafruit.com
+
     # Rare Distros
-    nixos.org guix.gnu.org gobolinux.org
-    lunar-linux.org sourcemage.org crux.nu
-    
-    # Plan 9 Family
-    9front.org plan9.io 9p.io cat-v.org
-    
-    # Lisp Machines
-    lispm.org common-lisp.net sbcl.org
-    
-    # Forth/Stack Languages
-    forth.org gforth.org ficl.org
-    
-    # Alternative Browsers
-    dillo.org netsurf-browser.org links.twibright.com
-    lynx.invisible-island.net w3m.org
-    
-    # Gopher/Gemini
-    gopher.floodgap.com gemini.circumlunar.space
-    
-    # Old Protocols
-    finger.org archie.org veronica.org
-    
-    # Text Processing
-    groff.gnu.org troff.org nroff.org
-    
-    # Audio/DSP
-    supercollider.github.io csound.com puredata.info
-    chuck.stanford.edu faust.grame.fr
-    
-    # Graphics/Rendering
-    povray.org blender.org openscad.org
-    
-    # CAD/Engineering
-    freecad.org librecad.org qcad.org
-    
-    # Scientific Computing
-    octave.org scilab.org maxima.sourceforge.io
-    sagemath.org gap-system.org
-    
+    dragora.org parrotsec.org antiXlinux.com taildisk.org
+
+    # Programming Languages & Tools
+    factorcode.org nim-lang.org gleam.run elixir-lang.org
+
+    # Security / Privacy
+    pryv.com privacymonitor.com protonmail.com searx.org
+
+    # Networking & Protocols
+    quicwg.org bgp.tools netdevconf.org
+
+    # Esoteric Languages
+    brainfuck.org unlambda.com false-lang.org pyth-lang.org
+
+    # Retro Web & Media
+    textfiles.com oldversion.com abandonia.com classicdosgames.com
+
+    # Minimalist / Experimental Web
+    minimalistweb.design motherfuckingwebsite.com hackernews.com
+
+    # Old School BBS & Retro Protocols
+    telnetbbsguide.com bbs.archivist.org nntp.org
+
+    # Alternative Social & P2P
+    scuttlebutt.nz mastodon.social retroshare.net
+
+    # IRC Networks
+    libera.chat oftc.net ircnet.org
+
+    # Old File Formats
+    groff.gnu.org dvi2pdf.org troff.org nroff.org
+
+    # Audio / DSP
+    csound.com faust.grame.fr supercollider.github.io
+
+    # Graphics / Rendering
+    blender.org openscad.org povray.org luxcorerender.org
+
+    # CAD / Engineering
+    librecad.org qcad.org freecadweb.org bricsys.com
+
+    # Scientific & Engineering
+    octave.org maxima.sourceforge.io sagecell.sagemath.org scilab.org
+
     # Theorem Provers
     coq.inria.fr isabelle.in.tum.de agda.org
-    lean-lang.org idris-lang.org
-    
+
     # Constraint Programming
     minizinc.org gecode.org choco-solver.org
-    
+
     # Logic Programming
     swi-prolog.org gnu.org/software/prolog
-    
+
     # Concatenative Languages
-    factor-lang.org joy-lang.org cat-language.org
-    
+    joy-lang.org cat-language.org
+
     # Array Languages
-    jsoftware.com dyalog.com aplwiki.com
-    kx.com arrayfire.com
-    
-    # Esoteric Languages
-    esolangs.org brainfuck.org befunge.org
-    
-    # Retro Games Preservation
-    abandonia.com dosgamesarchive.com
-    
-    # Demoscene
-    pouet.net scene.org
-    
-    # Alternative Search
-    marginalia.nu wiby.me teclis.com
-    
-    # Minimal Web
-    motherfuckingwebsite.com brutalist-web.design
-    
-    # Old School BBS
-    bbs.io telnetbbsguide.com
-    
-    # Retro Protocols
-    nntp.org usenet.org
-    
-    # Alternative Social
-    scuttlebutt.nz mastodon.social diasporafoundation.org
-    
-    # P2P Networks
-    gnutella.org soulseek.net bittorrent.org
-    
-    # IRC Networks
-    libera.chat oftc.net freenode.net
-    
-    # Old File Formats
-    ps2pdf.com dvi2pdf.org
+    dyalog.com aplwiki.com arrayfire.com
+
+    # Miscellaneous
+    glitch.com cyberciti.biz wikitech.wikimedia.org neocities.org
 )
 
 # Pick random domains
