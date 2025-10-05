@@ -74,7 +74,7 @@ rotate_log() {
 # -----------------------------
 send_notification() {
     local msg="$1"
-    notify-send -u critical "⚠ Low Memory Alert" "$msg"
+    notify-send -u critical "🚨 Low Memory Alert" "$msg"
 }
 
 # -----------------------------
@@ -90,7 +90,7 @@ while true; do
         TOP_PROCESSES=$(get_top_processes)
         track_process_memory_growth
 
-        NOTIF="$(date '+%H:%M:%S')
+        NOTIF="$(date '+%Y-%m-%d %H:%M:%S')
 Total RAM: ${TOTAL_MEM} MB
 Available: ${MEMFREE} MB (Threshold: ${THRESHOLD} MB)
 Swap used: ${SWAP_USED} MB / ${SWAP_TOTAL} MB
