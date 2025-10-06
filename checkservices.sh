@@ -37,7 +37,7 @@ while true; do
         fi
 
         # Detect running processes by full path
-        PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
+         PROCS=($(pgrep -f "[/]Documents/bin/${SCRIPT_NAME}"))
         NUM_RUNNING=${#PROCS[@]}
 
         echo "DEBUG: Checking $SCRIPT_NAME → PIDs: ${PROCS[*]:-none}"

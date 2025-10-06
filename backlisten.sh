@@ -7,7 +7,7 @@ COOLDOWN=2   # seconds between checks
 
 while true; do
     # Find all running processes for the script with bash
-    PROCS=$(pgrep -f "bash $SCRIPT_PATH")
+    PROCS=($(pgrep -f "[/]Documents/bin/${SCRIPT_NAME}"))
     NUM_RUNNING=$(echo "$PROCS" | wc -w)
 
     if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
