@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # Set user in /etc/sudoers file without providing password with rsync command
 # add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
 

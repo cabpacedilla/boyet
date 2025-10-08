@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # weather_updates.sh
 # Weather Alert Script
 # Fetches weather info from wttr.in, checks conditions, and sends notifications.

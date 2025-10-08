@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 SCRIPT_NAME="runscreensaver.sh"
 SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"

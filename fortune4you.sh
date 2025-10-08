@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 while true; do
 
 # Alert the random quote

@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
 LID_PATH="/proc/acpi/button/lid/LID0/state"

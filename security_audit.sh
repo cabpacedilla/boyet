@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # security_audit.sh
 # Fedora/Nobara Security Audit Script

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # fedora-proactive-sec.sh
 # Proactive Fedora/Nobara Security Monitor with Real-time Alerts and False Positive Filtering

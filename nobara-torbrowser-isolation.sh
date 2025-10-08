@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Option 2: Custom user (safer than using claiveapa)
 # Create a dedicated account:
@@ -100,7 +100,7 @@ sudo apparmor_parser -r "${APPARMOR_PROFILE}"
 
 echo "==> Creating sandbox launcher..."
 sudo bash -c "cat > /usr/local/bin/torbrowser-sandbox" <<'EOF'
-#!/bin/bash
+#!/usr/bin/bash
 set -e
 TOR_USER="torbrowser"
 firejail --apparmor --noprofile --net=torbrowser --dns=127.0.0.1 torbrowser-launcher

@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script will check if a process is running. If the process is not running, it will run the process.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # December 2020
@@ -29,7 +29,7 @@ SCRIPTS_CTR=0
 while [ "$SCRIPTS_CTR" -lt "${#SCRIPTS[@]}" ] ; do
 	# Count number of processes of the script and the process IDs of the scripts
 	SCRIPT_NAME="${SCRIPTS[$SCRIPTS_CTR]}"
-# 	SCRIPT="/usr/bin/bash /home/claiveapa/Documents/bin/${SCRIPT_NAME}.sh"
+# 	SCRIPT="/usr/usr/bin/bash /home/claiveapa/Documents/bin/${SCRIPT_NAME}.sh"
 	SCRIPT=$(command -v "${SCRIPT_NAME}.sh")
 	IDS=$(pgrep -fc "$SCRIPT_NAME")
 	PROCS=$(pidof -x "$SCRIPT")

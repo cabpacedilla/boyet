@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # login_monitor.sh
 # Real-time login alerts for SSH, sudo, su attempts (success & failure)
 # Logs to ~/scriptlogs/login-monitor.log and sends desktop notifications

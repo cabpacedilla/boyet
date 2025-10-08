@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Detect the amdgpu backlight device dynamically
 DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)

@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # Multi-script monitor: ensures scripts in SCRIPTS array are running,
 # kills extras, and notifies if missing.
 

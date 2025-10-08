@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script will alert the power consumption in a given time
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # October 2024
@@ -12,7 +12,7 @@
 # 6. Reboot the laptop
 # 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
 # 8. Low memory alert message will be displayed
-#!/bin/bash
+#!/usr/bin/bash
 
 # Start the monitoring
 notify-send "✅ Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &

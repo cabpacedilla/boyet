@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # tor_persistent_iptables.sh
 # Redirect only Tor Browser traffic via Tor's TransPort/DNSPort
 # Works with iptables-services persistence

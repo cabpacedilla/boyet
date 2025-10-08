@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script runs randomly selected rss-glx programs every minute.
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"

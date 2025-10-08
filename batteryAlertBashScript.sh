@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script alerts when battery level is low or high and adjusts brightness for battery optimization.
 # Written by Claive Alvin P. Acedilla. Modified for dynamic brightnessctl use.
 

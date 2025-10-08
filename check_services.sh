@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script will check if a process is running. If the process is not running, it will run the process.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # December 2020

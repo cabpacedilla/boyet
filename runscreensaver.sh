@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
 # In KDE 6.3, run one screensaver application in your screensavers folder then right click on the title bar 
 # then cick configure special application settings in More Actions with the following settings
