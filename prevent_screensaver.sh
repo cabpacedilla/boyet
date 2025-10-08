@@ -18,7 +18,7 @@ while true; do
         if [[ -n "$MEDIA_PLAY" ]]; then
            :
         else
-            PROCS=($(pgrep -f "[/]Documents/bin/${SCRIPT_NAME}"))
+            PROCS=$(pgrep -f "bash $SCRIPT_PATH$")
             NUM_RUNNING=$(echo "$PROCS" | wc -w)
 
              if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
