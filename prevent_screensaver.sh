@@ -18,7 +18,7 @@ while true; do
         if [[ -n "$MEDIA_PLAY" ]]; then
            :
         else
-            PROCS=$(pgrep -f "bash $SCRIPT_PATH$")
+            PROCS=($(pgrep -f "bin/$SCRIPT_NAME" 2>/dev/null || true))
             NUM_RUNNING=$(echo "$PROCS" | wc -w)
 
              if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
@@ -35,5 +35,5 @@ while true; do
         fi
     fi
 
-    sleep 0.1
+    sleep 0.2s
 done
