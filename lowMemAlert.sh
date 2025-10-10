@@ -28,7 +28,7 @@ CPU_IO_COLLAPSE=2                  # CPU saturated + I/O blocked
 MEMORY_PRESSURE_SWAP_COLLAPSE=3    # Severe pressure + swap thrashing
 COMPLETE_COLLAPSE=4                # Multiple collapse conditions
 
-CHECK_INTERVAL=5
+CHECK_INTERVAL=30
 LOG_FILE="$HOME/system_collapse.log"
 ALERT_COOLDOWN=600  # 10 minutes between collapse alerts
 
