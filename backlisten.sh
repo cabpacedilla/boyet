@@ -59,7 +59,7 @@ echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [INFO] Watchdog started (PID: $$)" >> "$LOG
 while true; do
     # Get current valid processes
     VALID_PROCS=()
-    ALL_PROCS=($(pgrep -f "bin/$SCRIPT_NAME" 2>/dev/null || true))
+    ALL_PROCS=($(pgrep -f "bash.*$SCRIPT_NAME$" 2>/dev/null || true))
     
     for pid in "${ALL_PROCS[@]}"; do
         if validate_process "$pid"; then
