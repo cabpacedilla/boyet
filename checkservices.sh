@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 # Multi-script monitor: ensures scripts in SCRIPTS array are running,
 # kills extras, and notifies if missing.
 
@@ -17,7 +17,7 @@ SCRIPTS=(
     "login_monitor"
     "low_disk_space"
     "lowMemAlert"
-    "prevent_screensaver"
+    "runscreensaver"
     "security_check"
     "weather_alarm"
 )
@@ -37,7 +37,7 @@ while true; do
         fi
 
         # Detect running processes by full path
-        PROCS=($(pgrep -f "bash.*$SCRIPT_PATH$"))
+        PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
         NUM_RUNNING=${#PROCS[@]}
 
         echo "DEBUG: Checking $SCRIPT_NAME → PIDs: ${PROCS[*]:-none}"

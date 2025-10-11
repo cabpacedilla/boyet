@@ -40,44 +40,83 @@ cleanup() {
 }
 trap cleanup TERM INT EXIT
 
-# --- Process validation function ---
+# --- Enhanced process validation function ---
 validate_process() {
     local pid="$1"
-    # Check if process exists and matches our expected command
-    if ps -p "$pid" >/dev/null 2>&1; then
-        # Verify it's actually our target script
-        if ps -p "$pid" -o command= | grep -qF "Documents/bin/$SCRIPT_NAME"; then
+    
+    # Method 1: Check if process exists via /proc (most reliable)
+    if [[ -d "/proc/$pid" ]]; then
+        # Method 2: Verify it's actually our target script via cmdline
+        if grep -qF "Documents/bin/$SCRIPT_NAME" "/proc/$pid/cmdline" 2>/dev/null; then
+            return 0
+        fi
+        # Alternative: check via process command
+        if ps -p "$pid" -o command= 2>/dev/null | grep -qF "Documents/bin/$SCRIPT_NAME"; then
             return 0
         fi
     fi
+    
+    # Method 3: Fallback to ps command
+    if ps -p "$pid" >/dev/null 2>&1; then
+        if ps -p "$pid" -o command= 2>/dev/null | grep -qF "Documents/bin/$SCRIPT_NAME"; then
+            return 0
+        fi
+    fi
+    
     return 1
+}
+
+# --- Robust process detection ---
+detect_processes() {
+    local valid_procs=()
+    
+    # Method 1: Original pgrep
+    local all_procs=($(pgrep -f "bash.*$SCRIPT_NAME$" 2>/dev/null || true))
+    
+    # Method 2: Direct /proc scan for processes in any state (including D state)
+    if [[ ${#all_procs[@]} -eq 0 ]]; then
+        for pid_dir in /proc/[0-9]*/; do
+            pid=$(basename "$pid_dir")
+            if [[ "$pid" =~ ^[0-9]+$ ]] && [[ -f "$pid_dir/cmdline" ]]; then
+                if grep -qF "Documents/bin/$SCRIPT_NAME" "$pid_dir/cmdline" 2>/dev/null; then
+                    all_procs+=("$pid")
+                fi
+            fi
+        done
+    fi
+    
+    # Validate all found processes
+    for pid in "${all_procs[@]}"; do
+        if validate_process "$pid"; then
+            valid_procs+=("$pid")
+        fi
+    done
+    
+    printf '%s\n' "${valid_procs[@]}"
 }
 
 # --- Main loop ---
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [INFO] Watchdog started (PID: $$)" >> "$LOGFILE"
 
 while true; do
-    # Get current valid processes
-    VALID_PROCS=()
-    ALL_PROCS=($(pgrep -f "bash.*$SCRIPT_NAME$" 2>/dev/null || true))
-    
-    for pid in "${ALL_PROCS[@]}"; do
-        if validate_process "$pid"; then
-            VALID_PROCS+=("$pid")
-        fi
-    done
-    
+    # Get current valid processes using robust detection
+    VALID_PROCS=($(detect_processes))
     NUM_RUNNING=${#VALID_PROCS[@]}
+
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [DEBUG] Found $NUM_RUNNING instances of $SCRIPT_NAME: ${VALID_PROCS[*]}" >> "$LOGFILE"
 
     if (( NUM_RUNNING > MIN_INSTANCES )); then
         # Kill older instances, keep the newest (validated)
-        PIDS_TO_KILL=$(ps -o pid= --sort=start_time -p "${VALID_PROCS[@]}" 2>/dev/null | head -n -"$MIN_INSTANCES")
+        PIDS_TO_KILL=$(ps -o pid= --sort=start_time -p "${VALID_PROCS[@]}" 2>/dev/null | head -n -"$MIN_INSTANCES" 2>/dev/null || true)
         for pid in $PIDS_TO_KILL; do
             if validate_process "$pid"; then  # Re-validate before killing
-                kill "$pid"
-                notify-send -t 5000 --app-name "💀 CheckServices Watchdog" \
-                    "Extra $SCRIPT_NAME killed: PID $pid" &
-                echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [INFO] Killed extra $SCRIPT_NAME (PID $pid)" >> "$LOGFILE"
+                if kill "$pid" 2>/dev/null; then
+                    notify-send -t 5000 --app-name "💀 CheckServices Watchdog" \
+                        "Extra $SCRIPT_NAME killed: PID $pid" &
+                    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [INFO] Killed extra $SCRIPT_NAME (PID $pid)" >> "$LOGFILE"
+                else
+                    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [WARN] Failed to kill PID $pid (may be in uninterruptible sleep)" >> "$LOGFILE"
+                fi
             fi
         done
 
@@ -100,6 +139,8 @@ while true; do
                     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [INFO] Started $SCRIPT_NAME (PID $PID)" >> "$LOGFILE"
                 else
                     echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [ERROR] Process $PID failed to start properly" >> "$LOGFILE"
+                    # Attempt to clean up the failed process
+                    kill "$PID" 2>/dev/null || true
                 fi
             else
                 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [ERROR] Failed to start $SCRIPT_NAME" >> "$LOGFILE"
