@@ -15,7 +15,7 @@
 #!/usr/bin/bash
 
 # Start the monitoring
-notify-send "✅ Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &
+notify-send "✅ Battery Usage Monitoring Started" "Monitoring continuously every 45 hour." &
 
 # Terminal list for flexibility across desktop environments
 TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
@@ -62,4 +62,3 @@ while true; do
         fi
     fi
 done
-
