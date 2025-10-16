@@ -1,30 +1,21 @@
 #!/usr/bin/env bash
-# Sync GitHub master branch to multiple mirrors
-# Copies ~/Documents/bin/ into the repo before syncing
+# -------------------------------------------------------------------
+# git_bitbucket_mirror.sh
+# Automatically syncs GitHub master branch to Bitbucket and SourceForge mirrors.
+# Copies ~/Documents/bin/ into the repo before syncing.
 # Author: Claive Alvin P. Acedilla (modified)
-#
+# -------------------------------------------------------------------
+
 # === Setup Instructions ===
-# 1. Generate an SSH key pair (if you haven't already):
-#    ssh-keygen -t ed25519 -C "your_email@example.com"
-#
-# 2. Start ssh-agent and add your private key:
-#    eval "$(ssh-agent -s)"
-#    ssh-add ~/.ssh/id_ed25519
-#
-# 3. Add your SSH public key (~/.ssh/id_ed25519.pub) to your remote Git hosts:
-#    - GitHub: https://github.com/settings/keys
-#    - Bitbucket: https://bitbucket.org/account/settings/ssh-keys/
-#    - SourceForge: https://sourceforge.net/account/ssh-keys/
-#
-# 4. Test SSH authentication for each remote:
-#    ssh -T git@github.com
-#    ssh -T git@bitbucket.org
-#    ssh -T cabpacedilla@git.code.sf.net
-#
-# 5. Configure git remotes inside your repo using SSH URLs:
+# 1. Generate SSH key: ssh-keygen -t ed25519 -C "your_email@example.com"
+# 2. Start ssh-agent: eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519
+# 3. Add public key to GitHub, Bitbucket, SourceForge.
+# 4. Test SSH: ssh -T git@github.com | ssh -T git@bitbucket.org | ssh -T cabpacedilla@git.code.sf.net
+# 5. Configure remotes:
 #    git remote set-url origin git@github.com:cabpacedilla/boyet.git
 #    git remote set-url bitbucket git@bitbucket.org:cabpa/boyet.git
 #    git remote set-url sourceforge ssh://cabpacedilla@git.code.sf.net/p/boyet/code
+# -------------------------------------------------------------------
 
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
@@ -40,56 +31,80 @@ BRANCH="master"
 LOGFILE="$HOME/scriptlogs/git_mirror_safe.log"
 mkdir -p "$(dirname "$LOGFILE")"
 
-# Ensure only one instance is running
+# Timestamp helper
+TIMESTAMP() { date '+%Y-%m-%d %H:%M:%S %Z'; }
+
+# Prevent log file from growing too large (>2MB)
+find "$(dirname "$LOGFILE")" -name "$(basename "$LOGFILE")" -size +2M -delete 2>/dev/null
+
+# Prevent multiple instances
 LOCKFILE="/tmp/git_mirror_safe.lock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
 
+# Record start time
+START_TIME=$(date +%s)
+
 # -----------------------------
 # Copy latest files to repo
 # -----------------------------
-echo "$(date) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$LOGFILE"
+echo "$(TIMESTAMP) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$LOGFILE"
 \cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
 
-cd "$REPO_DIR" || { echo "$(date) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
+cd "$REPO_DIR" || { echo "$(TIMESTAMP) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
 
 # -----------------------------
 # Stage & commit local changes
 # -----------------------------
 git add -A
 if git diff --cached --quiet && git diff --quiet; then
-    echo "$(date) - No changes to commit." | tee -a "$LOGFILE"
+    echo "$(TIMESTAMP) - No changes to commit." | tee -a "$LOGFILE"
 else
-    echo "$(date) - Committing new changes..." | tee -a "$LOGFILE"
+    echo "$(TIMESTAMP) - Committing new changes..." | tee -a "$LOGFILE"
     git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')"
 fi
 
 # -----------------------------
-# Force push to all remotes
+# Force push to all remotes (with retry)
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
 for REMOTE in "$GITHUB_REMOTE" "${MIRRORS[@]}"; do
-    echo "$(date) - Force pushing to $REMOTE/$BRANCH..." | tee -a "$LOGFILE"
+    echo "$(TIMESTAMP) - Force pushing to $REMOTE/$BRANCH..." | tee -a "$LOGFILE"
     if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
-        echo "$(date) - ✅ Force push succeeded to $REMOTE" | tee -a "$LOGFILE"
+        echo "$(TIMESTAMP) - ✅ Force push succeeded to $REMOTE" | tee -a "$LOGFILE"
         SUCCESS+=("$REMOTE ✅")
     else
-        echo "$(date) - ❌ Force push failed to $REMOTE" | tee -a "$LOGFILE"
-        FAIL+=("$REMOTE ❌")
+        echo "$(TIMESTAMP) - ⚠️ First push failed, retrying in 5s..." | tee -a "$LOGFILE"
+        sleep 5
+        if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
+            echo "$(TIMESTAMP) - ✅ Retry succeeded for $REMOTE" | tee -a "$LOGFILE"
+            SUCCESS+=("$REMOTE ✅ (Retry)")
+        else
+            echo "$(TIMESTAMP) - ❌ Force push failed to $REMOTE after retry" | tee -a "$LOGFILE"
+            FAIL+=("$REMOTE ❌")
+        fi
     fi
 done
 
 # -----------------------------
-# Send combined notification
+# Calculate elapsed time
+# -----------------------------
+END_TIME=$(date +%s)
+ELAPSED=$(( END_TIME - START_TIME ))
+printf -v DURATION '%02dh %02dm %02ds' $((ELAPSED/3600)) $(((ELAPSED%3600)/60)) $((ELAPSED%60))
+echo "$(TIMESTAMP) - Total sync duration: $DURATION" | tee -a "$LOGFILE"
+
+# -----------------------------
+# Desktop notification summary
 # -----------------------------
 MSG=""
-[[ ${#SUCCESS[@]} -gt 0 ]] && MSG+="Success:\n$(printf '%s\n' "${SUCCESS[@]}")\n"
+[[ ${#SUCCESS[@]} -gt 0 ]] && MSG+="Succeeded:\n$(printf '%s\n' "${SUCCESS[@]}")\n"
 [[ ${#FAIL[@]} -gt 0 ]] && MSG+="Failed:\n$(printf '%s\n' "${FAIL[@]}")"
 
 if [[ ${#FAIL[@]} -gt 0 ]]; then
-    notify-send "⚠️ Git Mirror Completed with Errors" "$MSG"
+    notify-send "⚠️ Git Mirror Completed with Errors" "Duration: $DURATION\n$MSG"
 else
-    notify-send "✅ Git Mirror Complete" "$MSG"
+    notify-send "✅ Git Mirror Complete" "Duration: $DURATION\n$MSG"
 fi
