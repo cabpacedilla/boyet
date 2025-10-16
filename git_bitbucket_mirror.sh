@@ -20,9 +20,6 @@
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-# -----------------------------
-# Configuration
-# -----------------------------
 REPO_DIR="$HOME/Documents/boyet"
 SOURCE_DIR="$HOME/Documents/bin"
 GITHUB_REMOTE="origin"
@@ -31,18 +28,13 @@ BRANCH="master"
 LOGFILE="$HOME/scriptlogs/git_mirror_safe.log"
 mkdir -p "$(dirname "$LOGFILE")"
 
-# Timestamp helper
 TIMESTAMP() { date '+%Y-%m-%d %H:%M:%S %Z'; }
-
-# Prevent log file from growing too large (>2MB)
 find "$(dirname "$LOGFILE")" -name "$(basename "$LOGFILE")" -size +2M -delete 2>/dev/null
 
-# Prevent multiple instances
 LOCKFILE="/tmp/git_mirror_safe.lock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
 
-# Record start time
 START_TIME=$(date +%s)
 
 # -----------------------------
@@ -52,6 +44,17 @@ echo "$(TIMESTAMP) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$
 \cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
 
 cd "$REPO_DIR" || { echo "$(TIMESTAMP) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
+
+# -----------------------------
+# Pull latest from GitHub (prevent divergence)
+# -----------------------------
+echo "$(TIMESTAMP) - Pulling latest changes from $GITHUB_REMOTE/$BRANCH with rebase..." | tee -a "$LOGFILE"
+if git pull --rebase "$GITHUB_REMOTE" "$BRANCH" &>> "$LOGFILE"; then
+    echo "$(TIMESTAMP) - ✅ Rebase successful." | tee -a "$LOGFILE"
+else
+    echo "$(TIMESTAMP) - ⚠️ Rebase conflict detected. Aborting rebase..." | tee -a "$LOGFILE"
+    git rebase --abort &>> "$LOGFILE"
+fi
 
 # -----------------------------
 # Stage & commit local changes
@@ -65,40 +68,38 @@ else
 fi
 
 # -----------------------------
-# Force push to all remotes (with retry)
+# Push updates safely (no force)
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
-for REMOTE in "$GITHUB_REMOTE" "${MIRRORS[@]}"; do
+echo "$(TIMESTAMP) - Pushing to GitHub ($GITHUB_REMOTE/$BRANCH)..." | tee -a "$LOGFILE"
+if git push "$GITHUB_REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
+    SUCCESS+=("$GITHUB_REMOTE ✅")
+else
+    FAIL+=("$GITHUB_REMOTE ❌")
+fi
+
+# -----------------------------
+# Mirror push (still force for mirrors)
+# -----------------------------
+for REMOTE in "${MIRRORS[@]}"; do
     echo "$(TIMESTAMP) - Force pushing to $REMOTE/$BRANCH..." | tee -a "$LOGFILE"
     if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
-        echo "$(TIMESTAMP) - ✅ Force push succeeded to $REMOTE" | tee -a "$LOGFILE"
         SUCCESS+=("$REMOTE ✅")
     else
-        echo "$(TIMESTAMP) - ⚠️ First push failed, retrying in 5s..." | tee -a "$LOGFILE"
-        sleep 5
-        if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
-            echo "$(TIMESTAMP) - ✅ Retry succeeded for $REMOTE" | tee -a "$LOGFILE"
-            SUCCESS+=("$REMOTE ✅ (Retry)")
-        else
-            echo "$(TIMESTAMP) - ❌ Force push failed to $REMOTE after retry" | tee -a "$LOGFILE"
-            FAIL+=("$REMOTE ❌")
-        fi
+        FAIL+=("$REMOTE ❌")
     fi
 done
 
 # -----------------------------
-# Calculate elapsed time
+# Report duration
 # -----------------------------
 END_TIME=$(date +%s)
 ELAPSED=$(( END_TIME - START_TIME ))
 printf -v DURATION '%02dh %02dm %02ds' $((ELAPSED/3600)) $(((ELAPSED%3600)/60)) $((ELAPSED%60))
 echo "$(TIMESTAMP) - Total sync duration: $DURATION" | tee -a "$LOGFILE"
 
-# -----------------------------
-# Desktop notification summary
-# -----------------------------
 MSG=""
 [[ ${#SUCCESS[@]} -gt 0 ]] && MSG+="Succeeded:\n$(printf '%s\n' "${SUCCESS[@]}")\n"
 [[ ${#FAIL[@]} -gt 0 ]] && MSG+="Failed:\n$(printf '%s\n' "${FAIL[@]}")"
