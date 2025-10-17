@@ -3,7 +3,7 @@
 # Works dynamically on Fedora/Nobara and KDE systems
 
 LOG_FILE="$HOME/scriptlogs/power_usage.log"
-INTERVAL=60  # seconds between readings (45 minutes)
+INTERVAL=2700  # seconds between readings (45 minutes)
 TERMINALS=(konsole gnome-terminal xfce4-terminal tilix lxterminal mate-terminal alacritty urxvt xterm)
 
 # Record script start time
