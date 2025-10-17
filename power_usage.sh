@@ -99,7 +99,7 @@ get_battery_info() {
     echo -e "Remaining Energy: $(printf '%.2f' "$energy_now") Wh"
     echo -e "Full Capacity: $(printf '%.2f' "$energy_full") Wh"
     echo -e "Est. Runtime: ~$(printf '%.2f' "$runtime_est") hrs (assuming ${power_now}W load)"
-    echo -e "(Detected: $unit_detected, divisor=$divisor)"
+    #~ echo -e "(Detected: $unit_detected, divisor=$divisor)"
 }
 
 get_top_processes() {
