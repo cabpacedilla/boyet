@@ -44,9 +44,9 @@ get_battery_info() {
 get_top_processes() {
     # Use ps and format columns with consistent width
     {
-        printf "%-12s %-20s %-10s %-10s\n" "PID" "COMMAND" "%CPU" "%MEM"
+        printf "%-12s %-18s %-10s %-10s\n" "PID" "COMMAND" "%CPU" "%MEM"
         ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 11 | tail -n +2 | \
-        awk '{printf "%-12s %-20s %-10s %-10s\n", $1, $2, $3, $4}'
+        awk '{printf "%-12s %-18s %-10s %-10s\n", $1, $2, $3, $4}'
     }
 }
 
