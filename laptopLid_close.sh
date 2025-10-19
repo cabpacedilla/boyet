@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script will handle display switching and screen lock when laptop lid is closed
 # Written by Claive Alvin P. Acedilla. Modified for proper display management.
 
