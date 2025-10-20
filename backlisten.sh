@@ -23,6 +23,7 @@ while true; do
         if [ -x "$SCRIPT_PATH" ]; then
             "$SCRIPT_PATH" &
             notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
+            sleep 1
         else
             notify-send --app-name "⚠️ Check services" "checkservices script not found or not executable!" &
         fi

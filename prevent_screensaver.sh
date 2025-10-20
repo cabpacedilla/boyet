@@ -31,6 +31,7 @@ while true; do
             elif [ "$NUM_RUNNING" -lt "$MIN_INSTANCES" ]; then
                 "$SCRIPT_PATH" &
                 notify-send -t 5000 --app-name "✅ CheckServices" "$SCRIPT_NAME started."
+                sleep 1
             fi
         fi
     fi
