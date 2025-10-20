@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
-# Multi-script monitor - SIMPLE and RELIABLE version
+# Multi-script monitor: ensures scripts in SCRIPTS array are running,
+# kills extras, and notifies if missing.
 
 SCRIPTS=(
-    "autosync" "autobrightness" "backlisten" "batteryAlertBashScript"
-    "btrfs_balance_quarterly" "btrfs_scrub_monthly" "fortune4you"
-    "keyLocked" "laptopLid_close" "login_monitor" "low_disk_space"
-    "lowMemAlert" "power_usage" "runscreensaver" "security_check"
+    "autosync"
+    "autobrightness"
+    "backlisten"
+    "batteryAlertBashScript"
+    #~ "battery_usage"
+    "btrfs_balance_quarterly"
+    "btrfs_scrub_monthly"
+    "fortune4you"
+#     "hot_parts"
+    "keyLocked"
+    #~ "laptopLid_close"
+    "login_monitor"
+    "low_disk_space"
+    "lowMemAlert"
+    "power_usage"
+    "runscreensaver"
+    "security_check"
     "weather_alarm"
 )
 
-COOLDOWN=2
+COOLDOWN=2   # seconds between checks
 MIN_INSTANCES=1
 
 while true; do
@@ -17,23 +31,29 @@ while true; do
         SCRIPT_NAME="${SCRIPT_BASENAME}.sh"
         SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
 
-        [ ! -f "$SCRIPT_PATH" ] && continue
+        # Skip if not found
+        if [ ! -x "$SCRIPT_PATH" ]; then
+            notify-send --app-name "CheckServices" "$SCRIPT_NAME not found or not executable!" &
+            continue
+        fi
 
-        # SIMPLE: Just count processes that contain the script path
-        PROCS=($(pgrep -f "$SCRIPT_PATH"))
+        # Detect running processes by full path
+        PROCS=($(pgrep -f "bash $SCRIPT_PATH$"))
         NUM_RUNNING=${#PROCS[@]}
 
-        echo "DEBUG: $SCRIPT_NAME → Running: $NUM_RUNNING, PIDs: ${PROCS[*]:-none}"
+        echo "DEBUG: Checking $SCRIPT_NAME → PIDs: ${PROCS[*]:-none}"
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
+            # Kill older ones, keep the newest
             PIDS_TO_KILL=$(ps -o pid= --sort=start_time -p "${PROCS[@]}" | head -n -$MIN_INSTANCES)
             for pid in $PIDS_TO_KILL; do
-                kill "$pid" 2>/dev/null
-                echo "Killed extra $SCRIPT_NAME (PID: $pid)"
+                kill "$pid"
+                notify-send -t 5000 --app-name "💀 CheckServices" "Extra $SCRIPT_NAME killed: PID $pid" &
             done
         elif [ "$NUM_RUNNING" -lt "$MIN_INSTANCES" ]; then
             "$SCRIPT_PATH" &
-            echo "Started $SCRIPT_NAME (PID: $!)"
+            notify-send -t 5000 --app-name "✅ CheckServices" "$SCRIPT_NAME started."
+            sleep 1 
         fi
     done
 
