@@ -3,7 +3,7 @@
 SCRIPT_NAME="checkservices.sh"
 SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
 MIN_INSTANCES=1
-COOLDOWN=2   # seconds between checks
+COOLDOWN=5   # seconds between checks
 
 while true; do
     # Find all running processes for the script with bash
@@ -23,7 +23,7 @@ while true; do
         if [ -x "$SCRIPT_PATH" ]; then
             "$SCRIPT_PATH" &
             notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
-            sleep 1
+            sleep 5
         else
             notify-send --app-name "⚠️ Check services" "checkservices script not found or not executable!" &
         fi

@@ -23,7 +23,7 @@ SCRIPTS=(
     "weather_alarm"
 )
 
-COOLDOWN=2   # seconds between checks
+COOLDOWN=5   # seconds between checks
 MIN_INSTANCES=1
 
 while true; do
@@ -53,7 +53,7 @@ while true; do
         elif [ "$NUM_RUNNING" -lt "$MIN_INSTANCES" ]; then
             "$SCRIPT_PATH" &
             notify-send -t 5000 --app-name "✅ CheckServices" "$SCRIPT_NAME started."
-            sleep 1 
+            sleep 5 
         fi
     done
 
