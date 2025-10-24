@@ -4,40 +4,6 @@
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
 
 # ------------------------
-# Cross-Desktop Dialog Function
-# ------------------------
-show_dialog() {
-    local title="$1"
-    local message="$2"
-
-    if command -v kdialog >/dev/null 2>&1; then
-        # KDE Plasma (Fedora KDE, Nobara, Kubuntu, openSUSE, Arch KDE, etc.)
-        kdialog --title "$title" --msgbox "$message"
-    elif command -v zenity >/dev/null 2>&1; then
-        # GNOME, XFCE, Cinnamon, Budgie, COSMIC, Pantheon (Ubuntu, Fedora, Mint, Pop!_OS, Solus, elementary)
-        zenity --info --title="$title" --text="$message"
-    elif command -v yad >/dev/null 2>&1; then
-        # LXQt, LXDE, lightweight DEs (Lubuntu, Arch LXQt, Fedora LXQt)
-        yad --info --title="$title" --text="$message"
-    elif command -v matedialog >/dev/null 2>&1; then
-        # MATE desktop (Ubuntu MATE, Fedora MATE, Debian MATE)
-        matedialog --info --title="$title" --text="$message"
-    elif command -v xmessage >/dev/null 2>&1; then
-        # Very minimal X11 environments (Openbox, i3, Fluxbox, etc.)
-        xmessage -title "$title" "$message"
-    else
-        # Fallback: console + notification if available
-        echo -e "\n$title\n$message\n"
-        if command -v notify-send >/dev/null 2>&1; then
-            notify-send "$title" "$message"
-        else
-            echo "No GUI dialog or notify-send tool installed."
-        fi
-    fi
-}
-
-
-# ------------------------
 # Configuration & API Key Management
 # ------------------------
 if [[ -n "$WEATHER_API_KEY" ]]; then
@@ -658,7 +624,7 @@ send_notifications() {
     fi
     current_time_12hr="${current_hour}:${current_minute} ${period}"
     
-    show_dialog "Weather Update - $CITY ($current_time_12hr)" "$MESSAGE" &
+    kdialog --title "Weather Update - $CITY ($current_time_12hr)" --msgbox "$MESSAGE" &
     echo -e "$MESSAGE" | tee -a "$LOG_FILE"
 }
 
