@@ -17,11 +17,12 @@ get_lid_state() {
 
 # Function to detect media playback
 is_media_playing() {
-    pactl list | grep -qw "RUNNING"
+   pactl list sink-inputs
 }
 
 # Main condition
-if ! is_media_playing && [ "$(get_lid_state)" == "open" ]; then
+MEDIA_STATUS=$(is_media_playing)
+if [[ -z "$MEDIA_STATUS" ]] && [[ "$(get_lid_state)" == "open" ]]; then
     # Kill screensavers and lock screen
     pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
     pkill -9 -f screensaver-

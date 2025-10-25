@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 # This script runs randomly selected screensaver- programs every 15 seconds.
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
@@ -21,7 +21,7 @@ mkdir -p "$HOME/scriptlogs"
 
 # Function: check if a media player is running
 is_media_playing() {
-    pactl list sink-inputs | awk '/Corked: no/ && /Mute: no/' | wc -l
+     pactl list sink-inputs
 }
 
 # Function: initialize screensaver lists
@@ -36,12 +36,8 @@ initialize_screensaver_lists() {
 # Main logic
 initialize_screensaver_lists
 
-# Get the count of playing media streams
-MEDIA_COUNT=$(is_media_playing)
-
-# Use numeric comparison to check if media is playing
-if [[ "$MEDIA_COUNT" -eq 0 ]]; then
-    # No media playing - start screensaver
+MEDIA_STATUS=$(is_media_playing)
+if [[ -z "$MEDIA_STATUS" ]]; then
     pkill -9 -f screensaver-
 
     # Dim brightness before screensaver
@@ -85,8 +81,7 @@ if [[ "$MEDIA_COUNT" -eq 0 ]]; then
         brightnessctl -d "$BRIGHT_DEVICE" set 90%
     fi
 else
-    # Media is playing - skip screensaver
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing ($MEDIA_COUNT stream(s)), skipping screensaver" >> "$LOGFILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
     # Kill any leftover screensaver
     pkill -9 -f screensaver-
 
