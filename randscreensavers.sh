@@ -21,7 +21,7 @@ mkdir -p "$HOME/scriptlogs"
 
 # Function: check if a media player is running
 is_media_playing() {
-    pactl list | grep -qw "RUNNING"
+    pactl list sink-inputs | awk '/Corked: no/ && /Mute: no/' | wc -l
 }
 
 # Function: initialize screensaver lists
@@ -36,7 +36,12 @@ initialize_screensaver_lists() {
 # Main logic
 initialize_screensaver_lists
 
-if ! is_media_playing; then
+# Get the count of playing media streams
+MEDIA_COUNT=$(is_media_playing)
+
+# Use numeric comparison to check if media is playing
+if [[ "$MEDIA_COUNT" -eq 0 ]]; then
+    # No media playing - start screensaver
     pkill -9 -f screensaver-
 
     # Dim brightness before screensaver
@@ -80,7 +85,8 @@ if ! is_media_playing; then
         brightnessctl -d "$BRIGHT_DEVICE" set 90%
     fi
 else
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
+    # Media is playing - skip screensaver
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing ($MEDIA_COUNT stream(s)), skipping screensaver" >> "$LOGFILE"
     # Kill any leftover screensaver
     pkill -9 -f screensaver-
 
