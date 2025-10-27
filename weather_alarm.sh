@@ -27,7 +27,7 @@ BASE_URL="http://api.weatherapi.com/v1"
 INTERVAL=1800
 ALERT_WINDOW=30
 LOG_FILE="$HOME/weather_log.txt"
-CURL_DELAY=1
+CURL_DELAY=5
 
 # ------------------------
 # Utilities
