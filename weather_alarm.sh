@@ -337,14 +337,19 @@ get_level() {
 # ------------------------
 # Location detection
 # ------------------------
+CURL_DELAY=1
 get_location() {
     LOC=$(curl -s --connect-timeout 10 ipinfo.io/loc 2>/dev/null)
+    sleep "$CURL_DELAY"
     [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 10 ipapi.co/latlong 2>/dev/null)
+    sleep "$CURL_DELAY"
     [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 10 ifconfig.me 2>/dev/null)
+    sleep "$CURL_DELAY"
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
     CITY=$(curl -s --connect-timeout 10 "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
         | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"' 2>/dev/null)
+    sleep "$CURL_DELAY"
     echo "Location detected: $CITY ($LAT,$LON)"
 }
 
@@ -354,6 +359,7 @@ get_location() {
 get_weather() {
     FORECAST=$(curl -s --connect-timeout 10 --max-time 30 \
         "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
+    sleep "$CURL_DELAY"
     if ! check_api_response "$FORECAST" "forecast"; then
         echo "Failed to fetch weather data. Retrying in 5 minutes..."
         sleep 300
@@ -362,6 +368,7 @@ get_weather() {
 
     ASTRONOMY=$(curl -s --connect-timeout 10 --max-time 30 \
         "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
+    sleep "$CURL_DELAY"
     if ! check_api_response "$ASTRONOMY" "astronomy"; then
         echo "Warning: Failed to fetch astronomy data. Continuing with weather only..."
         ASTRONOMY='{"astronomy":{"astro":{"sunrise":"","sunset":"","moonrise":"","moonset":"","moon_phase":""}}}'
