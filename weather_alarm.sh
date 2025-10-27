@@ -27,6 +27,7 @@ BASE_URL="http://api.weatherapi.com/v1"
 INTERVAL=1800
 ALERT_WINDOW=30
 LOG_FILE="$HOME/weather_log.txt"
+CURL_DELAY=1
 
 # ------------------------
 # Utilities
@@ -337,7 +338,6 @@ get_level() {
 # ------------------------
 # Location detection
 # ------------------------
-CURL_DELAY=1
 get_location() {
     LOC=$(curl -s --connect-timeout 10 ipinfo.io/loc 2>/dev/null)
     sleep "$CURL_DELAY"
