@@ -27,7 +27,6 @@ BASE_URL="http://api.weatherapi.com/v1"
 INTERVAL=1800
 ALERT_WINDOW=30
 LOG_FILE="$HOME/weather_log.txt"
-CURL_DELAY=5
 
 # ------------------------
 # Utilities
@@ -339,17 +338,13 @@ get_level() {
 # Location detection
 # ------------------------
 get_location() {
-    LOC=$(curl -s --connect-timeout 10 ipinfo.io/loc 2>/dev/null)
-    sleep "$CURL_DELAY"
-    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 10 ipapi.co/latlong 2>/dev/null)
-    sleep "$CURL_DELAY"
-    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 10 ifconfig.me 2>/dev/null)
-    sleep "$CURL_DELAY"
+    LOC=$(curl -s --connect-timeout 20 ipinfo.io/loc 2>/dev/null)
+    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 20 ipapi.co/latlong 2>/dev/null)
+    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 20 ifconfig.me 2>/dev/null)
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
-    CITY=$(curl -s --connect-timeout 10 "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
+    CITY=$(curl -s --connect-timeout 20 "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
         | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"' 2>/dev/null)
-    sleep "$CURL_DELAY"
     echo "Location detected: $CITY ($LAT,$LON)"
 }
 
@@ -357,18 +352,16 @@ get_location() {
 # Fetch weather data (forecast + astronomy)
 # ------------------------
 get_weather() {
-    FORECAST=$(curl -s --connect-timeout 10 --max-time 30 \
+    FORECAST=$(curl -s --connect-timeout 20 --max-time 30 \
         "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
-    sleep "$CURL_DELAY"
     if ! check_api_response "$FORECAST" "forecast"; then
         echo "Failed to fetch weather data. Retrying in 5 minutes..."
         sleep 300
         return 1
     fi
 
-    ASTRONOMY=$(curl -s --connect-timeout 10 --max-time 30 \
+    ASTRONOMY=$(curl -s --connect-timeout 20 --max-time 30 \
         "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
-    sleep "$CURL_DELAY"
     if ! check_api_response "$ASTRONOMY" "astronomy"; then
         echo "Warning: Failed to fetch astronomy data. Continuing with weather only..."
         ASTRONOMY='{"astronomy":{"astro":{"sunrise":"","sunset":"","moonrise":"","moonset":"","moon_phase":""}}}'
