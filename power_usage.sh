@@ -221,13 +221,13 @@ launch_terminal() {
         if command -v "$term" >/dev/null 2>&1; then
             case "$term" in
                 konsole|tilix|alacritty)
-                    "$term" -e bash -c "echo -e \"\$0\"; read -p 'Press Enter to close...'" "$message" &
+                    "$term" -e bash -c "echo -e \"\$0\"; read -p $'\\nPress Enter to close...'" "$message" &
                     ;;
                 gnome-terminal|xfce4-terminal|mate-terminal)
-                    "$term" -- bash -c "echo -e \"\$0\"; read -p 'Press Enter to close...'" "$message" &
+                    "$term" -e bash -c "echo -e \"\$0\"; read -p $'\\nPress Enter to close...'" "$message" &
                     ;;
                 *)
-                    "$term" -e bash -c "echo -e \"\$0\"; read -p 'Press Enter to close...'" "$message" &
+                    "$term" -e bash -c "echo -e \"\$0\"; read -p $'\\nPress Enter to close...'" "$message" &
                     ;;
             esac
             return
