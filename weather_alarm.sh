@@ -338,12 +338,12 @@ get_level() {
 # Location detection
 # ------------------------
 get_location() {
-    LOC=$(curl -s --connect-timeout 20 ipinfo.io/loc 2>/dev/null)
-    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 20 ipapi.co/latlong 2>/dev/null)
-    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 20 ifconfig.me 2>/dev/null)
+    LOC=$(curl -s --connect-timeout 20 --max-time 30 --retry 5 --retry-delay 5 --retry-all-errors ipinfo.io/loc 2>/dev/null)
+    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 20 --max-time 30 --retry 5 --retry-delay 5 --retry-all-errors ipapi.co/latlong 2>/dev/null)
+    [[ -z "$LOC" ]] && LOC=$(curl -s --connect-timeout 20 --max-time 30 --retry 5 --retry-delay 5 --retry-all-errorsifconfig.me 2>/dev/null)
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
-    CITY=$(curl -s --connect-timeout 20 "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
+    CITY=$(curl -s --connect-timeout 20 --max-time 30 --retry 5 --retry-delay 5 --retry-all-errors "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
         | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"' 2>/dev/null)
     echo "Location detected: $CITY ($LAT,$LON)"
 }
@@ -352,7 +352,7 @@ get_location() {
 # Fetch weather data (forecast + astronomy)
 # ------------------------
 get_weather() {
-    FORECAST=$(curl -s --connect-timeout 20 --max-time 30 \
+    FORECAST=$(curl -s --connect-timeout 20 --max-time 30 --retry 5 --retry-delay 5 --retry-all-errors \
         "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
     if ! check_api_response "$FORECAST" "forecast"; then
         echo "Failed to fetch weather data. Retrying in 5 minutes..."
@@ -360,7 +360,7 @@ get_weather() {
         return 1
     fi
 
-    ASTRONOMY=$(curl -s --connect-timeout 20 --max-time 30 \
+    ASTRONOMY=$(curl -s --connect-timeout 20 --max-time 30 --retry 5 --retry-delay 5 --retry-all-errors\
         "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
     if ! check_api_response "$ASTRONOMY" "astronomy"; then
         echo "Warning: Failed to fetch astronomy data. Continuing with weather only..."
