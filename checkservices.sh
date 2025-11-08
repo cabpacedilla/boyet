@@ -51,9 +51,11 @@ check_internet() {
     [[ -n "$WIFI_IFACE" && -f "/sys/class/net/$WIFI_IFACE/carrier" ]] &&
         WLAN_STAT=$(cat "/sys/class/net/$WIFI_IFACE/carrier")
 
-    # If neither link is up, immediately return offline
-    if [[ "$CABLE_STAT" != "1" && "$WLAN_STAT" != "1" ]]; then
-        return 1
+    # If either wired or wifi carrier is active, return success
+    if [[ "$CABLE_STAT" == "1" || "$WLAN_STAT" == "1" ]]; then
+        return 0   # online
+    else
+        return 1   # offline
     fi
 }
 
