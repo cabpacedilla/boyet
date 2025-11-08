@@ -24,46 +24,62 @@ SCRIPTS=(
     "security_check"
 )
 
-# Network interfaces for Fedora/Nobara
-WIRED_IFACE="enp3s0f3u2"
-WIFI_IFACE="wlp1s0"
-
 COOLDOWN=5   # seconds between checks
 MIN_INSTANCES=1
 
-# Function: check if either wired or wifi is connected
-check_internet() {
-    local CABLE_STAT WLAN_STAT
-
-    [[ -f "/sys/class/net/$WIRED_IFACE/carrier" ]] && CABLE_STAT=$(cat "/sys/class/net/$WIRED_IFACE/carrier")
-    [[ -f "/sys/class/net/$WIFI_IFACE/carrier" ]] && WLAN_STAT=$(cat "/sys/class/net/$WIFI_IFACE/carrier")
-
-    [[ "$CABLE_STAT" == "1" || "$WLAN_STAT" == "1" ]]
+# --- Functions for flexible interface detection ---
+get_wired_iface() {
+    ls /sys/class/net/ 2>/dev/null | grep -E '^en' | head -n1
 }
 
+get_wifi_iface() {
+    ls /sys/class/net/ 2>/dev/null | grep -E '^wl' | head -n1
+}
+
+# --- Function to check Internet connectivity ---
+check_internet() {
+    local WIRED_IFACE WIFI_IFACE CABLE_STAT WLAN_STAT
+
+    WIRED_IFACE=$(get_wired_iface)
+    WIFI_IFACE=$(get_wifi_iface)
+
+    # Check wired carrier if interface exists
+    [[ -n "$WIRED_IFACE" && -f "/sys/class/net/$WIRED_IFACE/carrier" ]] &&
+        CABLE_STAT=$(cat "/sys/class/net/$WIRED_IFACE/carrier")
+
+    # Check Wi-Fi carrier if interface exists
+    [[ -n "$WIFI_IFACE" && -f "/sys/class/net/$WIFI_IFACE/carrier" ]] &&
+        WLAN_STAT=$(cat "/sys/class/net/$WIFI_IFACE/carrier")
+
+    # If neither link is up, immediately return offline
+    if [[ "$CABLE_STAT" != "1" && "$WLAN_STAT" != "1" ]]; then
+        return 1
+    fi
+}
+
+# --- Main loop ---
 while true; do
     # Start with base scripts
     ACTIVE_SCRIPTS=("${SCRIPTS[@]}")
 
-    # Include weather_alarm only if internet is up
-    # Include weather_alarm only if internet is up
-	if check_internet; then
-		ACTIVE_SCRIPTS+=("weather_alarm")
-		echo "DEBUG: Internet detected — weather_alarm included."
-	else
-		# Remove weather_alarm from ACTIVE_SCRIPTS to prevent restart
-		ACTIVE_SCRIPTS=("${ACTIVE_SCRIPTS[@]/weather_alarm/}")
+    # Include weather_alarm only if Internet is up
+    if check_internet; then
+        ACTIVE_SCRIPTS+=("weather_alarm")
+        echo "DEBUG: Internet detected — weather_alarm included."
+    else
+        # Remove weather_alarm from ACTIVE_SCRIPTS to prevent restart
+        ACTIVE_SCRIPTS=("${ACTIVE_SCRIPTS[@]/weather_alarm/}")
 
-		# If weather_alarm is running while offline, kill it
-		PIDS=$(pgrep -f "$HOME/Documents/bin/weather_alarm.sh")
-		if [[ -n "$PIDS" ]]; then
-			for pid in $PIDS; do
-				kill "$pid"
-				notify-send -t 5000 --app-name "💀 CheckServices" "weather_alarm killed: no internet (PID $pid)" &
-			done
-		fi
-		echo "DEBUG: No internet — weather_alarm excluded."
-	fi
+        # If weather_alarm is running while offline, kill it
+        PIDS=$(pgrep -f "$HOME/Documents/bin/weather_alarm.sh")
+        if [[ -n "$PIDS" ]]; then
+            for pid in $PIDS; do
+                kill "$pid"
+                notify-send -t 5000 --app-name "💀 CheckServices" "weather_alarm killed: no internet (PID $pid)" &
+            done
+        fi
+        echo "DEBUG: No internet — weather_alarm excluded."
+    fi
 
     # Loop through all active scripts
     for SCRIPT_BASENAME in "${ACTIVE_SCRIPTS[@]}"; do

@@ -358,6 +358,7 @@ get_location() {
     CITY=$(curl "${CURL_OPTS[@]}" "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
         | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"' 2>/dev/null)
     echo "Location detected: $CITY ($LAT,$LON)"
+    return 0
 }
 
 # ------------------------
@@ -644,12 +645,15 @@ send_notifications() {
 # Main loop
 # ------------------------
 main() {
-    get_location
-
-    if [[ -z "$LAT" ]] || [[ -z "$LON" ]] || [[ "$LAT" == "null" ]] || [[ "$LON" == "null" ]]; then
-        echo "Error: Could not determine location. Please check your internet connection."
-        exit 1
-    fi
+	if  ! get_location; then
+		notify-send "No internet connection — skipping weather assessment."
+		exit 1
+	else
+		if [[ -z "$LAT" ]] || [[ -z "$LON" ]] || [[ "$LAT" == "null" ]] || [[ "$LON" == "null" ]]; then
+			echo "Error: Could not determine location. Please check your internet connection."
+			exit 1
+		fi
+	fi
 
     echo "Starting weather monitoring for $CITY ($LAT,$LON)"
     echo "API calls every $((INTERVAL/60)) minutes. Logs saved to: $LOG_FILE"
