@@ -20,7 +20,7 @@ SCRIPTS=(
     "power_usage"
     "runscreensaver"
     "security_check"
-    "weather_alarm"
+    #~ "weather_alarm"
 )
 
 COOLDOWN=5   # seconds between checks

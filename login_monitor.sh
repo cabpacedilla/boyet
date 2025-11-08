@@ -32,8 +32,10 @@ send_alert() {
 echo "[$(date '+%F %T')] Starting login monitor..." | tee -a "$LOGFILE"
 notify-send "Login Monitor" "Starting login monitor..." &
 
-journalctl -f -n0 -o short-iso --since now \
-  _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su | \
+#~ journalctl -f -n0 -o short-iso --since now \
+  #~ _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su | \
+journalctl -f -n0 -o short-iso --no-tail \
+  _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su |
 while read -r LINE; do
     NOW=$(date +%s)
     TS=$(date '+%F %T')
