@@ -46,20 +46,24 @@ while true; do
     ACTIVE_SCRIPTS=("${SCRIPTS[@]}")
 
     # Include weather_alarm only if internet is up
-    if check_internet; then
-        ACTIVE_SCRIPTS+=("weather_alarm")
-        echo "DEBUG: Internet detected — weather_alarm included."
-    else
-        # If weather_alarm is running while offline, kill it
-        PIDS=$(pgrep -f "$HOME/Documents/bin/weather_alarm.sh")
-        if [[ -n "$PIDS" ]]; then
-            for pid in $PIDS; do
-                kill "$pid"
-                notify-send -t 5000 --app-name "💀 CheckServices" "weather_alarm killed: no internet (PID $pid)" &
-            done
-        fi
-        echo "DEBUG: No internet — weather_alarm excluded."
-    fi
+    # Include weather_alarm only if internet is up
+	if check_internet; then
+		ACTIVE_SCRIPTS+=("weather_alarm")
+		echo "DEBUG: Internet detected — weather_alarm included."
+	else
+		# Remove weather_alarm from ACTIVE_SCRIPTS to prevent restart
+		ACTIVE_SCRIPTS=("${ACTIVE_SCRIPTS[@]/weather_alarm/}")
+
+		# If weather_alarm is running while offline, kill it
+		PIDS=$(pgrep -f "$HOME/Documents/bin/weather_alarm.sh")
+		if [[ -n "$PIDS" ]]; then
+			for pid in $PIDS; do
+				kill "$pid"
+				notify-send -t 5000 --app-name "💀 CheckServices" "weather_alarm killed: no internet (PID $pid)" &
+			done
+		fi
+		echo "DEBUG: No internet — weather_alarm excluded."
+	fi
 
     # Loop through all active scripts
     for SCRIPT_BASENAME in "${ACTIVE_SCRIPTS[@]}"; do
