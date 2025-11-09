@@ -27,36 +27,18 @@ SCRIPTS=(
 COOLDOWN=5   # seconds between checks
 MIN_INSTANCES=1
 
-# --- Functions for flexible interface detection ---
-get_wired_iface() {
-    ls /sys/class/net/ 2>/dev/null | grep -E '^en' | head -n1
-}
-
-get_wifi_iface() {
-    ls /sys/class/net/ 2>/dev/null | grep -E '^wl' | head -n1
-}
-
 # --- Function to check Internet connectivity ---
 check_internet() {
-    local WIRED_IFACE WIFI_IFACE CABLE_STAT WLAN_STAT
-
-    WIRED_IFACE=$(get_wired_iface)
-    WIFI_IFACE=$(get_wifi_iface)
-
-    # Check wired carrier if interface exists
-    [[ -n "$WIRED_IFACE" && -f "/sys/class/net/$WIRED_IFACE/carrier" ]] &&
-        CABLE_STAT=$(cat "/sys/class/net/$WIRED_IFACE/carrier")
-
-    # Check Wi-Fi carrier if interface exists
-    [[ -n "$WIFI_IFACE" && -f "/sys/class/net/$WIFI_IFACE/carrier" ]] &&
-        WLAN_STAT=$(cat "/sys/class/net/$WIFI_IFACE/carrier")
-
-    # If either wired or wifi carrier is active, return success
-    if [[ "$CABLE_STAT" == "1" || "$WLAN_STAT" == "1" ]]; then
-        return 0   # online
-    else
-        return 1   # offline
+    # Just use HTTP requests - these almost always work if internet is available
+    if curl -s --connect-timeout 5 "https://www.google.com" >/dev/null 2>&1; then
+        return 0
     fi
+    
+    if curl -s --connect-timeout 5 "https://www.cloudflare.com" >/dev/null 2>&1; then
+        return 0
+    fi
+    
+    return 1
 }
 
 # --- Main loop ---
