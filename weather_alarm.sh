@@ -8,8 +8,6 @@
 # ------------------------
 if [[ -n "$WEATHER_API_KEY" ]]; then
     API_KEY="$WEATHER_API_KEY"
-elif [[ -f "$HOME/.config/weather/api_key" ]]; then
-    API_KEY=$(cat "$HOME/.config/weather/api_key" 2>/dev/null | tr -d '\n\r')
 elif command -v secret‑tool >/dev/null 2>&1; then
     API_KEY=$(secret‑tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
 else
@@ -352,7 +350,6 @@ CURL_OPTS=(
 get_location() {
     LOC=$(curl "${CURL_OPTS[@]}" ipinfo.io/loc 2>/dev/null)
     [[ -z "$LOC" ]] && LOC=$(curl "${CURL_OPTS[@]}" ipapi.co/latlong 2>/dev/null)
-    [[ -z "$LOC" ]] && LOC=$(curl "${CURL_OPTS[@]}" ifconfig.me 2>/dev/null)
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
     CITY=$(curl "${CURL_OPTS[@]}" "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
