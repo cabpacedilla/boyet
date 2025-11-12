@@ -348,8 +348,21 @@ CURL_OPTS=(
 )
 
 get_location() {
-    LOC=$(curl "${CURL_OPTS[@]}" ipinfo.io/loc 2>/dev/null)
-    [[ -z "$LOC" ]] && LOC=$(curl "${CURL_OPTS[@]}" ipapi.co/latlong 2>/dev/null)
+    # Try ipinfo.io first
+	LOC=$(curl "${CURL_OPTS[@]}" ipinfo.io/loc 2>/dev/null)
+
+	# Validate it's actually coordinates (latitude,longitude format)
+	if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
+		echo "DEBUG: ipinfo.io failed or invalid format, trying ipapi.co..."
+		LOC=$(curl "${CURL_OPTS[@]}" ipapi.co/latlong 2>/dev/null)
+	fi
+
+	# Validate again before final fallback
+	if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
+		echo "DEBUG: All location services failed, using current location fallback"
+		LOC="10.3167,123.8907"  # Your actual coordinates from debug log
+	fi
+
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
     CITY=$(curl "${CURL_OPTS[@]}" "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
