@@ -31,13 +31,22 @@ LOG_FILE="$HOME/scriptlogs/weather_log.txt"
 # ------------------------
 deg_to_dir() {
     local deg="$1"
+    
+    # GUARD: Validate input is a number
     if ! [[ "$deg" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
         echo "Unknown"
         return 1
     fi
-    deg=$(echo "($deg + 360) % 360" | bc)
+    
+    # GUARD: Protect bc from invalid operations
+    local normalized_deg=$(echo "($deg + 360) % 360" | bc 2>/dev/null)
+    if [[ $? -ne 0 || -z "$normalized_deg" ]]; then
+        echo "Unknown"
+        return 1
+    fi
+    
     local directions=("N" "NE" "E" "SE" "S" "SW" "W" "NW")
-    local idx=$(( (deg + 22) / 45 % 8 ))
+    local idx=$(( (normalized_deg + 22) / 45 % 8 ))
     echo "${directions[$idx]}"
 }
 
@@ -105,37 +114,34 @@ format_time_12hr() {
     echo "${hour}:${minute} $ampm"
 }
 
+# API response validation
 check_api_response() {
     local response="$1"
     local endpoint="$2"
 
-    if [[ -z "$response" ]]; then
-        echo "Error: Empty response from $endpoint API"
+    # Guard against empty responses
+    if [[ -z "$response" || "$response" == "null" ]]; then
+        echo "Error: Empty or null response from $endpoint API"
         return 1
     fi
 
-    # Check if response is valid JSON
+    # Guard against non-JSON responses (like HTML error pages)
+    if [[ ! "$response" =~ ^[[:space:]]*\{ ]] && [[ ! "$response" =~ ^[[:space:]]*\[ ]]; then
+        echo "Error: Non-JSON response from $endpoint API: ${response:0:100}..."
+        return 1
+    fi
+
+    # Guard against jq parsing failures
     if ! echo "$response" | jq -e . >/dev/null 2>&1; then
-        echo "Error: Invalid JSON response from $endpoint API"
+        echo "Error: Invalid JSON structure from $endpoint API"
         return 1
     fi
 
+    # Guard against API error messages
     local error=$(echo "$response" | jq -r '.error.message // empty' 2>/dev/null)
     if [[ -n "$error" ]]; then
-        case "$error" in
-            *"API key"*|*"Invalid key"*)
-                echo "Error: Invalid API key. Please check your WeatherAPI key."
-                exit 1 ;;
-            *"exceed"*|*"limit"*)
-                echo "Error: API rate limit exceeded."
-                return 1 ;;
-            *"Invalid location"*)
-                echo "Error: Invalid location detected."
-                return 1 ;;
-            *)
-                echo "API Error: $error"
-                return 1 ;;
-        esac
+        echo "API Error ($endpoint): $error"
+        return 1
     fi
 
     return 0
@@ -332,6 +338,31 @@ get_level() {
     echo "$assessment" | cut -d'|' -f1
 }
 
+validate_coordinates() {
+    local coords="$1"
+    
+    # Check if coordinates match the pattern: lat,lon (with optional negative signs)
+    if [[ ! "$coords" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]]; then
+        return 1
+    fi
+    
+    # Extract latitude and longitude
+    local lat=$(echo "$coords" | cut -d, -f1)
+    local lon=$(echo "$coords" | cut -d, -f2)
+    
+    # Validate latitude range (-90 to 90)
+    if (( $(echo "$lat < -90 || $lat > 90" | bc -l) )); then
+        return 1
+    fi
+    
+    # Validate longitude range (-180 to 180)
+    if (( $(echo "$lon < -180 || $lon > 180" | bc -l) )); then
+        return 1
+    fi
+    
+    return 0
+}
+
 # ------------------------
 # Location detection
 # ------------------------
@@ -416,53 +447,80 @@ get_weather() {
 }
 
 # ------------------------
-# Improved data extraction functions
+# Data extraction functions
 # ------------------------
 extract_peak_data() {
     local forecast_json="$1"
     local day_index="$2"
     
-    # Extract max temperature with time
-    local max_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | max_by(.temp_c) | {time: .time, value: .temp_c}" 2>/dev/null)
-    local max_temp_value=$(echo "$max_temp_data" | jq -r '.value // 0')
-    local max_temp_time=$(echo "$max_temp_data" | jq -r '.time // ""' | cut -d' ' -f2)
-    
-    # Extract min temperature with time
-    local min_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | min_by(.temp_c) | {time: .time, value: .temp_c}" 2>/dev/null)
-    local min_temp_value=$(echo "$min_temp_data" | jq -r '.value // 0')
-    local min_temp_time=$(echo "$min_temp_data" | jq -r '.time // ""' | cut -d' ' -f2)
-    
-    # Extract peak UV with time - FIXED: handle empty results
-    local uv_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | map(select(.uv != null)) | max_by(.uv) | {time: .time, value: .uv} // \"\"" 2>/dev/null)
+    # GUARD: Validate input JSON
+    if [[ -z "$forecast_json" || "$forecast_json" == "null" ]]; then
+        echo "0|Unknown|0|Unknown|0|Unknown|0|Unknown||||||"
+        return 1
+    fi
+
+    # GUARD: Validate day index exists
+    local day_count=$(echo "$forecast_json" | jq -r '.forecast.forecastday | length' 2>/dev/null)
+    if [[ "$day_count" -le "$day_index" ]]; then
+        echo "0|Unknown|0|Unknown|0|Unknown|0|Unknown||||||"
+        return 1
+    fi
+
+    # GUARD: Extract max temperature with fallbacks
+    local max_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | max_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
+    local max_temp_value="0"
+    local max_temp_time="Unknown"
+    if [[ -n "$max_temp_data" && "$max_temp_data" != "null" ]]; then
+        max_temp_value=$(echo "$max_temp_data" | jq -r '.value // 0')
+        local temp_time=$(echo "$max_temp_data" | jq -r '.time // ""')
+        [[ -n "$temp_time" ]] && max_temp_time=$(echo "$temp_time" | cut -d' ' -f2)
+    fi
+
+    # GUARD: Extract min temperature with fallbacks
+    local min_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | min_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
+    local min_temp_value="0"
+    local min_temp_time="Unknown"
+    if [[ -n "$min_temp_data" && "$min_temp_data" != "null" ]]; then
+        min_temp_value=$(echo "$min_temp_data" | jq -r '.value // 0')
+        local temp_time=$(echo "$min_temp_data" | jq -r '.time // ""')
+        [[ -n "$temp_time" ]] && min_temp_time=$(echo "$temp_time" | cut -d' ' -f2)
+    fi
+
+    # GUARD: Extract UV data with comprehensive null checking
+    local uv_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.uv != null and .uv >= 0)] | max_by(.uv) | {time: .time, value: .uv} // \"\"" 2>/dev/null)
     local peak_uv_value="0"
     local uv_hour="Unknown"
-    
-    if [[ -n "$uv_data" ]] && [[ "$uv_data" != "null" ]]; then
+    if [[ -n "$uv_data" && "$uv_data" != "null" ]]; then
         peak_uv_value=$(echo "$uv_data" | jq -r '.value // 0')
         local uv_time=$(echo "$uv_data" | jq -r '.time // ""')
         [[ -n "$uv_time" ]] && uv_hour=$(echo "$uv_time" | cut -d' ' -f2)
     fi
-    
-    # Extract peak rain with time
-    local rain_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | max_by(.precip_mm) | {time: .time, value: .precip_mm}" 2>/dev/null)
-    local rain_peak=$(echo "$rain_data" | jq -r '.value // 0')
-    local rain_time=$(echo "$rain_data" | jq -r '.time // ""' | cut -d' ' -f2)
-    
-    # Convert times to 12-hour format
-    [[ -n "$max_temp_time" ]] && max_temp_time=$(format_time_12hr "$max_temp_time")
-    [[ -n "$min_temp_time" ]] && min_temp_time=$(format_time_12hr "$min_temp_time")
-    [[ -n "$uv_hour" && "$uv_hour" != "Unknown" ]] && uv_hour=$(format_time_12hr "$uv_hour")
-    [[ -n "$rain_time" ]] && rain_time=$(format_time_12hr "$rain_time")
-    
-    # Get advice and emojis
-    local temp_advice=$(get_advice temperature "$max_temp_value")
-    local temp_emoji=$(get_emoji temperature "$max_temp_value")
-    local rain_advice=$(get_advice rain "$rain_peak")
-    local rain_emoji=$(get_emoji rain "$rain_peak")
-    local uv_advice=$(get_advice uv "$peak_uv_value")
-    local uv_emoji=$(get_emoji uv "$peak_uv_value")
-    
-    echo "$max_temp_value|$max_temp_time|$min_temp_value|$min_temp_time|$peak_uv_value|$uv_hour|$rain_peak|$rain_time|$temp_advice|$temp_emoji|$rain_advice|$rain_emoji|$uv_advice|$uv_emoji"
+
+    # GUARD: Extract rain data with validation
+    local rain_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.precip_mm != null)] | max_by(.precip_mm) | {time: .time, value: .precip_mm} // \"\"" 2>/dev/null)
+    local rain_peak="0"
+    local rain_time="Unknown"
+    if [[ -n "$rain_data" && "$rain_data" != "null" ]]; then
+        rain_peak=$(echo "$rain_data" | jq -r '.value // 0')
+        local rain_time_raw=$(echo "$rain_data" | jq -r '.time // ""')
+        [[ -n "$rain_time_raw" ]] && rain_time=$(echo "$rain_time_raw" | cut -d' ' -f2)
+    fi
+
+    # GUARD: Safe time formatting
+    [[ -n "$max_temp_time" && "$max_temp_time" != "Unknown" ]] && max_temp_time=$(format_time_12hr "$max_temp_time" 2>/dev/null || echo "Unknown")
+    [[ -n "$min_temp_time" && "$min_temp_time" != "Unknown" ]] && min_temp_time=$(format_time_12hr "$min_temp_time" 2>/dev/null || echo "Unknown")
+    [[ -n "$uv_hour" && "$uv_hour" != "Unknown" ]] && uv_hour=$(format_time_12hr "$uv_hour" 2>/dev/null || echo "Unknown")
+    [[ -n "$rain_time" && "$rain_time" != "Unknown" ]] && rain_time=$(format_time_12hr "$rain_time" 2>/dev/null || echo "Unknown")
+
+    # GUARD: Safe advice generation
+    local temp_advice=$(get_advice temperature "$max_temp_value" 2>/dev/null || echo "")
+    local temp_emoji=$(get_emoji temperature "$max_temp_value" 2>/dev/null || echo "🌡")
+    local rain_advice=$(get_advice rain "$rain_peak" 2>/dev/null || echo "")
+    local rain_emoji=$(get_emoji rain "$rain_peak" 2>/dev/null || echo "💧")
+    local uv_advice=$(get_advice uv "$peak_uv_value" 2>/dev/null || echo "")
+    local uv_emoji=$(get_emoji uv "$peak_uv_value" 2>/dev/null || echo "☀️")
+
+    echo "${max_temp_value:-0}|${max_temp_time:-Unknown}|${min_temp_value:-0}|${min_temp_time:-Unknown}|${peak_uv_value:-0}|${uv_hour:-Unknown}|${rain_peak:-0}|${rain_time:-Unknown}|${temp_advice}|${temp_emoji}|${rain_advice}|${rain_emoji}|${uv_advice}|${uv_emoji}"
 }
 
 # ------------------------
@@ -655,36 +713,43 @@ send_notifications() {
 # Main loop
 # ------------------------
 main() {
-	if  ! get_location; then
-		notify-send "No internet connection — skipping weather assessment."
-		exit 1
-	else
-		if [[ -z "$LAT" ]] || [[ -z "$LON" ]] || [[ "$LAT" == "null" ]] || [[ "$LON" == "null" ]]; then
-			echo "Error: Could not determine location. Please check your internet connection."
-			exit 1
-		fi
-	fi
+    if ! get_location; then
+        notify-send "No internet connection — skipping weather assessment."
+        exit 1
+    else
+        # GUARD: Validate coordinates are real numbers
+        if [[ -z "$LAT" || -z "$LON" || "$LAT" == "null" || "$LON" == "null" ]] || 
+           ! [[ "$LAT" =~ ^-?[0-9]+\.?[0-9]*$ ]] || ! [[ "$LON" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
+            echo "Error: Invalid coordinates detected (LAT: $LAT, LON: $LON)"
+            exit 1
+        fi
+    fi
 
     echo "Starting weather monitoring for $CITY ($LAT,$LON)"
-    echo "API calls every $((INTERVAL/60)) minutes. Logs saved to: $LOG_FILE"
-
-     while true; do
+    
+    # GUARD: Main loop with crash recovery
+    local consecutive_failures=0
+    while true; do
         if get_weather; then
-            send_notifications
-            # Get current time for log message
-            current_hour=$(date +%-H)
-            current_minute=$(date +%M)
-            if [[ $current_hour -ge 12 ]]; then
-                period="PM"
-                [[ $current_hour -gt 12 ]] && current_hour=$((current_hour - 12))
+            consecutive_failures=0
+            if send_notifications; then
+                echo "$(date): Weather update sent successfully"
             else
-                period="AM"
-                [[ $current_hour -eq 0 ]] && current_hour=12
+                echo "$(date): Notification failed but continuing"
             fi
-            current_time_12hr="${current_hour}:${current_minute} ${period}"
-            echo "$(date): Weather update sent successfully at $current_time_12hr"
         else
-            echo "$(date): Weather update failed, will retry next cycle"
+            ((consecutive_failures++))
+            echo "$(date): Weather update failed (attempt $consecutive_failures)"
+            
+            # GUARD: Reset after too many failures
+            if [[ $consecutive_failures -ge 5 ]]; then
+                echo "Critical: Too many consecutive failures, restarting location detection"
+                if ! get_location; then
+                    echo "Fatal: Cannot recover location, exiting"
+                    exit 1
+                fi
+                consecutive_failures=0
+            fi
         fi
         sleep "$INTERVAL"
     done

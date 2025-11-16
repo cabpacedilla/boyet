@@ -15,7 +15,7 @@ SCRIPTS=(
     "fortune4you"
 #     "hot_parts"
     "keyLocked"
-    #~ "laptopLid_close"
+    "laptopLid_close"
     "login_monitor"
     "low_disk_space"
     "lowMemAlert"
