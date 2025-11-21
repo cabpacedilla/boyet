@@ -17,7 +17,7 @@ while true; do
         DIFF_DAYS=9999
     fi
 
-    if [ "$DIFF_DAYS" -eq 0 ]; then
+    if [ "$DIFF_DAYS" -ge 120 ]; then
         echo -e "\n[$(date)] Starting Btrfs balance on /" | tee -a "$LOGFILE"
         notify-send "✅ Btrfs Balance" "Starting Btrfs balance on / at $(date)."
         sudo btrfs balance start / >> "$LOGFILE" 2>&1

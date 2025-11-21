@@ -16,52 +16,52 @@ NC='\033[0m'
 # Pool of uncommon/random domains - EXPANDED
 POOL=(
     # Alternative OS & Tech
-    templeos.org skyos.org visopsys.org redox-os.org
+    kolibrios.org skyos.dev visopsys.com redox-os.org
 
     # Research / Academic
-    arxiv.org journals.plos.org mit.edu csail.mit.edu
+    arxiv-sanity.com journals.sciencedirect.com mit.edu csail.mit.edu
 
     # Retro Computing & Gaming
-    cpcwiki.eu retrocomputing.stackexchange.com amiga.resource.cx
+    cpcwiki.eu retrogaming.stackexchange.com amiga.resource.cx atariarchives.org
 
     # Embedded / IoT
-    zephyrproject.org tinkerforge.com mbed.org adafruit.com
+    zephyrproject.org tinkerforge.com mbed.org particle.io
 
     # Rare Distros
     dragora.org parrotsec.org antiXlinux.com taildisk.org
 
     # Programming Languages & Tools
-    factorcode.org nim-lang.org gleam.run elixir-lang.org
+    factorcode.org nim-lang.org gleam.run elixir-lang.org crystal-lang.org
 
     # Security / Privacy
-    pryv.com privacymonitor.com protonmail.com searx.org
+    pryv.com privacymonitor.com protonmail.com searx.org torproject.org
 
     # Networking & Protocols
-    quicwg.org bgp.tools netdevconf.org
+    quicwg.org bgp.tools netdevconf.org ietf.org
 
     # Esoteric Languages
-    brainfuck.org unlambda.com false-lang.org pyth-lang.org
+    brainfuck.org unlambda.com false-lang.org pyth-lang.org malbolge.org
 
     # Retro Web & Media
-    textfiles.com oldversion.com abandonia.com classicdosgames.com
+    textfiles.com oldversion.com abandonia.com classicdosgames.com thekingshacker.com
 
     # Minimalist / Experimental Web
-    minimalistweb.design motherfuckingwebsite.com hackernews.com
+    minimalistweb.design motherfuckingwebsite.com hackernews.com indiehackers.com
 
     # Old School BBS & Retro Protocols
-    telnetbbsguide.com bbs.archivist.org nntp.org
+    telnetbbsguide.com bbs.archivist.org nntp.org fidonet.org
 
     # Alternative Social & P2P
-    scuttlebutt.nz mastodon.social retroshare.net
+    scuttlebutt.nz mastodon.social retroshare.net friendica.org
 
     # IRC Networks
-    libera.chat oftc.net ircnet.org
+    libera.chat oftc.net ircnet.org freenode.net
 
     # Old File Formats
     groff.gnu.org dvi2pdf.org troff.org nroff.org
 
     # Audio / DSP
-    csound.com faust.grame.fr supercollider.github.io
+    csound.com faust.grame.fr supercollider.github.io puredata.info
 
     # Graphics / Rendering
     blender.org openscad.org povray.org luxcorerender.org
@@ -73,10 +73,10 @@ POOL=(
     octave.org maxima.sourceforge.io sagecell.sagemath.org scilab.org
 
     # Theorem Provers
-    coq.inria.fr isabelle.in.tum.de agda.org
+    coq.inria.fr isabelle.in.tum.de agda.org leanprover.github.io
 
     # Constraint Programming
-    minizinc.org gecode.org choco-solver.org
+    minizinc.org gecode.org choco-solver.org or-tools.github.io
 
     # Logic Programming
     swi-prolog.org gnu.org/software/prolog
