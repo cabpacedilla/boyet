@@ -1,78 +1,327 @@
 #!/usr/bin/env bash
-# Weather Alarm Script (enhanced multi‑day peaks) - FIXED VERSION
-# Dependencies: curl, jq, bc, notify-send
+# Weather Alarm Script (enhanced multi‑day peaks) - COMPLETE FIXED VERSION
+# Dependencies: curl, jq, bc, notify-send, kdialog
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
+
+# ------------------------
+# Enhanced Logging System
+# ------------------------
+LOG_LEVEL_DEBUG=0
+LOG_LEVEL_INFO=1
+LOG_LEVEL_WARN=2
+LOG_LEVEL_ERROR=3
+
+# Set default log level (can be overridden with WEATHER_LOG_LEVEL env var)
+LOG_LEVEL=${WEATHER_LOG_LEVEL:-$LOG_LEVEL_INFO}
+LOG_FILE="${WEATHER_LOG_FILE:-$HOME/scriptlogs/weather_log.txt}"
+ALERT_STATE_FILE="$HOME/.weather_alert_state.json"
+
+# Create log directory if it doesn't exist
+mkdir -p "$(dirname "$LOG_FILE")"
+
+setup_log_rotation() {
+    local max_size=500000  # 500KB
+    
+    if [[ -f "$LOG_FILE" ]] && (( $(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0) > max_size )); then
+        log_info "Rotating log file (size exceeded ${max_size} bytes)"
+        mv "$LOG_FILE" "${LOG_FILE}.old" 2>/dev/null || true
+        touch "$LOG_FILE"
+        
+        # Clean up old logs (keep only 5 most recent)
+        ls -tp "$LOG_FILE".* 2>/dev/null | tail -n +6 | xargs -r rm -- 2>/dev/null || true
+    fi
+}
+
+log() {
+    local level="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local level_str=""
+    
+    case "$level" in
+        $LOG_LEVEL_DEBUG) level_str="DEBUG" ;;
+        $LOG_LEVEL_INFO) level_str="INFO" ;;
+        $LOG_LEVEL_WARN) level_str="WARN" ;;
+        $LOG_LEVEL_ERROR) level_str="ERROR" ;;
+        *) level_str="UNKNOWN" ;;
+    esac
+    
+    local log_entry="[$timestamp] [$level_str] $message"
+    
+    # Only print to terminal for WARN and ERROR, or if debug mode
+    if [[ $level -ge $LOG_LEVEL_WARN ]] || [[ $LOG_LEVEL -eq $LOG_LEVEL_DEBUG ]]; then
+        echo "$log_entry"
+    fi
+    
+    # Always append to log file
+    echo "$log_entry" >> "$LOG_FILE"
+}
+
+log_debug() { log $LOG_LEVEL_DEBUG "$1"; }
+log_info() { log $LOG_LEVEL_INFO "$1"; }
+log_warn() { log $LOG_LEVEL_WARN "$1"; }
+log_error() { log $LOG_LEVEL_ERROR "$1"; }
+
+# Function tracing for debugging
+log_function_enter() {
+    log_debug "ENTER: ${FUNCNAME[1]} - Args: $*"
+}
+
+log_function_exit() {
+    log_debug "EXIT: ${FUNCNAME[1]} - Return: $1"
+}
+
+# Variable state logging
+log_variable() {
+    local var_name="$1"
+    local var_value="$2"
+    log_debug "VAR: $var_name = '$var_value'"
+}
+
+# API call logging
+log_api_call() {
+    log_debug "API CALL: $1"
+}
+
+log_api_response() {
+    log_debug "API RESPONSE: ${1:0:200}..."  # First 200 chars to avoid huge logs
+}
+
+# ------------------------
+# Alert State Management
+# ------------------------
+save_alert_state() {
+    local alert_type="$1"
+    local value="$2"
+    local timestamp=$(date +%s)
+    
+    # Create or update state file
+    if [[ -f "$ALERT_STATE_FILE" ]]; then
+        local current_state=$(cat "$ALERT_STATE_FILE")
+    else
+        local current_state="{}"
+    fi
+    
+    local new_state=$(echo "$current_state" | jq --arg type "$alert_type" \
+        --argjson value "$value" \
+        --argjson time "$timestamp" \
+        '. + {($type): {"value": $value, "time": $time}}' 2>/dev/null)
+    
+    if [[ -n "$new_state" ]]; then
+        echo "$new_state" > "$ALERT_STATE_FILE"
+    fi
+}
+
+should_alert() {
+    local alert_type="$1"
+    local current_value="$2"
+    local threshold="${3:-0}"
+    
+    # Ensure numeric values for calculations
+    current_value=${current_value:-0}
+    threshold=${threshold:-0}
+    
+    if [[ ! -f "$ALERT_STATE_FILE" ]]; then
+        return 0  # Always alert if no state file
+    fi
+    
+    local state=$(cat "$ALERT_STATE_FILE" 2>/dev/null || echo "{}")
+    local last_value=$(echo "$state" | jq -r ".\"$alert_type\".value // \"\"" 2>/dev/null)
+    local last_time=$(echo "$state" | jq -r ".\"$alert_type\".time // \"\"" 2>/dev/null)
+    
+    # If no previous state, alert
+    if [[ -z "$last_value" ]]; then
+        return 0
+    fi
+    
+    # Ensure last_value is numeric
+    last_value=${last_value:-0}
+    
+    # Check if value changed significantly or last alert was more than 1 hour ago
+    local value_diff=$(echo "scale=2; $current_value - $last_value" | bc -l 2>/dev/null || echo "999")
+    local time_diff=$(( $(date +%s) - last_time ))
+    
+    if (( $(echo "($value_diff >= $threshold) || ($value_diff <= -$threshold)" | bc -l 2>/dev/null || echo 1) )) || \
+       (( time_diff > 3600 )); then
+        return 0
+    fi
+    
+    return 1
+}
 
 # ------------------------
 # Configuration & API Key Management
 # ------------------------
-if [[ -n "$WEATHER_API_KEY" ]]; then
-    API_KEY="$WEATHER_API_KEY"
-elif command -v secret‑tool >/dev/null 2>&1; then
-    API_KEY=$(secret‑tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
-else
-    echo "Weather API key not found. Please set it using:"
-    echo "export WEATHER_API_KEY='your_key_here' in ~/.bashrc"
-    exit 1
-fi
+initialize_script() {
+    log_function_enter
+    
+    if [[ -n "$WEATHER_API_KEY" ]]; then
+        API_KEY="$WEATHER_API_KEY"
+        log_debug "Using API key from environment variable"
+    elif command -v secret-tool >/dev/null 2>&1; then
+        API_KEY=$(secret-tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
+        log_debug "Using API key from secret-tool"
+    else
+        log_error "Weather API key not found"
+        echo "Weather API key not found. Please set it using:"
+        echo "export WEATHER_API_KEY='your_key_here' in ~/.bashrc"
+        return 1
+    fi
 
-# Validate API key (simple check)
-if [[ ${#API_KEY} -lt 20 ]]; then
-    echo "Warning: API key seems too short; double check it."
-fi
+    # Validate API key (simple check)
+    if [[ ${#API_KEY} -lt 20 ]]; then
+        log_warn "API key seems too short; double check it."
+    fi
 
-BASE_URL="http://api.weatherapi.com/v1"
-INTERVAL=1800
-ALERT_WINDOW=30
-LOG_FILE="$HOME/scriptlogs/weather_log.txt"
+    BASE_URL="http://api.weatherapi.com/v1"
+    INTERVAL=1800
+    ALERT_WINDOW=30
+
+    # Setup log rotation
+    setup_log_rotation
+    
+    log_debug "Configuration loaded: BASE_URL=$BASE_URL, INTERVAL=$INTERVAL, ALERT_WINDOW=$ALERT_WINDOW"
+    log_function_exit "success"
+    return 0
+}
 
 # ------------------------
 # Utilities
 # ------------------------
+compare_bc() {
+    local expression="$1"
+    # Ensure expression is valid before passing to bc
+    if [[ -z "$expression" ]]; then
+        return 1
+    fi
+    local result=$(echo "$expression" | bc -l 2>/dev/null || echo "0")
+    [[ "$result" == "1" ]]
+}
+
+safe_extract_value() {
+    local json="$1"
+    local path="$2"
+    local default="$3"
+    
+    local value=$(echo "$json" | jq -r "$path" 2>/dev/null)
+    if [[ "$value" == "null" || -z "$value" || "$value" == "null" ]]; then
+        echo "$default"
+    else
+        echo "$value"
+    fi
+}
+
 deg_to_dir() {
+    log_function_enter "$1"
     local deg="$1"
+    log_variable "deg" "$deg"
     
     # GUARD: Validate input is a number
     if ! [[ "$deg" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+        log_error "Invalid degree input: $deg"
+        log_function_exit "Unknown"
         echo "Unknown"
         return 1
     fi
     
     # GUARD: Protect bc from invalid operations
-    local normalized_deg=$(echo "($deg + 360) % 360" | bc 2>/dev/null)
+    local normalized_deg=$(echo "scale=0; ($deg + 360) % 360" | bc -l 2>/dev/null)
     if [[ $? -ne 0 || -z "$normalized_deg" ]]; then
+        log_error "BC calculation failed for degree: $deg"
+        log_function_exit "Unknown"
         echo "Unknown"
         return 1
     fi
     
-    local directions=("N" "NE" "E" "SE" "S" "SW" "W" "NW")
-    local idx=$(( (normalized_deg + 22) / 45 % 8 ))
-    echo "${directions[$idx]}"
+    local directions=("N" "NNE" "NE" "ENE" "E" "ESE" "SE" "SSE" 
+                      "S" "SSW" "SW" "WSW" "W" "WNW" "NW" "NNW")
+    local idx=$(echo "scale=0; ($normalized_deg + 11.25) / 22.5" | bc -l)
+    idx=${idx%.*}  # Remove decimal part
+    
+    # Handle index out of bounds
+    if [[ $idx -ge 16 ]]; then
+        idx=0
+    fi
+    
+    local result="${directions[$idx]}"
+    log_debug "Converted $deg° to $result (normalized: $normalized_deg, index: $idx)"
+    log_function_exit "$result"
+    echo "$result"
 }
 
 time_to_minutes() {
+    log_function_enter "$1"
     local time_str="$1"
     local hour minute
+    log_variable "time_str" "$time_str"
 
-    [[ -z "$time_str" ]] && { echo "0"; return 1; }
+    [[ -z "$time_str" ]] && { 
+        log_error "Empty time string"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
 
     if [[ ! "$time_str" =~ (AM|PM|am|pm) ]]; then
-        hour=$(echo "$time_str" | cut -d: -f1 | tr -d ' ')
-        minute=$(echo "$time_str" | cut -d: -f2 | tr -d ' ')
-        [[ ! "$hour" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
-        [[ ! "$minute" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
-        [[ $hour -gt 23 ]] && { echo "0"; return 1; }
-        [[ $minute -gt 59 ]] && { echo "0"; return 1; }
-        echo $((10#$hour * 60 + 10#$minute))
+        hour=$(echo "$time_str" | cut -d: -f1 | sed 's/^0*//')
+        minute=$(echo "$time_str" | cut -d: -f2 | sed 's/^0*//')
+        [[ ! "$hour" =~ ^[0-9]+$ ]] && { 
+            log_error "Invalid hour in 24h time: $hour"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        [[ ! "$minute" =~ ^[0-9]+$ ]] && { 
+            log_error "Invalid minute in 24h time: $minute"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        [[ $hour -gt 23 ]] && { 
+            log_error "Hour out of range: $hour"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        [[ $minute -gt 59 ]] && { 
+            log_error "Minute out of range: $minute"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        local result=$((10#$hour * 60 + 10#$minute))
+        log_debug "24h time $time_str converted to $result minutes"
+        log_function_exit "$result"
+        echo $result
         return 0
     fi
 
-    hour=$(echo "$time_str" | cut -d: -f1 | tr -d ' ')
+    hour=$(echo "$time_str" | cut -d: -f1 | sed 's/^0*//')
     minute=$(echo "$time_str" | cut -d: -f2 | sed 's/[^0-9]//g')
-    [[ ! "$hour" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
-    [[ ! "$minute" =~ ^[0-9]+$ ]] && { echo "0"; return 1; }
-    [[ $hour -gt 12 || $hour -lt 1 ]] && { echo "0"; return 1; }
-    [[ $minute -gt 59 ]] && { echo "0"; return 1; }
+    [[ ! "$hour" =~ ^[0-9]+$ ]] && { 
+        log_error "Invalid hour in 12h time: $hour"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+    [[ ! "$minute" =~ ^[0-9]+$ ]] && { 
+        log_error "Invalid minute in 12h time: $minute"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+    [[ $hour -gt 12 || $hour -lt 1 ]] && { 
+        log_error "Hour out of 12h range: $hour"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+    [[ $minute -gt 59 ]] && { 
+        log_error "Minute out of range: $minute"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
 
     if [[ "$time_str" =~ (AM|am) ]]; then
         [[ $hour -eq 12 ]] && hour=0
@@ -80,20 +329,25 @@ time_to_minutes() {
         [[ $hour -ne 12 ]] && hour=$((hour + 12))
     fi
 
-    echo $((hour * 60 + 10#$minute))
+    local result=$((hour * 60 + 10#$minute))
+    log_debug "12h time $time_str converted to $result minutes (24h: $hour:$minute)"
+    log_function_exit "$result"
+    echo $result
 }
 
 # Convert 24-hour time to 12-hour format with AM/PM
 format_time_12hr() {
+    log_function_enter "$1"
     local time_24hr="$1"
     local hour minute ampm
     
-    # Extract hour and minute
-    hour=$(echo "$time_24hr" | cut -d: -f1)
-    minute=$(echo "$time_24hr" | cut -d: -f2)
+    # Extract hour and minute, remove leading zeros for bash arithmetic
+    hour=$(echo "$time_24hr" | cut -d: -f1 | sed 's/^0*//')
+    minute=$(echo "$time_24hr" | cut -d: -f2 | sed 's/^0*//')
     
-    # Remove leading zeros from hour
-    hour=$((10#$hour))
+    # Handle empty values
+    hour=${hour:-0}
+    minute=${minute:-0}
     
     # Determine AM/PM and convert hour
     if [[ $hour -eq 0 ]]; then
@@ -108,42 +362,54 @@ format_time_12hr() {
         ampm="AM"
     fi
     
-    # Format minute with leading zero if needed
-    minute=$(printf "%02d" $minute)
+    # Safe printf without octal interpretation
+    minute=$(printf "%02d" "$((10#$minute))")
     
-    echo "${hour}:${minute} $ampm"
+    local result="${hour}:${minute} ${ampm}"
+    log_debug "Converted $time_24hr to $result"
+    log_function_exit "$result"
+    echo "$result"
 }
 
 # API response validation
 check_api_response() {
     local response="$1"
     local endpoint="$2"
+    log_function_enter "$endpoint"
+    log_variable "endpoint" "$endpoint"
+    log_api_response "$response"
 
     # Guard against empty responses
     if [[ -z "$response" || "$response" == "null" ]]; then
-        echo "Error: Empty or null response from $endpoint API"
+        log_error "Empty or null response from $endpoint API"
+        log_function_exit "1"
         return 1
     fi
 
     # Guard against non-JSON responses (like HTML error pages)
     if [[ ! "$response" =~ ^[[:space:]]*\{ ]] && [[ ! "$response" =~ ^[[:space:]]*\[ ]]; then
-        echo "Error: Non-JSON response from $endpoint API: ${response:0:100}..."
+        log_error "Non-JSON response from $endpoint API: ${response:0:100}..."
+        log_function_exit "1"
         return 1
     fi
 
     # Guard against jq parsing failures
     if ! echo "$response" | jq -e . >/dev/null 2>&1; then
-        echo "Error: Invalid JSON structure from $endpoint API"
+        log_error "Invalid JSON structure from $endpoint API"
+        log_function_exit "1"
         return 1
     fi
 
     # Guard against API error messages
     local error=$(echo "$response" | jq -r '.error.message // empty' 2>/dev/null)
     if [[ -n "$error" ]]; then
-        echo "API Error ($endpoint): $error"
+        log_error "API Error ($endpoint): $error"
+        log_function_exit "1"
         return 1
     fi
 
+    log_debug "API response validation successful for $endpoint"
+    log_function_exit "0"
     return 0
 }
 
@@ -151,117 +417,135 @@ check_api_response() {
 # Advice System (with pressure in inHg)
 # ------------------------
 give_advice() {
-    case "$1" in
-        "heat_extreme") echo "Stay indoors, hydrate" ;;
-        "heat_high") echo "Avoid sun, drink water" ;;
-        "heat_mild") echo "Stay hydrated" ;;
-        "heat_low") echo "Pleasant weather" ;;
-        "cold_extreme") echo "Layer up, limit outdoors" ;;
-        "cold_high") echo "Heavy coat needed" ;;
-        "cold_mild") echo "Light jacket recommended" ;;
-        "cold_low") echo "Dress comfortably" ;;
-        "humidity_extreme") echo "Use AC/dehumidifier" ;;
-        "humidity_high") echo "Stay cool" ;;
-        "humidity_moderate") echo "Slightly heavy air" ;;
-        "humidity_low") echo "Dry air" ;;
-        "rain_storm") echo "Seek shelter" ;;
-        "rain_heavy") echo "Stay indoors" ;;
-        "rain_moderate") echo "Umbrella needed" ;;
-        "rain_light") echo "Light drizzle" ;;
-        "rain_none") echo "No rain" ;;
-        "wind_storm") echo "Stay indoors" ;;
-        "wind_strong") echo "Secure items" ;;
-        "wind_moderate") echo "Steady breeze" ;;
-        "wind_light") echo "Gentle breeze" ;;
-        "wind_none") echo "Calm" ;;
-        "uv_extreme") echo "Stay in shade" ;;
-        "uv_high") echo "Sunscreen + hat" ;;
-        "uv_moderate") echo "Use sunscreen" ;;
-        "uv_low") echo "Safe sun exposure" ;;
-        "pollution_extreme") echo "Stay indoors" ;;
-        "pollution_very_unhealthy") echo "Avoid outdoors" ;;
-        "pollution_high") echo "Limit exposure" ;;
-        "pollution_moderate") echo "Use caution" ;;
-        "pollution_light") echo "Mostly fine air" ;;
-        "pressure_very_high") echo "Very high - clear" ;;
-        "pressure_high") echo "High - fair" ;;
-        "pressure_normal") echo "Normal - typical" ;;
-        "pressure_low") echo "Low - rain likely" ;;
-        "pressure_very_low") echo "Very low - storms" ;;
-        "thunderstorm") echo "Stay inside" ;;
-        "fog") echo "Drive carefully" ;;
-        "snow") echo "Dress warm" ;;
-        "sunrise") echo "Start your day fresh" ;;
-        "sunset") echo "Relax and enjoy the evening" ;;
-        "moonrise") echo "Look up at the rising Moon" ;;
-        "moonset") echo "Catch the Moon before it sets" ;;
-        "full_moon") echo "Perfect night for stargazing" ;;
-        "new_moon") echo "Ideal time to spot faint stars" ;;
-        "first_quarter") echo "Half-lit Moon in the sky" ;;
-        "last_quarter") echo "Waning Moon for night observation" ;;
-        "eclipse") echo "Don't miss this celestial event" ;;
-        *) echo "" ;;
+    log_function_enter "$1"
+    local advice_type="$1"
+    local advice=""
+    
+    case "$advice_type" in
+        "heat_extreme") advice="Stay indoors, hydrate" ;;
+        "heat_high") advice="Avoid sun, drink water" ;;
+        "heat_mild") advice="Stay hydrated" ;;
+        "heat_low") advice="Pleasant weather" ;;
+        "cold_extreme") advice="Layer up, limit outdoors" ;;
+        "cold_high") advice="Heavy coat needed" ;;
+        "cold_mild") advice="Light jacket recommended" ;;
+        "cold_low") advice="Dress comfortably" ;;
+        "humidity_extreme") advice="Use AC/dehumidifier" ;;
+        "humidity_high") advice="Stay cool" ;;
+        "humidity_moderate") advice="Slightly heavy air" ;;
+        "humidity_low") advice="Dry air" ;;
+        "rain_storm") advice="Seek shelter" ;;
+        "rain_heavy") advice="Stay indoors" ;;
+        "rain_moderate") advice="Umbrella needed" ;;
+        "rain_light") advice="Light drizzle" ;;
+        "rain_none") advice="No rain" ;;
+        "wind_storm") advice="Stay indoors" ;;
+        "wind_strong") advice="Secure items" ;;
+        "wind_moderate") advice="Steady breeze" ;;
+        "wind_light") advice="Gentle breeze" ;;
+        "wind_none") advice="Calm" ;;
+        "uv_extreme") advice="Stay in shade" ;;
+        "uv_high") advice="Sunscreen + hat" ;;
+        "uv_moderate") advice="Use sunscreen" ;;
+        "uv_low") advice="Safe sun exposure" ;;
+        "pollution_extreme") advice="Stay indoors" ;;
+        "pollution_very_unhealthy") advice="Avoid outdoors" ;;
+        "pollution_high") advice="Limit exposure" ;;
+        "pollution_moderate") advice="Use caution" ;;
+        "pollution_light") advice="Mostly fine air" ;;
+        "pressure_very_high") advice="Very high - clear" ;;
+        "pressure_high") advice="High - fair" ;;
+        "pressure_normal") advice="Normal - typical" ;;
+        "pressure_low") advice="Low - rain likely" ;;
+        "pressure_very_low") advice="Very low - storms" ;;
+        "thunderstorm") advice="Stay inside" ;;
+        "fog") advice="Drive carefully" ;;
+        "snow") advice="Dress warm" ;;
+        "sunrise") advice="Start your day fresh" ;;
+        "sunset") advice="Relax and enjoy the evening" ;;
+        "moonrise") advice="Look up at the rising Moon" ;;
+        "moonset") advice="Catch the Moon before it sets" ;;
+        "full_moon") advice="Perfect night for stargazing" ;;
+        "new_moon") advice="Ideal time to spot faint stars" ;;
+        "first_quarter") advice="Half-lit Moon in the sky" ;;
+        "last_quarter") advice="Waning Moon for night observation" ;;
+        "eclipse") advice="Don't miss this celestial event" ;;
+        *) advice="" ;;
     esac
+    
+    log_debug "Advice for $advice_type: $advice"
+    log_function_exit "$advice"
+    echo "$advice"
 }
 
+# Fixed assessment function - compute once, reuse results
 assess_weather() {
+    log_function_enter "$1 $2 $3"
     local type="$1" value="$2" unit="$3"
     local level advice emoji alert_threshold=0
+    log_variable "type" "$type"
+    log_variable "value" "$value"
+    log_variable "unit" "$unit"
+
+    # Ensure value is numeric for comparisons
+    if ! [[ "$value" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+        value=0
+    fi
 
     case "$type" in
         "temperature")
-            if (( $(echo "$value >= 40" | bc -l) )); then
+            if compare_bc "$value >= 40"; then
                 level="extreme_heat"; advice=$(give_advice heat_extreme); emoji="🔥"; alert_threshold=1
-            elif (( $(echo "$value >= 35" | bc -l) )); then
+            elif compare_bc "$value >= 35"; then
                 level="high_heat"; advice=$(give_advice heat_high); emoji="🔥"
-            elif (( $(echo "$value >= 30" | bc -l) )); then
+            elif compare_bc "$value >= 30"; then
                 level="moderate_heat"; advice=$(give_advice heat_mild); emoji="🌡"
-            elif (( $(echo "$value >= 25" | bc -l) )); then
+            elif compare_bc "$value >= 25"; then
                 level="mild_heat"; advice=$(give_advice heat_low); emoji="🌤"
-            elif (( $(echo "$value >= 20" | bc -l) )); then
+            elif compare_bc "$value >= 20"; then
                 level="pleasant"; advice=$(give_advice heat_low); emoji="😊"
-            elif (( $(echo "$value >= 15" | bc -l) )); then
+            elif compare_bc "$value >= 15"; then
                 level="cool"; advice=$(give_advice cold_low); emoji="🧥"
-            elif (( $(echo "$value >= 5" | bc -l) )); then
+            elif compare_bc "$value >= 5"; then
                 level="cold"; advice=$(give_advice cold_mild); emoji="❄️"
-            elif (( $(echo "$value >= 0" | bc -l) )); then
+            elif compare_bc "$value >= 0"; then
                 level="very_cold"; advice=$(give_advice cold_high); emoji="🥶"
             else
                 level="extreme_cold"; advice=$(give_advice cold_extreme); emoji="🥶"; alert_threshold=1
             fi
             ;;
         "rain")
-            if (( $(echo "$value >= 50" | bc -l) )); then
+            if compare_bc "$value >= 50"; then
                 level="storm"; advice=$(give_advice rain_storm); emoji="⛈"; alert_threshold=1
-            elif (( $(echo "$value >= 20" | bc -l) )); then
+            elif compare_bc "$value >= 20"; then
                 level="heavy"; advice=$(give_advice rain_heavy); emoji="🌧"; alert_threshold=1
-            elif (( $(echo "$value >= 5" | bc -l) )); then
+            elif compare_bc "$value >= 5"; then
                 level="moderate"; advice=$(give_advice rain_moderate); emoji="🌧"; alert_threshold=1
-            elif (( $(echo "$value > 0" | bc -l) )); then
+            elif compare_bc "$value > 0"; then
                 level="light"; advice=$(give_advice rain_light); emoji="🌦"; alert_threshold=1
             else
                 level="none"; advice=$(give_advice rain_none); emoji="☀️"
             fi
             ;;
         "wind")
-            if (( $(echo "$value >= 80" | bc -l) )); then
+            if compare_bc "$value >= 80"; then
                 level="storm"; advice=$(give_advice wind_storm); emoji="🌪"; alert_threshold=1
-            elif (( $(echo "$value >= 40" | bc -l) )); then
+            elif compare_bc "$value >= 40"; then
                 level="strong"; advice=$(give_advice wind_strong); emoji="💨"; alert_threshold=1
-            elif (( $(echo "$value >= 20" | bc -l) )); then
+            elif compare_bc "$value >= 20"; then
                 level="moderate"; advice=$(give_advice wind_moderate); emoji="💨"
-            elif (( $(echo "$value >= 10" | bc -l) )); then
+            elif compare_bc "$value >= 10"; then
                 level="light"; advice=$(give_advice wind_light); emoji="🍃"
             else
                 level="calm"; advice=$(give_advice wind_none); emoji="🌀"
             fi
             ;;
         "uv")
-            if (( $(echo "$value >= 8" | bc -l) )); then
+            if compare_bc "$value >= 8"; then
                 level="extreme"; advice=$(give_advice uv_extreme); emoji="🔥"; alert_threshold=1
-            elif (( $(echo "$value >= 6" | bc -l) )); then
+            elif compare_bc "$value >= 6"; then
                 level="high"; advice=$(give_advice uv_high); emoji="😎"; alert_threshold=1
-            elif (( $(echo "$value >= 3" | bc -l) )); then
+            elif compare_bc "$value >= 3"; then
                 level="moderate"; advice=$(give_advice uv_moderate); emoji="🌞"
             else
                 level="low"; advice=$(give_advice uv_low); emoji="🌤"
@@ -279,24 +563,24 @@ assess_weather() {
             esac
             ;;
         "humidity")
-            if (( $(echo "$value >= 85" | bc -l) )); then
+            if compare_bc "$value >= 85"; then
                 level="extreme"; advice=$(give_advice humidity_extreme); emoji="💦"
-            elif (( $(echo "$value >= 70" | bc -l) )); then
+            elif compare_bc "$value >= 70"; then
                 level="high"; advice=$(give_advice humidity_high); emoji="💧"
-            elif (( $(echo "$value >= 50" | bc -l) )); then
+            elif compare_bc "$value >= 50"; then
                 level="moderate"; advice=$(give_advice humidity_moderate); emoji="💧"
             else
                 level="low"; advice=$(give_advice humidity_low); emoji="🏜"
             fi
             ;;
         "visibility")
-            if (( $(echo "$value >= 10" | bc -l) )); then
+            if compare_bc "$value >= 10"; then
                 level="excellent"; advice="Excellent visibility"; emoji="👁"
-            elif (( $(echo "$value >= 5" | bc -l) )); then
+            elif compare_bc "$value >= 5"; then
                 level="good"; advice="Good visibility"; emoji="👁"
-            elif (( $(echo "$value >= 2" | bc -l) )); then
+            elif compare_bc "$value >= 2"; then
                 level="moderate"; advice="Moderate visibility"; emoji="🌫"
-            elif (( $(echo "$value >= 1" | bc -l) )); then
+            elif compare_bc "$value >= 1"; then
                 level="poor"; advice="Poor visibility"; emoji="🌫"
             else
                 level="very_poor"; advice="Very poor visibility"; emoji="🌫"
@@ -304,13 +588,13 @@ assess_weather() {
             ;;
         "pressure")
             # Atmospheric pressure in inches of mercury (inHg) - FIXED thresholds
-            if (( $(echo "$value >= 30.2" | bc -l) )); then
+            if compare_bc "$value >= 30.2"; then
                 level="very_high"; advice=$(give_advice pressure_very_high); emoji="🔵"
-            elif (( $(echo "$value >= 29.9" | bc -l) )); then
+            elif compare_bc "$value >= 29.9"; then
                 level="high"; advice=$(give_advice pressure_high); emoji="🔷"
-            elif (( $(echo "$value >= 29.5" | bc -l) )); then
+            elif compare_bc "$value >= 29.5"; then
                 level="normal"; advice=$(give_advice pressure_normal); emoji="🌤"
-            elif (( $(echo "$value >= 29.0" | bc -l) )); then
+            elif compare_bc "$value >= 29.0"; then
                 level="low"; advice=$(give_advice pressure_low); emoji="🌧"; alert_threshold=1
             else
                 level="very_low"; advice=$(give_advice pressure_very_low); emoji="⛈"; alert_threshold=1
@@ -318,31 +602,28 @@ assess_weather() {
             ;;
     esac
 
-    echo "$level|$advice|$emoji|$alert_threshold|$value|$unit"
+    local result="$level|$advice|$emoji|$alert_threshold|$value|$unit"
+    log_debug "Assessment for $type: level=$level, alert=$alert_threshold, advice=$advice"
+    log_function_exit "$result"
+    echo "$result"
 }
 
-get_advice() {
-    local assessment=$(assess_weather "$1" "$2" "$3")
-    echo "$assessment" | cut -d'|' -f2
-}
-get_alert_status() {
-    local assessment=$(assess_weather "$1" "$2" "$3")
-    echo "$assessment" | cut -d'|' -f4
-}
-get_emoji() {
-    local assessment=$(assess_weather "$1" "$2" "$3")
-    echo "$assessment" | cut -d'|' -f3
-}
-get_level() {
-    local assessment=$(assess_weather "$1" "$2" "$3")
-    echo "$assessment" | cut -d'|' -f1
+# Helper function to get all metrics at once (FIXED recursion issue)
+get_weather_metrics() {
+    local type="$1" value="$2" unit="$3"
+    local assessment=$(assess_weather "$type" "$value" "$unit")
+    echo "$assessment"
 }
 
 validate_coordinates() {
+    log_function_enter "$1"
     local coords="$1"
+    log_variable "coords" "$coords"
     
     # Check if coordinates match the pattern: lat,lon (with optional negative signs)
     if [[ ! "$coords" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]]; then
+        log_error "Coordinate format invalid: $coords"
+        log_function_exit "1"
         return 1
     fi
     
@@ -351,15 +632,21 @@ validate_coordinates() {
     local lon=$(echo "$coords" | cut -d, -f2)
     
     # Validate latitude range (-90 to 90)
-    if (( $(echo "$lat < -90 || $lat > 90" | bc -l) )); then
+    if compare_bc "$lat < -90" || compare_bc "$lat > 90"; then
+        log_error "Latitude out of range: $lat"
+        log_function_exit "1"
         return 1
     fi
     
     # Validate longitude range (-180 to 180)
-    if (( $(echo "$lon < -180 || $lon > 180" | bc -l) )); then
+    if compare_bc "$lon < -180" || compare_bc "$lon > 180"; then
+        log_error "Longitude out of range: $lon"
+        log_function_exit "1"
         return 1
     fi
     
+    log_debug "Coordinates validated successfully: lat=$lat, lon=$lon"
+    log_function_exit "0"
     return 0
 }
 
@@ -379,26 +666,39 @@ CURL_OPTS=(
 )
 
 get_location() {
+    log_function_enter
     # Try ipinfo.io first
-	LOC=$(curl "${CURL_OPTS[@]}" ipinfo.io/loc 2>/dev/null)
+    log_api_call "ipinfo.io/loc"
+    LOC=$(curl "${CURL_OPTS[@]}" ipinfo.io/loc 2>/dev/null)
+    log_api_response "$LOC"
 
-	# Validate it's actually coordinates (latitude,longitude format)
-	if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
-		echo "DEBUG: ipinfo.io failed or invalid format, trying ipapi.co..."
-		LOC=$(curl "${CURL_OPTS[@]}" ipapi.co/latlong 2>/dev/null)
-	fi
+    # Validate it's actually coordinates (latitude,longitude format)
+    if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
+        log_warn "ipinfo.io failed or invalid format, trying ipapi.co..."
+        log_api_call "ipapi.co/latlong"
+        LOC=$(curl "${CURL_OPTS[@]}" ipapi.co/latlong 2>/dev/null)
+        log_api_response "$LOC"
+    fi
 
-	# Validate again before final fallback
-	if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
-		echo "DEBUG: All location services failed, using current location fallback"
-		LOC="10.3167,123.8907"  # Your actual coordinates from debug log
-	fi
+    # Validate again before final fallback
+    if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
+        log_warn "All location services failed, using current location fallback"
+        LOC="10.3167,123.8907"  # Fallback coordinates
+    fi
 
     LAT=$(echo "$LOC" | cut -d, -f1)
     LON=$(echo "$LOC" | cut -d, -f2)
+    
+    log_api_call "OpenStreetMap reverse geocoding"
     CITY=$(curl "${CURL_OPTS[@]}" "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
         | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"' 2>/dev/null)
-    echo "Location detected: $CITY ($LAT,$LON)"
+    log_api_response "$CITY"
+    
+    log_info "Location detected: $CITY ($LAT,$LON)"
+    log_variable "LAT" "$LAT"
+    log_variable "LON" "$LON"
+    log_variable "CITY" "$CITY"
+    log_function_exit "success"
     return 0
 }
 
@@ -406,43 +706,54 @@ get_location() {
 # Fetch weather data (forecast + astronomy)
 # ------------------------
 get_weather() {
+    log_function_enter
+    log_variable "LAT" "$LAT"
+    log_variable "LON" "$LON"
+    
+    log_api_call "WeatherAPI forecast"
     FORECAST=$(curl "${CURL_OPTS[@]}" \
         "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
     if ! check_api_response "$FORECAST" "forecast"; then
-        echo "Failed to fetch weather data. Retrying in 5 minutes..."
-        sleep 300
+        log_error "Failed to fetch weather data"
+        log_function_exit "failure"
         return 1
     fi
 
+    log_api_call "WeatherAPI astronomy"
     ASTRONOMY=$(curl "${CURL_OPTS[@]}" \
         "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
     if ! check_api_response "$ASTRONOMY" "astronomy"; then
-        echo "Warning: Failed to fetch astronomy data. Continuing with weather only..."
+        log_warn "Failed to fetch astronomy data. Continuing with weather only..."
         ASTRONOMY='{"astronomy":{"astro":{"sunrise":"","sunset":"","moonrise":"","moonset":"","moon_phase":""}}}'
     fi
 
-    # Current conditions with fallbacks
-    TEMP_C=$(echo "$FORECAST" | jq -r '.current.temp_c // 0')
-    FEELS=$(echo "$FORECAST" | jq -r '.current.feelslike_c // 0')
-    HUMIDITY=$(echo "$FORECAST" | jq -r '.current.humidity // 0')
-    WIND_KPH=$(echo "$FORECAST" | jq -r '.current.wind_kph // 0')
-    WIND_DIR_DEG=$(echo "$FORECAST" | jq -r '.current.wind_degree // 0')
+    # Use safe extraction for all values
+    TEMP_C=$(safe_extract_value "$FORECAST" '.current.temp_c' '0')
+    FEELS=$(safe_extract_value "$FORECAST" '.current.feelslike_c' '0')
+    HUMIDITY=$(safe_extract_value "$FORECAST" '.current.humidity' '0')
+    WIND_KPH=$(safe_extract_value "$FORECAST" '.current.wind_kph' '0')
+    WIND_DIR_DEG=$(safe_extract_value "$FORECAST" '.current.wind_degree' '0')
     WIND_DIR=$(deg_to_dir "$WIND_DIR_DEG")
-    PRECIP=$(echo "$FORECAST" | jq -r '.current.precip_mm // 0')
-    UV=$(echo "$FORECAST" | jq -r '.current.uv // 0')
-    VIS=$(echo "$FORECAST" | jq -r '.current.vis_km // 0')
-    PRESSURE_MB=$(echo "$FORECAST" | jq -r '.current.pressure_mb // 0')
-    PRESSURE_IN=$(echo "$FORECAST" | jq -r '.current.pressure_in // 0')
-    CONDITION=$(echo "$FORECAST" | jq -r '.current.condition.text // ""')
-    AQI=$(echo "$FORECAST" | jq -r '.current.air_quality["us-epa-index"] // 0')
-    PM25=$(echo "$FORECAST" | jq -r '.current.air_quality.pm2_5 // 0')
+    PRECIP=$(safe_extract_value "$FORECAST" '.current.precip_mm' '0')
+    UV=$(safe_extract_value "$FORECAST" '.current.uv' '0')
+    VIS=$(safe_extract_value "$FORECAST" '.current.vis_km' '0')
+    PRESSURE_MB=$(safe_extract_value "$FORECAST" '.current.pressure_mb' '0')
+    PRESSURE_IN=$(safe_extract_value "$FORECAST" '.current.pressure_in' '0')
+    CONDITION=$(safe_extract_value "$FORECAST" '.current.condition.text' '')
+    AQI=$(safe_extract_value "$FORECAST" '.current.air_quality["us-epa-index"]' '0')
+    PM25=$(safe_extract_value "$FORECAST" '.current.air_quality.pm2_5' '0')
 
-    SUNRISE=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.sunrise // ""')
-    SUNSET=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.sunset // ""')
-    MOONRISE=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.moonrise // ""')
-    MOONSET=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.moonset // ""')
-    MOON_PHASE=$(echo "$ASTRONOMY" | jq -r '.astronomy.astro.moon_phase // ""')
+    SUNRISE=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.sunrise' '')
+    SUNSET=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.sunset' '')
+    MOONRISE=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.moonrise' '')
+    MOONSET=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.moonset' '')
+    MOON_PHASE=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.moon_phase' '')
 
+    # Log all extracted values
+    log_debug "Weather data extracted: TEMP_C=$TEMP_C, HUMIDITY=$HUMIDITY, WIND_KPH=$WIND_KPH, PRECIP=$PRECIP, UV=$UV, PRESSURE_IN=$PRESSURE_IN, AQI=$AQI"
+    log_debug "Astronomy data: SUNRISE=$SUNRISE, SUNSET=$SUNSET, MOON_PHASE=$MOON_PHASE"
+    
+    log_function_exit "success"
     return 0
 }
 
@@ -450,11 +761,15 @@ get_weather() {
 # Data extraction functions
 # ------------------------
 extract_peak_data() {
+    log_function_enter "$2"
     local forecast_json="$1"
     local day_index="$2"
+    log_variable "day_index" "$day_index"
     
     # GUARD: Validate input JSON
     if [[ -z "$forecast_json" || "$forecast_json" == "null" ]]; then
+        log_error "Empty or null forecast JSON for day $day_index"
+        log_function_exit "fallback"
         echo "0|Unknown|0|Unknown|0|Unknown|0|Unknown||||||"
         return 1
     fi
@@ -462,143 +777,295 @@ extract_peak_data() {
     # GUARD: Validate day index exists
     local day_count=$(echo "$forecast_json" | jq -r '.forecast.forecastday | length' 2>/dev/null)
     if [[ "$day_count" -le "$day_index" ]]; then
+        log_error "Day index $day_index out of range (total days: $day_count)"
+        log_function_exit "fallback"
         echo "0|Unknown|0|Unknown|0|Unknown|0|Unknown||||||"
         return 1
     fi
 
-    # GUARD: Extract max temperature with fallbacks
+    # Extract all peak data
     local max_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | max_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
-    local max_temp_value="0"
-    local max_temp_time="Unknown"
-    if [[ -n "$max_temp_data" && "$max_temp_data" != "null" ]]; then
+    local min_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | min_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
+    local uv_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.uv != null and .uv >= 0)] | max_by(.uv) | {time: .time, value: .uv} // \"\"" 2>/dev/null)
+    local rain_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.precip_mm != null)] | max_by(.precip_mm) | {time: .time, value: .precip_mm} // \"\"" 2>/dev/null)
+
+    # Parse extracted data with fallbacks
+    local max_temp_value="0" max_temp_time="Unknown"
+    local min_temp_value="0" min_temp_time="Unknown" 
+    local peak_uv_value="0" uv_hour="Unknown"
+    local rain_peak="0" rain_time="Unknown"
+
+    [[ -n "$max_temp_data" && "$max_temp_data" != "null" ]] && {
         max_temp_value=$(echo "$max_temp_data" | jq -r '.value // 0')
         local temp_time=$(echo "$max_temp_data" | jq -r '.time // ""')
         [[ -n "$temp_time" ]] && max_temp_time=$(echo "$temp_time" | cut -d' ' -f2)
-    fi
+    }
 
-    # GUARD: Extract min temperature with fallbacks
-    local min_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | min_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
-    local min_temp_value="0"
-    local min_temp_time="Unknown"
-    if [[ -n "$min_temp_data" && "$min_temp_data" != "null" ]]; then
+    [[ -n "$min_temp_data" && "$min_temp_data" != "null" ]] && {
         min_temp_value=$(echo "$min_temp_data" | jq -r '.value // 0')
         local temp_time=$(echo "$min_temp_data" | jq -r '.time // ""')
         [[ -n "$temp_time" ]] && min_temp_time=$(echo "$temp_time" | cut -d' ' -f2)
-    fi
+    }
 
-    # GUARD: Extract UV data with comprehensive null checking
-    local uv_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.uv != null and .uv >= 0)] | max_by(.uv) | {time: .time, value: .uv} // \"\"" 2>/dev/null)
-    local peak_uv_value="0"
-    local uv_hour="Unknown"
-    if [[ -n "$uv_data" && "$uv_data" != "null" ]]; then
+    [[ -n "$uv_data" && "$uv_data" != "null" ]] && {
         peak_uv_value=$(echo "$uv_data" | jq -r '.value // 0')
         local uv_time=$(echo "$uv_data" | jq -r '.time // ""')
         [[ -n "$uv_time" ]] && uv_hour=$(echo "$uv_time" | cut -d' ' -f2)
-    fi
+    }
 
-    # GUARD: Extract rain data with validation
-    local rain_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.precip_mm != null)] | max_by(.precip_mm) | {time: .time, value: .precip_mm} // \"\"" 2>/dev/null)
-    local rain_peak="0"
-    local rain_time="Unknown"
-    if [[ -n "$rain_data" && "$rain_data" != "null" ]]; then
+    [[ -n "$rain_data" && "$rain_data" != "null" ]] && {
         rain_peak=$(echo "$rain_data" | jq -r '.value // 0')
         local rain_time_raw=$(echo "$rain_data" | jq -r '.time // ""')
         [[ -n "$rain_time_raw" ]] && rain_time=$(echo "$rain_time_raw" | cut -d' ' -f2)
-    fi
+    }
 
-    # GUARD: Safe time formatting
-    [[ -n "$max_temp_time" && "$max_temp_time" != "Unknown" ]] && max_temp_time=$(format_time_12hr "$max_temp_time" 2>/dev/null || echo "Unknown")
-    [[ -n "$min_temp_time" && "$min_temp_time" != "Unknown" ]] && min_temp_time=$(format_time_12hr "$min_temp_time" 2>/dev/null || echo "Unknown")
-    [[ -n "$uv_hour" && "$uv_hour" != "Unknown" ]] && uv_hour=$(format_time_12hr "$uv_hour" 2>/dev/null || echo "Unknown")
-    [[ -n "$rain_time" && "$rain_time" != "Unknown" ]] && rain_time=$(format_time_12hr "$rain_time" 2>/dev/null || echo "Unknown")
+    # Format times
+    [[ "$max_temp_time" != "Unknown" ]] && max_temp_time=$(format_time_12hr "$max_temp_time" 2>/dev/null || echo "Unknown")
+    [[ "$min_temp_time" != "Unknown" ]] && min_temp_time=$(format_time_12hr "$min_temp_time" 2>/dev/null || echo "Unknown")
+    [[ "$uv_hour" != "Unknown" ]] && uv_hour=$(format_time_12hr "$uv_hour" 2>/dev/null || echo "Unknown")
+    [[ "$rain_time" != "Unknown" ]] && rain_time=$(format_time_12hr "$rain_time" 2>/dev/null || echo "Unknown")
 
-    # GUARD: Safe advice generation
-    local temp_advice=$(get_advice temperature "$max_temp_value" 2>/dev/null || echo "")
-    local temp_emoji=$(get_emoji temperature "$max_temp_value" 2>/dev/null || echo "🌡")
-    local rain_advice=$(get_advice rain "$rain_peak" 2>/dev/null || echo "")
-    local rain_emoji=$(get_emoji rain "$rain_peak" 2>/dev/null || echo "💧")
-    local uv_advice=$(get_advice uv "$peak_uv_value" 2>/dev/null || echo "")
-    local uv_emoji=$(get_emoji uv "$peak_uv_value" 2>/dev/null || echo "☀️")
+    # Get assessments once (FIXED recursion issue)
+    local temp_assessment=$(get_weather_metrics temperature "$max_temp_value" "°C")
+    local rain_assessment=$(get_weather_metrics rain "$rain_peak" "mm") 
+    local uv_assessment=$(get_weather_metrics uv "$peak_uv_value" "")
 
-    echo "${max_temp_value:-0}|${max_temp_time:-Unknown}|${min_temp_value:-0}|${min_temp_time:-Unknown}|${peak_uv_value:-0}|${uv_hour:-Unknown}|${rain_peak:-0}|${rain_time:-Unknown}|${temp_advice}|${temp_emoji}|${rain_advice}|${rain_emoji}|${uv_advice}|${uv_emoji}"
+    local temp_advice=$(echo "$temp_assessment" | cut -d'|' -f2)
+    local temp_emoji=$(echo "$temp_assessment" | cut -d'|' -f3)
+    local rain_advice=$(echo "$rain_assessment" | cut -d'|' -f2)
+    local rain_emoji=$(echo "$rain_assessment" | cut -d'|' -f3)
+    local uv_advice=$(echo "$uv_assessment" | cut -d'|' -f2)
+    local uv_emoji=$(echo "$uv_assessment" | cut -d'|' -f3)
+
+    local result="${max_temp_value:-0}|${max_temp_time:-Unknown}|${min_temp_value:-0}|${min_temp_time:-Unknown}|${peak_uv_value:-0}|${uv_hour:-Unknown}|${rain_peak:-0}|${rain_time:-Unknown}|${temp_advice}|${temp_emoji}|${rain_advice}|${rain_emoji}|${uv_advice}|${uv_emoji}"
+    
+    log_debug "Peak data for day $day_index: max_temp=$max_temp_value, min_temp=$min_temp_value, uv=$peak_uv_value, rain=$rain_peak"
+    log_function_exit "success"
+    echo "$result"
 }
 
 # ------------------------
-# Generate alerts & notifications (with emojis)
+# Alert Generation Functions
 # ------------------------
 generate_alerts() {
+    log_function_enter
     ALERTS=()
 
-    if [[ "$(get_alert_status temperature "$TEMP_C")" == "1" ]]; then
-        emoji=$(get_emoji temperature "$TEMP_C")
-        advice=$(get_advice temperature "$TEMP_C")
-        level=$(get_level temperature "$TEMP_C")
-        case "$level" in
-            "extreme_heat") ALERTS+=("$emoji Extreme heat ($TEMP_C°C) → $advice") ;;
-            "extreme_cold") ALERTS+=("$emoji Extreme cold ($TEMP_C°C) → $advice") ;;
+    # Get all weather metrics at once (FIXED recursion issue)
+    local temp_assessment=$(get_weather_metrics temperature "$TEMP_C" "°C")
+    local rain_assessment=$(get_weather_metrics rain "$PRECIP" "mm")
+    local wind_assessment=$(get_weather_metrics wind "$WIND_KPH" "km/h")
+    local uv_assessment=$(get_weather_metrics uv "$UV" "")
+    local pollution_assessment=$(get_weather_metrics pollution "$AQI" "")
+    local pressure_assessment=$(get_weather_metrics pressure "$PRESSURE_IN" "inHg")
+
+    # Parse assessments
+    local temp_level=$(echo "$temp_assessment" | cut -d'|' -f1)
+    local temp_advice=$(echo "$temp_assessment" | cut -d'|' -f2)
+    local temp_emoji=$(echo "$temp_assessment" | cut -d'|' -f3)
+    local temp_alert=$(echo "$temp_assessment" | cut -d'|' -f4)
+
+    local rain_level=$(echo "$rain_assessment" | cut -d'|' -f1)
+    local rain_advice=$(echo "$rain_assessment" | cut -d'|' -f2)
+    local rain_emoji=$(echo "$rain_assessment" | cut -d'|' -f3)
+    local rain_alert=$(echo "$rain_assessment" | cut -d'|' -f4)
+
+    local wind_level=$(echo "$wind_assessment" | cut -d'|' -f1)
+    local wind_advice=$(echo "$wind_assessment" | cut -d'|' -f2)
+    local wind_emoji=$(echo "$wind_assessment" | cut -d'|' -f3)
+    local wind_alert=$(echo "$wind_assessment" | cut -d'|' -f4)
+
+    local uv_level=$(echo "$uv_assessment" | cut -d'|' -f1)
+    local uv_advice=$(echo "$uv_assessment" | cut -d'|' -f2)
+    local uv_emoji=$(echo "$uv_assessment" | cut -d'|' -f3)
+    local uv_alert=$(echo "$uv_assessment" | cut -d'|' -f4)
+
+    local pollution_level=$(echo "$pollution_assessment" | cut -d'|' -f1)
+    local pollution_advice=$(echo "$pollution_assessment" | cut -d'|' -f2)
+    local pollution_emoji=$(echo "$pollution_assessment" | cut -d'|' -f3)
+    local pollution_alert=$(echo "$pollution_assessment" | cut -d'|' -f4)
+
+    local pressure_level=$(echo "$pressure_assessment" | cut -d'|' -f1)
+    local pressure_advice=$(echo "$pressure_assessment" | cut -d'|' -f2)
+    local pressure_emoji=$(echo "$pressure_assessment" | cut -d'|' -f3)
+    local pressure_alert=$(echo "$pressure_assessment" | cut -d'|' -f4)
+
+    # Generate alerts with state management
+    if [[ "$temp_alert" == "1" ]] && should_alert "temperature_$temp_level" "$TEMP_C" "5"; then
+        case "$temp_level" in
+            "extreme_heat") 
+                ALERTS+=("$temp_emoji Extreme heat ($TEMP_C°C) → $temp_advice")
+                save_alert_state "temperature_$temp_level" "$TEMP_C"
+                ;;
+            "extreme_cold") 
+                ALERTS+=("$temp_emoji Extreme cold ($TEMP_C°C) → $temp_advice")
+                save_alert_state "temperature_$temp_level" "$TEMP_C"
+                ;;
         esac
     fi
 
-    if [[ "$(get_alert_status rain "$PRECIP")" == "1" ]]; then
-        emoji=$(get_emoji rain "$PRECIP")
-        advice=$(get_advice rain "$PRECIP")
-        level=$(get_level rain "$PRECIP")
-        case "$level" in
-            "storm") ALERTS+=("$emoji Storming ($PRECIP mm) → $advice") ;;
-            "heavy") ALERTS+=("$emoji Heavy rain ($PRECIP mm) → $advice") ;;
-            "moderate") ALERTS+=("$emoji Moderate rain ($PRECIP mm) → $advice") ;;
-            "light") ALERTS+=("$emoji Light rain ($PRECIP mm) → $advice") ;;
+    if [[ "$rain_alert" == "1" ]] && should_alert "rain_$rain_level" "$PRECIP" "2"; then
+        case "$rain_level" in
+            "storm") 
+                ALERTS+=("$rain_emoji Storming ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+            "heavy") 
+                ALERTS+=("$rain_emoji Heavy rain ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+            "moderate") 
+                ALERTS+=("$rain_emoji Moderate rain ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+            "light") 
+                ALERTS+=("$rain_emoji Light rain ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
         esac
     fi
 
-    if [[ "$(get_alert_status wind "$WIND_KPH")" == "1" ]]; then
-        emoji=$(get_emoji wind "$WIND_KPH")
-        advice=$(get_advice wind "$WIND_KPH")
-        level=$(get_level wind "$WIND_KPH")
-        case "$level" in
-            "storm") ALERTS+=("$emoji Storm-force wind ($WIND_KPH km/h) → $advice") ;;
-            "strong") ALERTS+=("$emoji Strong wind ($WIND_KPH km/h) → $advice") ;;
+    if [[ "$wind_alert" == "1" ]] && should_alert "wind_$wind_level" "$WIND_KPH" "10"; then
+        case "$wind_level" in
+            "storm") 
+                ALERTS+=("$wind_emoji Storm-force wind ($WIND_KPH km/h) → $wind_advice")
+                save_alert_state "wind_$wind_level" "$WIND_KPH"
+                ;;
+            "strong") 
+                ALERTS+=("$wind_emoji Strong wind ($WIND_KPH km/h) → $wind_advice")
+                save_alert_state "wind_$wind_level" "$WIND_KPH"
+                ;;
         esac
     fi
 
-    if [[ "$(get_alert_status uv "$UV")" == "1" ]]; then
-        emoji=$(get_emoji uv "$UV")
-        advice=$(get_advice uv "$UV")
-        level=$(get_level uv "$UV")
-        case "$level" in
-            "extreme") ALERTS+=("$emoji Extreme UV ($UV) → $advice") ;;
-            "high") ALERTS+=("$emoji High UV ($UV) → $advice") ;;
+    if [[ "$uv_alert" == "1" ]] && should_alert "uv_$uv_level" "$UV" "1"; then
+        case "$uv_level" in
+            "extreme") 
+                ALERTS+=("$uv_emoji Extreme UV ($UV) → $uv_advice")
+                save_alert_state "uv_$uv_level" "$UV"
+                ;;
+            "high") 
+                ALERTS+=("$uv_emoji High UV ($UV) → $uv_advice")
+                save_alert_state "uv_$uv_level" "$UV"
+                ;;
         esac
     fi
 
-    if [[ "$(get_alert_status pollution "$AQI")" == "1" ]]; then
-        emoji=$(get_emoji pollution "$AQI")
-        advice=$(get_advice pollution "$AQI")
-        level=$(get_level pollution "$AQI")
-        case "$level" in
-            "unhealthy") ALERTS+=("$emoji Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
-            "very_unhealthy") ALERTS+=("$emoji Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
-            "hazardous") ALERTS+=("$emoji Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $advice") ;;
+    if [[ "$pollution_alert" == "1" ]] && should_alert "pollution_$pollution_level" "$AQI" "1"; then
+        case "$pollution_level" in
+            "unhealthy") 
+                ALERTS+=("$pollution_emoji Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $pollution_advice")
+                save_alert_state "pollution_$pollution_level" "$AQI"
+                ;;
+            "very_unhealthy") 
+                ALERTS+=("$pollution_emoji Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $pollution_advice")
+                save_alert_state "pollution_$pollution_level" "$AQI"
+                ;;
+            "hazardous") 
+                ALERTS+=("$pollution_emoji Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $pollution_advice")
+                save_alert_state "pollution_$pollution_level" "$AQI"
+                ;;
         esac
     fi
 
-    # Pressure alerts (using inHg)
-    if [[ "$(get_alert_status pressure "$PRESSURE_IN")" == "1" ]]; then
-        emoji=$(get_emoji pressure "$PRESSURE_IN")
-        advice=$(get_advice pressure "$PRESSURE_IN")
-        level=$(get_level pressure "$PRESSURE_IN")
-        case "$level" in
-            "very_low") ALERTS+=("$emoji Very low pressure ($PRESSURE_IN inHg) → $advice") ;;
-            "low") ALERTS+=("$emoji Low pressure ($PRESSURE_IN inHg) → $advice") ;;
+    if [[ "$pressure_alert" == "1" ]] && should_alert "pressure_$pressure_level" "$PRESSURE_IN" "0.1"; then
+        case "$pressure_level" in
+            "very_low") 
+                ALERTS+=("$pressure_emoji Very low pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+            "low") 
+                ALERTS+=("$pressure_emoji Low pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+            "very_high")
+                ALERTS+=("$pressure_emoji Very high pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+            "high")
+                ALERTS+=("$pressure_emoji High pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
         esac
     fi
 
-    [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
-    [[ "$CONDITION" =~ [Ff]og ]] && ALERTS+=("🌫 Fog detected → $(give_advice fog)")
-    [[ "$CONDITION" =~ [Ss]now ]] && ALERTS+=("❄️ Snow detected → $(give_advice snow)")
+    # Special condition alerts
+    [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && should_alert "thunderstorm" "1" "0" && {
+        ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
+        save_alert_state "thunderstorm" "1"
+    }
+
+    [[ "$CONDITION" =~ [Ff]og ]] && should_alert "fog" "1" "0" && {
+        ALERTS+=("🌫 Fog detected → $(give_advice fog)")
+        save_alert_state "fog" "1"
+    }
+
+    [[ "$CONDITION" =~ [Ss]now ]] && should_alert "snow" "1" "0" && {
+        ALERTS+=("❄️ Snow detected → $(give_advice snow)")
+        save_alert_state "snow" "1"
+    }
+    
+    log_debug "Generated ${#ALERTS[@]} current condition alerts"
+    log_function_exit "${#ALERTS[@]} alerts"
 }
 
-generate_astronomy_alerts() {
+process_peak_alerts() {
+    log_function_enter
+    PEAK_ALERTS=()
+    
+    # Process today and tomorrow's peak data
+    for day_index in 0 1; do
+        local day_date=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day_index].date")
+        local peak_data=$(extract_peak_data "$FORECAST" "$day_index")
+        
+        IFS='|' read -r max_temp max_temp_time min_temp min_temp_time peak_uv uv_hour rain_peak rain_time temp_advice temp_emoji rain_advice rain_emoji uv_advice uv_emoji <<< "$peak_data"
+        
+        log_debug "Day $day_index ($day_date) peaks - Max: ${max_temp}°C, Min: ${min_temp}°C, UV: $peak_uv, Rain: ${rain_peak}mm"
+        
+        # Alert for extreme temperature peaks
+        if compare_bc "$max_temp >= 38"; then
+            local alert_key="peak_temp_${day_date}_max"
+            if should_alert "$alert_key" "$max_temp" "2"; then
+                PEAK_ALERTS+=("🔥 Peak Heat Alert: ${max_temp}°C at $max_temp_time on $day_date")
+                save_alert_state "$alert_key" "$max_temp"
+            fi
+        fi
+        
+        if compare_bc "$min_temp <= 0"; then
+            local alert_key="peak_temp_${day_date}_min" 
+            if should_alert "$alert_key" "$min_temp" "1"; then
+                PEAK_ALERTS+=("🥶 Freezing Alert: ${min_temp}°C at $min_temp_time on $day_date")
+                save_alert_state "$alert_key" "$min_temp"
+            fi
+        fi
+        
+        # Alert for extreme UV
+        if compare_bc "$peak_uv >= 8"; then
+            local alert_key="peak_uv_${day_date}"
+            if should_alert "$alert_key" "$peak_uv" "1"; then
+                PEAK_ALERTS+=("🌞 Extreme UV Alert: $peak_uv at $uv_hour on $day_date")
+                save_alert_state "$alert_key" "$peak_uv"
+            fi
+        fi
+        
+        # Alert for heavy rain
+        if compare_bc "$rain_peak >= 20"; then
+            local alert_key="peak_rain_${day_date}"
+            if should_alert "$alert_key" "$rain_peak" "5"; then
+                PEAK_ALERTS+=("🌧️ Heavy Rain Alert: ${rain_peak}mm at $rain_time on $day_date")
+                save_alert_state "$alert_key" "$rain_peak"
+            fi
+        fi
+    done
+    
+    log_debug "Generated ${#PEAK_ALERTS[@]} peak alerts"
+    log_function_exit "${#PEAK_ALERTS[@]} alerts"
+}
+
+process_astronomy_alerts() {
+    log_function_enter
+    ASTRONOMY_ALERTS=()
+    
     local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
     local hour=${localtime%:*}
     local minute=${localtime#*:}
@@ -609,47 +1076,115 @@ generate_astronomy_alerts() {
     local moonrise_minutes=$(time_to_minutes "$MOONRISE")
     local moonset_minutes=$(time_to_minutes "$MOONSET")
 
+    # Sunrise/Sunset alerts
     if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
-        ALERTS+=("☀️ Sunrise at $SUNRISE → $(give_advice sunrise)")
+        local alert_key="sunrise_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("☀️ Sunrise in ${ALERT_WINDOW}min at $SUNRISE → $(give_advice sunrise)")
+            save_alert_state "$alert_key" "$now"
+        fi
     elif (( now >= sunset_minutes - ALERT_WINDOW && now <= sunset_minutes )); then
-        ALERTS+=("🌇 Sunset at $SUNSET → $(give_advice sunset)")
+        local alert_key="sunset_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("🌇 Sunset in ${ALERT_WINDOW}min at $SUNSET → $(give_advice sunset)")
+            save_alert_state "$alert_key" "$now"
+        fi
     fi
 
+    # Moonrise/Moonset alerts
     if (( now >= moonrise_minutes - ALERT_WINDOW && now <= moonrise_minutes )); then
-        ALERTS+=("🌙 Moonrise at $MOONRISE → $(give_advice moonrise)")
+        local alert_key="moonrise_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("🌙 Moonrise in ${ALERT_WINDOW}min at $MOONRISE → $(give_advice moonrise)")
+            save_alert_state "$alert_key" "$now"
+        fi
     elif (( now >= moonset_minutes - ALERT_WINDOW && now <= moonset_minutes )); then
-        ALERTS+=("🌘 Moonset at $MOONSET → $(give_advice moonset)")
+        local alert_key="moonset_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("🌘 Moonset in ${ALERT_WINDOW}min at $MOONSET → $(give_advice moonset)")
+            save_alert_state "$alert_key" "$now"
+        fi
     fi
 
+    # Special moon phase alerts
     case "$MOON_PHASE" in
-        "Full Moon") ALERTS+=("🌕 Full Moon → $(give_advice full_moon)") ;;
-        "New Moon") ALERTS+=("🌑 New Moon → $(give_advice new_moon)") ;;
-        "Eclipse") ALERTS+=("🌒 Eclipse today → $(give_advice eclipse)") ;;
+        "Full Moon")
+            local alert_key="full_moon_$(date +%Y%m)"
+            if should_alert "$alert_key" "1" "0"; then
+                ASTRONOMY_ALERTS+=("🌕 Full Moon Tonight → $(give_advice full_moon)")
+                save_alert_state "$alert_key" "1"
+            fi
+            ;;
+        "New Moon")
+            local alert_key="new_moon_$(date +%Y%m)"
+            if should_alert "$alert_key" "1" "0"; then
+                ASTRONOMY_ALERTS+=("🌑 New Moon Tonight → $(give_advice new_moon)")
+                save_alert_state "$alert_key" "1"
+            fi
+            ;;
     esac
+    
+    log_debug "Generated ${#ASTRONOMY_ALERTS[@]} astronomy alerts"
+    log_function_exit "${#ASTRONOMY_ALERTS[@]} alerts"
 }
 
+# ------------------------
+# Notification System
+# ------------------------
 send_notifications() {
+    log_function_enter
+    
+    # Generate all types of alerts
     generate_alerts
-    generate_astronomy_alerts
+    process_peak_alerts
+    process_astronomy_alerts
 
     MESSAGE=""
-    if [[ ${#ALERTS[@]} -gt 0 ]]; then
-        MESSAGE+="🚨 Alerts:\n"
-        for a in "${ALERTS[@]}"; do
+    
+    # Combine all alerts
+    local ALL_ALERTS=("${ALERTS[@]}" "${PEAK_ALERTS[@]}" "${ASTRONOMY_ALERTS[@]}")
+    
+    if [[ ${#ALL_ALERTS[@]} -gt 0 ]]; then
+        MESSAGE+="🚨 Weather Alerts:\n"
+        for a in "${ALL_ALERTS[@]}"; do
             MESSAGE+="• $a\n"
         done
         MESSAGE+="\n"
+        log_info "Sending ${#ALL_ALERTS[@]} total alerts to user"
+        
+        # Send desktop notifications for critical alerts
+        for alert in "${ALL_ALERTS[@]}"; do
+            if [[ "$alert" =~ 🔥|🥶|🌪|⛈|☠️ ]]; then  # Critical emojis
+                if command -v notify-send >/dev/null 2>&1; then
+                    notify-send "Weather Alert" "$alert" -u critical -t 10000 2>/dev/null ||
+                    log_warn "Desktop notification failed for: $alert"
+                fi
+            fi
+        done
+    else
+        MESSAGE+="✅ No weather alerts at this time.\n\n"
+        log_info "No weather alerts to send"
     fi
 
+    # Get current assessments for display (FIXED - no recursion)
+    local current_temp=$(get_weather_metrics temperature "$TEMP_C" "°C")
+    local current_humidity=$(get_weather_metrics humidity "$HUMIDITY" "%")
+    local current_wind=$(get_weather_metrics wind "$WIND_KPH" "km/h")
+    local current_rain=$(get_weather_metrics rain "$PRECIP" "mm")
+    local current_uv=$(get_weather_metrics uv "$UV" "")
+    local current_pressure=$(get_weather_metrics pressure "$PRESSURE_IN" "inHg")
+    local current_pollution=$(get_weather_metrics pollution "$AQI" "")
+    local current_visibility=$(get_weather_metrics visibility "$VIS" "km")
+
     MESSAGE+="📊 Current ($CITY: $LAT, $LON):\n"
-    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(get_advice temperature "$TEMP_C") $(get_emoji temperature "$TEMP_C")\n"
-    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(get_advice humidity "$HUMIDITY") $(get_emoji humidity "$HUMIDITY")\n"
-    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(get_advice wind "$WIND_KPH") $(get_emoji wind "$WIND_KPH")\n"
-    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(get_advice rain "$PRECIP") $(get_emoji rain "$PRECIP")\n"
-    MESSAGE+="• 🌞 UV: $UV → $(get_advice uv "$UV") $(get_emoji uv "$UV")\n"
-    MESSAGE+="• 📊 Pressure: $PRESSURE_IN inHg → $(get_advice pressure "$PRESSURE_IN") $(get_emoji pressure "$PRESSURE_IN")\n"
-    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(get_advice pollution "$AQI") $(get_emoji pollution "$AQI")\n"
-    MESSAGE+="• 👁 Visibility: $VIS km → $(get_advice visibility "$VIS") $(get_emoji visibility "$VIS")\n\n"
+    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(echo "$current_temp" | cut -d'|' -f2) $(echo "$current_temp" | cut -d'|' -f3)\n"
+    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(echo "$current_humidity" | cut -d'|' -f2) $(echo "$current_humidity" | cut -d'|' -f3)\n"
+    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(echo "$current_wind" | cut -d'|' -f2) $(echo "$current_wind" | cut -d'|' -f3)\n"
+    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(echo "$current_rain" | cut -d'|' -f2) $(echo "$current_rain" | cut -d'|' -f3)\n"
+    MESSAGE+="• 🌞 UV: $UV → $(echo "$current_uv" | cut -d'|' -f2) $(echo "$current_uv" | cut -d'|' -f3)\n"
+    MESSAGE+="• 📊 Pressure: $PRESSURE_IN inHg → $(echo "$current_pressure" | cut -d'|' -f2) $(echo "$current_pressure" | cut -d'|' -f3)\n"
+    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(echo "$current_pollution" | cut -d'|' -f2) $(echo "$current_pollution" | cut -d'|' -f3)\n"
+    MESSAGE+="• 👁 Visibility: $VIS km → $(echo "$current_visibility" | cut -d'|' -f2) $(echo "$current_visibility" | cut -d'|' -f3)\n\n"
 
     MESSAGE+="📅 Upcoming Hours Forecast:\n"
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
@@ -665,27 +1200,28 @@ send_notifications() {
         hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
         hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
         hr_pressure=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].pressure_in")
-        hr_advice=$(get_advice rain "$hr_rain")
-        hr_emoji=$(get_emoji rain "$hr_rain")
+        
+        local hr_rain_assessment=$(get_weather_metrics rain "$hr_rain" "mm")
+        local hr_rain_advice=$(echo "$hr_rain_assessment" | cut -d'|' -f2)
+        local hr_rain_emoji=$(echo "$hr_rain_assessment" | cut -d'|' -f3)
 
         MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm, $hr_pressure inHg"
-        [[ -n "$hr_advice" ]] && MESSAGE+=" → $hr_advice $hr_emoji"
+        [[ -n "$hr_rain_advice" ]] && MESSAGE+=" → $hr_rain_advice $hr_rain_emoji"
         MESSAGE+="\n"
     done
 
-    MESSAGE+="\n📄 Daily Peaks:\n"
+    # Add peak data to the display
+    MESSAGE+="\n📅 Next 2 Days Peak Forecast:\n"
     for i in 0 1; do
         day_date=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].date")
-        
-        # Use the improved extraction function
         local peak_data=$(extract_peak_data "$FORECAST" "$i")
         IFS='|' read -r max_temp max_temp_time min_temp min_temp_time peak_uv uv_hour rain_peak rain_time temp_advice temp_emoji rain_advice rain_emoji uv_advice uv_emoji <<< "$peak_data"
 
         MESSAGE+="• $day_date:\n"
-        MESSAGE+="  - 🌡 Max Temp: ${max_temp}°C at $max_temp_time → $temp_advice $temp_emoji\n"
-        MESSAGE+="  - 🌡 Min Temp: ${min_temp}°C at $min_temp_time → $temp_advice $temp_emoji\n"
-        MESSAGE+="  - 🌞 Peak UV: ${peak_uv} at $uv_hour → $uv_advice $uv_emoji\n"
-        MESSAGE+="  - 🌧 Peak Rain: ${rain_peak} mm at $rain_time → $rain_advice $rain_emoji\n\n"
+        MESSAGE+="  - 🌡 Max: ${max_temp}°C at $max_temp_time $temp_emoji\n"
+        MESSAGE+="  - 🌡 Min: ${min_temp}°C at $min_temp_time $temp_emoji\n"
+        MESSAGE+="  - 🌞 UV: ${peak_uv} at $uv_hour $uv_emoji\n"
+        MESSAGE+="  - 🌧 Rain: ${rain_peak}mm at $rain_time $rain_emoji\n\n"
     done
 
     MESSAGE+="🌌 Astronomy:\n"
@@ -693,71 +1229,105 @@ send_notifications() {
     MESSAGE+="🌙 Moonrise: $MOONRISE | 🌘 Moonset: $MOONSET\n"
     MESSAGE+="🌔 Moon Phase: $MOON_PHASE\n"
     
-    # Get current time in 12-hour format with explicit AM/PM
-    current_hour=$(date +%-H)
-    current_minute=$(date +%M)
-    if [[ $current_hour -ge 12 ]]; then
-        period="PM"
-        [[ $current_hour -gt 12 ]] && current_hour=$((current_hour - 12))
-    else
-        period="AM"
-        [[ $current_hour -eq 0 ]] && current_hour=12
-    fi
-    current_time_12hr="${current_hour}:${current_minute} ${period}"
+    # Send the main notification
+    local current_time_12hr=$(date +"%I:%M %p")
+    log_info "Sending comprehensive notification for $CITY at $current_time_12hr"
     
-    kdialog --title "Weather Update - $CITY ($current_time_12hr)" --msgbox "$MESSAGE" &
-    echo -e "$MESSAGE" | tee -a "$LOG_FILE"
+    if command -v kdialog >/dev/null 2>&1; then
+        kdialog --title "Weather Update - $CITY ($current_time_12hr)" --msgbox "$MESSAGE" 2>/dev/null ||
+        log_warn "KDialog notification failed"
+    else
+        echo -e "Weather Update - $CITY ($current_time_12hr)\n\n$MESSAGE"
+    fi
+    
+    echo -e "$(date): Weather Update\n$MESSAGE" >> "$LOG_FILE"
+    log_function_exit "success"
 }
 
 # ------------------------
-# Main loop
+# Main execution workflow
 # ------------------------
-main() {
-    if ! get_location; then
-        notify-send "No internet connection — skipping weather assessment."
-        exit 1
-    else
-        # GUARD: Validate coordinates are real numbers
-        if [[ -z "$LAT" || -z "$LON" || "$LAT" == "null" || "$LON" == "null" ]] || 
-           ! [[ "$LAT" =~ ^-?[0-9]+\.?[0-9]*$ ]] || ! [[ "$LON" =~ ^-?[0-9]+\.?[0-9]*$ ]]; then
-            echo "Error: Invalid coordinates detected (LAT: $LAT, LON: $LON)"
-            exit 1
-        fi
-    fi
-
-    echo "Starting weather monitoring for $CITY ($LAT,$LON)"
+fetch_and_process_weather() {
+    log_function_enter
     
-    # GUARD: Main loop with crash recovery
+    if ! get_location; then
+        log_error "Location detection failed"
+        return 1
+    fi
+    
+    if ! get_weather; then
+        log_error "Weather data fetch failed"
+        return 1
+    fi
+    
+    if ! send_notifications; then
+        log_error "Notification failed"
+        return 1
+    fi
+    
+    log_function_exit "success"
+    return 0
+}
+
+main() {
+    log_info "Starting weather monitoring script"
+    
+    if ! initialize_script; then
+        log_error "Failed to initialize script"
+        exit 1
+    fi
+    
     local consecutive_failures=0
     while true; do
-        if get_weather; then
+        if fetch_and_process_weather; then
             consecutive_failures=0
-            if send_notifications; then
-                echo "$(date): Weather update sent successfully"
-            else
-                echo "$(date): Notification failed but continuing"
-            fi
+            log_info "Weather update completed successfully, sleeping for $INTERVAL seconds"
+            sleep "$INTERVAL"
         else
             ((consecutive_failures++))
-            echo "$(date): Weather update failed (attempt $consecutive_failures)"
+            log_error "Weather update failed (attempt $consecutive_failures)"
             
-            # GUARD: Reset after too many failures
             if [[ $consecutive_failures -ge 5 ]]; then
-                echo "Critical: Too many consecutive failures, restarting location detection"
-                if ! get_location; then
-                    echo "Fatal: Cannot recover location, exiting"
-                    exit 1
-                fi
-                consecutive_failures=0
+                log_error "Too many consecutive failures, exiting"
+                exit 1
             fi
+            sleep 300  # 5 minutes before retry
         fi
-        sleep "$INTERVAL"
     done
 }
 
+# ------------------------
+# Script Entry Point
+# ------------------------
 if [[ "$1" == "--setup" ]]; then
-    echo "API key should be set in ~/.bashrc as: export WEATHER_API_KEY='your_key_here'"
+    log_info "Setup mode activated"
+    echo "Weather Alarm Script Setup"
+    echo "=========================="
+    echo "1. API key should be set in ~/.bashrc as:"
+    echo "   export WEATHER_API_KEY='your_key_here'"
+    echo ""
+    echo "2. Log level can be set with:"
+    echo "   export WEATHER_LOG_LEVEL=0 (DEBUG) to 3 (ERROR)"
+    echo ""
+    echo "3. Log file can be set with:"
+    echo "   export WEATHER_LOG_FILE='/path/to/log.txt'"
+    echo ""
+    echo "4. Run normally: ./weather_script.sh"
+    echo "   Run in debug: ./weather_script.sh --debug"
     exit 0
 fi
 
-main
+if [[ "$1" == "--debug" ]]; then
+    export WEATHER_LOG_LEVEL=0
+    log_info "Debug mode activated - maximum logging enabled"
+fi
+
+if [[ "$1" == "--test" ]]; then
+    echo "Testing weather script components..."
+    export WEATHER_LOG_LEVEL=0
+    initialize_script && get_location && get_weather && send_notifications
+    exit $?
+fi
+
+# Start the main script
+main "$@"
