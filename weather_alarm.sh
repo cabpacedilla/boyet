@@ -277,19 +277,21 @@ time_to_minutes() {
             echo "0"; 
             return 1; 
         }
-        [[ $hour -gt 23 ]] && { 
+        # FIXED: Use base-10 conversion for comparisons
+        [[ $((10#$hour)) -gt 23 ]] && { 
             log_error "Hour out of range: $hour"
             log_function_exit "0"
             echo "0"; 
             return 1; 
         }
-        [[ $minute -gt 59 ]] && { 
+        [[ $((10#$minute)) -gt 59 ]] && { 
             log_error "Minute out of range: $minute"
             log_function_exit "0"
             echo "0"; 
             return 1; 
         }
-        local result=$((10#$hour * 60 + 10#$minute))
+        # FIXED: Use base-10 conversion to prevent octal interpretation
+        local result=$(( (10#$hour) * 60 + (10#$minute) ))
         log_debug "24h time $time_str converted to $result minutes"
         log_function_exit "$result"
         echo $result
@@ -310,13 +312,14 @@ time_to_minutes() {
         echo "0"; 
         return 1; 
     }
-    [[ $hour -gt 12 || $hour -lt 1 ]] && { 
+    # FIXED: Use base-10 conversion for comparisons
+    [[ $((10#$hour)) -gt 12 || $((10#$hour)) -lt 1 ]] && { 
         log_error "Hour out of 12h range: $hour"
         log_function_exit "0"
         echo "0"; 
         return 1; 
     }
-    [[ $minute -gt 59 ]] && { 
+    [[ $((10#$minute)) -gt 59 ]] && { 
         log_error "Minute out of range: $minute"
         log_function_exit "0"
         echo "0"; 
@@ -329,7 +332,8 @@ time_to_minutes() {
         [[ $hour -ne 12 ]] && hour=$((hour + 12))
     fi
 
-    local result=$((hour * 60 + 10#$minute))
+    # FIXED: Use base-10 conversion to prevent octal interpretation
+    local result=$(( (10#$hour) * 60 + (10#$minute) ))
     log_debug "12h time $time_str converted to $result minutes (24h: $hour:$minute)"
     log_function_exit "$result"
     echo $result
@@ -1069,7 +1073,9 @@ process_astronomy_alerts() {
     local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
     local hour=${localtime%:*}
     local minute=${localtime#*:}
-    local now=$((10#$hour * 60 + 10#$minute))
+    
+    # FIXED: Use base-10 conversion to prevent octal interpretation
+    local now=$(( (10#$hour) * 60 + (10#$minute) ))
 
     local sunrise_minutes=$(time_to_minutes "$SUNRISE")
     local sunset_minutes=$(time_to_minutes "$SUNSET")
@@ -1189,7 +1195,8 @@ send_notifications() {
     MESSAGE+="📅 Upcoming Hours Forecast:\n"
     LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
     for i in {1..3}; do
-        idx=$((10#$LOCAL_HOUR + i))
+        # FIXED: Use base-10 conversion to prevent octal interpretation
+        idx=$(( (10#$LOCAL_HOUR) + i ))
         day=0
         if (( idx > 23 )); then
             idx=$((idx - 24))
