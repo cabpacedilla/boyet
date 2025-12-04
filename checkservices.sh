@@ -24,7 +24,7 @@ SCRIPTS=(
     "security_check"
 )
 
-COOLDOWN=5   # seconds between checks
+COOLDOWN=30   # seconds between checks
 MIN_INSTANCES=1
 
 # --- Function to check Internet connectivity ---

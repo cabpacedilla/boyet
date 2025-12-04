@@ -3,6 +3,15 @@
 # Dependencies: curl, jq, bc, notify-send, kdialog
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
 
+# Singleton implementation
+LOCK_FILE="/tmp/weather_alarm_$(whoami).lock"
+if [ -e "${LOCK_FILE}" ] && kill -0 "$(cat "${LOCK_FILE}")" 2>/dev/null; then
+    echo "Weather alarm already running. Exiting." >&2
+    exit 1
+fi
+echo $$ > "${LOCK_FILE}"
+trap 'rm -f "${LOCK_FILE}"' EXIT
+
 # ------------------------
 # Enhanced Logging System
 # ------------------------
