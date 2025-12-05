@@ -3,14 +3,26 @@
 # Dependencies: curl, jq, bc, notify-send, kdialog
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
 
-# Singleton implementation
 LOCK_FILE="/tmp/weather_alarm_$(whoami).lock"
-if [ -e "${LOCK_FILE}" ] && kill -0 "$(cat "${LOCK_FILE}")" 2>/dev/null; then
-    echo "Weather alarm already running. Exiting." >&2
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
     exit 1
 fi
-echo $$ > "${LOCK_FILE}"
-trap 'rm -f "${LOCK_FILE}"' EXIT
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
 
 # ------------------------
 # Enhanced Logging System
