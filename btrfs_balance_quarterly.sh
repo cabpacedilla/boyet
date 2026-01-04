@@ -1,32 +1,48 @@
 #!/usr/bin/env bash
 
-while true; do
+# 1. Define Logging Functions (Must be at the top)
+log_info() {
+    local MESSAGE="[$(date +'%Y-%m-%d %H:%M:%S')] [INFO] - $1"
+    echo -e "$MESSAGE" | tee -a "$LOGFILE"
+}
 
-    # File to store the last run date
+# Ensure the log directory exists
+mkdir -p "$HOME/scriptlogs"
+
+while true; do
     LAST_RUN_FILE="$HOME/scriptlogs/btrfs-balance-last-run"
     LOGFILE="$HOME/scriptlogs/btrfs-balance-$(date +%Y-%m-%d).log"
-
-    # Get the current and last run dates
     NOW=$(date +%s)
 
     if [ -f "$LAST_RUN_FILE" ]; then
         LAST_RUN=$(cat "$LAST_RUN_FILE")
-        # Calculate difference in days (~120 days for 4 months)
         DIFF_DAYS=$(( (NOW - LAST_RUN) / 86400 ))
     else
         DIFF_DAYS=9999
     fi
 
     if [ "$DIFF_DAYS" -ge 120 ]; then
-        echo -e "\n[$(date)] Starting Btrfs balance on /" | tee -a "$LOGFILE"
-        notify-send "✅ Btrfs Balance" "Starting Btrfs balance on / at $(date)."
-        sudo btrfs balance start / >> "$LOGFILE" 2>&1
-        echo "[$(date)] Btrfs balance completed" | tee -a "$LOGFILE"
-        notify-send "✅ Btrfs Balance" "Btrfs balance completed at $(date)."
+        log_info "Starting Btrfs balance on /"
+        notify-send "✅ Btrfs Balance" "Starting Btrfs balance on /."
+
+        log_info "Running: safe filtered Data balance (-dusage=10)..."
+        sudo btrfs balance start -dusage=10 / >> "$LOGFILE" 2>&1
+
+        log_info "Running: safe Metadata balance (-musage=5)..."
+        sudo btrfs balance start -musage=5 / >> "$LOGFILE" 2>&1
+
+        log_info "Recording filesystem usage after balance:"
+        sudo btrfs filesystem usage / >> "$LOGFILE"
+        
+        log_info "Btrfs balance completed successfully."
+        notify-send "✅ Btrfs Balance" "Completed successfully."
         date +%s > "$LAST_RUN_FILE"
     else
-        echo -e "\n[$(date)] Less than 4 months since last balance. Skipping." | tee -a "$LOGFILE"
+        # We don't want to spam the log file every day while sleeping
+        # so we only log the "Skip" to the console, or remove this line entirely.
+        echo "Check: Only $DIFF_DAYS days since last balance. Sleeping..."
     fi
 
+    # Wait 24 hours before checking again
     sleep 86400
 done
