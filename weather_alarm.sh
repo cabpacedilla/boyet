@@ -691,40 +691,35 @@ CURL_OPTS=(
 )
 
 get_location() {
-    log_function_enter
-    # Try ipinfo.io first
-    log_api_call "ipinfo.io/loc"
-    LOC=$(curl "${CURL_OPTS[@]}" ipinfo.io/loc 2>/dev/null)
-    log_api_response "$LOC"
+    log_info "Detecting precise location..."
 
-    # Validate it's actually coordinates (latitude,longitude format)
-    if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
-        log_warn "ipinfo.io failed or invalid format, trying ipapi.co..."
-        log_api_call "ipapi.co/latlong"
-        LOC=$(curl "${CURL_OPTS[@]}" ipapi.co/latlong 2>/dev/null)
-        log_api_response "$LOC"
+    # --- Attempt 1: ip-api.com ---
+    local geo_data=$(curl -s "http://ip-api.com/json/")
+    LAT=$(echo "$geo_data" | jq -r '.lat // empty')
+    LON=$(echo "$geo_data" | jq -r '.lon // empty')
+
+    # --- Attempt 2: ipapi.co (Fallback) ---
+    if [[ -z "$LAT" || -z "$LON" ]]; then
+        log_warn "Primary geo-detection failed. Trying ipapi.co..."
+        geo_data=$(curl -s "https://ipapi.co/json/")
+        LAT=$(echo "$geo_data" | jq -r '.latitude // empty')
+        LON=$(echo "$geo_data" | jq -r '.longitude // empty')
     fi
 
-    # Validate again before final fallback
-    if [[ -z "$LOC" ]] || [[ ! "$LOC" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]] || ! validate_coordinates "$LOC"; then
-        log_warn "All location services failed, using current location fallback"
-        LOC="10.3167,123.8907"  # Fallback coordinates
+    # --- Validation & Reverse Geocoding ---
+    if [[ -n "$LAT" && -n "$LON" ]]; then
+        # Map the coordinates to a real city/district name (e.g., Talisay vs Cebu City)
+        # We use a custom User-Agent to comply with Nominatim's usage policy
+        CITY=$(curl -s -A "WeatherAlarmScript/1.0" \
+            "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
+            | jq -r '.address.city // .address.town // .address.municipality // .address.village // "Unknown Location"')
+        
+        WEATHER_QUERY="$LAT,$LON"
+        log_info "Location Found: $CITY ($WEATHER_QUERY)"
+    else
+        log_error "Critical: Could not detect location from any service."
+        return 1
     fi
-
-    LAT=$(echo "$LOC" | cut -d, -f1)
-    LON=$(echo "$LOC" | cut -d, -f2)
-    
-    log_api_call "OpenStreetMap reverse geocoding"
-    CITY=$(curl "${CURL_OPTS[@]}" "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
-        | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"' 2>/dev/null)
-    log_api_response "$CITY"
-    
-    log_info "Location detected: $CITY ($LAT,$LON)"
-    log_variable "LAT" "$LAT"
-    log_variable "LON" "$LON"
-    log_variable "CITY" "$CITY"
-    log_function_exit "success"
-    return 0
 }
 
 # ------------------------
