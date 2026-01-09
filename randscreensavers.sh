@@ -65,28 +65,17 @@ if [[ -z "$MEDIA_STATUS" ]]; then
     # Select random screensaver
     RANDOM_INDEX=$(( RANDOM % NUM_UNPLAYED ))
     SELECTED_BASENAME="${UNPLAYED_SCREENSAVERS[RANDOM_INDEX]}"
-    RANDOM_PROGRAM="$SCREENSAVER_DIR/$SELECTED_BASENAME"
+    RANDOM_SCREENSAVER="$SCREENSAVER_DIR/$SELECTED_BASENAME"
 
     # Update lists
     sed -i "$((RANDOM_INDEX + 1))d" "$UNPLAYED_LIST"
     echo "$SELECTED_BASENAME" >> "$PLAYED_LIST"
 
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_PROGRAM (Remaining: $((NUM_UNPLAYED - 1)))" >> "$LOGFILE"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_SCREENSAVER (Remaining: $((NUM_UNPLAYED - 1)))" >> "$LOGFILE"
 
-    "$RANDOM_PROGRAM" &
-    sleep 0.5
-
-    # Restore brightness after starting screensaver
-    if [ -n "$BRIGHT_DEVICE" ]; then
-        brightnessctl -d "$BRIGHT_DEVICE" set 90%
-    fi
+    "$RANDOM_SCREENSAVER" &
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
     # Kill any leftover screensaver
-    pkill -9 -f screensaver-
-
-    # Optionally restore brightness if needed
-    if [ -n "$BRIGHT_DEVICE" ]; then
-        brightnessctl -d "$BRIGHT_DEVICE" set 90%
-    fi
+    #pkill -9 -f screensaver-
 fi
