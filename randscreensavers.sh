@@ -3,9 +3,6 @@
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
 
-# Automatically detect AMD GPU backlight device (e.g. amdgpu_bl0 or amdgpu_bl1)
-BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
-
 # Handle case where brightness device is not found
 if [ -z "$BRIGHT_DEVICE" ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') - No amdgpu_bl* brightness device found. Brightness control will be skipped." >> "$LOGFILE"
@@ -39,13 +36,7 @@ initialize_screensaver_lists
 MEDIA_STATUS=$(is_media_playing)
 if [[ -z "$MEDIA_STATUS" ]]; then
     pkill -9 -f screensaver-
-
-    # Dim brightness before screensaver
-    if [ -n "$BRIGHT_DEVICE" ]; then
-        brightnessctl -d "$BRIGHT_DEVICE" set 0%
-        sleep 0.1
-    fi
-
+    
     # Load screensavers into an array
     mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
     NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
@@ -76,6 +67,5 @@ if [[ -z "$MEDIA_STATUS" ]]; then
     "$RANDOM_SCREENSAVER" &
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
-    # Kill any leftover screensaver
-    #pkill -9 -f screensaver-
+
 fi
