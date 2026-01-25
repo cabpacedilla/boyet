@@ -53,6 +53,9 @@ if [[ -z "$MEDIA_STATUS" ]]; then
         fi
     fi
 
+	# Trap signals from outside (resume handler, active state, etc.)
+	trap cleanup INT TERM
+
     # Select random screensaver
     RANDOM_INDEX=$(( RANDOM % NUM_UNPLAYED ))
     SELECTED_BASENAME="${UNPLAYED_SCREENSAVERS[RANDOM_INDEX]}"
