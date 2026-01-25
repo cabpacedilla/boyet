@@ -49,7 +49,7 @@ while true; do
     # Include weather_alarm only if Internet is up
     if check_internet; then
         ACTIVE_SCRIPTS+=("weather_alarm")
-        echo "DEBUG: Internet detected — weather_alarm included."
+        # echo "DEBUG: Internet detected — weather_alarm included."
     else
         # Remove weather_alarm from ACTIVE_SCRIPTS to prevent restart
         ACTIVE_SCRIPTS=("${ACTIVE_SCRIPTS[@]/weather_alarm/}")
@@ -62,7 +62,7 @@ while true; do
                 notify-send -t 5000 --app-name "💀 CheckServices" "weather_alarm killed: no internet (PID $pid)" &
             done
         fi
-        echo "DEBUG: No internet — weather_alarm excluded."
+        # echo "DEBUG: No internet — weather_alarm excluded."
     fi
 
     # Loop through all active scripts
@@ -80,7 +80,7 @@ while true; do
         PROCS=($(pgrep -f "bash $SCRIPT_PATH$"))
         NUM_RUNNING=${#PROCS[@]}
 
-        echo "DEBUG: Checking $SCRIPT_NAME → PIDs: ${PROCS[*]:-none}"
+        # echo "DEBUG: Checking $SCRIPT_NAME → PIDs: ${PROCS[*]:-none}"
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
             # Kill older ones, keep the newest

@@ -21,7 +21,7 @@ while true; do
     else
         # Script not running, start it
         if [ -x "$SCRIPT_PATH" ]; then
-            "$SCRIPT_PATH" &
+            "$SCRIPT_PATH" > /dev/null 2>&1 &
             notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
             sleep 5
         else

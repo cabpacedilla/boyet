@@ -1,33 +1,65 @@
 #!/usr/bin/env bash
+# Monthly Btrfs Scrub Script - SSD Optimized
+# Runs a scrub every 30 days with proper error detection and SSD-friendly I/O
 
-# Ensure the log directory exists
-mkdir -p "$HOME/scriptlogs"
+set -o pipefail
+
+LOG_DIR="$HOME/scriptlogs"
+LAST_RUN_FILE="$LOG_DIR/btrfs-scrub-last-run"
+MOUNTPOINT="/"
+
+mkdir -p "$LOG_DIR"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOGFILE"
+}
 
 while true; do
-  CURRENT_DAY=$(date +%d)
-  LOGFILE="$HOME/scriptlogs/btrfs-scrub-$(date +%Y-%m-%d).log"
+    LOGFILE="$LOG_DIR/btrfs-scrub-$(date +%Y-%m-%d).log"
+    NOW=$(date +%s)
 
-  # Check if it is NOT the 15th
-  if [ "$CURRENT_DAY" != "15" ]; then
-    echo "Current day is $CURRENT_DAY. Not the 15th. Skipping scrub and sleeping 24h." >> "$LOGFILE"
-    sleep 86400
-    continue
-  fi
+    if [[ -f "$LAST_RUN_FILE" ]]; then
+        LAST_RUN=$(cat "$LAST_RUN_FILE")
+        DIFF_DAYS=$(( (NOW - LAST_RUN) / 86400 ))
+    else
+        DIFF_DAYS=9999
+    fi
 
-  # --- This part only runs on the 15th ---
-  echo -e "\nStarting Btrfs scrub on / at $(date)" | tee -a "$LOGFILE"
-  notify-send "✅ Btrfs Scrub" "Starting Btrfs scrub on / at $(date)"
-  
-  # Note: sudo might prompt for a password if run in a terminal, 
-  # but will fail in a background process unless configured in sudoers.
-  sudo btrfs scrub start -Bd / >> "$LOGFILE" 2>&1
-  
-  echo "Btrfs scrub completed at $(date)" | tee -a "$LOGFILE"
-  notify-send "✅ Btrfs Scrub" "Btrfs scrub completed at $(date)"
+    if [[ "$DIFF_DAYS" -ge 30 ]]; then
+        log "Starting monthly Btrfs scrub on $MOUNTPOINT"
+        notify-send "🛡️ Btrfs Maintenance" "Starting monthly scrub (SSD-friendly mode)…"
 
-  echo -e "\nBtrfs filesystem usage at $(date)" | tee -a "$LOGFILE"
-  sudo btrfs filesystem usage / | tee -a "$LOGFILE"
+        # Check if scrub is already running
+        if sudo btrfs scrub status "$MOUNTPOINT" 2>&1 | grep -q "running"; then
+            log "Scrub already running. Skipping."
+            sleep 3600
+            continue
+        fi
 
-  # Sleep for 24 hours to avoid re-running the scrub on the same day
-  sleep 86400
+        # Run scrub with low I/O priority to reduce SSD wear
+        log "Running scrub with ionice class 3 (idle priority)"
+        if sudo ionice -c3 nice -n 19 btrfs scrub start -Bd "$MOUNTPOINT" >> "$LOGFILE" 2>&1; then
+            # Check scrub results
+            SCRUB_STATUS=$(sudo btrfs scrub status "$MOUNTPOINT")
+            
+            if echo "$SCRUB_STATUS" | grep -qE "total errors: 0|no errors found"; then
+                log "✅ Scrub completed cleanly (no errors)."
+                notify-send "✅ Btrfs Scrub" "Scrub completed with no errors."
+            else
+                log "⚠️  Scrub completed WITH ERRORS!"
+                echo "$SCRUB_STATUS" >> "$LOGFILE"
+                notify-send -u critical "⚠️ Btrfs Scrub" "Errors detected during scrub. Check logs!"
+            fi
+        else
+            log "❌ Scrub failed to complete!"
+            notify-send -u critical "⚠️ Btrfs Scrub" "Scrub command failed!"
+        fi
+
+        log "Post-scrub filesystem usage:"
+        sudo btrfs filesystem usage "$MOUNTPOINT" >> "$LOGFILE"
+
+        date +%s > "$LAST_RUN_FILE"
+    fi
+
+    sleep 3600
 done
