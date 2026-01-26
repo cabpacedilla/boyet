@@ -5,6 +5,7 @@
 
 # Base scripts (always run)
 SCRIPTS=(
+	"auto_system_update_nobara"
     "autosync"
     "autobrightness"
     "backlisten"
