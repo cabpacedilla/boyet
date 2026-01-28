@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # --- CONFIG ---
-API_KEY="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"
+GROQ_API_KEY=$(cat ~/.config/groq_api_key.txt)
 MODEL="llama-3.3-70b-versatile" 
 LAST_SENT=0
 COOLDOWN=30 # Seconds to wait between AI calls
