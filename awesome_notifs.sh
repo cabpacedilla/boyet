@@ -1,75 +1,115 @@
 #!/usr/bin/env bash
 
-# --- CONFIG ---
-GROQ_API_KEY=$(cat ~/.config/groq_api_key.txt)
+# ─────────────────────────────────────────────────────────────────
+#  Discord Science & Tech Scout – v4.8 (Sensitive Edition)
+# ─────────────────────────────────────────────────────────────────
+
+# Load API Key
+GROQ_API_KEY=$(tr -d '[:space:]' < ~/.config/groq_api_key.txt) || { 
+    echo "Error: Cannot read API key." >&2; exit 1 
+}
+
 MODEL="llama-3.3-70b-versatile" 
-LAST_SENT=0
-COOLDOWN=30 # Seconds to wait between AI calls
+COOLDOWN=60               
+COOLDOWN_FILE="/tmp/discord-observer-cooldown"
+touch "$COOLDOWN_FILE"
 
-SYSTEM_PROMPT="Act as a cynical, elite AI observer. Summarize chat drama with brutal brevity. 
-Format:
-- PLAYERS: [Names + Vibe]
-- SUBTEXT: [1 sentence on the hidden ego/pathos]
-- ANALOGY: [1 sharp historical/pop-culture reference]
-Constraints: No fluff. Max 60 words total. Tone: Dry, judgmental."
+# --- LAYER 1: UPDATED SENSITIVE GATEKEEPER ---
+# Catches common scientific discussion terms to trigger Grok analysis.
+INTEREST_REGEX="(breakthrough|discovery|invention|innovation|solution|optimized|patent|eureka|proof|prototype|research|peer-review|novel|method|github|http|doi\.org|arxiv|nature\.com|science\.org|quantum|superconductor|fusion|fission|particle|entropy|thermo|relativity|nano|graphene|crispr|genome|enzyme|molecule|catalyst|synthesis|reaction|biotech|clinical|vaccine|neuro|pathogen|climate|decarbon|renewable|sequestration|carbon|satellite|algorithm|neural|llm|encryption|blockchain|architecture|theory|mechanism|reactor|electricity|experiment|hypothesis|physics|chemistry|biology|medicine|engineering)"
 
-echo "Observer is watching with a ${COOLDOWN}s cooldown..."
+# --- LAYER 2: GROK SYSTEM PROMPT ---
+SYSTEM_PROMPT="Act as an elite AI Science Curator. 
+TASK: Analyze the chat for significant intellectual signals: breakthroughs, inventions, or novel scientific ideas.
+IF MUNDANE (jokes, food, tech support, general chat): Respond ONLY with 'IGNORE'. 
+IF INTERESTING: Provide DISCOVERY, FIELD, POTENTIAL, and a sophisticated VERDICT.
+Constraints: 8/10 significance threshold. Max 150 words."
 
-dbus-monitor "interface='org.freedesktop.Notifications'" | \
+echo "Sensitive Scout Active. Filtering for signal..."
+
+CHUNK=""
+
+# ─────────────────────────────────────────────────────────────────
+# Main Monitoring Loop
+# ─────────────────────────────────────────────────────────────────
+
+dbus-monitor "interface='org.freedesktop.Notifications'" 2>/dev/null | \
 grep --line-buffered "string" | \
 while read -r line; do
-
-    clean_line="${line%\"}"
-    clean_line="${clean_line#\"}"
     
-    # Skip the system noise immediately
-    case "$clean_line" in 
-        "image_data"|"variant"|"plasma_workspace"|"string"|"urgency"|"x-kde-"*|"notification"|"desktop-entry"|"sender-pid")
+    # Extract raw content
+    clean=$(echo "$line" | sed -E 's/^.*string[[:space:]]+"//; s/"[[:space:]]*$//; s/\\"/"/g')
+
+    # SILENCE THE NOISE: Skip system strings and common Discord clutter
+    case "$clean" in
+        ""|"default"|"image_data"|"variant"|"plasma_workspace"|"urgency"|"x-kde-"*|"notification"|"desktop-entry"|"sender-pid"|"System Notifications"|"start-here-kde-plasma")
             continue ;;
     esac
 
-    CHUNK+="$clean_line | "
+    # Accumulate history
+    CHUNK+="$clean | "
+    [[ ${#CHUNK} -gt 5000 ]] && CHUNK="${CHUNK: -5000}"
 
-    # TRIGGER on Discord notifications
-    if [[ "$clean_line" == *"com.discordapp.Discord"* ]]; then
+    # Only process when a message actually comes from Discord
+    if [[ "$line" == *"com.discordapp.Discord"* ]]; then
         
-        # Check if we are still in cooldown
-        CURRENT_TIME=$(date +%s)
-        ELAPSED=$(( CURRENT_TIME - LAST_SENT ))
+        # --- FIRST LAYER CHECK ---
+        LOWER_MSG=$(echo "$clean" | tr '[:upper:]' '[:lower:]')
+        if [[ ! "$LOWER_MSG" =~ $INTEREST_REGEX ]]; then
+            continue 
+        fi
 
-        if [[ $ELAPSED -lt $COOLDOWN ]]; then
-            echo "Skipping... Cooldown active ($(( COOLDOWN - ELAPSED ))s remaining)"
-            CHUNK="" # Clear buffer so we don't send stale drama later
+        # --- COOLDOWN CHECK ---
+        CURRENT_TIME=$(date +%s)
+        LAST_SENT=$(cat "$COOLDOWN_FILE" 2>/dev/null || echo "0")
+        if (( CURRENT_TIME - LAST_SENT < COOLDOWN )); then
             continue
         fi
 
-        # Filter the junk before sending to AI
-        CLEAN_CHAT=$(echo "$CHUNK" | sed -E 's/com.discordapp.Discord | //g')
+        echo "Potential signal detected: '$clean'. Consulting Grok..."
 
-        if [[ ${#CLEAN_CHAT} -gt 20 ]]; then
+        # Prepare payload
+        CLEAN_CHAT=$(echo "$CHUNK" | sed -E 's/com\.discordapp\.Discord//g; s/\|+/|/g; s/^[ |]+//')
+        PAYLOAD=$(jq -cn --arg mod "$MODEL" --arg sys "$SYSTEM_PROMPT" --arg usr "$CLEAN_CHAT" \
+            '{model: $mod, messages: [{role: "system", content: $sys}, {role: "user", content: $usr}], temperature: 0.3, max_tokens: 450}')
+
+        # --- API CALL WITH RATE-LIMIT HANDLING ---
+        ATTEMPT=0
+        while [ $ATTEMPT -lt 2 ]; do
+            RAW=$(curl --silent --write-out "HTTPSTATUS:%{http_code}" \
+                -H "Authorization: Bearer $GROQ_API_KEY" \
+                -H "Content-Type: application/json" \
+                -d "$PAYLOAD" "https://api.groq.com/openai/v1/chat/completions")
+
+            HTTP_STATUS=$(echo "$RAW" | tr -d '\n' | sed -e 's/.*HTTPSTATUS://')
+            BODY=$(echo "$RAW" | sed -e 's/HTTPSTATUS\:.*//')
+
+            if [ "$HTTP_STATUS" -eq 200 ]; then
+                AI_RESPONSE=$(echo "$BODY" | jq -r '.choices[0].message.content // empty')
+                break
+            elif [ "$HTTP_STATUS" -eq 429 ]; then
+                echo "Rate limited. Waiting 25s..."
+                sleep 25
+                ((ATTEMPT++))
+            else
+                echo "Error: Status $HTTP_STATUS"
+                break
+            fi
+        done
+
+        # --- OUTPUT VERDICT ---
+        if [[ -n "$AI_RESPONSE" && "$AI_RESPONSE" != *"IGNORE"* ]]; then
+            date +%s > "$COOLDOWN_FILE"
             
-            PAYLOAD=$(jq -n \
-                --arg sys "$SYSTEM_PROMPT" \
-                --arg usr "$CLEAN_CHAT" \
-                --arg mod "$MODEL" \
-                '{model: $mod, messages: [{role: "system", content: $sys}, {role: "user", content: $usr}], temperature: 0.7}')
-
-            RAW_JSON=$(curl -s https://api.groq.com/openai/v1/chat/completions \
-              -H "Authorization: Bearer $API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "$PAYLOAD")
-
-            AI_CONTENT=$(echo "$RAW_JSON" | jq -r '.choices[0].message.content // .error.message')
-
-            # Update the last sent timestamp
-            LAST_SENT=$(date +%s)
-
-            kdialog --title "Observer Insight ($(date +"%I:%M %p"))" \
-                    --msgbox "$AI_CONTENT" 2>/dev/null &
+            # Send Desktop Notification
+            kdialog --title "Breakthrough Detected" --msgbox "$AI_RESPONSE" 2>/dev/null &
             
-            echo -e "\n--- INSIGHT GENERATED ---\n$AI_CONTENT\n------------------------"
+            # Terminal Output
+            echo -e "\n💎 [SIGNAL ANALYSIS]\n$AI_RESPONSE\n────────────────────────────────"
+        else
+            echo "Grok analysis: Not significant. (Ignored)"
         fi
-
-        CHUNK="" 
+        
+        CHUNK="" # Clear buffer to stay fresh
     fi
 done

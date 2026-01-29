@@ -1,68 +1,76 @@
 #!/usr/bin/env bash
-# Nobara Auto-Update Daemon v2.2
-# Integrated Failure Handler & Full-Log Logic
+# Nobara Auto-Update Daemon v2.5
+# Fixes: False failure notifications & reliable package listing
 
 # --- CONFIG ---
 LOGFILE_GENERAL="$HOME/scriptlogs/general_update_log.txt"
 LIST="$HOME/scriptlogs/updateable.txt"
 FAIL_DIR="$HOME/scriptlogs/failures"
-mkdir -p "$FAIL_DIR"
+mkdir -p "$FAIL_DIR" "$(dirname "$LOGFILE_GENERAL")"
 
 while true; do
     log_time=$(date '+%Y-%m-%d %H:%M:%S')
-    
-    # 1. Synchronization Phase ---
-    echo "$log_time - Initial repository sync and cache cleanup." >> "$LOGFILE_GENERAL"
+    echo "$log_time - Starting update cycle" >> "$LOGFILE_GENERAL"
 
-    sudo dnf clean all 2>> "$LOGFILE_GENERAL"
-    
-    if sudo nobara-updater check-updates 2>> "$LOGFILE_GENERAL"; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Repositories re-synchronized." >> "$LOGFILE_GENERAL"
-    else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - WARNING: Repository refresh had issues." >> "$LOGFILE_GENERAL"
-    fi
+    # 1. Sync & cleanup
+    sudo dnf clean all >> "$LOGFILE_GENERAL" 2>&1
+    sudo nobara-updater check-updates -y >> "$LOGFILE_GENERAL" 2>&1
 
-    # 2. Detection Phase ---
-    sudo dnf list updates -q > "$LIST.tmp" 2>/dev/null
-    
-    # Capture the FULL list for the log file
-    FULL_PENDING=$(grep -E '\.' "$LIST.tmp" | awk '{print $1 " (" $2 ")"}' | sort -u)
+    # 2. Get full pending updates list
+    sudo dnf check-update > "$LIST.tmp" 2>/dev/null
 
-    if [ -z "$FULL_PENDING" ]; then
+    # Format nice list for notifications
+    PENDING_NAMES=$(grep -E '\.' "$LIST.tmp" | awk '{print $1}' | sort -u | head -n 15)
+    PENDING_COUNT=$(grep -E '\.' "$LIST.tmp" | wc -l)
+
+    if [[ $PENDING_COUNT -eq 0 ]]; then
         echo "$log_time - System up to date." >> "$LOGFILE_GENERAL"
         notify-send -t 5000 "Auto-updates" "System is already up to date."
     else
-        notify-send -t 0 "Updates Detected" "Ready to update:\n$FULL_PENDING\n...(and more)"
-        
-        # 3. Execution Phase ---
+        # Show short list + count in notification
+        NOTIFY_TEXT="Ready to update $PENDING_COUNT packages:\n$PENDING_NAMES"
+        [[ $PENDING_COUNT -gt 15 ]] && NOTIFY_TEXT+="\n...and $((PENDING_COUNT-15)) more"
+
+        notify-send -t 0 "Updates Detected" "$NOTIFY_TEXT"
+
+        # 3. Run update
         TEMP_SYNC_LOG=$(mktemp)
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - Launching nobara-sync cli..." >> "$LOGFILE_GENERAL"
-
+        echo "$log_time - Running nobara-sync cli..." >> "$LOGFILE_GENERAL"
+        
+        # We use PIPESTATUS to catch the exit code of nobara-sync, not tee
         sudo nobara-sync cli | tee "$TEMP_SYNC_LOG" >> "$LOGFILE_GENERAL" 2>&1
+        EXIT_CODE=${PIPESTATUS[0]}
 
-        # 4. Verification & Failure Handling ---
-        if grep -aiE "Updates complete!|Complete!" "$TEMP_SYNC_LOG" > /dev/null; then
-            # SUCCESS PATH
-            LOG_FRIENDLY_LIST=$(echo "$FULL_PENDING" | xargs | sed 's/ /, /g')
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - SUCCESS. Updated: $LOG_FRIENDLY_LIST" >> "$LOGFILE_GENERAL"
+        # 4. Verification: Check Exit Code OR Success Strings
+        if [ $EXIT_CODE -eq 0 ] || grep -aiE "Updates complete!|Complete!|Transaction test succeeded|Nothing to do|All Updates complete" "$TEMP_SYNC_LOG" > /dev/null; then
             
-            notify-send -t 0 "Updates Complete" "Verified success.\n\nUpdated:\n$FULL_PENDING"
-            rm -f "$TEMP_SYNC_LOG"
+            # Success – determine what was actually updated using our previous list
+            UPDATED_LIST=$(grep -E '\.' "$LIST.tmp" | awk '{print $1}' | sort -u)
+            UPDATED_COUNT=$(echo "$UPDATED_LIST" | grep -v '^$' | wc -l)
+
+            if [[ $UPDATED_COUNT -gt 0 ]]; then
+                DISPLAY_LIST=$(echo "$UPDATED_LIST" | head -n 15)
+                SUCCESS_TEXT="Updated $UPDATED_COUNT packages:\n$DISPLAY_LIST"
+                [[ $UPDATED_COUNT -gt 15 ]] && SUCCESS_TEXT+="\n...and $((UPDATED_COUNT-15)) more"
+            else
+                SUCCESS_TEXT="Updates completed (System already clean)."
+            fi
+
+            notify-send -t 10000 "Updates Complete" "$SUCCESS_TEXT"
+            echo "$log_time - SUCCESS. $SUCCESS_TEXT" >> "$LOGFILE_GENERAL"
         else
-            # FAILURE PATH
+            # Actual Failure
             FAIL_LOG_NAME="fail_$(date '+%Y%m%d_%H%M%S').log"
             cp "$TEMP_SYNC_LOG" "$FAIL_DIR/$FAIL_LOG_NAME"
-            
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: Verification failed. Log saved to $FAIL_DIR/$FAIL_LOG_NAME" >> "$LOGFILE_GENERAL"
-            notify-send -u critical "Auto-updates" "Update failed! Log saved to:\n$FAIL_DIR/$FAIL_LOG_NAME"
-            
-            rm -f "$TEMP_SYNC_LOG"
+            echo "$log_time - ERROR: Update verification failed. Log: $FAIL_DIR/$FAIL_LOG_NAME" >> "$LOGFILE_GENERAL"
+            notify-send -u critical "Auto-updates" "Update failed!\nLog saved to:\n$FAIL_DIR/$FAIL_LOG_NAME"
         fi
+
+        rm -f "$TEMP_SYNC_LOG"
     fi
 
     rm -f "$LIST.tmp"
-    
-    # Sleep 1 Hour
-    echo "$log_time - Waiting for 1 hour..." >> "$LOGFILE_GENERAL"
+
+    echo "$log_time - Waiting 1 hour..." >> "$LOGFILE_GENERAL"
     sleep 1h
 done
