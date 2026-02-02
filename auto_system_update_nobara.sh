@@ -40,7 +40,7 @@ while true; do
 
     if [[ $PENDING_COUNT -eq 0 ]]; then
         echo "$log_time - System up to date." >> "$LOGFILE_GENERAL"
-        notify-send -t 5000 "Auto-updates" "System is already up to date."
+        notify-send -t 0 "Auto-updates" "System is already up to date."
     else
         # Pre-Update Notification
         TITLE="Updates Detected"
@@ -81,7 +81,7 @@ while true; do
             FAIL_LOG_NAME="fail_$(date '+%Y%m%d_%H%M%S').log"
             cp "$TEMP_SYNC_LOG" "$FAIL_DIR/$FAIL_LOG_NAME"
             echo "$log_time - ERROR: Update verification failed. Log: $FAIL_DIR/$FAIL_LOG_NAME" >> "$LOGFILE_GENERAL"
-            notify-send -u critical "Auto-updates" "Update failed!\nLog saved to:\n$FAIL_DIR/$FAIL_LOG_NAME"
+            notify-send -u critical -t 0 "Auto-updates" "Update failed!\nLog saved to:\n$FAIL_DIR/$FAIL_LOG_NAME"
         fi
         rm -f "$TEMP_SYNC_LOG"
     fi
