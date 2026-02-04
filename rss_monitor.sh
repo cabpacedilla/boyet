@@ -78,9 +78,17 @@ while true; do
             # --- 5. LOGGING & NOTIFICATION ---
             if [[ "$SHOULD_PROCESS" == true ]]; then
                 SOURCE="Discovery"
+                
                 [[ "$URL" == *"nature.com"* ]] && SOURCE="Nature"
                 [[ "$URL" == *"science.org"* ]] && SOURCE="Science"
                 [[ "$URL" == *"sciencedaily.com"* ]] && SOURCE="Practical News"
+                
+                [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]] && SOURCE="Hacker News"
+                [[ "$URL" == *"arstechnica.com"* ]] && SOURCE="Ars Technica"
+                [[ "$URL" == *"mit.edu"* ]] && SOURCE="MIT Tech"
+                [[ "$URL" == *"newatlas.com"* ]] && SOURCE="New Atlas"
+                [[ "$URL" == *"technologyreview.com"* ]] && SOURCE="MIT Tech Review"
+                [[ "$URL" == *"thehackernews.com"* ]] && SOURCE="CyberSecurity"
 
                 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
 
