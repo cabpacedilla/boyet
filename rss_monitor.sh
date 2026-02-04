@@ -2,14 +2,32 @@
 
 # File paths
 HISTORY_FILE="/home/claiveapa/.cache/practical_science_history.log"
-SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Cannabis|Mosquito|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome|AI|Deep Learning|Chemical|Origin|Space|Ice"
-CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Himalayas|Darkwaves|Seafloor|Axion|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Enzyme|Quantum|X-ray|Infection|Antibiotic"
+SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Cannabis|Mosquito|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome|AI|Deep Learning|Chemical|Origin|Space|Ice|Quantum|Encryption|Cybersecurity|Kernel|Compiler|LLM|Neural|Architecture|Semiconductor|Transistor|Algorithm"
+CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Himalayas|Darkwaves|Seafloor|Axion|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Enzyme|Quantum|X-ray|Infection|Antibiotic|Zero-Day|Vulnerability|Benchmark|Standard|Protocol|Open-Source|Exploit|Hardware|Framework|Zero-Day|Vulnerability|Benchmark|Standard|Protocol|Open-Source|Exploit|Hardware|Framework"
 
 FEEDS=(
     "https://www.nature.com/nature/research-articles.rss"
-    "https://www.science.org/rss/news_current.xml"
+    "https://phys.org/rss-feed/"
+    "https://www.newscientist.com/section/news/feed/"
+    "https://www.eurekalert.org/rss/breaking.xml"
+    "https://www.quantamagazine.org/feed/"
+    "https://www.sciencedaily.com/rss/top/science.xml"
     "https://www.sciencedaily.com/rss/top/health.xml"
     "https://www.sciencedaily.com/rss/top/environment.xml"
+	"https://www.sciencedaily.com/rss/top/technology.xml"
+	"https://www.sciencedaily.com/rss/mind_brain.xml"
+	"https://www.sciencedaily.com/rss/health_medicine/nutrition.xml"
+	"https://www.sciencedaily.com/rss/health_medicine/fitness.xml"
+	"https://www.sciencedaily.com/rss/mind_brain/sleep.xml"
+	"https://www.technologyreview.com/feed/"
+	"https://phys.org/rss-feed/technology-news/consumer-gadgets/"
+	"https://newatlas.com/index.rss"
+	"https://news.ycombinator.com/rss"
+	"https://hnrss.org/best"
+	"https://hnrss.org/best"
+    "http://feeds.arstechnica.com/arstechnica/index"
+    "https://news.mit.edu/rss/topic/computer-science-and-technology"
+    "https://thehackernews.com/feeds/posts/default"
 )
 
 touch "$HISTORY_FILE"
