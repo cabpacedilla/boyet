@@ -62,45 +62,47 @@ while true; do
             # --- 3. DUPLICATE CHECK ---
             grep -qF "$LINK" "$HISTORY_FILE" 2>/dev/null && continue
 
-            # --- 4. FILTER CHECK ---
+            # --- 4. TAG ALIGNMENT (PRIORITY RE-ORDERED) ---
             CONTENT_TO_SCAN="$TITLE $DESC"
             TAG=""
             SHOULD_PROCESS=false
             
+            # Breakthroughs always come first
             if echo "$CONTENT_TO_SCAN" | grep -qiE "$CRITICALS"; then
-				TAG="🔥 BREAKTHROUGH"
-				SHOULD_PROCESS=true
-			elif echo "$CONTENT_TO_SCAN" | grep -qiE "$BIO_SIGNALS"; then
-				TAG="Health/Bio"
-				SHOULD_PROCESS=true
-			elif echo "$CONTENT_TO_SCAN" | grep -qiE "$TECH_SIGNALS"; then
-				TAG="Tech/Comp"
-				SHOULD_PROCESS=true
-			fi
+                TAG="🔥 BREAKTHROUGH"
+                SHOULD_PROCESS=true
+            # TECH checked BEFORE BIO to avoid mislabeling "AI Learning"
+            elif echo "$CONTENT_TO_SCAN" | grep -qiE "$TECH_SIGNALS"; then
+                TAG="Tech/Comp"
+                SHOULD_PROCESS=true
+            elif echo "$CONTENT_TO_SCAN" | grep -qiE "$BIO_SIGNALS"; then
+                TAG="Health/Bio"
+                SHOULD_PROCESS=true
+            fi
 
-            # --- 5. LOGGING & NOTIFICATION ---
-			if [[ "$SHOULD_PROCESS" == true ]]; then
-				# Start with a generic source based on the domain
-				SOURCE="Discovery"
-				
-				# Precise Source Matching
-				if [[ "$URL" == *"nature.com"* ]]; then SOURCE="Nature";
-				elif [[ "$URL" == *"science.org"* ]]; then SOURCE="Science";
-				elif [[ "$URL" == *"arstechnica.com"* ]]; then SOURCE="Ars Technica";
-				elif [[ "$URL" == *"technologyreview.com"* ]]; then SOURCE="MIT Tech Review";
-				elif [[ "$URL" == *"newatlas.com"* ]]; then SOURCE="New Atlas";
-				elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
-				elif [[ "$URL" == *"thehackernews.com"* ]]; then SOURCE="CyberSecurity";
-				elif [[ "$URL" == *"mit.edu"* ]]; then SOURCE="MIT News";
-				
-				# Break down ScienceDaily into sub-contexts
-				elif [[ "$URL" == *"sciencedaily.com"* ]]; then
-					if [[ "$URL" == *"mind_brain"* ]]; then SOURCE="Brain/Habits";
-					elif [[ "$URL" == *"nutrition"* ]]; then SOURCE="Nutrition News";
-					elif [[ "$URL" == *"technology"* ]]; then SOURCE="Tech Daily";
-					else SOURCE="Practical Science";
-					fi
-				fi
+            # --- 5. SOURCE CONTEXTUALIZATION (CONTEXT-AWARE) ---
+            if [[ "$SHOULD_PROCESS" == true ]]; then
+                SOURCE="Discovery"
+                
+                # Identify exact source by URL patterns
+                if [[ "$URL" == *"nature.com"* ]]; then SOURCE="Nature";
+                elif [[ "$URL" == *"science.org"* ]]; then SOURCE="Science";
+                elif [[ "$URL" == *"arstechnica.com"* ]]; then SOURCE="Ars Technica";
+                elif [[ "$URL" == *"technologyreview.com"* ]]; then SOURCE="MIT Tech Review";
+                elif [[ "$URL" == *"newatlas.com"* ]]; then SOURCE="New Atlas";
+                elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
+                elif [[ "$URL" == *"thehackernews.com"* ]]; then SOURCE="CyberSecurity";
+                elif [[ "$URL" == *"mit.edu"* ]]; then SOURCE="MIT News";
+                elif [[ "$URL" == *"phys.org"* ]]; then SOURCE="Phys.org";
+                elif [[ "$URL" == *"eurekalert.org"* ]]; then SOURCE="EurekAlert";
+                elif [[ "$URL" == *"newscientist.com"* ]]; then SOURCE="New Scientist";
+                elif [[ "$URL" == *"quantamagazine.org"* ]]; then SOURCE="Quanta Mag";
+                elif [[ "$URL" == *"sciencedaily.com"* ]]; then
+                    if [[ "$URL" == *"mind_brain"* ]]; then SOURCE="Brain/Habits";
+                    elif [[ "$URL" == *"nutrition"* ]]; then SOURCE="Nutrition";
+                    elif [[ "$URL" == *"technology"* ]]; then SOURCE="Tech Daily";
+                    else SOURCE="Science Daily"; fi
+                fi
 
                 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
 
