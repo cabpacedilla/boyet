@@ -68,27 +68,39 @@ while true; do
             SHOULD_PROCESS=false
             
             if echo "$CONTENT_TO_SCAN" | grep -qiE "$CRITICALS"; then
-                TAG="🔥 BREAKTHROUGH"
-                SHOULD_PROCESS=true
-            elif echo "$CONTENT_TO_SCAN" | grep -qiE "$SIGNALS"; then
-                TAG="Health/Env"
-                SHOULD_PROCESS=true
-            fi
+				TAG="🔥 BREAKTHROUGH"
+				SHOULD_PROCESS=true
+			elif echo "$CONTENT_TO_SCAN" | grep -qiE "$BIO_SIGNALS"; then
+				TAG="Health/Bio"
+				SHOULD_PROCESS=true
+			elif echo "$CONTENT_TO_SCAN" | grep -qiE "$TECH_SIGNALS"; then
+				TAG="Tech/Comp"
+				SHOULD_PROCESS=true
+			fi
 
             # --- 5. LOGGING & NOTIFICATION ---
-            if [[ "$SHOULD_PROCESS" == true ]]; then
-                SOURCE="Discovery"
-                
-                [[ "$URL" == *"nature.com"* ]] && SOURCE="Nature"
-                [[ "$URL" == *"science.org"* ]] && SOURCE="Science"
-                [[ "$URL" == *"sciencedaily.com"* ]] && SOURCE="Practical News"
-                
-                [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]] && SOURCE="Hacker News"
-                [[ "$URL" == *"arstechnica.com"* ]] && SOURCE="Ars Technica"
-                [[ "$URL" == *"mit.edu"* ]] && SOURCE="MIT Tech"
-                [[ "$URL" == *"newatlas.com"* ]] && SOURCE="New Atlas"
-                [[ "$URL" == *"technologyreview.com"* ]] && SOURCE="MIT Tech Review"
-                [[ "$URL" == *"thehackernews.com"* ]] && SOURCE="CyberSecurity"
+			if [[ "$SHOULD_PROCESS" == true ]]; then
+				# Start with a generic source based on the domain
+				SOURCE="Discovery"
+				
+				# Precise Source Matching
+				if [[ "$URL" == *"nature.com"* ]]; then SOURCE="Nature";
+				elif [[ "$URL" == *"science.org"* ]]; then SOURCE="Science";
+				elif [[ "$URL" == *"arstechnica.com"* ]]; then SOURCE="Ars Technica";
+				elif [[ "$URL" == *"technologyreview.com"* ]]; then SOURCE="MIT Tech Review";
+				elif [[ "$URL" == *"newatlas.com"* ]]; then SOURCE="New Atlas";
+				elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
+				elif [[ "$URL" == *"thehackernews.com"* ]]; then SOURCE="CyberSecurity";
+				elif [[ "$URL" == *"mit.edu"* ]]; then SOURCE="MIT News";
+				
+				# Break down ScienceDaily into sub-contexts
+				elif [[ "$URL" == *"sciencedaily.com"* ]]; then
+					if [[ "$URL" == *"mind_brain"* ]]; then SOURCE="Brain/Habits";
+					elif [[ "$URL" == *"nutrition"* ]]; then SOURCE="Nutrition News";
+					elif [[ "$URL" == *"technology"* ]]; then SOURCE="Tech Daily";
+					else SOURCE="Practical Science";
+					fi
+				fi
 
                 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
 
@@ -99,13 +111,16 @@ while true; do
                 echo "$ENTRY" >> "$HISTORY_FILE"
                 
                 # ASYNC NOTIFICATION
-                (
-                    RES=$(notify-send -u critical -a "ScienceMonitor" -t 0 \
-                        --action="open=Read Article" \
-                        "💡 $TAG" "$TITLE")
-                    
-                    [[ "$RES" == "open" ]] && xdg-open "$LINK"
-                ) &
+				(
+					# This sends the notification and waits for the 'open' action
+					ACTION=$(notify-send -u critical -a "ScienceMonitor" -t 0 \
+						--action="open=Read Article" \
+						"💡 $TAG ($SOURCE)" "$TITLE")
+					
+					if [[ "$ACTION" == "open" ]]; then
+						xdg-open "$LINK"
+					fi
+				) &
             fi
         done <<< "$ITEMS"
     done
