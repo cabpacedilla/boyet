@@ -3,15 +3,12 @@
 # File paths
 HISTORY_FILE="/home/claiveapa/.cache/practical_science_history.log"
 
-# --- 1. KEYWORD GROUPS (ALIGNED BY CONTEXT) ---
-# High-priority alerts
-CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Himalayas|Darkwaves|Seafloor|Axion|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Enzyme|Quantum|X-ray|Infection|Antibiotic|Zero-Day|Vulnerability|Benchmark|Standard|Protocol|Open-Source|Exploit|Hardware|Framework"
+# --- 1. KEYWORD GROUPS ---
+CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Himalayas|Darkwaves|Seafloor|Axion|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Enzyme|Quantum|X-ray|Infection|Antibiotic|Zero-Day|Vulnerability|Benchmark|Standard|Protocol|Open-Source|Exploit|Framework|Study|Research"
 
-# Computing and Digital breakthroughs
-TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|Multimodal|Inference|GPU|Algorithm|Architecture|Semiconductor|Transistor|Quantum|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware"
+TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|Multimodal|Inference|GPU|Algorithm|Architecture|Semiconductor|Transistor|Quantum|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|Stars|Galaxy|Physics|Astronomy|CPU|NVME|Erase|Drive"
 
-# Biological and Environmental science
-BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Cannabis|Mosquito|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome"
+BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Cannabis|Mosquito|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome|Evolution|Puma|Penguin|Injuries|Pesticide|Biodiversity|Seed|Hormone|Animal"
 
 FEEDS=(
     "https://www.nature.com/nature/research-articles.rss"
@@ -41,10 +38,7 @@ touch "$HISTORY_FILE"
 
 while true; do
     for URL in "${FEEDS[@]}"; do
-        # Fetch XML with User-Agent to bypass blocks
         RAW_XML=$(curl -sL -A "Mozilla/5.0" --connect-timeout 20 "$URL") || continue
-        
-        # Split items into lines for processing
         ITEMS=$(echo "$RAW_XML" | tr '\r\n\t' ' ' | sed 's/<item/\n<item/g' | grep '<item')
 
         while IFS= read -r ITEM || [[ -n "$ITEM" ]]; do
@@ -52,78 +46,83 @@ while true; do
 
             # --- 2. EXTRACTION ---
             CLEAN_ITEM=$(echo "$ITEM" | sed -e 's/<!\[CDATA\[//g' -e 's/\]\]>//g' -e 's/&lt;[^&]*&gt;//g')
-            
             TITLE=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<title>).*?(?=</title>)' | xargs)
-            
             LINK=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<link>).*?(?=</link>)' | head -n1 | xargs)
             [[ -z "$LINK" ]] && LINK=$(echo "$ITEM" | grep -oP '(?<=href=").*?(?=")' | head -n1)
-
             DESC=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<description>).*?(?=</description>)' | xargs)
 
-            # Validation & Duplicate Check
             [[ -z "$TITLE" || -z "$LINK" ]] && continue
             grep -qF "$LINK" "$HISTORY_FILE" 2>/dev/null && continue
 
-            # --- 3. TAG ALIGNMENT (REORDERED FOR AI PRIORITY) ---
+            # --- 3. FIXED LOGIC: TOPIC ASSIGNMENT ---
             CONTENT_TO_SCAN="$TITLE $DESC"
-            TAG=""
+            TOPIC_LABEL=""
+            IS_BREAKTHROUGH=false
             SHOULD_PROCESS=false
             
-            if echo "$CONTENT_TO_SCAN" | grep -qiE "$CRITICALS"; then
-                TAG="🔥 BREAKTHROUGH"
+            # Use \b to ensure whole word matches only
+            # Priority 1: Health/Bio (Checks for mother plants, hormones, pesticides)
+            if echo "$CONTENT_TO_SCAN" | grep -qiE "\b($BIO_SIGNALS)\b"; then
+                TOPIC_LABEL="Health/Bio"
                 SHOULD_PROCESS=true
-            elif echo "$CONTENT_TO_SCAN" | grep -qiE "$TECH_SIGNALS"; then
-                TAG="Tech/Comp"
-                SHOULD_PROCESS=true
-            elif echo "$CONTENT_TO_SCAN" | grep -qiE "$BIO_SIGNALS"; then
-                TAG="Health/Bio"
+            # Priority 2: Tech/Comp
+            elif echo "$CONTENT_TO_SCAN" | grep -qiE "\b($TECH_SIGNALS)\b"; then
+                TOPIC_LABEL="Tech/Comp"
                 SHOULD_PROCESS=true
             fi
 
-            # --- 4. SOURCE CONTEXTUALIZATION ---
+            # Step B: Check for Breakthrough status
+            if echo "$CONTENT_TO_SCAN" | grep -qiE "\b($CRITICALS)\b"; then
+                IS_BREAKTHROUGH=true
+                SHOULD_PROCESS=true
+            fi
+
+            # Step C: Final Tag Construction
+            if [[ "$IS_BREAKTHROUGH" == true ]]; then
+                if [[ -n "$TOPIC_LABEL" ]]; then
+                    TAG="🔥 BREAKTHROUGH ($TOPIC_LABEL)"
+                else
+                    TAG="🔥 BREAKTHROUGH"
+                fi
+            else
+                TAG="$TOPIC_LABEL"
+            fi
+
+            # --- 4. SOURCE LABELING ---
             if [[ "$SHOULD_PROCESS" == true ]]; then
                 SOURCE="Discovery"
-                
                 if [[ "$URL" == *"nature.com"* ]]; then SOURCE="Nature";
                 elif [[ "$URL" == *"science.org"* ]]; then SOURCE="Science";
+                elif [[ "$URL" == *"phys.org"* ]]; then SOURCE="Phys.org";
                 elif [[ "$URL" == *"arstechnica.com"* ]]; then SOURCE="Ars Technica";
+                elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
                 elif [[ "$URL" == *"technologyreview.com"* ]]; then SOURCE="MIT Tech Review";
                 elif [[ "$URL" == *"newatlas.com"* ]]; then SOURCE="New Atlas";
-                elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
-                elif [[ "$URL" == *"thehackernews.com"* ]]; then SOURCE="CyberSecurity";
-                elif [[ "$URL" == *"mit.edu"* ]]; then SOURCE="MIT News";
-                elif [[ "$URL" == *"phys.org"* ]]; then SOURCE="Phys.org";
                 elif [[ "$URL" == *"eurekalert.org"* ]]; then SOURCE="EurekAlert";
                 elif [[ "$URL" == *"newscientist.com"* ]]; then SOURCE="New Scientist";
-                elif [[ "$URL" == *"quantamagazine.org"* ]]; then SOURCE="Quanta Mag";
                 elif [[ "$URL" == *"sciencedaily.com"* ]]; then
                     if [[ "$URL" == *"mind_brain"* ]]; then SOURCE="Brain/Habits";
                     elif [[ "$URL" == *"nutrition"* ]]; then SOURCE="Nutrition";
-                    elif [[ "$URL" == *"technology"* ]]; then SOURCE="Tech Daily";
                     else SOURCE="Science Daily"; fi
                 fi
 
                 TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
                 ENTRY="[$TIMESTAMP][$TAG: $SOURCE] $TITLE | $LINK"
-                
                 echo "$ENTRY" >> "$HISTORY_FILE"
                 
                 # --- 5. NOTIFICATION ---
                 (
-                    ACTION=$(notify-send -u critical -a "ScienceMonitor" -t 0 \
+                    URGENCY="normal"
+                    [[ "$IS_BREAKTHROUGH" == true ]] && URGENCY="critical"
+
+                    ACTION=$(notify-send -u "$URGENCY" -a "ScienceMonitor" -t 15000 \
                         --action="open=Read Article" \
                         "💡 $TAG ($SOURCE)" "$TITLE")
-                    
-                    if [[ "$ACTION" == "open" ]]; then
-                        xdg-open "$LINK"
-                    fi
+                    [[ "$ACTION" == "open" ]] && xdg-open "$LINK"
                 ) &
             fi
         done <<< "$ITEMS"
     done
-
-    # Maintenance: Deduplicate history file
     awk '!seen[$0]++' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
-
     sleep 1200
 done
