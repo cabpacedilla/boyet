@@ -4,11 +4,14 @@
 HISTORY_FILE="/home/claiveapa/.cache/practical_science_history.log"
 
 # --- 1. KEYWORD GROUPS ---
-CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Himalayas|Darkwaves|Seafloor|Axion|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Enzyme|Quantum|X-ray|Infection|Antibiotic|Zero-Day|Vulnerability|Benchmark|Standard|Protocol|Open-Source|Exploit|Framework|Study|Research"
+# Added 'Model' and 'Findings' to CRITICALS
+CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Himalayas|Darkwaves|Seafloor|Axion|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Enzyme|Quantum|X-ray|Infection|Antibiotic|Zero-Day|Vulnerability|Benchmark|Standard|Protocol|Open-Source|Exploit|Framework|Study|Research|Model|Findings"
 
-TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|Multimodal|Inference|GPU|Algorithm|Architecture|Semiconductor|Transistor|Quantum|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|Stars|Galaxy|Physics|Astronomy|CPU|NVME|Erase|Drive"
+# Added 'Magnetic', 'Field', 'Dynamics', 'Physics'
+TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|Multimodal|Inference|GPU|Algorithm|Architecture|Semiconductor|Transistor|Quantum|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|Stars|Galaxy|Physics|Astronomy|CPU|NVME|Erase|Drive|Magnetic|Field|Dynamics|Physics"
 
-BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Cannabis|Mosquito|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome|Evolution|Puma|Penguin|Injuries|Pesticide|Biodiversity|Seed|Hormone|Animal"
+# Added 'Gene', 'Fiber', 'CRISPR', 'Hormone', 'Seed', 'Plant', 'Animal', 'Movement', 'Behavior', 'Psychology'
+BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Cannabis|Mosquito|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome|Evolution|Puma|Penguin|Injuries|Pesticide|Biodiversity|Seed|Hormone|Animal|Movement|Gene|Fiber|CRISPR|Behavior|Psychology|Biology"
 
 FEEDS=(
     "https://www.nature.com/nature/research-articles.rss"
@@ -60,24 +63,22 @@ while true; do
             IS_BREAKTHROUGH=false
             SHOULD_PROCESS=false
             
-            # Use \b to ensure whole word matches only
-            # Priority 1: Health/Bio (Checks for mother plants, hormones, pesticides)
+            # Use \b for word boundaries. Check Bio first for priority.
             if echo "$CONTENT_TO_SCAN" | grep -qiE "\b($BIO_SIGNALS)\b"; then
                 TOPIC_LABEL="Health/Bio"
                 SHOULD_PROCESS=true
-            # Priority 2: Tech/Comp
             elif echo "$CONTENT_TO_SCAN" | grep -qiE "\b($TECH_SIGNALS)\b"; then
                 TOPIC_LABEL="Tech/Comp"
                 SHOULD_PROCESS=true
             fi
 
-            # Step B: Check for Breakthrough status
+            # Check for Breakthrough status separately
             if echo "$CONTENT_TO_SCAN" | grep -qiE "\b($CRITICALS)\b"; then
                 IS_BREAKTHROUGH=true
                 SHOULD_PROCESS=true
             fi
 
-            # Step C: Final Tag Construction
+            # Construct the Tag
             if [[ "$IS_BREAKTHROUGH" == true ]]; then
                 if [[ -n "$TOPIC_LABEL" ]]; then
                     TAG="🔥 BREAKTHROUGH ($TOPIC_LABEL)"
