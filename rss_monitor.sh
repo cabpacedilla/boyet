@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 
-# ============================================================================
-# Science News RSS Monitor & Notifier
-# Filters science/tech/health news based on keywords and logs/notifies breakthroughs
-# ============================================================================
+# File paths
+HISTORY_FILE="/home/claiveapa/.cache/practical_science_history.log"
+touch "$HISTORY_FILE"
 
-HISTORY_FILE="$HOME/.cache/practical_science_history.log"
-touch "$HISTORY_FILE" 2>/dev/null || { echo "Cannot create/write to $HISTORY_FILE"; exit 1; }
+# --- 1. KEYWORD GROUPS (Balanced for Alignment) ---
+# CRITICALS: Keywords that trigger the 🔥 BREAKTHROUGH tag and critical notifications.
+CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|FDA|Breakthrough|Prevention|Immunity|Dangerous|Risk|Threat|Undetected|Resurrect|Infection|Antibiotic|Zero-Day|Vulnerability|Exploit|Alert|Emergency|Crisis|Impossible|Overturned|Overturns|Discovery|Discovers|Uncovers|Reveals|First-ever|Revolutionary|Milestone"
 
-# ─────────────────────────────────────────────────────────────────────────────
-# 1. KEYWORD GROUPS
-# ─────────────────────────────────────────────────────────────────────────────
+# TECH_SIGNALS: Keywords for Technology and Computing topics.
+TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|GPU|Algorithm|Architecture|Semiconductor|Transistor|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|CPU|NVME|Drive|Blockchain|Robot|Robotic|Chip|Circuit|Sensor|Computing|Digital|Network|System"
 
-# High-impact / breakthrough indicators
-CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|Guidelines|FDA|Breakthrough|Prevention|Immunity|Sustainability|Discovery|Ancient|Dangerous|Risk|Threat|Undetected|Record|Resurrect|Infection|Antibiotic|Zero-Day|Vulnerability|Benchmark|Protocol|Open-Source|Exploit|Framework|Breach|Hack"
+# BIO_SIGNALS: Keywords for Health, Biology, and Medical topics.
+BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Longevity|Health|Brain|Medicine|Aging|Virus|Bacteria|Genetic|DNA|Genome|Hormone|Enzyme|Protein|Cell|Clinical|Therapy|Patient|Biotech|Biology"
 
-# Tech, computing, engineering, infosec
-TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|Multimodal|Inference|GPU|Algorithm|Architecture|Semiconductor|Transistor|Quantum|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|Astronomy|CPU|NVME|Erase|Drive|Robotics|Security|Knox|Firewall|Patch|Firmware|Malware|Virtualization|Hypervisor"
+# SPACE_SIGNALS: Keywords for Astronomy and Space topics.
+SPACE_SIGNALS="Stars|Galaxy|Astronomy|Space|NASA|Exoplanet|Telescope|Cosmos|Mars|Jupiter|Moon|Universe|Orbit|Astronaut|Spacewalk|Observatory|Celestial"
 
-# Health, biology, environment, life sciences
-BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Stress|Pollution|Climate|Plastic|Longevity|Health|Brain|Medicine|Aging|Virus|Bacteria|Ocean|Fruit|Plant|Genetic|DNA|Genome|Evolution|Puma|Penguin|Injuries|Pesticide|Biodiversity|Seed|Hormone|Animal|Movement|Gene|Fiber|CRISPR|Behavior|Psychology|Biology|Enzyme|Biocatalysis|Crystallography|Molecular|Protein"
+# PHYS_SIGNALS: Keywords for Physics and related fields.
+PHYS_SIGNALS="Physics|Quantum|Axion|Superconductivity|Thermodynamics|Atomic|Particle|Gravity|Neutrino|Laser|Light|Magnetic|Matter|Entangled|Qubit|Mechanics|Relativity|Energy|Wave"
 
-# RSS / Atom feeds to monitor
+# EARTH_SIGNALS: Keywords for Earth Sciences, Environment, and Paleontology.
+EARTH_SIGNALS="Dinosaur|Fossil|Evolution|Ocean|Climate|Plastic|Pollution|Biodiversity|Forest|Environment|Plant|Animal|Puma|Penguin|Marine|Sealife|Fire|Arctic|Upcycling|Life|Origin|Geology|Weather|Ecology|Seafloor"
+
+# --- RSS FEED URLs ---
 FEEDS=(
     "https://www.nature.com/nature/research-articles.rss"
     "https://phys.org/rss-feed/"
@@ -37,7 +39,6 @@ FEEDS=(
     "https://www.sciencedaily.com/rss/health_medicine/fitness.xml"
     "https://www.sciencedaily.com/rss/mind_brain/sleep.xml"
     "https://www.technologyreview.com/feed/"
-    "https://phys.org/rss-feed/technology-news/consumer-gadgets/"
     "https://newatlas.com/index.rss"
     "https://news.ycombinator.com/rss"
     "https://hnrss.org/best"
@@ -46,130 +47,102 @@ FEEDS=(
     "https://thehackernews.com/feeds/posts/default"
 )
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Main loop
-# ─────────────────────────────────────────────────────────────────────────────
-
+# --- MAIN LOOP ---
 while true; do
     for URL in "${FEEDS[@]}"; do
-        # Fetch feed (timeout prevents hanging forever on bad servers)
-        RAW_XML=$(curl -sL -A "Mozilla/5.0 (compatible; ScienceMonitor/1.0)" --connect-timeout 15 --max-time 30 "$URL") || continue
-
-        # Handle both RSS <item> and Atom <entry>
-        ITEMS=$(echo "$RAW_XML" | tr '\r\n\t' ' ' \
-            | sed 's/</\n</g' \
-            | grep -E '^<(item|entry)' \
-            | sed 's/^<[^>]*>//' )
+        # Fetch with a real User-Agent to avoid 403/404 errors
+        RAW_XML=$(curl -sL -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" --connect-timeout 20 "$URL") || continue
+        
+        # Standardize XML format for parsing
+        ITEMS=$(echo "$RAW_XML" | tr '\r\n\t' ' ' | sed 's/<item/\n<item/g' | grep '<item')
 
         while IFS= read -r ITEM || [[ -n "$ITEM" ]]; do
             [[ -z "$ITEM" ]] && continue
 
-            # ─── Extraction ─────────────────────────────────────────────────────
+            # --- 2. EXTRACTION ---
+            CLEAN_ITEM=$(echo "$ITEM" | sed -e 's/<!\[CDATA\[//g' -e 's/\]\]>//g' -e 's/&lt;[^&]*&gt;//g' -e 's/&amp;/&/g') # Added &amp; to & for cleaner titles
+            TITLE=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<title>).*?(?=</title>)' | head -n1 | xargs)
+            LINK=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<link>).*?(?=</link>)' | head -n1 | xargs)
+            DESC=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<description>).*?(?=</description>)' | head -n1 | xargs)
 
-            # Title (handle CDATA and plain text)
-            TITLE=$(echo "$ITEM" | grep -oP '<title[^>]*>.*?</title>' \
-                | sed -e 's/.*<title[^>]*>//' -e 's/<\/title>.*//' \
-                | sed -e 's/<!\[CDATA\[//' -e 's/\]\]//' | xargs)
-
-            # Link (RSS <link> or Atom href= fallback)
-            LINK=$(echo "$ITEM" | grep -oP '<link[^>]*>.*?</link>' \
-                | sed -e 's/.*<link[^>]*>//' -e 's/<\/link>.*//' \
-                | sed -e 's/<!\[CDATA\[//' -e 's/\]\]//' | head -n1 | xargs)
-
-            if [[ -z "$LINK" ]]; then
-                LINK=$(echo "$ITEM" | grep -oP 'href="[^"]+"' | head -n1 | cut -d'"' -f2 | xargs)
-            fi
-
-            # Description / summary
-            DESC=$(echo "$ITEM" | grep -oP '(<description>|<summary>|<content[^>]*>).*?(</description>|</summary>|</content>)' \
-                | sed -e 's/.*>//' -e 's/<.*//' \
-                | sed -e 's/<!\[CDATA\[//' -e 's/\]\]//' | xargs)
-
+            # Skip if title or link is empty, or if link has been seen
             [[ -z "$TITLE" || -z "$LINK" ]] && continue
+            grep -qF "$LINK" "$HISTORY_FILE" 2>/dev/null && continue
 
-            # Skip already seen articles
-            grep -qF -- "$LINK" "$HISTORY_FILE" 2>/dev/null && continue
+            # --- 3. SCORING LOGIC (The Alignment Fix) ---
+            CONTENT=$(echo "$TITLE $DESC" | tr '[:upper:]' '[:lower:]') # Convert to lowercase for case-insensitive matching
+            
+            # Count matches for each category bucket
+            B_SCORE=$(echo "$CONTENT" | grep -oiwE "($BIO_SIGNALS)" | wc -l)
+            T_SCORE=$(echo "$CONTENT" | grep -oiwE "($TECH_SIGNALS)" | wc -l)
+            S_SCORE=$(echo "$CONTENT" | grep -oiwE "($SPACE_SIGNALS)" | wc -l)
+            P_SCORE=$(echo "$CONTENT" | grep -oiwE "($PHYS_SIGNALS)" | wc -l)
+            E_SCORE=$(echo "$CONTENT" | grep -oiwE "($EARTH_SIGNALS)" | wc -l)
 
-            # ─── Scoring ────────────────────────────────────────────────────────
+            # Determine Winning Category based on highest score
+            TOPIC_LABEL="Science (General)" # Default label if no specific category wins
+            MAX=0
+            [[ $B_SCORE -gt $MAX ]] && { MAX=$B_SCORE; TOPIC_LABEL="Health/Bio"; }
+            [[ $T_SCORE -gt $MAX ]] && { MAX=$T_SCORE; TOPIC_LABEL="Tech/Comp"; }
+            [[ $S_SCORE -gt $MAX ]] && { MAX=$S_SCORE; TOPIC_LABEL="Space"; }
+            [[ $P_SCORE -gt $MAX ]] && { MAX=$P_SCORE; TOPIC_LABEL="Physics"; }
+            [[ $E_SCORE -gt $MAX ]] && { MAX=$E_SCORE; TOPIC_LABEL="Earth/Nature"; }
 
-            CONTENT_TO_SCAN="$TITLE $DESC"
-
-            BIO_SCORE=$(echo "$CONTENT_TO_SCAN" | grep -oiwE "($BIO_SIGNALS)" | wc -l)
-            TECH_SCORE=$(echo "$CONTENT_TO_SCAN" | grep -oiwE "($TECH_SIGNALS)" | wc -l)
-
-            TOPIC_LABEL="General"
-            SHOULD_PROCESS=false
-
-            # Priority: Tech/Security > Health/Bio > mixed/default
-            if (( TECH_SCORE > BIO_SCORE )); then
-                TOPIC_LABEL="Tech/Security"
-                SHOULD_PROCESS=true
-            elif (( BIO_SCORE > TECH_SCORE )); then
-                TOPIC_LABEL="Health/Bio"
-                SHOULD_PROCESS=true
-            elif (( BIO_SCORE > 0 || TECH_SCORE > 0 )); then
-                # Tie / mixed — prefer Tech if security words are present
-                if echo "$CONTENT_TO_SCAN" | grep -qiwE "(Vulnerability|Breach|Security|Knox|Exploit|Hack|Malware|Patch|Firmware)"; then
-                    TOPIC_LABEL="Tech/Security"
-                else
-                    TOPIC_LABEL="Science"
-                fi
-                SHOULD_PROCESS=true
-            fi
-
-            # Independent breakthrough flag
+            # Breakthrough Detection
             IS_BREAKTHROUGH=false
-            if echo "$CONTENT_TO_SCAN" | grep -qiwE "($CRITICALS)"; then
+            if echo "$CONTENT" | grep -qiE "\b($CRITICALS)\b"; then
                 IS_BREAKTHROUGH=true
-                SHOULD_PROCESS=true
             fi
 
-            # ─── Tagging ────────────────────────────────────────────────────────
-
+            # Construction of the Final Tag
             if [[ "$IS_BREAKTHROUGH" == true ]]; then
-                TAG="🔥 BREAKTHROUGH"
-                [[ "$TOPIC_LABEL" != "General" ]] && TAG="🔥 BREAKTHROUGH ($TOPIC_LABEL)"
+                TAG="🔥 BREAKTHROUGH ($TOPIC_LABEL)"
             else
                 TAG="$TOPIC_LABEL"
             fi
 
-            # ─── Logging & Notification ─────────────────────────────────────────
-
-            if [[ "$SHOULD_PROCESS" == true ]]; then
-                SOURCE="Discovery"
-                [[ "$URL" == *"nature.com"*          ]] && SOURCE="Nature"
-                [[ "$URL" == *"phys.org"*            ]] && SOURCE="Phys.org"
-                [[ "$URL" == *"arstechnica.com"*     ]] && SOURCE="Ars Technica"
-                [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]] && SOURCE="Hacker News"
-                [[ "$URL" == *"technologyreview.com"*]] && SOURCE="MIT Tech Review"
-                [[ "$URL" == *"sciencedaily.com"*    ]] && SOURCE="Science Daily"
-                [[ "$URL" == *"thehackernews.com"*   ]] && SOURCE="The Hacker News"
-
-                TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
-                ENTRY="[$TIMESTAMP][$TAG: $SOURCE] $TITLE | $LINK"
-
-                printf '%s\n' "$ENTRY" >> "$HISTORY_FILE"
-
-                # Background notification
-                (
-                    URGENCY="normal"
-                    [[ "$IS_BREAKTHROUGH" == true ]] && URGENCY="critical"
-
-                    RES=$(notify-send -u "$URGENCY" -a "ScienceMonitor" -t 15000 \
-                        --action="open=Read Article" \
-                        "💡 $TAG  ($SOURCE)" "$TITLE" 2>/dev/null)
-
-                    [[ "$RES" == "open" ]] && xdg-open "$LINK" 2>/dev/null
-                ) &>/dev/null &
+            # --- 4. SOURCE LABELING ---
+            SOURCE="Science News" # Default source if not explicitly matched
+            if [[ "$URL" == *"nature.com"* ]]; then SOURCE="Nature";
+            elif [[ "$URL" == *"science.org"* ]]; then SOURCE="Science"; # Assuming a science.org feed might be added later
+            elif [[ "$URL" == *"phys.org"* ]]; then SOURCE="Phys.org";
+            elif [[ "$URL" == *"arstechnica.com"* ]]; then SOURCE="Ars Technica";
+            elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
+            elif [[ "$URL" == *"technologyreview.com"* ]]; then SOURCE="MIT Tech Review";
+            elif [[ "$URL" == *"newatlas.com"* ]]; then SOURCE="New Atlas";
+            elif [[ "$URL" == *"eurekalert.org"* ]]; then SOURCE="EurekAlert";
+            elif [[ "$URL" == *"newscientist.com"* ]]; then SOURCE="New Scientist";
+            elif [[ "$URL" == *"sciencedaily.com"* ]]; then
+                if [[ "$URL" == *"mind_brain"* ]]; then SOURCE="Brain/Habits";
+                elif [[ "$URL" == *"nutrition"* ]]; then SOURCE="Nutrition";
+                elif [[ "$URL" == *"fitness"* ]]; then SOURCE="Fitness"; # Added fitness source
+                else SOURCE="Science Daily"; fi
+            elif [[ "$URL" == *"news.mit.edu"* ]]; then SOURCE="MIT News"; # Specific MIT News
+            elif [[ "$URL" == *"thehackernews.com"* ]]; then SOURCE="The Hacker News";
             fi
+
+            # --- 5. LOGGING & NOTIFICATION ---
+            TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
+            ENTRY="[$TIMESTAMP][$TAG: $SOURCE] $TITLE | $LINK"
+            echo "$ENTRY" >> "$HISTORY_FILE"
+
+            # NOTIFICATION LOGIC: Only send a notify-send for BREAKTHROUGH articles
+            if [[ "$IS_BREAKTHROUGH" == true ]]; then
+                (
+                    URGENCY="critical" # Breakthroughs are always critical urgency
+                    ACTION=$(notify-send -u "$URGENCY" -a "ScienceMonitor" -t 15000 \
+                        --action="open=Read Article" \
+                        "💡 $TAG ($SOURCE)" "$TITLE")
+                    [[ "$ACTION" == "open" ]] && xdg-open "$LINK"
+                ) &
+            fi
+            
         done <<< "$ITEMS"
     done
-
-    # Deduplicate log (safe even if interrupted)
-    if [[ -s "$HISTORY_FILE" ]]; then
-        awk '!seen[$0]++' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && \
-            mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
-    fi
-
-    sleep 1200   # 20 minutes
+    
+    # Final cleanup: Remove duplicate lines from history file and keep it tidy
+    awk '!seen[$0]++' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+    
+    # Sleep for 20 minutes (1200 seconds) before the next fetch cycle
+    sleep 1200 
 done
