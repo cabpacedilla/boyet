@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
 
-# File paths
+# --- 1. CONFIGURATION & LOGGING ---
 HISTORY_FILE="/home/claiveapa/.cache/practical_science_history.log"
 touch "$HISTORY_FILE"
 
-# --- 1. KEYWORD GROUPS (Balanced for Alignment) ---
-# CRITICALS: Keywords that trigger the 🔥 BREAKTHROUGH tag and critical notifications.
-CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|FDA|Breakthrough|Prevention|Immunity|Dangerous|Risk|Threat|Undetected|Resurrect|Infection|Antibiotic|Zero-Day|Vulnerability|Exploit|Alert|Emergency|Crisis|Impossible|Overturned|Overturns|Discovery|Discovers|Uncovers|Reveals|First-ever|Revolutionary|Milestone"
+# --- 2. KEYWORD GROUPS (Balanced for Alignment) ---
+# CRITICALS: High-impact triggers. Removed generic "Discovery" to prevent false alarms.
+CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|FDA|Breakthrough|Zero-Day|Vulnerability|Exploit|Alert|Emergency|Crisis|Impossible|Overturned|Revolutionary|Milestone"
 
-# TECH_SIGNALS: Keywords for Technology and Computing topics.
-TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|GPU|Algorithm|Architecture|Semiconductor|Transistor|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|CPU|NVME|Drive|Blockchain|Robot|Robotic|Chip|Circuit|Sensor|Computing|Digital|Network|System"
+# TECH_SIGNALS: Technology and Computing.
+TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|GPU|Algorithm|Architecture|Semiconductor|Transistor|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|CPU|NVME|Blockchain|Robot|Robotic|Chip|Circuit|Sensor|Computing|Digital|Network|System"
 
-# BIO_SIGNALS: Keywords for Health, Biology, and Medical topics.
-BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Longevity|Health|Brain|Medicine|Aging|Virus|Bacteria|Genetic|DNA|Genome|Hormone|Enzyme|Protein|Cell|Clinical|Therapy|Patient|Biotech|Biology"
+# BIO_SIGNALS: Health, Biology, and Medical. (Expanded for Brain/Clinical/Microbe)
+BIO_SIGNALS="Nutrition|Sleep|Exercise|Mental|Vaccine|Diet|Microbiome|Habit|Cognitive|Longevity|Health|Brain|Medicine|Aging|Virus|Bacteria|Genetic|DNA|Genome|Hormone|Enzyme|Protein|Cell|Clinical|Therapy|Patient|Biotech|Biology|Alzheimer|Parkinson|Dementia|Synapse|Neurological|Psychology|Cancer|Faecal|Microbe|Microbiology|Wellness|Microbes"
 
-# SPACE_SIGNALS: Keywords for Astronomy and Space topics.
-SPACE_SIGNALS="Stars|Galaxy|Astronomy|Space|NASA|Exoplanet|Telescope|Cosmos|Mars|Jupiter|Moon|Universe|Orbit|Astronaut|Spacewalk|Observatory|Celestial"
+# SPACE_SIGNALS: Astronomy and Space topics.
+SPACE_SIGNALS="Stars|Galaxy|Astronomy|Space|NASA|Exoplanet|Telescope|Cosmos|Mars|Jupiter|Moon|Universe|Orbit|Astronaut|Spacewalk|Observatory|Celestial|ISS|SpaceX|Satellite"
 
-# PHYS_SIGNALS: Keywords for Physics and related fields.
-PHYS_SIGNALS="Physics|Quantum|Axion|Superconductivity|Thermodynamics|Atomic|Particle|Gravity|Neutrino|Laser|Light|Magnetic|Matter|Entangled|Qubit|Mechanics|Relativity|Energy|Wave"
+# PHYS_SIGNALS: Physics and related fields.
+PHYS_SIGNALS="Physics|Quantum|Axion|Superconductivity|Thermodynamics|Atomic|Particle|Gravity|Neutrino|Laser|Light|Magnetic|Matter|Entangled|Qubit|Mechanics|Relativity|Energy|Wave|Superconductor|Photon"
 
-# EARTH_SIGNALS: Keywords for Earth Sciences, Environment, and Paleontology.
-EARTH_SIGNALS="Dinosaur|Fossil|Evolution|Ocean|Climate|Plastic|Pollution|Biodiversity|Forest|Environment|Plant|Animal|Puma|Penguin|Marine|Sealife|Fire|Arctic|Upcycling|Life|Origin|Geology|Weather|Ecology|Seafloor"
+# EARTH_SIGNALS: Environment, Weather, and Paleontology. (Expanded for storms/archaeology)
+EARTH_SIGNALS="Dinosaur|Fossil|Evolution|Ocean|Climate|Plastic|Pollution|Biodiversity|Forest|Environment|Plant|Animal|Marine|Sealife|Fire|Arctic|Upcycling|Origin|Geology|Weather|Ecology|Seafloor|Storm|Flood|Antarctica|Glacier|Methane|Species|Neanderthal|Archaeological|Paleolithic|Antarctic"
 
 # --- RSS FEED URLs ---
 FEEDS=(
@@ -59,34 +59,37 @@ while true; do
         while IFS= read -r ITEM || [[ -n "$ITEM" ]]; do
             [[ -z "$ITEM" ]] && continue
 
-            # --- 2. EXTRACTION ---
-            CLEAN_ITEM=$(echo "$ITEM" | sed -e 's/<!\[CDATA\[//g' -e 's/\]\]>//g' -e 's/&lt;[^&]*&gt;//g' -e 's/&amp;/&/g') # Added &amp; to & for cleaner titles
+            # --- EXTRACTION ---
+            CLEAN_ITEM=$(echo "$ITEM" | sed -e 's/<!\[CDATA\[//g' -e 's/\]\]>//g' -e 's/&lt;[^&]*&gt;//g' -e 's/&amp;/&/g')
             TITLE=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<title>).*?(?=</title>)' | head -n1 | xargs)
             LINK=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<link>).*?(?=</link>)' | head -n1 | xargs)
             DESC=$(echo "$CLEAN_ITEM" | grep -oP '(?<=<description>).*?(?=</description>)' | head -n1 | xargs)
 
-            # Skip if title or link is empty, or if link has been seen
+            # Skip if title or link is empty
             [[ -z "$TITLE" || -z "$LINK" ]] && continue
-            grep -qF "$LINK" "$HISTORY_FILE" 2>/dev/null && continue
-
-            # --- 3. SCORING LOGIC (The Alignment Fix) ---
-            CONTENT=$(echo "$TITLE $DESC" | tr '[:upper:]' '[:lower:]') # Convert to lowercase for case-insensitive matching
             
-            # Count matches for each category bucket
+            # CHECK HISTORY: Efficiency tweak for large log files
+            tail -n 1000 "$HISTORY_FILE" | grep -qF "$LINK" 2>/dev/null && continue
+
+            # --- SCORING LOGIC ---
+            CONTENT=$(echo "$TITLE $DESC" | tr '[:upper:]' '[:lower:]')
+            
             B_SCORE=$(echo "$CONTENT" | grep -oiwE "($BIO_SIGNALS)" | wc -l)
             T_SCORE=$(echo "$CONTENT" | grep -oiwE "($TECH_SIGNALS)" | wc -l)
             S_SCORE=$(echo "$CONTENT" | grep -oiwE "($SPACE_SIGNALS)" | wc -l)
             P_SCORE=$(echo "$CONTENT" | grep -oiwE "($PHYS_SIGNALS)" | wc -l)
             E_SCORE=$(echo "$CONTENT" | grep -oiwE "($EARTH_SIGNALS)" | wc -l)
 
-            # Determine Winning Category based on highest score
-            TOPIC_LABEL="Science (General)" # Default label if no specific category wins
+            # Determine Winning Category
+            TOPIC_LABEL="Science (General)"
             MAX=0
-            [[ $B_SCORE -gt $MAX ]] && { MAX=$B_SCORE; TOPIC_LABEL="Health/Bio"; }
-            [[ $T_SCORE -gt $MAX ]] && { MAX=$T_SCORE; TOPIC_LABEL="Tech/Comp"; }
-            [[ $S_SCORE -gt $MAX ]] && { MAX=$S_SCORE; TOPIC_LABEL="Space"; }
+            
+            # Order of preference: Bio/Earth/Tech usually have more specific keywords than Physics
             [[ $P_SCORE -gt $MAX ]] && { MAX=$P_SCORE; TOPIC_LABEL="Physics"; }
+            [[ $S_SCORE -gt $MAX ]] && { MAX=$S_SCORE; TOPIC_LABEL="Space"; }
+            [[ $T_SCORE -gt $MAX ]] && { MAX=$T_SCORE; TOPIC_LABEL="Tech/Comp"; }
             [[ $E_SCORE -gt $MAX ]] && { MAX=$E_SCORE; TOPIC_LABEL="Earth/Nature"; }
+            [[ $B_SCORE -gt $MAX ]] && { MAX=$B_SCORE; TOPIC_LABEL="Health/Bio"; }
 
             # Breakthrough Detection
             IS_BREAKTHROUGH=false
@@ -94,17 +97,16 @@ while true; do
                 IS_BREAKTHROUGH=true
             fi
 
-            # Construction of the Final Tag
+            # Tag construction
             if [[ "$IS_BREAKTHROUGH" == true ]]; then
                 TAG="🔥 BREAKTHROUGH ($TOPIC_LABEL)"
             else
                 TAG="$TOPIC_LABEL"
             fi
 
-            # --- 4. SOURCE LABELING ---
-            SOURCE="Science News" # Default source if not explicitly matched
+            # --- SOURCE LABELING ---
+            SOURCE="Science News"
             if [[ "$URL" == *"nature.com"* ]]; then SOURCE="Nature";
-            elif [[ "$URL" == *"science.org"* ]]; then SOURCE="Science"; # Assuming a science.org feed might be added later
             elif [[ "$URL" == *"phys.org"* ]]; then SOURCE="Phys.org";
             elif [[ "$URL" == *"arstechnica.com"* ]]; then SOURCE="Ars Technica";
             elif [[ "$URL" == *"ycombinator.com"* || "$URL" == *"hnrss.org"* ]]; then SOURCE="Hacker News";
@@ -115,34 +117,31 @@ while true; do
             elif [[ "$URL" == *"sciencedaily.com"* ]]; then
                 if [[ "$URL" == *"mind_brain"* ]]; then SOURCE="Brain/Habits";
                 elif [[ "$URL" == *"nutrition"* ]]; then SOURCE="Nutrition";
-                elif [[ "$URL" == *"fitness"* ]]; then SOURCE="Fitness"; # Added fitness source
+                elif [[ "$URL" == *"fitness"* ]]; then SOURCE="Fitness";
                 else SOURCE="Science Daily"; fi
-            elif [[ "$URL" == *"news.mit.edu"* ]]; then SOURCE="MIT News"; # Specific MIT News
+            elif [[ "$URL" == *"news.mit.edu"* ]]; then SOURCE="MIT News";
             elif [[ "$URL" == *"thehackernews.com"* ]]; then SOURCE="The Hacker News";
             fi
 
-            # --- 5. LOGGING & NOTIFICATION ---
+            # --- LOGGING & NOTIFICATION ---
             TIMESTAMP=$(date "+%Y-%m-%d %H:%M")
             ENTRY="[$TIMESTAMP][$TAG: $SOURCE] $TITLE | $LINK"
             echo "$ENTRY" >> "$HISTORY_FILE"
 
-            # NOTIFICATION LOGIC: Only send a notify-send for BREAKTHROUGH articles
             if [[ "$IS_BREAKTHROUGH" == true ]]; then
                 (
-                    URGENCY="critical" # Breakthroughs are always critical urgency
-                    ACTION=$(notify-send -u "$URGENCY" -a "ScienceMonitor" -t 15000 \
+                    notify-send -u "critical" -a "ScienceMonitor" -t 15000 \
                         --action="open=Read Article" \
-                        "💡 $TAG ($SOURCE)" "$TITLE")
-                    [[ "$ACTION" == "open" ]] && xdg-open "$LINK"
+                        "💡 $TAG ($SOURCE)" "$TITLE" | grep -q "open" && xdg-open "$LINK"
                 ) &
             fi
             
         done <<< "$ITEMS"
     done
     
-    # Final cleanup: Remove duplicate lines from history file and keep it tidy
-    awk '!seen[$0]++' "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+    # Keep history file healthy (Remove duplicates, keep last 5000 lines)
+    sort -u "$HISTORY_FILE" -o "$HISTORY_FILE"
+    tail -n 5000 "$HISTORY_FILE" > "${HISTORY_FILE}.tmp" && mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
     
-    # Sleep for 20 minutes (1200 seconds) before the next fetch cycle
     sleep 1200 
 done
