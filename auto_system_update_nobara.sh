@@ -84,6 +84,11 @@ while true; do
         # 4. Verification & Archive
         if [ $EXIT_CODE -eq 0 ] || grep -aiE "Complete!|All Updates complete" "$TEMP_SYNC_LOG" > /dev/null; then
             grep -E '\.' "$LIST.tmp" | awk -v dt="$(date '+%Y-%m-%d')" '{print dt "," $1 "," $2}' >> "$HISTORY_LOG"
+            
+            # This removes orphaned dependencies left over from the old versions
+            sudo dnf autoremove -y >> "$LOGFILE_GENERAL" 2>&1
+            
+            # Final cleanup of the downloaded .rpm files
             sudo dnf clean packages >> "$LOGFILE_GENERAL" 2>&1
             
             FINAL_TITLE="Updates Complete"
