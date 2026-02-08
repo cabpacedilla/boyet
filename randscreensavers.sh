@@ -67,7 +67,7 @@ if [[ -z "$MEDIA_STATUS" ]]; then
 
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_SCREENSAVER (Remaining: $((NUM_UNPLAYED - 1)))" >> "$LOGFILE"
 
-    "$RANDOM_SCREENSAVER" &
+    "$RANDOM_SCREENSAVER" 
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
 
