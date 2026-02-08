@@ -6,7 +6,7 @@ touch "$HISTORY_FILE"
 
 # --- 2. KEYWORD GROUPS (Balanced for Alignment) ---
 # CRITICALS: High-impact triggers. Removed generic "Discovery" to prevent false alarms.
-CRITICALS="Breakthrough|Revolutionary|Milestone|First-ever|Paradigm|Overturned|Solved|Transistor Moment|Holy Grail"
+CRITICALS="Treatment|Cure|Toxin|Warning|Efficacy|FDA|Breakthrough|Zero-Day|Vulnerability|Exploit|Alert|Emergency|Crisis|Impossible|Overturned|Revolutionary|Milestone"
 
 # TECH_SIGNALS: Technology and Computing.
 TECH_SIGNALS="AI|Deep Learning|LLM|Neural|NLP|GPU|Algorithm|Architecture|Semiconductor|Transistor|Encryption|Cybersecurity|Kernel|Compiler|Automation|Software|Hardware|CPU|NVME|Blockchain|Robot|Robotic|Chip|Circuit|Sensor|Computing|Digital|Network|System"
@@ -131,6 +131,12 @@ while true; do
             if [[ "$IS_BREAKTHROUGH" == true ]]; then
                 (
                     notify-send -u "critical" -a "ScienceMonitor" -t 15000 \
+                        --action="open=Read Article" \
+                        "💡 $TAG ($SOURCE)" "$TITLE" | grep -q "open" && xdg-open "$LINK"
+                ) &
+            else
+				(
+				notify-send -u "normal" -a "ScienceMonitor" -t 15000 \
                         --action="open=Read Article" \
                         "💡 $TAG ($SOURCE)" "$TITLE" | grep -q "open" && xdg-open "$LINK"
                 ) &
