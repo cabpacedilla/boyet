@@ -23,8 +23,8 @@ while true; do
     PENDING_RAW=$(grep -E '\.(x86_64|noarch|i686)' "$LIST_TMP" | awk '{print $1 " " $2}')
     
     if [[ -z "$PENDING_RAW" ]]; then
-        echo "$log_time - System up to date." >> "$LOGFILE_GENERAL"
-        notify-send -t 0 "System up to date."
+        echo "$log_time - System is up to date." >> "$LOGFILE_GENERAL"
+        notify-send -t 0 "System is up to date."
     else
         COUNT=$(echo "$PENDING_RAW" | wc -l)
         
