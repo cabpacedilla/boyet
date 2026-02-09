@@ -461,8 +461,8 @@ give_advice() {
         "humidity_low") advice="Dry air" ;;
         "rain_storm") advice="Seek shelter" ;;
         "rain_heavy") advice="Stay indoors" ;;
-        "rain_moderate") advice="Umbrella needed" ;;
-        "rain_light") advice="Light drizzle" ;;
+        "rain_moderate") advice="Use umbrella, raincoat and boots" ;;
+		"rain_light") advice="Use umbralla" ;;
         "rain_none") advice="No rain" ;;
         "wind_storm") advice="Stay indoors" ;;
         "wind_strong") advice="Secure items" ;;
@@ -470,7 +470,7 @@ give_advice() {
         "wind_light") advice="Gentle breeze" ;;
         "wind_none") advice="Calm" ;;
         "uv_extreme") advice="Stay in shade" ;;
-        "uv_high") advice="Sunscreen + hat" ;;
+        "uv_high") advice="Sunscreen + hat/umbrella" ;;
         "uv_moderate") advice="Use sunscreen" ;;
         "uv_low") advice="Safe sun exposure" ;;
         "pollution_extreme") advice="Stay indoors" ;;
@@ -542,9 +542,9 @@ assess_weather() {
         "rain")
             if compare_bc "$value >= 50"; then
                 level="storm"; advice=$(give_advice rain_storm); emoji="⛈"; alert_threshold=1
-            elif compare_bc "$value >= 20"; then
+            elif compare_bc "$value >= 7.6"; then
                 level="heavy"; advice=$(give_advice rain_heavy); emoji="🌧"; alert_threshold=1
-            elif compare_bc "$value >= 5"; then
+            elif compare_bc "$value >= 2.5"; then
                 level="moderate"; advice=$(give_advice rain_moderate); emoji="🌧"; alert_threshold=1
             elif compare_bc "$value > 0"; then
                 level="light"; advice=$(give_advice rain_light); emoji="🌦"; alert_threshold=1
