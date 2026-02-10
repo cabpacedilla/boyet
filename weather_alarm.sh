@@ -462,7 +462,7 @@ give_advice() {
         "rain_storm") advice="Seek shelter" ;;
         "rain_heavy") advice="Stay indoors" ;;
         "rain_moderate") advice="Use umbrella, raincoat and boots" ;;
-		"rain_light") advice="Use umbralla" ;;
+		"rain_light") advice="Use umbrella" ;;
         "rain_none") advice="No rain" ;;
         "wind_storm") advice="Stay indoors" ;;
         "wind_strong") advice="Secure items" ;;
