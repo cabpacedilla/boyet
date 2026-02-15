@@ -20,7 +20,6 @@ IDLE_TIMEOUT=1                      # Minutes until idle
 SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
 RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"
-BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
 # Ensure log directory exists and state is clean
 mkdir -p "$(dirname "$LOGFILE")"
@@ -65,31 +64,27 @@ check_idle_status() {
 
         if [[ "$idle_status" == "idle" ]]; then
             # 1. Start the NEXT screensaver in the background
+            # This allows it to load while the current one is still visible
             "$SCREENSAVER_SCRIPT" &
             
-            # 2. FADE-IN OVERLAP (2 Seconds):
-            # Gradually increase brightness from 0% to 100% over 2 seconds
-            if [ -n "$BRIGHT_DEVICE" ]; then
-                for i in {0..100..10}; do
-                    brightnessctl -d "$BRIGHT_DEVICE" set "${i}%"
-                    sleep 0.1
-                done
-            else
-                sleep 3 # Fallback if no brightness device found
-            fi
+            # 2. Transition Window: Wait for the new screensaver to initialize
+            # This prevents the "black flash" between programs.
+            #sleep 2
             
-            # 3. Handle the Overlap cleanup:
+            # 3. Handle the Overlap:
+            # pgrep -c counts how many screensavers are currently running.
             current_count=$(pgrep -c -f "screensaver-")
             
             if [ "$current_count" -gt 1 ]; then
-                # Kill only the OLDEST instance, leaving the new one active
+                # If more than one is running, kill the OLDEST instance only (-o)
                 pkill -o -f "screensaver-" 2>/dev/null
-                echo "$(date) - Fade-in complete: Old screensaver killed." >> "$LOGFILE"
+                echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
             else
+                # On the very first run, we don't kill anything.
                 echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
             fi
         else
-            # System is ACTIVE: Stop all screensavers
+            # System is ACTIVE: Stop all screensaver processes immediately
             pkill -f "screensaver-" 2>/dev/null
             echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
         fi
@@ -117,5 +112,5 @@ while true; do
     #pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
     #pkill -9 -f "screensaver-"             # Force kill any running screensaver
     check_idle_status
-    sleep "$(shuf -i12-27 -n1)" # Check every 15 seconds for idle status (you can adjust this duration)
+    sleep 13 # Check every 15 seconds for idle status (you can adjust this duration)
 done

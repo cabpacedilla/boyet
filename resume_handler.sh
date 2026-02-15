@@ -1,52 +1,43 @@
 #!/usr/bin/env bash
 
-# --- Environment Setup ---
-export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
 LID_PATH="/proc/acpi/button/lid/LID0/state"
 
-# 1. IMMEDIATE ACTION: LOCK THE SESSION
-# We do this first so that if the script logic fails later, 
-# the desktop is already secured.
+# Auto-detect AMD GPU brightness device (amdgpu_bl0, bl1, etc.)
+BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
+
+echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> "$LOGFILE"
+
+# Lock screen using KDE's D-Bus service
 loginctl lock-session
 echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"
 
-# 2. STOP VISUALS
-# Kill the screensaver loop and any active animation processes
-pkill -9 -f "randscreensavers.sh"
-pkill -9 -f "screensaver-"
-echo "$(date '+%Y-%m-%d %H:%M:%S') - [CLEANUP] Screensaver processes terminated." >> "$LOGFILE"
-
-# --- Hardware & Environment Detection ---
-
-# Auto-detect AMD GPU brightness device
-BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
-
-# Function to check lid state
+# Function to get the lid state
 get_lid_state() {
     if [ -f "$LID_PATH" ]; then
         awk '{print $2}' < "$LID_PATH"
-    else
-        echo "unknown"
     fi
 }
 
-# Check for external displays (HDMI)
-HDMI_DISPLAY=$(xrandr --display :0 | grep ' connected' | grep 'HDMI' | awk '{print $1}')
+# Function to detect media playback
+is_media_playing() {
+   pactl list sink-inputs
+}
 
-# 3. PROACTIVE BRIGHTNESS RESTORATION
-# We restore brightness only if the lid is open OR if an HDMI is connected 
-# (clamshell mode).
-LID_STATE=$(get_lid_state)
+# Main condition
+MEDIA_STATUS=$(is_media_playing)
+HDMI_DISPLAY=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
 
-if [[ "$LID_STATE" == "open" || -n "$HDMI_DISPLAY" ]]; then
+if [[ ( -z "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
+      ( -n "$HDMI_DISPLAY" && "$(get_lid_state)" == "closed" ) ]]; then
+    # Kill screensavers and lock screen
+    pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
+    pkill -9 -f screensaver-
+
+    # Restore brightness if device is found
     if [ -n "$BRIGHT_DEVICE" ]; then
-        # Restore to a comfortable 90%
         brightnessctl --device="$BRIGHT_DEVICE" set 90%
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - [HARDWARE] Brightness restored to 90%." >> "$LOGFILE"
+    else
+        echo "$(date +%Y-%m-%d\ %H:%M:%S) - No amdgpu_bl* device found, skipping brightness restore." >> "$LOGFILE"
     fi
-else
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - [IDLE] System active but lid closed; brightness kept at 0%." >> "$LOGFILE"
 fi
-
-exit 0

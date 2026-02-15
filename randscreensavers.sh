@@ -18,7 +18,10 @@ mkdir -p "$HOME/scriptlogs"
 
 # Function: check if a media player is running
 is_media_playing() {
-     pactl list sink-inputs
+    # We search for any sink-input where 'Corked: no' is present.
+    # We exclude 'speech-dispatcher' if you don't want system beeps to block your screensaver.
+    pactl list sink-inputs | grep -A 20 "Sink Input" | \
+    grep -v "speech-dispatcher" | grep "Corked: no"
 }
 
 # Function: initialize screensaver lists
