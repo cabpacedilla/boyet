@@ -3,6 +3,9 @@
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
 
+# Trap signals from outside (resume handler, active state, etc.)
+trap cleanup INT TERM
+
 # Handle case where brightness device is not found
 if [ -z "$BRIGHT_DEVICE" ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') - No amdgpu_bl* brightness device found. Brightness control will be skipped." >> "$LOGFILE"
@@ -56,9 +59,6 @@ if [[ -z "$MEDIA_STATUS" ]]; then
         fi
     fi
 
-	# Trap signals from outside (resume handler, active state, etc.)
-	trap cleanup INT TERM
-
     # Select random screensaver
     RANDOM_INDEX=$(( RANDOM % NUM_UNPLAYED ))
     SELECTED_BASENAME="${UNPLAYED_SCREENSAVERS[RANDOM_INDEX]}"
@@ -73,5 +73,4 @@ if [[ -z "$MEDIA_STATUS" ]]; then
     "$RANDOM_SCREENSAVER" 
 else
     echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
-
 fi

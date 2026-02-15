@@ -30,6 +30,7 @@ HDMI_DISPLAY=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
 
 if [[ ( -z "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
       ( -n "$HDMI_DISPLAY" && "$(get_lid_state)" == "closed" ) ]]; then
+
     # Kill screensavers and lock screen
     pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
     pkill -9 -f screensaver-

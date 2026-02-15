@@ -104,7 +104,7 @@ start_swayidle() {
 
 # --- Execution ---
 rotate_log
-start_swayidle &
+start_swayidle 
 
 # Main loop to continuously check idle status
 while true; do
@@ -112,5 +112,5 @@ while true; do
     #pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
     #pkill -9 -f "screensaver-"             # Force kill any running screensaver
     check_idle_status
-    sleep 13 # Check every 15 seconds for idle status (you can adjust this duration)
+    sleep 10 # Check every 15 seconds for idle status (you can adjust this duration)
 done
