@@ -11,28 +11,43 @@ while true; do
     log_time=$(date '+%Y-%m-%d %H:%M:%S')
     echo "$log_time - Starting update cycle" >> "$LOGFILE_GENERAL"
 
-    # 1. Sync & cleanup metadata
+    # 1. Metadata Cleanup & Sync
     sudo dnf clean all >> "$LOGFILE_GENERAL" 2>&1
     sudo dnf makecache >> "$LOGFILE_GENERAL" 2>&1
+    sudo flatpak repair >> "$LOGFILE_GENERAL" 2>&1
+    flatpak repair --user >> "$LOGFILE_GENERAL" 2>&1
     sudo nobara-updater check-updates >> "$LOGFILE_GENERAL" 2>&1
 
     # 2. Capture Pending Updates
+    # DNF: Extract Name and Version, format as "Name (Version)"
     sudo dnf check-update > "$LIST_TMP" 2>/dev/null
+    PENDING_DNF=$(grep -E '\.(x86_64|noarch|i686)' "$LIST_TMP" | awk '{print $1 " (" $2 ")"}')
     
-    # Extract package names and versions (Name Version)
-    PENDING_RAW=$(grep -E '\.(x86_64|noarch|i686)' "$LIST_TMP" | awk '{print $1 " " $2}')
-    
-    if [[ -z "$PENDING_RAW" ]]; then
-        echo "$log_time - System is up to date." >> "$LOGFILE_GENERAL"
-        notify-send -t 0 "System is up to date."
-    else
-        COUNT=$(echo "$PENDING_RAW" | wc -l)
-        
-        # Format the list for notifications
-        DISPLAY_LIST=$(echo "$PENDING_RAW" | sed 's/ / /g')
+    # Flatpak: Extract App ID and Version, format as "ID (Version)"
+    # We use sed to turn the tab/multiple spaces into " (" and add the closing ")"
+    PENDING_FP=$(flatpak remote-ls --updates --columns=application,version 2>/dev/null | awk 'NF > 1 {print $1 " (" $2 ")"}')
 
-        # Pre-Update Notification (With Names and Versions)
-        notify-send -t 15000 "Updates Detected" "Pending: $COUNT packages\n\n$DISPLAY_LIST\n\nStarting background sync..."
+    if [[ -z "$PENDING_DNF" && -z "$PENDING_FP" ]]; then
+        echo "$log_time - System is up to date." >> "$LOGFILE_GENERAL"
+        notify-send -t 5000 "System is up to date."
+    else
+        DNF_COUNT=$(echo "$PENDING_DNF" | grep -v '^$' | wc -l)
+        FP_COUNT=$(echo "$PENDING_FP" | grep -v '^$' | wc -l)
+        TOTAL_COUNT=$((DNF_COUNT + FP_COUNT))
+        
+        # Build the formatted Display List
+        DISPLAY_LIST=""
+        if [[ ! -z "$PENDING_DNF" ]]; then
+            DISPLAY_LIST+="<b>[Packages]</b>\n$PENDING_DNF"
+        fi
+        if [[ ! -z "$PENDING_FP" ]]; then
+            # Add spacing if DNF list exists
+            [[ ! -z "$DISPLAY_LIST" ]] && DISPLAY_LIST+="\n\n"
+            DISPLAY_LIST+="<b>[Flatpaks]</b>\n$PENDING_FP"
+        fi
+
+        # Pre-Update Notification
+        notify-send -t 15000 "Updates Detected ($TOTAL_COUNT)" "$DISPLAY_LIST"
 
         # 3. Run Update
         TEMP_SYNC_LOG=$(mktemp)
@@ -40,15 +55,18 @@ while true; do
         EXIT_CODE=${PIPESTATUS[0]}
 
         if [ $EXIT_CODE -eq 0 ] || grep -aiE "Complete!|All Updates complete" "$TEMP_SYNC_LOG" > /dev/null; then
-            # Log to CSV (Date, Package Name, Version)
-            echo "$PENDING_RAW" | awk -v dt="$(date '+%Y-%m-%d')" '{print dt "," $1 "," $2}' >> "$HISTORY_LOG"
-            
-            # Cleanup
+            # 4. Post-Update Housekeeping
             sudo dnf autoremove -y >> "$LOGFILE_GENERAL" 2>&1
             sudo dnf clean packages >> "$LOGFILE_GENERAL" 2>&1
+            sudo flatpak uninstall --unused -y >> "$LOGFILE_GENERAL" 2>&1
+            flatpak uninstall --user --unused -y >> "$LOGFILE_GENERAL" 2>&1
             
-            # Final Notification (With Names and Versions)
-            notify-send -t 0 "Updates Complete" "Successfully updated $COUNT packages:\n\n$DISPLAY_LIST"
+            # Log to History CSV
+            [[ ! -z "$PENDING_DNF" ]] && echo "$PENDING_DNF" | awk -v dt="$(date '+%Y-%m-%d')" 'NF {print dt ",DNF," $0}' >> "$HISTORY_LOG"
+            [[ ! -z "$PENDING_FP" ]] && echo "$PENDING_FP" | awk -v dt="$(date '+%Y-%m-%d')" 'NF {print dt ",Flatpak," $0}' >> "$HISTORY_LOG"
+            
+            # Final Success Notification
+            notify-send -t 0 "Updates Complete" "Successfully updated $TOTAL_COUNT items:\n\n$DISPLAY_LIST"
         else
             notify-send -u critical -t 0 "Auto-updates" "Update failed! Check logs at $LOGFILE_GENERAL"
         fi

@@ -1,0 +1,20 @@
+URL="https://www.amca.org/assets/resources/public/"
+EXTENSIONS="jpg jpeg png svg mp4 pdf doc docx odt ods xls xlsx xlsm csv"
+
+for ext in $EXTENSIONS; do
+    echo "--- Searching for: *.$ext ---"
+
+    # We add -e robots=off and a User-Agent string to look like a real browser
+    urls=$(wget -r -l 2 -np -nd --spider -e robots=off \
+          --user-agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+          "$URL" 2>&1 | grep '^--' | awk '{print $3}' | grep -i "\.$ext$" | head -n 3)
+
+    if [[ -z "$urls" ]]; then
+        echo "No *.$ext files found at this level."
+    else
+        for file_url in $urls; do
+            echo "Downloading: $file_url"
+            wget -nc -q --user-agent="Mozilla/5.0" "$file_url"
+        done
+    fi
+done
