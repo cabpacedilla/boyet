@@ -8,10 +8,6 @@ BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> "$LOGFILE"
 
-# Lock screen using KDE's D-Bus service
-loginctl lock-session
-echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"
-
 # Function to get the lid state
 get_lid_state() {
     if [ -f "$LID_PATH" ]; then
@@ -33,6 +29,10 @@ if [[ ( -z "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
     # Kill screensavers and lock screen
     pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
     pkill -9 -f screensaver-
+    
+    # Lock screen using KDE's D-Bus service
+	loginctl lock-session
+	echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"
 
     # Restore brightness if device is found
     if [ -n "$BRIGHT_DEVICE" ]; then

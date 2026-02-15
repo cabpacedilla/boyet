@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------------------
-# git_bitbucket_mirror.sh v2.3
+# git_bitbucket_mirror.sh v2.5
 # Automatically syncs GitHub, Bitbucket, and SourceForge mirrors.
+# Includes Pre-commit file stats and full live terminal visibility.
 # -------------------------------------------------------------------
 
 export LANG=en_US.UTF-8
@@ -37,58 +38,58 @@ echo "$(TIMESTAMP) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$
 cd "$REPO_DIR" || { echo "$(TIMESTAMP) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
 
 # -----------------------------
-# 2. Pull & Rebase (The "Origin" Fix)
+# 2. Pull & Rebase
 # -----------------------------
 echo "$(TIMESTAMP) - Syncing with $GITHUB_REMOTE/$BRANCH..." | tee -a "$LOGFILE"
-# Fetch first to see what the remote has
-git fetch "$GITHUB_REMOTE" &>> "$LOGFILE"
+git fetch "$GITHUB_REMOTE" 2>&1 | tee -a "$LOGFILE"
 
-if git pull --rebase "$GITHUB_REMOTE" "$BRANCH" &>> "$LOGFILE"; then
+if git pull --rebase "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
     echo "$(TIMESTAMP) - ✅ Rebase successful." | tee -a "$LOGFILE"
 else
     echo "$(TIMESTAMP) - ⚠️ Rebase conflict or divergence. Attempting standard merge..." | tee -a "$LOGFILE"
-    git rebase --abort &>> "$LOGFILE"
-    # Fallback: Merge remote changes to keep history moving
-    git merge "$GITHUB_REMOTE/$BRANCH" --no-edit &>> "$LOGFILE"
+    git rebase --abort 2>&1 | tee -a "$LOGFILE"
+    git merge "$GITHUB_REMOTE/$BRANCH" --no-edit 2>&1 | tee -a "$LOGFILE"
 fi
 
 # -----------------------------
-# 3. Stage & Commit
+# 3. Stage & Commit (With Pro-Tip Stats)
 # -----------------------------
 git add -A
+
+# Check for changes
 if git diff --cached --quiet && git diff --quiet; then
     echo "$(TIMESTAMP) - No changes to commit." | tee -a "$LOGFILE"
 else
+    # PRINT EXACT FILE CHANGES BEFORE COMMITTING
+    echo "--- File Change Summary ---" | tee -a "$LOGFILE"
+    git diff --cached --stat | tee -a "$LOGFILE"
+    echo "---------------------------" | tee -a "$LOGFILE"
+
     echo "$(TIMESTAMP) - Committing local changes..." | tee -a "$LOGFILE"
-    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" &>> "$LOGFILE"
+    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" 2>&1 | tee -a "$LOGFILE"
 fi
 
 # -----------------------------
-# 4. Push Phase
+# 4. Push Phase (Full Visibility)
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
-# --- Push to GitHub ---
-# We use --force-with-lease here. It's safer than --force 
-# but stronger than a standard push.
 echo "$(TIMESTAMP) - Pushing to GitHub ($GITHUB_REMOTE)..." | tee -a "$LOGFILE"
-if git push "$GITHUB_REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
+if git push "$GITHUB_REMOTE" "$BRANCH:$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
     SUCCESS+=("origin ✅")
 else
-    # If standard push fails, try force-pushing to align GitHub with your local 'bin'
     echo "$(TIMESTAMP) - ⚠️ Standard push failed. Attempting force push to origin..." | tee -a "$LOGFILE"
-    if git push --force "$GITHUB_REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
+    if git push --force "$GITHUB_REMOTE" "$BRANCH:$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
          SUCCESS+=("origin ✅ (forced)")
     else
          FAIL+=("origin ❌")
     fi
 fi
 
-# --- Push to Mirrors ---
 for REMOTE in "${MIRRORS[@]}"; do
     echo "$(TIMESTAMP) - Force pushing to $REMOTE..." | tee -a "$LOGFILE"
-    if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
+    if git push --force "$REMOTE" "$BRANCH:$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
         SUCCESS+=("$REMOTE ✅")
     else
         FAIL+=("$REMOTE ❌")
@@ -109,9 +110,7 @@ MSG=""
 echo "$(TIMESTAMP) - Sync duration: $DURATION" | tee -a "$LOGFILE"
 
 if [[ ${#FAIL[@]} -gt 0 ]]; then
-    # FAILURE NOTIFICATION
     notify-send -u critical "⚠️ Git Mirror Error" "Duration: $DURATION\n\n$MSG\n\nCheck $LOGFILE for details."
 else
-    # SUCCESS NOTIFICATION
     notify-send "✅ Git Mirror Complete" "Duration: $DURATION\n\n$MSG"
 fi
