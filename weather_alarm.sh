@@ -1176,33 +1176,41 @@ send_notifications() {
     MESSAGE=""
     
     # Combine all alerts
+   # Combine all alerts
     local ALL_ALERTS=("${ALERTS[@]}" "${PEAK_ALERTS[@]}" "${ASTRONOMY_ALERTS[@]}")
     
     if [[ ${#ALL_ALERTS[@]} -gt 0 ]]; then
-        MESSAGE+="🚨 Weather Alerts:\n"
+        # Build the Alarms Header Section
+        ALARMS_ONLY="🚨 WEATHER ALARMS FOR $CITY\n"
+        ALARMS_ONLY+="------------------------------------------------------\n"
         for a in "${ALL_ALERTS[@]}"; do
-            MESSAGE+="• $a\n"
+            # Add emojis based on critical levels if not already there
+            ALARMS_ONLY+="• $a\n"
         done
-        MESSAGE+="\n"
-        log_info "Sending ${#ALL_ALERTS[@]} total alerts to user"
-        
+        ALARMS_ONLY+="\n"
+
+        # Construct the final display message (Alarms at the top)
+        MESSAGE="${ALARMS_ONLY}\n"
+      
+        log_info "Alarms detected! Formatting email for $ALERT_EMAIL"
+
+        # 1. SEND EMAIL via msmtp
+        # We use the total number of alerts as the "current_value" 
+        # This triggers an email if the count changes or 1 hour passes.
         if should_alert "email_trigger" "${#ALL_ALERTS[@]}" 0; then
              send_email_alert "Weather Alarm: $CITY (${#ALL_ALERTS[@]} Alerts)" "$MESSAGE"
              save_alert_state "email_trigger" "${#ALL_ALERTS[@]}"
         fi
         
-        # Send desktop notifications for critical alerts
+        # 2. SEND DESKTOP NOTIFICATIONS
+        # Critical alerts get an immediate popup
         for alert in "${ALL_ALERTS[@]}"; do
-            if [[ "$alert" =~ 🔥|🥶|🌪|⛈|☠️ ]]; then  # Critical emojis
+            if [[ "$alert" =~ 🔥|🥶|🌪|⛈|☠️ ]]; then
                 if command -v notify-send >/dev/null 2>&1; then
-                    notify-send "Weather Alert" "$alert" -u critical -t 10000 2>/dev/null ||
-                    log_warn "Desktop notification failed for: $alert"
+                    notify-send "CRITICAL Weather Alarm" "$alert" -u critical -t 10000
                 fi
             fi
         done
-    else
-        MESSAGE+="✅ No weather alerts at this time.\n\n"
-        log_info "No weather alerts to send"
     fi
 
     # Get current assessments for display (FIXED - no recursion)

@@ -8,6 +8,9 @@ BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> "$LOGFILE"
 
+# Trap signals from outside (resume handler, active state, etc.)
+trap cleanup INT TERM
+
 # Lock screen using KDE's D-Bus service
 loginctl lock-session
 echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"

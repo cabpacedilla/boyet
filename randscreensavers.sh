@@ -3,9 +3,6 @@
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
 
-# Trap signals from outside (resume handler, active state, etc.)
-trap cleanup INT TERM
-
 # Handle case where brightness device is not found
 if [ -z "$BRIGHT_DEVICE" ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') - No amdgpu_bl* brightness device found. Brightness control will be skipped." >> "$LOGFILE"
