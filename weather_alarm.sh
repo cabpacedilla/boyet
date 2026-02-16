@@ -36,6 +36,7 @@ LOG_LEVEL_ERROR=3
 LOG_LEVEL=${WEATHER_LOG_LEVEL:-$LOG_LEVEL_INFO}
 LOG_FILE="${WEATHER_LOG_FILE:-$HOME/scriptlogs/weather_log.txt}"
 ALERT_STATE_FILE="$HOME/.weather_alert_state.json"
+ALERT_EMAIL="cabpacedilla@gmail.com"
 
 # Create log directory if it doesn't exist
 mkdir -p "$(dirname "$LOG_FILE")"
@@ -439,16 +440,24 @@ check_api_response() {
 }
 
 send_email_alert() {
-	local subject="$1"
-	local body="$2"
-	{
-		echo "To: $ALERT_EMAIL"
-		echo "Subject: $subject"
-		echo "Content-Type: text/plain; charset=UTF-8"
-		echo ""
-		echo -e "$body"
-	} | msmtp -a default "$ALERT_EMAIL"
-}	
+    local subject="$1"
+    local body="$2"
+
+    # Use printf to handle the newlines properly for the email body
+    {
+        echo "To: $ALERT_EMAIL"
+        echo "Subject: $subject"
+        echo "Content-Type: text/plain; charset=UTF-8"
+        echo ""
+        echo -e "$body"
+    } | msmtp -a default "$ALERT_EMAIL"
+
+    if [[ $? -eq 0 ]]; then
+        log_info "Email alert successfully sent to $ALERT_EMAIL"
+    else
+        log_error "Failed to send email via msmtp. Check your ~/.msmtprc configuration."
+    fi
+}
 	
 # ------------------------
 # Advice System (with pressure in inHg)
@@ -1175,39 +1184,35 @@ send_notifications() {
 
     MESSAGE=""
     
-    # Combine all alerts
-   # Combine all alerts
-    local ALL_ALERTS=("${ALERTS[@]}" "${PEAK_ALERTS[@]}" "${ASTRONOMY_ALERTS[@]}")
+	# Combine all alerts
+   local ALL_ALERTS=("${ALERTS[@]}" "${PEAK_ALERTS[@]}" "${ASTRONOMY_ALERTS[@]}")
     
     if [[ ${#ALL_ALERTS[@]} -gt 0 ]]; then
-        # Build the Alarms Header Section
-        ALARMS_ONLY="🚨 WEATHER ALARMS FOR $CITY\n"
-        ALARMS_ONLY+="------------------------------------------------------\n"
+        # 1. Build the Alarms Section (The Header)
+        ALERT_CONTENT="🚨 WEATHER ALARMS FOR $CITY\n"
+        ALERT_CONTENT+="==============================\n"
         for a in "${ALL_ALERTS[@]}"; do
-            # Add emojis based on critical levels if not already there
-            ALARMS_ONLY+="• $a\n"
+            ALERT_CONTENT+="• $a\n"
         done
-        ALARMS_ONLY+="\n"
+        ALERT_CONTENT+="\n"
 
-        # Construct the final display message (Alarms at the top)
-        MESSAGE="${ALARMS_ONLY}\n"
-      
-        log_info "Alarms detected! Formatting email for $ALERT_EMAIL"
+        # 2. Append General Info (The Footer)
+        MESSAGE="${ALERT_CONTENT}\n"
 
-        # 1. SEND EMAIL via msmtp
-        # We use the total number of alerts as the "current_value" 
-        # This triggers an email if the count changes or 1 hour passes.
+        log_info "Processing ${#ALL_ALERTS[@]} total alerts"
+
+        # 3. Send via Email (using msmtp)
+        # We use the length of the alerts as a 'state' so we don't spam identical emails
         if should_alert "email_trigger" "${#ALL_ALERTS[@]}" 0; then
-             send_email_alert "Weather Alarm: $CITY (${#ALL_ALERTS[@]} Alerts)" "$MESSAGE"
+             send_email_alert "Weather Alert: ${#ALL_ALERTS[@]} Alarms in $CITY" "$MESSAGE"
              save_alert_state "email_trigger" "${#ALL_ALERTS[@]}"
         fi
         
-        # 2. SEND DESKTOP NOTIFICATIONS
-        # Critical alerts get an immediate popup
+        # 4. Desktop Notifications (Critical Only)
         for alert in "${ALL_ALERTS[@]}"; do
             if [[ "$alert" =~ 🔥|🥶|🌪|⛈|☠️ ]]; then
                 if command -v notify-send >/dev/null 2>&1; then
-                    notify-send "CRITICAL Weather Alarm" "$alert" -u critical -t 10000
+                    notify-send "CRITICAL Weather Alert" "$alert" -u critical -t 10000
                 fi
             fi
         done
