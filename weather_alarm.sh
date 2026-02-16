@@ -438,6 +438,18 @@ check_api_response() {
     return 0
 }
 
+send_email_alert() {
+	local subject="$1"
+	local body="$2"
+	{
+		echo "To: $ALERT_EMAIL"
+		echo "Subject: $subject"
+		echo "Content-Type: text/plain; charset=UTF-8"
+		echo ""
+		echo -e "$body"
+	} | msmtp -a default "$ALERT_EMAIL"
+}	
+	
 # ------------------------
 # Advice System (with pressure in inHg)
 # ------------------------
@@ -1173,6 +1185,11 @@ send_notifications() {
         done
         MESSAGE+="\n"
         log_info "Sending ${#ALL_ALERTS[@]} total alerts to user"
+        
+        if should_alert "email_trigger" "${#ALL_ALERTS[@]}" 0; then
+             send_email_alert "Weather Alarm: $CITY (${#ALL_ALERTS[@]} Alerts)" "$MESSAGE"
+             save_alert_state "email_trigger" "${#ALL_ALERTS[@]}"
+        fi
         
         # Send desktop notifications for critical alerts
         for alert in "${ALL_ALERTS[@]}"; do

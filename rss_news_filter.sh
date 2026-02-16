@@ -5,6 +5,7 @@ HISTORY_FILE="$HOME/.cache/practical_science_history.log"
 LOGSEQ_JOURNAL="$HOME/Documents/Logseq/journals/$(date +%Y_%m_%d).md"
 mkdir -p "$(dirname "$HISTORY_FILE")"
 mkdir -p "$(dirname "$LOGSEQ_JOURNAL")"
+ALERT_EMAIL="cabpacedilla@gmail.com"
 
 # --- 2. COMPREHENSIVE KEYWORD ENGINE ---
 ASTRONOMY_PAT="astronomy|exoplanet|james webb|black hole|nebula|starship|telescope|pulsar|quasar|dark matter|cosmology|spacex|nasa|esa|jaxa|supernova|moon|mars|orbit|gravitational wave"
