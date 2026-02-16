@@ -62,6 +62,22 @@ decode_html_entities() {
     echo "$1" | sed -e 's/&#x27;/\'\''/g' -e 's/&amp;/\&/g' -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&quot;/"/g' -e "s/&#039;/'/g" -e 's/&#38;/\&/g'
 }
 
+handle_notification() {
+    local LINK="$1" TITLE="$2" TAG="$3" URGENCY="$4"
+    (
+        RESPONSE=$(notify-send -u "$URGENCY" -a "ScienceMonitor" -t 15000 \
+            --print-id \
+            --action="default=Open Article" \
+            --action="read_article=Read Article" \
+            --wait \
+            "💡 $TAG" "$TITLE" 2>/dev/null)
+
+        if [[ "$RESPONSE" == *"read_article"* ]] || [[ "$RESPONSE" == *"default"* ]]; then
+            xdg-open "$LINK" >/dev/null 2>&1 &
+        fi
+    ) &
+}
+
 # --- 6. MAIN LOOP ---
 while true; do
     for URL in "${FEEDS[@]}"; do
@@ -92,9 +108,12 @@ while true; do
             
             if echo "$TITLE $DESC" | grep -qiE "$PRACTICAL|$THEORETICAL"; then
                 FINAL_TAG="🔥 BREAKTHROUGH ($TOPIC_LABEL)"
-                notify-send -u critical -a "ScienceMonitor" "💡 $FINAL_TAG" "$TITLE" &
+                handle_notification "$LINK" "$TITLE" "$FINAL_TAG" "critical"
+                
+                # --- EMAIL PART (Category and Title in Subject) ---
+                echo -e "Subject: $TOPIC_LABEL: $TITLE\n\n$(date '+%Y-%m-%d %H:%M')  $TITLE\n$TOPIC_LABEL\n$LINK" | msmtp -t "$ALERT_EMAIL"
             else
-                notify-send -u normal -a "ScienceMonitor" "💡 $FINAL_TAG" "$TITLE" &
+                handle_notification "$LINK" "$TITLE" "$TOPIC_LABEL" "normal"
             fi
 
             # LOGGING
