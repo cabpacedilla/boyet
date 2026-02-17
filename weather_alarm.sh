@@ -1197,7 +1197,7 @@ send_notifications() {
         ALERT_CONTENT+="\n"
 
         # 2. Append General Info (The Footer)
-        MESSAGE="${ALERT_CONTENT}\n"
+        MESSAGE="${ALERT_CONTENT}"
 
         log_info "Processing ${#ALL_ALERTS[@]} total alerts"
 
