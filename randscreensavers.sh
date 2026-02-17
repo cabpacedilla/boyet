@@ -3,6 +3,9 @@
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
 
+# Trap signals from outside (resume handler, active state, etc.)
+trap cleanup INT TERM
+
 # Handle case where brightness device is not found
 if [ -z "$BRIGHT_DEVICE" ]; then
     echo "$(date '+%Y-%m-%d %H:%M:%S') - No amdgpu_bl* brightness device found. Brightness control will be skipped." >> "$LOGFILE"
@@ -20,8 +23,7 @@ mkdir -p "$HOME/scriptlogs"
 is_media_playing() {
     # We search for any sink-input where 'Corked: no' is present.
     # We exclude 'speech-dispatcher' if you don't want system beeps to block your screensaver.
-    pactl list sink-inputs | grep -A 20 "Sink Input" | \
-    grep -v "speech-dispatcher" | grep "Corked: no"
+    pactl list sink-inputs | awk -v RS="" '/Corked: no/ && /media.class = "Stream\/Output\/Audio"/ && !/elisa/ && /media.name/'
 }
 
 # Function: initialize screensaver lists

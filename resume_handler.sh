@@ -8,13 +8,6 @@ BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> "$LOGFILE"
 
-# Trap signals from outside (resume handler, active state, etc.)
-trap cleanup INT TERM
-
-# Lock screen using KDE's D-Bus service
-loginctl lock-session
-echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"
-
 # Function to get the lid state
 get_lid_state() {
     if [ -f "$LID_PATH" ]; then
@@ -24,15 +17,17 @@ get_lid_state() {
 
 # Function to detect media playback
 is_media_playing() {
-   pactl list sink-inputs
+    # We search for any sink-input where 'Corked: no' is present.
+    # We exclude 'speech-dispatcher' if you don't want system beeps to block your screensaver.
+    pactl list sink-inputs | awk -v RS="" '/Corked: no/ && /media.class = "Stream\/Output\/Audio"/ && !/elisa/ && /media.name/'
 }
 
 # Main condition
 MEDIA_STATUS=$(is_media_playing)
 HDMI_DISPLAY=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
 
-if [[ ( -z "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
-      ( -n "$HDMI_DISPLAY" && "$(get_lid_state)" == "closed" ) ]]; then
+if [[ ( -n "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
+	( -n "$HDMI_DISPLAY" && "$(get_lid_state)" == "closed" ) ]]; then
 
     # Kill screensavers and lock screen
     pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
@@ -44,4 +39,8 @@ if [[ ( -z "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
     else
         echo "$(date +%Y-%m-%d\ %H:%M:%S) - No amdgpu_bl* device found, skipping brightness restore." >> "$LOGFILE"
     fi
+    
+else
+	loginctl lock-session
+	echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"
 fi
