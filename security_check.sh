@@ -25,7 +25,7 @@ trap cleanup EXIT
 mkdir -p "$HOME/scriptlogs"
 LOGFILE="$HOME/scriptlogs/fedora-sec-proactive.log"
 # Your target email
-ALERT_EMAIL="capacedilla@gmail.com"
+ALERT_EMAIL="cabpacedilla@gmail.com"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
