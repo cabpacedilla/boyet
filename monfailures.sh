@@ -2,6 +2,27 @@
 # monitor_system_failures.sh
 # Monitors critical and serious system failures across popular Linux distros.
 
+LOCK_FILE="/tmp/monfailures_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
 ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
 PIDFILE="$HOME/scriptlogs/monitor.pid"
 mkdir -p "$(dirname "$ALERT_LOG")"

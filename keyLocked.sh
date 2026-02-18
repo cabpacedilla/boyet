@@ -15,6 +15,27 @@
 # 9. Press the Num Lock key
 # 10. A Num Lock key notification message will be displayed
 
+LOCK_FILE="/tmp/keyLocked_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
 # Define LED mask values for key locks
 CAPS_LOCK="00000001"
 NUM_LOCK="00000002"

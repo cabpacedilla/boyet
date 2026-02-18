@@ -1,5 +1,26 @@
 #!/usr/bin/env bash
 
+LOCK_FILE="/tmp/auto_system_update_nobara_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
 # --- CONFIG ---
 LOGFILE_GENERAL="$HOME/scriptlogs/general_update_log.txt"
 HISTORY_LOG="$HOME/scriptlogs/update_history.csv"
