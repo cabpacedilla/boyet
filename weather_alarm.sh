@@ -1189,7 +1189,7 @@ send_notifications() {
     
     if [[ ${#ALL_ALERTS[@]} -gt 0 ]]; then
         # 1. Build the Alarms Section (The Header)
-        ALERT_CONTENT="🚨 WEATHER ALARMS FOR $CITY\n"
+        ALERT_CONTENT="\n🚨 WEATHER ALARMS FOR $CITY\n"
         ALERT_CONTENT+="==============================\n"
         for a in "${ALL_ALERTS[@]}"; do
             ALERT_CONTENT+="• $a\n"
@@ -1228,7 +1228,7 @@ send_notifications() {
     local current_pollution=$(get_weather_metrics pollution "$AQI" "")
     local current_visibility=$(get_weather_metrics visibility "$VIS" "km")
 
-    MESSAGE+="📊 Current ($CITY: $LAT, $LON):\n"
+    MESSAGE+="\n📊 Current ($CITY: $LAT, $LON):\n"
     MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(echo "$current_temp" | cut -d'|' -f2) $(echo "$current_temp" | cut -d'|' -f3)\n"
     MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(echo "$current_humidity" | cut -d'|' -f2) $(echo "$current_humidity" | cut -d'|' -f3)\n"
     MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(echo "$current_wind" | cut -d'|' -f2) $(echo "$current_wind" | cut -d'|' -f3)\n"
