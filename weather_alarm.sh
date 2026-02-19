@@ -1204,7 +1204,7 @@ send_notifications() {
         # 3. Send via Email (using msmtp)
         # We use the length of the alerts as a 'state' so we don't spam identical emails
         if should_alert "email_trigger" "${#ALL_ALERTS[@]}" 0; then
-             send_email_alert "Weather Alert: ${#ALL_ALERTS[@]} Alarms in $CITY" "$MESSAGE"
+             send_email_alert "Weather Alert: ${#ALL_ALERTS[@]} Alarms in $CITY - ${ALL_ALERTS[0]}" "$MESSAGE"
              save_alert_state "email_trigger" "${#ALL_ALERTS[@]}"
         fi
         

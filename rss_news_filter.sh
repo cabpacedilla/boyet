@@ -25,6 +25,7 @@ trap cleanup EXIT
 LOG_FILE="$HOME/.cache/practical_science_history.log"
 CACHE_DIR="/tmp/sciencemonitor_cache"
 mkdir -p "$(dirname "$LOG_FILE")" "$CACHE_DIR"
+ALERT_EMAIL="cabpacedilla@gmail.com"
 
 # 1. MUST declare associative array BEFORE assigning values
 declare -A KEYWORD_WEIGHTS
@@ -103,13 +104,15 @@ fetch_and_process() {
 
             # NOTIFICATION
             (
-                RESPONSE=$(notify-send -u normal -a "ScienceMonitor" -t 10000 \
+                RESPONSE=$(notify-send -u normal -t 10000 \
                     --print-id --action="read=Read Article" \
                     "💎 $SOURCE [$SCORE]" "$TITLE" 2>/dev/null)
                 
                 if [[ "$RESPONSE" == "read" ]]; then
                     xdg-open "$LINK" >/dev/null 2>&1 &
                 fi
+
+                echo -e "Subject: $TITLE\n\nDate: $DATE\nScore: $SCORE\nSource: $SOURCE\nTitle: $TITLE\nLink: $LINK" | msmtp -t "$ALERT_EMAIL"
             ) &
 
         done <<< "$ITEMS"
