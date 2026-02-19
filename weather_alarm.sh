@@ -1192,7 +1192,7 @@ send_notifications() {
         ALERT_CONTENT="\n🚨 WEATHER ALARMS FOR $CITY\n"
         ALERT_CONTENT+="==============================\n"
         for a in "${ALL_ALERTS[@]}"; do
-            ALERT_CONTENT+="• $a\n"
+            ALERT_CONTENT+="• $a"
         done
         ALERT_CONTENT+="\n"
 
