@@ -1192,9 +1192,9 @@ send_notifications() {
         ALERT_CONTENT="\n🚨 WEATHER ALARMS FOR $CITY\n"
         ALERT_CONTENT+="==============================\n"
         for a in "${ALL_ALERTS[@]}"; do
-            ALERT_CONTENT+="• $a"
+            ALERT_CONTENT+="• $a\n"
         done
-        ALERT_CONTENT+="\n"
+        #ALERT_CONTENT+="\n"
 
         # 2. Append General Info (The Footer)
         MESSAGE="${ALERT_CONTENT}"
