@@ -78,7 +78,9 @@ while true; do
 
             # --- NOTIFICATIONS ---
             (
-                ACTION=$(notify-send -u "$URGENCY" -a "News Alert" -t 15000 \
+                ACTION=$(notify-send -u "$URGENCY" -a "News Alert" \
+                    -t 0 \
+                    --hint=int:transient:0 \
                     --action="open=Read Article" \
                     "💡 $FINAL_TAG" "$TITLE")
 
