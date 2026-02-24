@@ -1,5 +1,5 @@
 --- APPLICATION STRATEGY ---
-Focus on Leadership: Mention your 8+ years of experience and your ability to optimize workflows and test coverage strategy.
+Focus on Leadership/Strategy: Highlight your experience in optimizing the QA life cycle and integrating tests into DevOps pipelines.
 
 --- SUGGESTED OPENING ---
 With over 8 years of experience in QA leadership, I focus on building robust test pipelines and optimizing workflows to ensure high-velocity, high-quality releases.

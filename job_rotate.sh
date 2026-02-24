@@ -13,30 +13,32 @@ while true; do
     echo "$(date): Starting new search cycle..." >> "$LOG_FILE"
 
     # --- ROTATING QUERIES & TEMPLATES ---
-    # Moved inside the loop so DAY_OF_YEAR updates every cycle
+    # Priority: Software Testing Titles & Methodology
     DAY_OF_YEAR=$(date +%j)
     QUERY_INDEX=$((DAY_OF_YEAR % 3))
 
     case $QUERY_INDEX in
         0)
-            SELECTED_QUERY="(SDET OR \"Senior QA\") AND (Linux OR Bash) AND (\"System Monitoring\" OR \"Automation Test\") AND (Python OR API)"
-            STRATEGY="Focus on Technical Depth: Mention your Nobara daily-driver setup and how you use Bash/Python to monitor system health, not just UI."
-            INTRO="As a Senior QA who maintains Linux as a daily-driver, I specialize in moving beyond UI testing into system-level automation and monitoring using Python and Bash."
+            # Focus: Automation Engineering & Development
+            SELECTED_QUERY="(SDET OR \"Automation Engineer\" OR \"Quality Engineer\") AND (Python OR API OR Selenium) AND (Linux OR Bash)"
+            STRATEGY="Focus on SDET/Automation: Emphasize your ability to write clean, maintainable test code in Python and shell scripts."
+            INTRO="As a Senior SDET, I specialize in building automated frameworks from the ground up, with a heavy focus on backend and API validation."
             ;;
         1)
-            SELECTED_QUERY="(\"Senior QA\" OR \"QA Lead\") AND (Linux OR Git) AND (\"Test Planning\" OR \"QA Pipeline\" OR \"Workflow Optimization\")"
-            STRATEGY="Focus on Leadership: Mention your 8+ years of experience and your ability to optimize workflows and test coverage strategy."
+            # Focus: Strategy, Leadership, and DevOps Testing
+            SELECTED_QUERY="(\"QA Lead\" OR \"Test Lead\" OR \"QA Manager\") AND (\"Test Strategy\" OR \"CI/CD\" OR \"QAOps\") AND Linux"
+            STRATEGY="Focus on Leadership/Strategy: Highlight your experience in optimizing the QA life cycle and integrating tests into DevOps pipelines."
             INTRO="With over 8 years of experience in QA leadership, I focus on building robust test pipelines and optimizing workflows to ensure high-velocity, high-quality releases."
             ;;
         2)
-            SELECTED_QUERY="(\"Senior QA\" OR SDET) AND (Bash OR \"Shell script\") AND (\"e-commerce\" OR POS OR \"Embedded test\")"
-            STRATEGY="Focus on Domain Expertise: Mention your specific background in POS and E-commerce transactional testing."
-            INTRO="I bring extensive experience in the E-commerce and POS sectors, where I've specialized in testing complex transactional flows and back-end shell automation."
+            # Focus: Specialized Systems & Performance Testing
+            SELECTED_QUERY="(\"Senior Software Tester\" OR \"Systems Test Engineer\") AND (\"Performance Testing\" OR \"Integration Testing\" OR \"Backend\") AND Bash"
+            STRATEGY="Focus on Systems/Manual-to-Auto: Highlight your deep-dive testing skills, particularly in complex system integrations and POS/E-commerce."
+            INTRO="I am a Senior Systems Tester with extensive experience in end-to-end integration testing and performance monitoring on Linux environments."
             ;;
     esac
 
     # --- EXECUTION ---
-    # Ensure find_jobs.py is in the correct directory
     RAW_RESULTS=$(python3 "$BIN_DIR/find_jobs.py" "$SELECTED_QUERY")
     NEW_JOBS_BODY=""
     COUNT=0
@@ -48,7 +50,8 @@ while true; do
         COMPANY=$(echo "$line" | cut -d'|' -f3); LINK=$(echo "$line" | cut -d'|' -f4)
 
         if ! grep -q "$ID" "$SEEN_FILE"; then
-            NEW_JOBS_BODY+="📍 $TITLE at $COMPANY\n🔗 $LINK\n\n"
+            # Using $'...' for proper newline rendering in emails
+            NEW_JOBS_BODY+=$'📍 '"$TITLE"' at '"$COMPANY"$'\n🔗 '"$LINK"$'\n\n'
             echo "$ID" >> "$SEEN_FILE"
             ((COUNT++))
         fi
@@ -80,12 +83,12 @@ while true; do
             echo "Subject: $SUBJECT"
             echo "Content-Type: text/plain; charset=UTF-8"
             echo ""
-            echo -e "Hi Claive,\n\nI found $COUNT new matches for your specialized Linux/QA profile.\n\n$NEW_JOBS_BODY\n---\nStrategy: $STRATEGY\n\nFull template saved to: $TEMPLATE_FILE"
+            echo -e "Hi Claive,\n\nI found $COUNT new matches for your specialized Software Testing profile.\n\n$NEW_JOBS_BODY\n---\nStrategy: $STRATEGY\n\nFull template saved to: $TEMPLATE_FILE"
         } | msmtp -a default "$ALERT_EMAIL"
 
         echo "$(date): Sent email for $SUBJECT" >> "$LOG_FILE"
     else
-        echo "$(date): No new jobs found this cycle." >> "$LOG_FILE"
+        echo "$(date): No new jobs found this cycle ($SELECTED_QUERY)." >> "$LOG_FILE"
     fi
 
     # --- THE SLEEP TIMER ---
