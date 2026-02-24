@@ -32,6 +32,7 @@ SCRIPTS=(
     "btrfs_balance_quarterly"
     "btrfs_scrub_monthly"
     "fortune4you"
+    "job_rotate"
     "keyLocked"
     "laptopLid_close"
     "login_monitor"

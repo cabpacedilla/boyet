@@ -1,0 +1,7 @@
+--- APPLICATION STRATEGY ---
+Focus on Leadership: Mention your 8+ years of experience and your ability to optimize workflows and test coverage strategy.
+
+--- SUGGESTED OPENING ---
+With over 8 years of experience in QA leadership, I focus on building robust test pipelines and optimizing workflows to ensure high-velocity, high-quality releases.
+
+Check my GitHub (boyet) for specific Linux automation scripts: https://github.com/your-github-link
