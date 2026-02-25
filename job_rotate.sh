@@ -49,6 +49,8 @@ while true; do
             ;;
     esac
 
+	echo "$(date): Running Playwright scraper for: $SELECTED_QUERY" >> "$LOG_FILE"
+	
     # --- EXECUTION ---
     # timeout 120s prevents the process from hanging indefinitely
     RAW_RESULTS=$(timeout 120s python3 "$BIN_DIR/find_jobs.py" "$SELECTED_QUERY")
@@ -82,7 +84,9 @@ while true; do
             echo ""
             echo -e "Hi Claive,\n\nI found $COUNT new matches.\n\n$NEW_JOBS_BODY\n---\nStrategy: $STRATEGY"
         } | msmtp -a default "$ALERT_EMAIL"
-        echo "$(date): Sent email for $COUNT jobs." >> "$LOG_FILE"
+        echo "$(date): SUCCESS - Sent email for $COUNT jobs." >> "$LOG_FILE"
+    else
+		echo "$(date): INFO - No new jobs found this cycle." >> "$LOG_FILE"
     fi
 
     # --- SLEEP ---
