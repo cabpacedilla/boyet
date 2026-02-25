@@ -1,105 +1,94 @@
 import sys
 import asyncio
 import random
-from playwright.async_api import async_playwright
 import urllib.parse
+from playwright.async_api import async_playwright
 
-# New helper for human-like pauses
-async def random_delay(min_sec=3, max_sec=7):
-    delay = random.uniform(min_sec, max_sec)
-    await asyncio.sleep(delay)
+async def random_delay(min_sec=4, max_sec=8):
+    await asyncio.sleep(random.uniform(min_sec, max_sec))
 
-async def scrape_linkedin(page, query):
+async def scrape_portal(page, url, site_id, card_selector, title_sel, comp_sel, link_sel, attr="href"):
     try:
-        q = urllib.parse.quote(query)
-        url = f"https://www.linkedin.com/jobs/search/?keywords={q}&location=Philippines&f_WT=2&f_JT=C%2CP&f_E=4"
-        await page.goto(url, wait_until="load", timeout=30000)
-        await random_delay(2, 4) # Pause after load
+        await page.goto(url, wait_until="load", timeout=40000)
+        await random_delay(2, 4)
         
         jobs = []
-        cards = await page.query_selector_all("div.base-card")
-        for c in cards[:5]:
-            title_el = await c.query_selector("h3.base-search-card__title")
-            comp_el = await c.query_selector("h4.base-search-card__subtitle")
-            link_el = await c.query_selector("a.base-card__full-link")
-            if title_el and comp_el and link_el:
-                title = (await title_el.inner_text()).strip()
-                comp = (await comp_el.inner_text()).strip()
-                link = (await link_el.get_attribute("href")).split('?')[0]
-                job_id = link.split("-")[-1]
-                jobs.append(f"{job_id}|{title}|{comp}|{link}")
+        cards = await page.query_selector_all(card_selector)
+        for c in cards[:12]:
+            try:
+                t_el = await c.query_selector(title_sel)
+                c_el = await c.query_selector(comp_sel)
+                l_el = await c.query_selector(link_sel)
+                if t_el and c_el and l_el:
+                    title = (await t_el.inner_text()).strip()
+                    comp = (await c_el.inner_text()).strip()
+                    href = await l_el.get_attribute(attr)
+                    
+                    # Formatting links
+                    if site_id == "li": link = href.split('?')[0]
+                    elif site_id == "js": link = f"https://www.jobstreet.com.ph{href}".split('?')[0]
+                    elif site_id == "in": link = f"https://ph.indeed.com{href}"
+                    else: link = f"https://www.mynimo.com{href}" if href.startswith('/') else href
+                    
+                    # Generate ID
+                    jid = f"{site_id}-{hash(link) % 10000000}"
+                    jobs.append(f"{jid}|{title}|{comp}|{link}")
+            except: continue
         return jobs
-    except Exception as e:
-        return []
-
-async def scrape_mynimo(page, query):
-    try:
-        clean_q = query.replace('"', '').replace('(', '').replace(')', '').replace('OR', '').replace('AND', '')
-        q = urllib.parse.quote(' '.join(clean_q.split()))
-        url = f"https://www.mynimo.com/cebu-jobs/search?q={q}"
-        
-        await page.goto(url, wait_until="load", timeout=30000)
-        await random_delay(2, 5)
-        
-        jobs = []
-        items = await page.query_selector_all("div.job-item")
-        for i in items[:5]:
-            title_el = await i.query_selector("a.job-title")
-            comp_el = await i.query_selector("div.company-name")
-            if title_el and comp_el:
-                title = (await title_el.inner_text()).strip()
-                link = "https://www.mynimo.com" + await title_el.get_attribute("href")
-                comp = (await comp_el.inner_text()).strip()
-                jobs.append(f"mynimo-{title[:5]}|{title}|{comp}|{link}")
-        return jobs
-    except Exception as e:
-        return []
-
-async def scrape_jobstreet(page, query):
-    try:
-        clean_q = query.replace('"', '').replace('(', '').replace(')', '').replace('OR', ' ').replace('AND', ' ')
-        q = urllib.parse.quote(' '.join(clean_q.split()))
-        url = f"https://www.jobstreet.com.ph/en/job-search/{q}-contract-jobs/"
-        
-        await page.goto(url, wait_until="load", timeout=30000)
-        await random_delay(3, 6)
-        
-        jobs = []
-        cards = await page.query_selector_all("article")
-        for c in cards[:5]:
-            title_el = await c.query_selector("a[data-automation='jobTitle']")
-            comp_el = await c.query_selector("a[data-automation='jobCompany']")
-            if title_el and comp_el:
-                title = (await title_el.inner_text()).strip()
-                link = "https://www.jobstreet.com.ph" + await title_el.get_attribute("href")
-                comp = (await comp_el.inner_text()).strip()
-                jobs.append(f"js-{title[:5]}|{title}|{comp}|{link}")
-        return jobs
-    except Exception as e:
-        return []
+    except: return []
 
 async def main():
     query = sys.argv[1] if len(sys.argv) > 1 else "Senior QA"
+    q_encoded = urllib.parse.quote(query)
+    
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
         context = await browser.new_context(
-            user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+            viewport={'width': 1280, 'height': 800},
+            user_agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
         )
         page = await context.new_page()
-        
         results = []
-        # Staggered execution
-        results.extend(await scrape_linkedin(page, query))
-        await random_delay(5, 10) # Pause between portals
+
+        # Portal 1: LinkedIn (Remote focus)
+        results.extend(await scrape_portal(page, 
+            f"https://www.linkedin.com/jobs/search/?keywords={q_encoded}&location=Philippines&f_WT=2", 
+            "li", ".base-card", ".base-search-card__title", ".base-search-card__subtitle", "a.base-card__full-link"))
         
-        results.extend(await scrape_mynimo(page, query))
-        await random_delay(5, 10) # Pause between portals
-        
-        results.extend(await scrape_jobstreet(page, query))
-        
-        for item in list(set(results)):
-            print(item)
-            
+        await random_delay(5, 10)
+
+        # Portal 2: Indeed PH
+        results.extend(await scrape_portal(page,
+            f"https://ph.indeed.com/jobs?q={q_encoded}&l=Philippines",
+            "in", ".job_seen_beacon", "h2", "[data-testid='company-name']", "a.jcs-JobTitle"))
+
+        await random_delay(5, 10)
+
+        # Portal 3: JobStreet PH
+        # Clean query for JobStreet URL structure
+        js_q = query.replace('"', '').replace('(', '').replace(')', '').replace('OR', ' ').replace('AND', ' ')
+        js_q_enc = urllib.parse.quote(' '.join(js_q.split()))
+        results.extend(await scrape_portal(page,
+            f"https://www.jobstreet.com.ph/en/job-search/{js_q_enc}-jobs/",
+            "js", "article[data-automation='job-card']", "a[data-automation='jobTitle']", "a[data-automation='jobCompany']", "a[data-automation='jobTitle']"))
+
+        await random_delay(5, 10)
+
+        # Portal 4: Mynimo (Cebu focus)
+        my_q = query.replace('"', '').replace('(', '').replace(')', '').replace('OR', '').replace('AND', '')
+        my_q_enc = urllib.parse.quote(' '.join(my_q.split()))
+        results.extend(await scrape_portal(page,
+            f"https://www.mynimo.com/cebu-jobs/search?q={my_q_enc}",
+            "my", ".job-item", ".job-title", ".company-name", ".job-title"))
+
+        # Unique filtering
+        seen = set()
+        for item in results:
+            jid = item.split('|')[0]
+            if jid not in seen:
+                print(item)
+                seen.add(jid)
+
         await browser.close()
 
 if __name__ == "__main__":
