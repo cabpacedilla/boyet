@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# -----------------------------------------------------------
-# power_usage.sh — Enhanced Battery & Time Estimation Monitor
-# -----------------------------------------------------------
+# -------------------------------------------------------------------------
+# power_usage.sh — Enhanced GUI Battery & Process Monitor (kdialog Version)
+# -------------------------------------------------------------------------
 
 LOCK_FILE="/tmp/power_usage_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
@@ -9,15 +9,14 @@ if ! flock -n 9; then
     exit 1
 fi
 
-# Store our PID
 echo $$ > "$LOCK_FILE"
 
-# Enhanced cleanup that only removes our PID file
+# Clean up lock file and close any open kdialogs on exit
 cleanup() {
-    # Only remove if it's our PID (prevents removing another process's lock)
     if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
         rm -f "$LOCK_FILE"
     fi
+    pkill -f "kdialog --title Power" 2>/dev/null
     flock -u 9
     exec 9>&-
 }
@@ -25,15 +24,17 @@ cleanup() {
 trap cleanup EXIT
 
 LOG_FILE="$HOME/scriptlogs/power_usage.log"
-INTERVAL=2700  
-TERMINALS=(konsole gnome-terminal xfce4-terminal tilix lxterminal mate-terminal alacritty urxrt xterm)
+INTERVAL=2700  # 45 Minutes
 
 # Power estimation constants (Fallback if sysfs power_now is missing)
 CPU_POWER_IDLE=2.0
 CPU_POWER_PER_CORE=4.0
 MEM_POWER_PER_GB=0.5
 
-SCRIPT_START=$(date +%s)
+# Battery Thresholds
+LOW_BATTERY=20
+CRITICAL_BATTERY=10
+
 CUMULATIVE_ENERGY_KWH=0
 
 safe_bc() {
@@ -52,20 +53,14 @@ get_system_info() {
     PREV_TIMESTAMP=$(date +%s)
 }
 
-# -----------------------------------------------------------
-# IMPROVED BATTERY & TIME ESTIMATION
-# -----------------------------------------------------------
 get_battery_info() {
     local bat
     bat=$(find /sys/class/power_supply/ -name "BAT*" | head -n 1)
     [[ -z "$bat" ]] && { echo "No Battery Found"; return 1; }
 
-    # 1. Get capacity and status
     local cap=$(cat "$bat/capacity" 2>/dev/null || echo "0")
     local stat=$(cat "$bat/status" 2>/dev/null || echo "Unknown")
 
-    # 2. Get Power Draw (W) - Hardware level
-    # Some laptops use power_now (uW), others use current_now (uA) * voltage_now (uV)
     local p_now_uw=$(cat "$bat/power_now" 2>/dev/null || echo "0")
     local v_now_uv=$(cat "$bat/voltage_now" 2>/dev/null || echo "0")
     local c_now_ua=$(cat "$bat/current_now" 2>/dev/null || echo "0")
@@ -77,8 +72,6 @@ get_battery_info() {
         real_watts=$(safe_bc "($c_now_ua * $v_now_uv) / 1000000000000")
     fi
 
-    # 3. Get Energy Remaining (Wh)
-    # energy_now (uWh) or charge_now (uAh) * voltage
     local e_now_uwh=$(cat "$bat/energy_now" 2>/dev/null || echo "0")
     local c_now_uah=$(cat "$bat/charge_now" 2>/dev/null || echo "0")
     
@@ -89,7 +82,6 @@ get_battery_info() {
         Wh_remaining=$(safe_bc "($c_now_uah * $v_now_uv) / 1000000000000")
     fi
 
-    # 4. Calculate Time Remaining
     local time_str="N/A"
     if [[ $(echo "$real_watts > 0.5" | bc -l) -eq 1 && "$stat" == "Discharging" ]]; then
         local hours_left=$(safe_bc "$Wh_remaining / $real_watts")
@@ -99,13 +91,10 @@ get_battery_info() {
     elif [[ "$stat" == "Charging" ]]; then
         time_str="Charging..."
     else
-        time_str="Infinite/Stationary"
+        time_str="Stationary"
     fi
 
-    echo -e "State: $stat\nLevel: ${cap}%\nLive Draw: ${real_watts}W\nEst. Time Remaining: $time_str"
-    
-    # Return metrics for log consumption
-    echo "$real_watts|$Wh_remaining|$stat" > /tmp/bat_metrics
+    echo -e "State: $stat\nLevel: ${cap}%\nLive Draw: ${real_watts}W\nEst. Time: $time_str"
 }
 
 get_average_cpu_usage() {
@@ -127,50 +116,22 @@ get_average_mem_usage() {
 get_process_power_consumption() {
     local avg_cpu=$(get_average_cpu_usage)
     local avg_mem=$(get_average_mem_usage)
-
-    # Estimate based on load
     local est_power=$(safe_bc "$CPU_POWER_IDLE + ($avg_cpu / 100) * $CPU_CORES * $CPU_POWER_PER_CORE + ($avg_mem / 100) * $TOTAL_RAM_GB * $MEM_POWER_PER_GB")
-
     local now=$(date +%s)
     local elapsed=$((now - PREV_TIMESTAMP))
     local energy_interval_kwh=$(safe_bc "$est_power * ($elapsed / 3600) / 1000")
     CUMULATIVE_ENERGY_KWH=$(safe_bc "$CUMULATIVE_ENERGY_KWH + $energy_interval_kwh")
     PREV_TIMESTAMP=$now
-
     echo "$avg_cpu|$avg_mem|$est_power|$energy_interval_kwh|$CUMULATIVE_ENERGY_KWH"
 }
 
 get_top_processes() {
-    # Define fixed widths for clean vertical alignment
-    local w_pid=10
-    local w_comm=20
-    local w_cpu=10
-    local w_mem=10
-
-    # Print Headers (Left-aligned)
-    printf "%-${w_pid}s %-${w_comm}s %-${w_cpu}s %-${w_mem}s\n" "PID" "COMMAND" "%CPU" "%MEM"
-
-    # Process and align each row of data
-    # Using 'comm' for the command ensures names don't have spaces that break alignment
+    # Using Tabs (\t) for flexible alignment in kdialog variable-width fonts
+    echo -e "PID\tCOMMAND\t%CPU\t%MEM"
     ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 6 | tail -n +2 | while read -r p c cpu mem; do
-        printf "%-${w_pid}s %-${w_comm}s %-${w_cpu}s %-${w_mem}s\n" "$p" "$c" "$cpu" "$mem"
-    done
-}
-
-launch_terminal() {
-    local msg="$1"
-    for term in "${TERMINALS[@]}"; do
-        if command -v "$term" >/dev/null 2>&1; then
-            # We wrap the logic in a clean subshell that handles its own exit
-            "$term" -e bash -c "
-                trap 'exit' INT TERM
-                echo -e \"$msg\"
-                echo -e \"\n\"
-                read -n 1 -s -r -p \"Press any key to close...\"
-                exit
-            " & 
-            return
-        fi
+        # Truncate command to 15 chars to keep tabs predictable
+        local short_c="${c:0:15}"
+        echo -e "$p\t$short_c\t$cpu\t$mem"
     done
 }
 
@@ -180,15 +141,44 @@ main() {
     sleep 2
 
     while true; do
+        # 1. Close any previous Power Usage dialogs to prevent stacking
+        pkill -f "kdialog --title Power" 2>/dev/null
+
+        # 2. Gather Data
         bat_out=$(get_battery_info)
+        current_cap=$(echo "$bat_out" | grep "Level:" | grep -oP '\d+' | head -1)
+        
         power_data=$(get_process_power_consumption)
         IFS='|' read -r cpu mem pwr_w int_kwh cum_kwh <<< "$power_data"
         top_p=$(get_top_processes)
 
-        summary="--- POWER REPORT $(date '+%H:%M:%S') ---\n$bat_out\n\nCPU: $cpu% | MEM: $mem%\nLoad-Est Power: ${pwr_w}W\nInterval Energy: ${int_kwh}kWh\n\n$top_p"
+        # 3. Format Summary
+        summary="==============================
+  🔋 POWER STATUS: $(date '+%H:%M:%S')
+==============================
+$bat_out
 
+💻 LOAD: CPU: $cpu% | MEM: $mem%
+Est. Load Power: ${pwr_w}W
+Interval Energy: ${int_kwh}kWh
+
+🔝 TOP PROCESSES:
+$top_p
+=============================="
+
+        # 4. Save to Log
         echo -e "$summary" >> "$LOG_FILE"
-        launch_terminal "$summary"
+
+        # 5. Launch kdialog based on battery health
+        if [ "$current_cap" -le "$CRITICAL_BATTERY" ]; then
+            kdialog --title "Power: CRITICAL ${current_cap}%" --error "$summary\n\nPLUG IN NOW!" &
+        elif [ "$current_cap" -le "$LOW_BATTERY" ]; then
+            kdialog --title "Power: LOW ${current_cap}%" --sorry "$summary" &
+        else
+            kdialog --title "Power Usage Monitor" --msgbox "$summary" &
+        fi
+
+        # 6. Wait for next interval
         sleep "$INTERVAL"
     done
 }
