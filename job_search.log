@@ -345,3 +345,9 @@ Sab 07 Mar 2026 09:42:54 N.H. PST: Strategy: SDET Specialist. Focus on Cypress/P
 Sab 07 Mar 2026 09:42:54 N.H. PST: Running Scraper for: ("Senior QA" OR SDET) AND (Python OR Cypress) AND (Selenium OR Postman OR API) AND (Contract OR Remote OR Part-time OR Freelance) NOT ("Full-time" OR Permanent)
 Sab 07 Mar 2026 09:43:47 N.H. PST: SUCCESS - Sent email for 9 jobs.
 Sab 07 Mar 2026 09:43:47 N.H. PST: Sleeping for 62 minutes...
+------------------------------------------------
+Lin 08 Mar 2026 09:05:17 N.U. PST: Starting Search Cycle (LinkedIn, Indeed, JobStreet, Mynimo)...
+Lin 08 Mar 2026 09:05:17 N.U. PST: Strategy: QAOps/Linux Specialist - CONTRACT/REMOTE ONLY
+Lin 08 Mar 2026 09:05:17 N.U. PST: Running Scraper for: ("Senior QA" OR "Automation Engineer") AND (Bash OR Shell OR Linux OR DevOps) AND (Contract OR Remote OR Part-time OR Freelance) NOT ("Full-time" OR Permanent)
+Lin 08 Mar 2026 09:06:06 N.U. PST: SUCCESS - Sent email for 18 jobs.
+Lin 08 Mar 2026 09:06:06 N.U. PST: Sleeping for 66 minutes...
