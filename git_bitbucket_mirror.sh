@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 # -------------------------------------------------------------------
-# git_bitbucket_mirror.sh v2.3
-# Automatically syncs GitHub, Bitbucket, and SourceForge mirrors.
+# git_bitbucket_mirror.sh
+# Automatically syncs GitHub master branch to Bitbucket and SourceForge mirrors.
+# Copies ~/Documents/bin/ into the repo before syncing.
+# Author: Claive Alvin P. Acedilla (modified)
+# -------------------------------------------------------------------
+
+# === Setup Instructions ===
+# 1. Generate SSH key: ssh-keygen -t ed25519 -C "your_email@example.com"
+# 2. Start ssh-agent: eval "$(ssh-agent -s)" && ssh-add ~/.ssh/id_ed25519
+# 3. Add public key to GitHub, Bitbucket, SourceForge.
+# 4. Test SSH: ssh -T git@github.com | ssh -T git@bitbucket.org | ssh -T cabpacedilla@git.code.sf.net
+# 5. Configure remotes:
+#    git remote set-url origin git@github.com:cabpacedilla/boyet.git
+#    git remote set-url bitbucket git@bitbucket.org:cabpa/boyet.git
+#    git remote set-url sourceforge ssh://cabpacedilla@git.code.sf.net/p/boyet/code
 # -------------------------------------------------------------------
 
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-# === CONFIG ===
 REPO_DIR="$HOME/Documents/boyet"
 SOURCE_DIR="$HOME/Documents/bin"
 GITHUB_REMOTE="origin"
@@ -17,11 +29,8 @@ LOGFILE="$HOME/scriptlogs/git_mirror_safe.log"
 mkdir -p "$(dirname "$LOGFILE")"
 
 TIMESTAMP() { date '+%Y-%m-%d %H:%M:%S %Z'; }
-
-# Rotate logs if they exceed 2MB
 find "$(dirname "$LOGFILE")" -name "$(basename "$LOGFILE")" -size +2M -delete 2>/dev/null
 
-# Prevent concurrent runs
 LOCKFILE="/tmp/git_mirror_safe.lock"
 exec 200>"$LOCKFILE"
 flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
@@ -29,7 +38,7 @@ flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
 START_TIME=$(date +%s)
 
 # -----------------------------
-# 1. Prepare Local Repo
+# Copy latest files to repo
 # -----------------------------
 echo "$(TIMESTAMP) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$LOGFILE"
 \cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
@@ -37,57 +46,45 @@ echo "$(TIMESTAMP) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$
 cd "$REPO_DIR" || { echo "$(TIMESTAMP) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
 
 # -----------------------------
-# 2. Pull & Rebase (The "Origin" Fix)
+# Pull latest from GitHub (prevent divergence)
 # -----------------------------
-echo "$(TIMESTAMP) - Syncing with $GITHUB_REMOTE/$BRANCH..." | tee -a "$LOGFILE"
-# Fetch first to see what the remote has
-git fetch "$GITHUB_REMOTE" &>> "$LOGFILE"
-
+echo "$(TIMESTAMP) - Pulling latest changes from $GITHUB_REMOTE/$BRANCH with rebase..." | tee -a "$LOGFILE"
 if git pull --rebase "$GITHUB_REMOTE" "$BRANCH" &>> "$LOGFILE"; then
     echo "$(TIMESTAMP) - ✅ Rebase successful." | tee -a "$LOGFILE"
 else
-    echo "$(TIMESTAMP) - ⚠️ Rebase conflict or divergence. Attempting standard merge..." | tee -a "$LOGFILE"
+    echo "$(TIMESTAMP) - ⚠️ Rebase conflict detected. Aborting rebase..." | tee -a "$LOGFILE"
     git rebase --abort &>> "$LOGFILE"
-    # Fallback: Merge remote changes to keep history moving
-    git merge "$GITHUB_REMOTE/$BRANCH" --no-edit &>> "$LOGFILE"
 fi
 
 # -----------------------------
-# 3. Stage & Commit
+# Stage & commit local changes
 # -----------------------------
 git add -A
 if git diff --cached --quiet && git diff --quiet; then
     echo "$(TIMESTAMP) - No changes to commit." | tee -a "$LOGFILE"
 else
-    echo "$(TIMESTAMP) - Committing local changes..." | tee -a "$LOGFILE"
-    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" &>> "$LOGFILE"
+    echo "$(TIMESTAMP) - Committing new changes..." | tee -a "$LOGFILE"
+    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')"
 fi
 
 # -----------------------------
-# 4. Push Phase
+# Push updates safely (no force)
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
-# --- Push to GitHub ---
-# We use --force-with-lease here. It's safer than --force 
-# but stronger than a standard push.
-echo "$(TIMESTAMP) - Pushing to GitHub ($GITHUB_REMOTE)..." | tee -a "$LOGFILE"
+echo "$(TIMESTAMP) - Pushing to GitHub ($GITHUB_REMOTE/$BRANCH)..." | tee -a "$LOGFILE"
 if git push "$GITHUB_REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
-    SUCCESS+=("origin ✅")
+    SUCCESS+=("$GITHUB_REMOTE ✅")
 else
-    # If standard push fails, try force-pushing to align GitHub with your local 'bin'
-    echo "$(TIMESTAMP) - ⚠️ Standard push failed. Attempting force push to origin..." | tee -a "$LOGFILE"
-    if git push --force "$GITHUB_REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
-         SUCCESS+=("origin ✅ (forced)")
-    else
-         FAIL+=("origin ❌")
-    fi
+    FAIL+=("$GITHUB_REMOTE ❌")
 fi
 
-# --- Push to Mirrors ---
+# -----------------------------
+# Mirror push (still force for mirrors)
+# -----------------------------
 for REMOTE in "${MIRRORS[@]}"; do
-    echo "$(TIMESTAMP) - Force pushing to $REMOTE..." | tee -a "$LOGFILE"
+    echo "$(TIMESTAMP) - Force pushing to $REMOTE/$BRANCH..." | tee -a "$LOGFILE"
     if git push --force "$REMOTE" "$BRANCH:$BRANCH" &>> "$LOGFILE"; then
         SUCCESS+=("$REMOTE ✅")
     else
@@ -96,22 +93,19 @@ for REMOTE in "${MIRRORS[@]}"; do
 done
 
 # -----------------------------
-# 5. Final Report
+# Report duration
 # -----------------------------
 END_TIME=$(date +%s)
 ELAPSED=$(( END_TIME - START_TIME ))
 printf -v DURATION '%02dh %02dm %02ds' $((ELAPSED/3600)) $(((ELAPSED%3600)/60)) $((ELAPSED%60))
+echo "$(TIMESTAMP) - Total sync duration: $DURATION" | tee -a "$LOGFILE"
 
 MSG=""
 [[ ${#SUCCESS[@]} -gt 0 ]] && MSG+="Succeeded:\n$(printf '%s\n' "${SUCCESS[@]}")\n"
 [[ ${#FAIL[@]} -gt 0 ]] && MSG+="Failed:\n$(printf '%s\n' "${FAIL[@]}")"
 
-echo "$(TIMESTAMP) - Sync duration: $DURATION" | tee -a "$LOGFILE"
-
 if [[ ${#FAIL[@]} -gt 0 ]]; then
-    # FAILURE NOTIFICATION
-    notify-send -u critical "⚠️ Git Mirror Error" "Duration: $DURATION\n\n$MSG\n\nCheck $LOGFILE for details."
+    notify-send "⚠️ Git Mirror Completed with Errors" "Duration: $DURATION\n$MSG"
 else
-    # SUCCESS NOTIFICATION
-    notify-send "✅ Git Mirror Complete" "Duration: $DURATION\n\n$MSG"
+    notify-send "✅ Git Mirror Complete" "Duration: $DURATION\n$MSG"
 fi
