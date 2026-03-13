@@ -130,9 +130,6 @@ start_swayidle
 # Main loop to continuously check idle status
 while true; do
     log_status
-    pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
-    pkill -9 -f "/home/claiveapa/Documents/bin/resume_handler.sh"
-    pkill -9 -f screensaver-
     check_idle_status
     sleep 10 # Check every 15 seconds for idle status (you can adjust this duration)
 done
