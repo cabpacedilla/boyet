@@ -30,7 +30,7 @@ if [[ ( -n "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
 	( -n "$HDMI_DISPLAY" && "$(get_lid_state)" == "closed" ) ]]; then
 
     # Kill screensavers and lock screen
-    pkill -9 -f "/home/claiveapa/Documents/bin/randscreensavers.sh"
+    pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
     pkill -9 -f screensaver-
 
     # Restore brightness if device is found
