@@ -38,7 +38,7 @@ SCRIPTS=(
     "login_monitor"
     "low_disk_space"
     "lowMemAlert"
-    "power_usage"
+    #"power_usage"
     "runscreensaver"
     "security_check"
 )
