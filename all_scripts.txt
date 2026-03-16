@@ -1,0 +1,1566 @@
+===== autosync.sh =====
+#!/usr/bin/bash
+# Set user in /etc/sudoers file without providing password with rsync command
+# add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
+
+while inotifywait -r -e modify,create /home/claiveapa/Documents/; do
+	BACKUP_TIME=$(date +"%I:%M %p")
+	rsync -avz --protect-args "/home/claiveapa/Documents/" "/run/media/claiveapa/Data/claive/Documents/nobara/kde42/"
+    STATUS=$?
+
+    if [[ $STATUS -eq 0 || $STATUS -eq 24 ]]; then
+        notify-send --app-name "✅ Auto-backup: $BACKUP_TIME" "Backup sync was successful." &
+    else
+        notify-send --app-name "⚠️ Auto-backup: $BACKUP_TIME" "Backup sync encountered an error (code $STATUS)." &
+    fi
+done
+
+
+===== autobrightness.sh =====
+#!/bin/bash
+BRIGHT_PATH=/sys/class/backlight/amdgpu_bl1/brightness
+OPTIMAL_BRIGHTNESS=56206
+
+while true; do
+    BRIGHTNESS=$(cat "$BRIGHT_PATH")
+    if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
+        brightnessctl --device=amdgpu_bl1 set 90%
+    fi
+    sleep 5 # Check every 5 seconds
+done
+
+
+===== backlisten.sh =====
+#!/usr/bin/bash
+
+SCRIPT_NAME="checkservices.sh"
+SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
+MIN_INSTANCES=1
+COOLDOWN=2   # seconds between checks
+
+while true; do
+    # Find all running processes for the script with bash
+    PROCS=$(pgrep -f "bash $SCRIPT_PATH")
+    NUM_RUNNING=$(echo "$PROCS" | wc -w)
+
+    if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
+        # More than one instance? Kill extras and notify
+        PROC_ARRAY=($PROCS)
+        LAST_INDEX=$(( ${#PROC_ARRAY[@]} - 1 ))
+        for i in $(seq 0 $((LAST_INDEX - 1))); do
+            kill "${PROC_ARRAY[$i]}"
+            notify-send -t 10000 --app-name "💀 Check services" "Extra checkservices instance killed: PID ${PROC_ARRAY[$i]}" &
+        done
+    else
+        # Script not running, start it
+        if [ -x "$SCRIPT_PATH" ]; then
+            "$SCRIPT_PATH" &
+            notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
+        else
+            notify-send --app-name "⚠️ Check services" "checkservices script not found or not executable!" &
+        fi
+    fi
+
+    sleep "$COOLDOWN"
+done
+
+
+===== batteryAlertBashScript.sh =====
+#!/usr/bin/bash
+# This script will alert when battery level is below or equal 40% and will notify when battery level is above or equal 80% to optimize laptop battery life.
+# This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# September 2020
+
+# Steps for the task:
+# 1. Install acpi
+# 2. Create a bin directory inside your home directory
+# 3. Change directory to the bin directory
+# 4. Create the bash script file below with nano or gedit and save it with a filename like battAlert.sh
+# 5. Make file executable with chmod +x battAlert.sh command
+# 6. Add the battAlert.sh command in Startup applications
+# 7. Reboot and use the laptop until the battery drains to 40%
+# 8. A notification message will be displayed to plug the power cable to opitimize the battery life. Then a low battery notification sound will be played.
+# 0. Let the laptop charge until 80%
+# 10. A notification message will be displayed to unplug the power cable to opitimize the battery life. Then a full battery notification sound will be played.
+
+notify()
+{
+   # Set Action to Plug if low
+   if [ "$1" = 'low' ]; then
+        ACTION="Plug"
+   
+   # Set Action to Unplug if high    
+   elif [ "$1" = 'high' ]; then
+        ACTION="Unplug"
+   fi
+    
+   # Notify battery alert
+   notify-send -u critical --app-name "⚠️ Battery alert:" "Battery reached $2%. $ACTION the power cable to optimize battery life!"
+   
+   # check if cvlc file program is existing then play low or high mp3
+   #if [ -f "$(which mpv)" ]; then
+      #cvlc --play-and-exit ~/Music/battery-"$1".mp3 2>/dev/null
+    #  mpv ~/Music/battery-"$1".mp3 2>/dev/null
+   #fi
+}
+
+while true
+do
+
+# 1. Set low.high and full battery levels
+LOW_BATT=20
+HIGH_BATT=80
+FULL_BATT=100
+BRIGHTNESS=$(cat /sys/class/backlight/amdgpu_bl1/brightness)
+OPTIMAL_BRIGHTNESS=56206
+
+#1. Get battery level and state
+BATT_LEVEL=$(acpi -b | grep -P -o '[0-9]+(?=%)')
+BATT_STATE=$(acpi -b | awk '{print $3}')  
+   
+#2. If battery battery level is 40 or less and discharging, notify low battery alert
+if [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; then
+   notify low "$BATT_LEVEL"
+      
+#3. If battery level is 40 or less and charging, do nothing
+elif { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Unknown," ]; }; then
+	if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
+      brightnessctl --device=amdgpu_bl1 set 90%
+	fi
+	:
+   
+#4. If battery level is 80 or more, notify full battery alert
+elif { [ "$BATT_LEVEL" -ge "$HIGH_BATT" ] && [ "$BATT_STATE" = "Charging," ]; } || { [ "$BATT_LEVEL" -eq "$FULL_BATT" ] && [ "$BATT_STATE" = "Full," ]; } || { [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] && [ "$BATT_STATE" = "Not" ]; } || { [ "$BATT_LEVEL" -ge "$HIGH_BATT" ] && [ "$BATT_STATE" = "Unknown," ]; } || { [ "$BATT_LEVEL" -eq "$FULL_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; }; then
+   notify high "$BATT_LEVEL"
+      
+#5. If battery level is 80 or less and discharging, do nothing   
+elif { [ "$BATT_LEVEL" -le "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; } || { [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; }; then
+	if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
+      brightnessctl --device=amdgpu_bl1 set 90%
+	fi
+	:
+##5. If battery level is 80 or more and discharging, do nothing 
+#elif [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] &&  [ "$BATT_STATE" = 'Discharging,' ]; then
+#   if [ "$BRIGHTNESS" != "$OPTIMAL_BRIGHTNESS" ]; then
+#		echo $OPTIMAL_BRIGHTNESS | sudo tee /sys/class/backlight/amdgpu_bl1/brightness
+#	fi
+
+fi
+   
+sleep 5s
+done
+
+
+
+
+===== battery_usage.sh =====
+#!/usr/bin/bash
+# This script will alert the power consumption in a given time
+# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# October 2024
+
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like battery_usage.sh
+# 4. Make file executable with command chmod +x battery_usage.sh 
+# 5. Add the battery_usage.sh command in Startup applications
+# 6. Reboot the laptop
+# 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
+# 8. Low memory alert message will be displayed
+#!/bin/bash
+
+# Start the monitoring
+notify-send "✅ Battery Usage Monitoring Started" "Monitoring continuously every 1 hour." &
+
+# Terminal list for flexibility across desktop environments
+TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
+
+# Flag to indicate if it's the first run
+first_run=true
+
+# Infinite loop for monitoring
+while true; do
+    # Check if it's the first run
+    if [ "$first_run" = true ]; then
+        # Skip running powertop on the first iteration and mark as no longer the first run
+        first_run=false
+    else
+        # Get power consumption data from powertop
+        sudo powertop --time=3600 --html=powertop.html
+
+        # Extract top power consumers from the HTML file
+        POWER_DATA=$(grep -A 12 "Top 10 Power Consumers" powertop.html | \
+        grep "<tr" | \
+        awk -F '>' '{gsub(/<\/t[dh]/, "", $3); gsub(/<\/t[dh]/, "", $5); gsub(/<\/t[dh]/, "", $7); gsub(/<\/t[dh]/, "", $9); \
+        if (length($9) > 119) $9 = substr($9, 1, 110) "..."; \
+        printf "%-14s %-10s %-10s %s\n", $3, $5, $7, $9}' | \
+        head -n 11)
+
+        # Check if POWER_DATA is empty
+        if [ -z "$POWER_DATA" ]; then
+            continue
+        fi
+
+        # Try launching in available terminal
+        launched=false
+        for term in "${TERMINALS[@]}"; do
+            if command -v "$term" >/dev/null 2>&1; then
+                "$term" -e bash -c "echo -e \"Top 10 Power Consumers\n$POWER_DATA\n\"; read -p 'Press enter to close...'" &
+                launched=true
+                break
+            fi
+        done
+
+        # If no terminal was found, notify the user
+        if [ "$launched" = false ]; then
+            notify-send "⚠️ Battery Usage Alert" "No supported terminal emulator found to display power usage."
+        fi
+    fi
+done
+
+
+
+===== btrfs_balance_quarterly.sh =====
+#!/bin/bash
+
+while true; do
+
+    # File to store the last run date
+    LAST_RUN_FILE="$HOME/scriptlogs/btrfs-balance-last-run"
+    LOGFILE="$HOME/scriptlogs/btrfs-balance-$(date +%Y-%m-%d).log"
+
+    # Get the current and last run dates
+    NOW=$(date +%s)
+
+    if [ -f "$LAST_RUN_FILE" ]; then
+        LAST_RUN=$(cat "$LAST_RUN_FILE")
+        # Calculate difference in days (~120 days for 4 months)
+        DIFF_DAYS=$(( (NOW - LAST_RUN) / 86400 ))
+    else
+        DIFF_DAYS=9999
+    fi
+
+    if [ "$DIFF_DAYS" -eq 0 ]; then
+        echo -e "\n[$(date)] Starting Btrfs balance on /" | tee -a "$LOGFILE"
+        notify-send "✅ Btrfs Balance" "Starting Btrfs balance on / at $(date)."
+        sudo btrfs balance start / >> "$LOGFILE" 2>&1
+        echo "[$(date)] Btrfs balance completed" | tee -a "$LOGFILE"
+        notify-send "✅ Btrfs Balance" "Btrfs balance completed at $(date)."
+        date +%s > "$LAST_RUN_FILE"
+    else
+        echo -e "\n[$(date)] Less than 4 months since last balance. Skipping." | tee -a "$LOGFILE"
+    fi
+
+    sleep 86400
+done
+
+
+===== btrfs_scrub_monthly.sh =====
+#!/bin/bash
+
+while true; do
+  # Run only on the 15th day of the month
+  if [ "$(date +%d)" != "15" ]; then
+    sleep 86400
+    continue
+  fi
+
+  LOGFILE="$HOME/scriptlogs/btrfs-scrub-$(date +%Y-%m-%d).log"
+
+  echo -e "\nStarting Btrfs scrub on / at $(date)" | tee -a "$LOGFILE"
+  notify-send "✅ Btrfs Scrub" "Starting Btrfs scrub on / at $(date)"
+  sudo btrfs scrub start -Bd / >> "$LOGFILE" 2>&1
+  echo "Btrfs scrub completed at $(date)" | tee -a "$LOGFILE"
+  notify-send "✅ Btrfs Scrub" "Btrfs scrub completed at $(date)"
+
+  echo -e "\nBtrfs filesystem usage at $(date)" | tee -a "$LOGFILE"
+  sudo btrfs filesystem usage / | tee -a "$LOGFILE"
+
+
+  # Sleep for 24 hours to avoid re-running the scrub on the same day
+  sleep 86400
+done
+
+
+===== fortune4you.sh =====
+#!/bin/bash
+while true; do
+
+# Alert the random quote
+# notify-send -u critical --app-name "Fortune:" "$(fortune)"
+kdialog --title "Fortune" --msgbox "$(fortune)" &
+# kdialog --passivepopup "$(fortune)" --title "Fortune" &
+
+# Sleep in random time
+sleep "$(shuf -i1200-1500 -n1)"
+
+done
+
+
+===== hot_parts.sh =====
+#!/usr/bin/env bash
+# hot_parts.sh - Detect hot components (CPU, GPU, NVMe, Battery, ACPI zones)
+# Author: Claive Alvin P. Acedilla (with ChatGPT refinements)
+# Uses sysfs for temperature monitoring. No lm-sensors required.
+
+LOGFILE="$HOME/scriptlogs/hot_parts.log"
+mkdir -p "$(dirname "$LOGFILE")"
+
+trap 'echo "$(date) - SIGTERM received, exiting..." >> "$LOGFILE"; exit 0' TERM
+trap 'echo "$(date) - SIGINT received, exiting..." >> "$LOGFILE"; exit 0' INT
+
+NOTIFY=true    # Enable desktop notifications
+
+# Get safe threshold depending on sensor name
+get_threshold() {
+    case "$1" in
+        *cpu*|*k10temp*|*amdgpu*) echo 95 ;;   # CPU/GPU critical
+        *nvme*)                   echo 75 ;;   # NVMe SSDs throttle earlier
+        *BAT*|*bat*)              echo 50 ;;   # Batteries should stay cool
+        *acpitz*|*pch*)           echo 95 ;;   # ACPI/Chipset zones
+        *)                        echo 85 ;;   # Fallback
+    esac
+}
+
+print_alert() {
+    local part=$1
+    local temp=$2
+    echo "$(date) 🔥 Hot: $part — ${temp}°C" | tee -a "$LOGFILE"
+    if $NOTIFY; then
+        notify-send -u critical "🔥 Overheating Alert" "$part is at ${temp}°C" 2>>"$LOGFILE" || \
+            echo "$(date) ⚠️ notify-send failed" >> "$LOGFILE" &
+    fi
+}
+
+# Detect and monitor all hwmon devices
+check_hwmon() {
+    for dir in /sys/class/hwmon/hwmon*; do
+        [[ -d "$dir" ]] || continue
+        name=$(<"$dir/name")
+
+        for tfile in "$dir"/temp*_input; do
+            [[ -f "$tfile" ]] || continue
+            temp=$(( $(cat "$tfile") / 1000 ))
+            threshold=$(get_threshold "$name")
+
+            if (( temp > threshold )); then
+                label="${name}"
+                # If a label file exists (temp1_label, temp2_label, etc.), use it
+                lfile="${tfile%_*}_label"
+                [[ -f "$lfile" ]] && label="$name ($(cat "$lfile"))"
+
+                print_alert "$label" "$temp"
+            fi
+        done
+    done
+}
+
+while true; do
+    echo "$(date) 🔎 Checking system temperatures..." >> "$LOGFILE"
+    check_hwmon
+    echo "$(date) ✅ Done." >> "$LOGFILE"
+    sleep 5
+done
+
+
+===== keyLocked.sh =====
+#!/usr/bin/bash
+# This script will notify when Caps Lock or Num Lock are on using the xset q command.
+# This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# October 2020
+
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like keyLocked.sh
+# 4. Make file executable with chmod +x keyLocked.sh command
+# 5. Add the keyLocked.sh command in Startup applications
+# 6. Reboot the laptop
+# 7. Press the Caps Lock key
+# 8. A Caps Lock key notification message will be displayed
+# 9. Press the Num Lock key
+# 10. A Num Lock key notification message will be displayed
+
+# Define LED mask values for key locks
+CAPS_LOCK="00000001"
+NUM_LOCK="00000002"
+CAPSNUM_LOCK="00000003"
+NO_LOCK="00000000"
+
+# Function to get LED mask value
+get_led_mask() {
+    xset q | grep 'LED mask' | awk '{ print $NF }'
+}
+
+# Main loop
+while true; do
+    LED_MASK=$(get_led_mask)
+
+    # Check if the LED mask command was successful
+    if [ $? -ne 0 ]; then
+        sleep 10
+        continue
+    fi
+
+    # Notify based on LED mask value
+    case "$LED_MASK" in
+        "$CAPS_LOCK")
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Caps lock is on."
+            ;;
+        "$NUM_LOCK")
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Num lock is on."
+            ;;
+        "$CAPSNUM_LOCK")
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Caps lock and Num lock are on."
+            ;;
+        "$NO_LOCK")
+            # Do nothing
+            ;;
+        *)
+            # Handle unexpected values
+            ;;
+    esac
+
+    sleep 10
+done
+
+
+
+===== laptopLid_close.sh =====
+#!/usr/bin/bash
+# This script will activate screen lock when the laptop lid will be closed for auto lid close security in icewm window manager in Linux
+# This script was written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# September 2020
+
+# Steps for the task:
+# 1. icewm is already installed and configured for user login
+# 2. Install xscreensaver
+# 3. Create a bin directory inside your home directory
+# 4. Change directory to the bin directory
+# 5. Create the bash script file below with nano or gedit and save it with a filename like lid_close.sh
+# 6. Make file executable with chmod +x lid_close.sh command
+# 7. Add the "lid_close.sh &" command in .icewm/startup script
+# 8. Reboot the laptop
+# 9. Login to icewm
+# 10. Close the laptop lid
+# 11. Open the laptop lid
+# 12. xscreensaver will ask for password
+
+#!/usr/bin/bash
+# Pre-requisite: 
+# Install xscreensaver and run xscreensaver at startup
+
+# Path to lid state file
+LID_PATH="/proc/acpi/button/lid/LID0/state"
+OPTIMAL_BRIGHTNESS=56206
+
+# Function to check if HDMI is connected
+check_hdmi() {
+    local HDMI_DETECT
+    HDMI_DETECT=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
+    echo "$HDMI_DETECT"
+}
+
+# Function to get the lid state
+get_lid_state() {
+    local LID_STATE
+    if [ -f "$LID_PATH" ]; then
+        LID_STATE=$(awk '{print $2}' < "$LID_PATH")
+    fi
+    echo "$LID_STATE"
+}
+
+# Main loop
+while true; do
+    # Check lid state and HDMI connection
+    if [ "$(get_lid_state)" == "closed" ] && [ -z  "$(check_hdmi)" ]; then
+        # Lock screen and suspend if no HDMI is connected and lid is closed
+        brightnessctl --device=amdgpu_bl0 set 80%
+        #xscreensaver-command --lock
+        systemctl suspend
+    else
+		:
+    fi
+
+    sleep 0.1
+done
+
+
+
+
+
+
+
+
+===== login_monitor.sh =====
+#!/bin/bash
+# login_monitor.sh
+# Real-time login alerts for SSH, sudo, su attempts (success & failure)
+# Logs to ~/scriptlogs/login-monitor.log and sends desktop notifications
+# Requires: libnotify (notify-send command)
+
+LOGFILE="$HOME/scriptlogs/login-monitor.log"
+mkdir -p "$(dirname "$LOGFILE")"
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Export so notify-send works in GUI
+# export DISPLAY=:0
+# export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+# Cooldown seconds for identical repeated messages
+COOLDOWN=5
+declare -A last_event
+
+# Function to send notifications and log them
+send_alert() {
+    TITLE="$1"
+    MSG="$2"
+    URGENCY="$3"
+    notify-send "$TITLE" "$MSG" -u "$URGENCY" &
+    echo "[$(date '+%F %T')] [$TITLE] $MSG" >> "$LOGFILE"
+}
+
+echo "[$(date '+%F %T')] Starting login monitor..." | tee -a "$LOGFILE"
+notify-send "Login Monitor" "Starting login monitor..." &
+
+journalctl -f -n0 -o short-iso --since now \
+  _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su | \
+while read -r LINE; do
+    NOW=$(date +%s)
+    TS=$(date '+%F %T')
+
+    # --- SSH ---
+    if [[ "$LINE" =~ "sshd" || "$LINE" =~ "sshd-session" ]]; then
+        if [[ "$LINE" =~ "Accepted " ]]; then
+            USER=$(echo "$LINE" | grep -oP "for \K[^ ]+")
+            IP=$(echo "$LINE" | grep -oP "from \K[^ ]+")
+            EVENT_ID="ssh_success_${USER}_${IP}_$(echo "$LINE" | awk '{print $1}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            MSG="User: $USER | From: $IP | Time: $TS"
+            echo -e "✅ ${GREEN}[SSH SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "✅ SSH Login Success" "$MSG" critical
+
+        elif [[ "$LINE" =~ "Failed password" ]]; then
+            USER=$(echo "$LINE" | grep -oP "for \K[^ ]+")
+            IP=$(echo "$LINE" | grep -oP "from \K[^ ]+")
+            EVENT_ID="ssh_fail_${USER}_${IP}_${NOW}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            MSG="User: $USER | From: $IP | Time: $TS"
+            echo -e "⚠️ ${RED}[SSH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "⚠️ SSH Login Failed" "$MSG" critical
+        fi
+    fi
+
+    # --- SUDO ---
+    if [[ "$LINE" =~ "sudo" ]]; then
+        if [[ "$LINE" =~ "session opened" ]]; then
+            USER=$(echo "$LINE" | grep -oP "by \K[^ ]+")
+            EVENT_ID="sudo_success_${USER}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            RAW=$(journalctl _COMM=sudo -n5 -o cat | grep "COMMAND=" | tail -1)
+            CONTEXT=$(echo "$RAW" | sed -E 's/; COMMAND=.*//')
+            CMD=$(echo "$RAW" | sed -E 's/.*COMMAND=(.*)/\1/')
+            MSG="User: $USER | Time: $TS\n$CONTEXT\nCommand: $CMD"
+            echo -e "✅ ${GREEN}[SUDO SUCCESS]${NC} $LINE | $CONTEXT | Command: $CMD" | tee -a "$LOGFILE"
+            send_alert "✅ Sudo Success" "$MSG" critical
+
+        # Handle PAM authentication failures (first failure attempt - uses PAM log)
+        elif [[ "$LINE" =~ "pam_unix(sudo:auth): authentication failure" ]]; then
+            if [[ "$LINE" =~ "user="([^\ ]+) ]]; then
+                USER="${BASH_REMATCH[1]}"
+            else
+                USER="unknown"
+            fi
+
+            EVENT_ID="sudo_pam_fail_${USER}_${NOW}"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < 2 )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            # Extract PAM failure details from the log line
+            PAM_DETAILS=$(echo "$LINE" | sed -n 's/.*authentication failure; \(.*\)/\1/p')
+
+            # Don't try to get command for PAM failures - it's from previous session
+            MSG="User: $USER | Time: $TS\n$PAM_DETAILS\nCommand: (will be logged on final attempt)"
+            echo -e "⚠️ ${RED}[SUDO FAILURE]${NC} $LINE | $PAM_DETAILS | Command: (will be logged on final attempt)" | tee -a "$LOGFILE"
+            send_alert "⚠️ Sudo Failure" "$MSG" critical
+
+        # Handle sudo's own failure messages (successive attempts - uses sudo log)
+        elif [[ "$LINE" =~ "incorrect password attempts" ]] || [[ "$LINE" =~ "sorry, try again" ]] || [[ "$LINE" =~ "password attempts" ]]; then
+            # Simple approach: extract username using awk after sudo[pid]:
+            USER=$(echo "$LINE" | awk -F'sudo\\[[0-9]*\\]: *' '{print $2}' | awk '{print $1}')
+
+            # If that fails, try alternative extraction
+            if [[ -z "$USER" ]] || [[ "$USER" == ":" ]]; then
+                # Use sed to extract first word after sudo[number]:
+                USER=$(echo "$LINE" | sed -n 's/.*sudo\[[0-9]*\]: *\([^ ]*\).*/\1/p')
+            fi
+
+            # Final fallback
+            if [[ -z "$USER" ]]; then
+                USER="unknown"
+            fi
+
+            EVENT_ID="sudo_fail_${USER}_${NOW}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < 2 )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            # For sudo's own logs, extract command directly from the line
+            if [[ "$LINE" =~ COMMAND=(.+)$ ]]; then
+                CMD="${BASH_REMATCH[1]}"
+                CONTEXT=$(echo "$LINE" | sed -E 's/; COMMAND=.*//')
+            else
+                # Fallback to journal query
+                RAW=$(journalctl _COMM=sudo -n5 -o cat | grep "COMMAND=" | tail -1)
+                CONTEXT=$(echo "$RAW" | sed -E 's/; COMMAND=.*//')
+                CMD=$(echo "$RAW" | sed -E 's/.*COMMAND=(.*)/\1/')
+            fi
+
+            MSG="User: $USER | Time: $TS\n$CONTEXT\nCommand: $CMD"
+            echo -e "⚠️ ${RED}[SUDO FAILURE]${NC} $LINE | $CONTEXT | Command: $CMD" | tee -a "$LOGFILE"
+            send_alert "⚠️ Sudo Failure" "$MSG" critical
+        fi
+    fi
+
+    # --- SU ---
+    if [[ "$LINE" =~ " su[" && "$LINE" =~ "session opened" ]]; then
+        USER=$(echo "$LINE" | grep -oP "by \K[^ ]+")
+        EVENT_ID="su_success_${USER}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+        if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+            continue
+        fi
+        last_event[$EVENT_ID]=$NOW
+
+        MSG="User: $USER | Time: $TS"
+        echo -e "✅ ${GREEN}[SU SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
+        send_alert "✅ su Login Success" "$MSG" critical
+
+    elif [[ "$LINE" =~ " su[" && "$LINE" =~ "authentication failure" ]]; then
+        # Extract both the source user (ruser) and target user (user) from su failure
+        if [[ "$LINE" =~ ruser=([^[:space:]]+) ]]; then
+            SOURCE_USER="${BASH_REMATCH[1]}"
+        elif [[ "$LINE" =~ logname=([^[:space:]]+) ]]; then
+            SOURCE_USER="${BASH_REMATCH[1]}"
+        else
+            SOURCE_USER="unknown"
+        fi
+
+        if [[ "$LINE" =~ user=([^[:space:]]+)$ ]] || [[ "$LINE" =~ user=([^[:space:]]+)[[:space:]] ]]; then
+            TARGET_USER="${BASH_REMATCH[1]}"
+        else
+            TARGET_USER="unknown"
+        fi
+
+        # Make each su failure unique
+        EVENT_ID="su_fail_${SOURCE_USER}_${TARGET_USER}_${NOW}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+        if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < 2 )); then
+            continue
+        fi
+        last_event[$EVENT_ID]=$NOW
+
+        MSG="Source User: $SOURCE_USER | Target User: $TARGET_USER | Time: $TS"
+        echo -e "⚠️ ${RED}[SU FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
+        send_alert "⚠️ su Failure" "$MSG" critical
+    fi
+done
+
+
+===== low_disk_space.sh =====
+#!/bin/bash
+
+INTERVAL=10
+# Levels from 80% to 90%
+LEVELS=$(seq 80 1 90)
+LAST_ALERT=0
+
+while true; do
+    USED_PERCENT=$(df / | awk 'NR==2 {print $5}' | sed 's/%//')
+
+    for LEVEL in $LEVELS; do
+        if [ "$USED_PERCENT" -ge "$LEVEL" ] && [ "$LAST_ALERT" -lt "$LEVEL" ]; then
+            notify-send --urgency=critical --app-name "Low disk space" \
+                        "Disk usage has reached ${USED_PERCENT}%. Threshold: ${LEVEL}%."
+            LAST_ALERT=$LEVEL
+        fi
+    done
+
+    # Reset if usage goes back below first threshold
+    if [ "$USED_PERCENT" -lt 80 ]; then
+        LAST_ALERT=0
+    fi
+
+    sleep $INTERVAL
+done
+
+
+===== lowMemAlert.sh =====
+#!/usr/bin/bash
+# This script will alert when free memory is less than or equals to the free available RAM percentage limit
+# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# October 2020
+
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like lowMemAlert.sh
+# 4. Make file executable with chmod +x lowMemAlert.sh command
+# 5. Add the lowMemAlert.sh command in Startup applications
+# 6. Reboot the laptop
+# 7. Log in and simulate low memory scenario by running many high memory consuming processes until free memory space reaches desired low free memory space in megabytes
+# 8. Low memory alert message will be displayed
+
+TERMINALS=("gnome-terminal" "xfce4-terminal" "tilix" "lxterminal" "mate-terminal" "alacritty" "urxvt" "konsole")
+
+#!/usr/bin/bash
+while true; do
+# 1. Set you suggest memory free limit
+MEMFREE_LIMIT=1440
+	
+# 2. Get total free memory size in megabytes(MB) 
+MEMFREE=$(free -m | awk 'NR==2 {print $7}')
+
+# 3. Check if free memory is less or equals to desired low free memory space in megabytes
+if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$MEMFREE_LIMIT" ]; then    
+   # 4. get top processes consuming system memory and show notification with the top 10 memory consuming processes
+#    TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
+   TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; if ($5 !~ /konsole/) printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
+#    TOP_PROCESSES=$(ps -eo pid,ppid,%mem,%cpu,cmd --sort=-%mem | head -n 11 | awk '{cmd = ""; for (i=5; i<=NF; i++) cmd = cmd $i " "; if(length(cmd) > 115) cmd = substr(cmd, 1, 113) "..."; printf "%-10s %-10s %-5s %-5s %s\n", $1, $2, $3, $4, cmd}')
+
+  
+   launched=false
+   for term in "${TERMINALS[@]}"; do
+      if command -v "$term" >/dev/null 2>&1; then
+         "$term" -e bash -c "echo -e \"⚠️ Low memory alert: RAM has low free memory. Free high memory consuming processes:\n${TOP_PROCESSES}\n\"; read -p 'Press enter to close...'" &
+         launched=true
+         break
+      fi
+   done
+
+   if [ "$launched" = false ]; then
+      notify-send "⚠️ Low Memory Alert" "No supported terminal emulator found to display memory usage."
+   fi
+fi
+
+# 4. sleep for 30 seconds
+sleep 30
+done
+
+
+
+
+===== runscreensaver.sh =====
+#!/usr/bin/bash
+# This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
+
+# Ensure environment variables are set (important when started via KDE autostart)
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
+# Configuration
+LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
+IDLE_TIMEOUT=1         # Timeout in minutes after which the system is considered idle
+SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
+RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
+IDLE_STATUS_FILE="/tmp/sway_idle_status"
+
+mkdir -p "$(dirname "$LOGFILE")"
+
+# Initialize idle state as active (avoid stale "idle" leftover)
+echo "active" > "$IDLE_STATUS_FILE"
+
+# --- Helper functions ---
+
+log_status() {
+    echo "$(date) - Checking idle status" >> "$LOGFILE"
+}
+
+check_idle_status() {
+    if [[ -f "$IDLE_STATUS_FILE" ]]; then
+        idle_status=$(<"$IDLE_STATUS_FILE")
+        echo "$(date) - Idle status: $idle_status" >> "$LOGFILE"
+
+        if [[ "$idle_status" == "idle" ]]; then
+            if ! pgrep -f "screensaver-" >/dev/null; then
+                echo "$(date) - System is idle, starting screensaver..." >> "$LOGFILE"
+                "$SCREENSAVER_SCRIPT" &
+            fi
+        else
+            if pgrep -f "screensaver-" >/dev/null; then
+                echo "$(date) - System is active, stopping screensaver..." >> "$LOGFILE"
+                pkill -f "screensaver-"
+            fi
+        fi
+    else
+        echo "$(date) - $IDLE_STATUS_FILE not found! swayidle may not be running correctly." >> "$LOGFILE"
+    fi
+}
+
+start_swayidle() {
+    echo "$(date) - Starting swayidle with timeout $((IDLE_TIMEOUT * 60)) seconds..." >> "$LOGFILE"
+    swayidle -w \
+        timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+        resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+}
+
+# Start swayidle to track idle status and run screensaver when idle
+start_swayidle &
+
+# Main loop to continuously check idle status
+while true; do
+    log_status
+    check_idle_status
+    sleep 15 # Check every 15 seconds for idle status (you can adjust this duration)
+done
+
+
+===== security_check.sh =====
+#!/bin/bash
+
+# fedora-proactive-sec.sh
+# Proactive Fedora/Nobara Security Monitor with Real-time Alerts and False Positive Filtering
+
+mkdir -p "$HOME/scriptlogs"
+LOGFILE="$HOME/scriptlogs/fedora-sec-proactive.log"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# ===== Utility Functions =====
+notify() {
+  notify-send "🛡️ Fedora Proactive Security" "$1" &
+}
+
+log_info() {
+  echo -e "${YELLOW}[INFO]${NC} $1" | tee -a "$LOGFILE"
+}
+
+log_success() {
+  echo -e "${GREEN}[ OK ]${NC} $1" | tee -a "$LOGFILE"
+}
+
+log_warn() {
+  echo -e "${RED}[WARN]${NC} $1" | tee -a "$LOGFILE"
+  notify "$1"
+}
+
+startup_notify() {
+  notify "🛡️ Proactive Security Monitor started"
+  log_info "Security monitor started at $(date)"
+}
+
+# ===== Enable and Configure auditd =====
+enable_auditd() {
+  sudo systemctl enable --now auditd
+  log_info "auditd service enabled."
+
+  AUDIT_RULES="/etc/audit/rules.d/proactive.rules"
+  if [ ! -f "$AUDIT_RULES" ]; then
+    sudo tee "$AUDIT_RULES" > /dev/null <<EOF
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/sudoers -p wa -k sudoers_changes
+-w /etc/ssh/sshd_config -p wa -k ssh_config_changes
+-w /bin/su -p x -k su_exec
+-a exit,always -F arch=b64 -S execve -k exec_watched
+EOF
+    sudo augenrules --load
+    log_success "auditd proactive rules applied."
+  else
+    log_info "auditd proactive rules already present."
+  fi
+}
+
+# ===== Known harmless patterns to ignore =====
+false_positive_patterns=(
+  "Call to Suspend failed"
+  "gnome-shell.*no suitable screen"
+  "pulseaudio.*Connection refused"
+  "systemd-logind.*failed to idle"
+  "org.freedesktop.DBus.Error"
+)
+
+is_false_positive() {
+  local line="$1"
+  for pattern in "${false_positive_patterns[@]}"; do
+    if echo "$line" | grep -qiE "$pattern"; then
+      return 0  # true → it's a false positive
+    fi
+  done
+  return 1  # false → it's a real alert
+}
+
+# ===== Real-time Log Monitoring =====
+monitor_logs_proactively() {
+  log_info "Monitoring logs in real-time for threats..."
+
+  journalctl -f -p err..emerg -u fail2ban -u firewalld |
+  while read -r line; do
+    if echo "$line" | grep -E -i \
+      "segfault|unauthorized|denied|failed|attack|exploit|rootkit|brute|ban|unban|blocked|drop|reject|port|zone|rule"; then
+      if ! is_false_positive "$line"; then
+        log_warn "Real-time log alert: $line"
+      fi
+    fi
+  done
+}
+
+# ===== Critical Services Check =====
+monitor_system_services() {
+  critical_services=(auditd fail2ban firewalld)
+  for service in "${critical_services[@]}"; do
+    if ! systemctl is-active --quiet "$service"; then
+      log_warn "CRITICAL: $service is not running!"
+    else
+      log_success "$service is running."
+    fi
+  done
+}
+
+# ===== Real-time Auditd Alerts =====
+real_time_audit_alerts() {
+  log_info "Watching audit logs in real-time..."
+
+  ausearch -i --input-logs --checkpoint="/tmp/audit_checkpoint" | while read -r line; do
+    if echo "$line" | grep -E "passwd_changes|shadow_changes|su_exec|exec_watched|sudoers_changes"; then
+      log_warn "AUDIT ALERT: $line"
+    fi
+  done
+}
+
+# ===== Main =====
+startup_notify
+
+echo -e "\n===== ENABLE AUDITD ===== $(date) =====" | tee -a "$LOGFILE"
+enable_auditd
+
+echo -e "\n===== CRITICAL SERVICES CHECK ===== $(date) =====" | tee -a "$LOGFILE"
+monitor_system_services &
+
+echo -e "\n===== REAL-TIME LOG MONITORING ===== $(date) =====" | tee -a "$LOGFILE"
+monitor_logs_proactively &
+
+echo -e "\n===== REAL-TIME AUDITD ALERTS ===== $(date) =====" | tee -a "$LOGFILE"
+real_time_audit_alerts
+
+
+===== weather_alarm.sh =====
+#!/usr/bin/env bash
+
+API_KEY="98ddb8a158f24a1596882148251309"
+
+WARNINGS=()
+EMOJIS=()
+
+# Control which data to show in normal section
+SHOW_TEMP=true
+SHOW_HUMIDITY=true
+SHOW_WIND=true
+SHOW_PRECIP=true
+SHOW_UV=true
+
+# Detect notification command
+get_notifier() {
+    if command -v kdialog &>/dev/null; then
+        NOTIFIER="kdialog"
+    elif command -v notify-send &>/dev/null; then
+        NOTIFIER="notify-send"
+    else
+        echo "No supported notification command found (kdialog or notify-send)."
+        exit 1
+    fi
+}
+
+get_location() {
+    LOC=$(curl -s ipinfo.io/loc)
+    LAT=$(echo "$LOC" | cut -d, -f1)
+    LON=$(echo "$LOC" | cut -d, -f2)
+
+    CITY=$(curl -s "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
+           | jq -r '.address.city // .address.town // .address.village // .address.hamlet // "Unknown"')
+
+    echo "Location detected: $CITY ($LAT,$LON)"
+}
+
+get_weather() {
+    DATA=$(curl -s "http://api.weatherapi.com/v1/current.json?key=$API_KEY&q=$LAT,$LON&aqi=no")
+
+    TEMP_C=$(jq -r '.current.temp_c' <<< "$DATA")
+    HUMIDITY=$(jq -r '.current.humidity' <<< "$DATA")
+    WIND_KPH=$(jq -r '.current.wind_kph' <<< "$DATA")
+    PRECIP_MM=$(jq -r '.current.precip_mm' <<< "$DATA")
+    UV=$(jq -r '.current.uv' <<< "$DATA")
+
+    echo "Weather fetched for $CITY: Temp=${TEMP_C}°C, Humidity=${HUMIDITY}%, Wind=${WIND_KPH} kph, Rain=${PRECIP_MM} mm, UV=${UV}"
+}
+
+check_conditions() {
+    WARNINGS=()
+    EMOJIS=()
+
+    # Temperature alert
+    if (( $(echo "$TEMP_C > 34" | bc -l) )); then
+        WARNINGS+=("🔥 High temperature (${TEMP_C}°C) - Stay hydrated!")
+        EMOJIS+=("🔥")
+        SHOW_TEMP=false
+    else
+        SHOW_TEMP=true
+    fi
+
+    # Humidity alert
+    if (( HUMIDITY > 80 )); then
+        WARNINGS+=("💧 High humidity (${HUMIDITY}%) - Stay in airy place.")
+        EMOJIS+=("💧")
+        SHOW_HUMIDITY=false
+    else
+        SHOW_HUMIDITY=true
+    fi
+
+    # Precipitation alert
+    if (( $(echo "$PRECIP_MM > 0" | bc -l) )); then
+        if (( $(echo "$PRECIP_MM <= 2.5" | bc -l) )); then
+            WARNINGS+=("🌦 Light rain (${PRECIP_MM} mm) - Use umbrella.")
+            EMOJIS+=("🌦")
+        else
+            WARNINGS+=("🌩 Heavy rain (${PRECIP_MM} mm) - Flooding risk!")
+            EMOJIS+=("🌩")
+        fi
+        SHOW_PRECIP=false
+    else
+        SHOW_PRECIP=true
+    fi
+
+    # UV alert
+    if (( $(echo "$UV >= 3 && $UV < 6" | bc -l) )); then
+        WARNINGS+=("🟡 Moderate UV ($UV) - Wear sun protection.")
+        EMOJIS+=("🟡")
+        SHOW_UV=false
+    elif (( $(echo "$UV >= 6 && $UV < 8" | bc -l) )); then
+        WARNINGS+=("🟠 High UV ($UV) - Apply sunscreen!")
+        EMOJIS+=("🟠")
+        SHOW_UV=false
+    elif (( $(echo "$UV >= 8" | bc -l) )); then
+        WARNINGS+=("🔴 Very high UV ($UV) - Avoid direct sun!")
+        EMOJIS+=("🔴")
+        SHOW_UV=false
+    else
+        SHOW_UV=false
+    fi
+}
+
+send_notifications() {
+    if (( ${#WARNINGS[@]} > 0 )); then
+        for warning in "${WARNINGS[@]}"; do
+            MESSAGE+="• $warning"$'\n'
+        done
+        MESSAGE+=$'\n'
+    fi
+
+    $SHOW_TEMP && MESSAGE+="• Temp: ${TEMP_C}°C\n"
+    $SHOW_HUMIDITY && MESSAGE+="• Hum: ${HUMIDITY}%\n"
+    $SHOW_WIND && MESSAGE+="• Wind: ${WIND_KPH} kph\n"
+    $SHOW_PRECIP && MESSAGE+="• Rain: ${PRECIP_MM} mm\n"
+    $SHOW_UV && MESSAGE+="• UV: ${UV}\n"
+
+    TITLE="⛅ Weather $CITY"
+
+    case "$NOTIFIER" in
+        kdialog)
+            # kdialog display on notification area
+            kdialog --passivepopup "$MESSAGE" --title "$TITLE"
+            ;;
+        notify-send)
+            # GNOME-style passive notification (timeout 15s)
+            notify-send "$TITLE" "$MESSAGE" -u critical -t 15000
+            ;;
+    esac
+}
+
+main() {
+    get_location
+    get_weather
+    check_conditions
+    send_notifications
+}
+
+get_notifier
+
+# Loop every 15 minutes
+while true; do
+    main
+    sleep 900
+done
+
+
+===== recentFiles.sh =====
+#!/usr/bin/env bash
+# This script is used to monitor and access recently used files
+# This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# June 2024
+# call script to launch in a terminal konsole -e /home/claiveapa/Documents/bin/recentFiles.sh
+
+# Relaunch in terminal if not running interactively
+if [[ ! -t 0 ]]; then
+    TERMINALS=("gnome-terminal" "konsole" "xfce4-terminal" "xterm" "lxterminal" "tilix" "mate-terminal" "deepin-terminal" "alacritty" "urxvt")
+    for term in "${TERMINALS[@]}"; do
+        if command -v "$term" >/dev/null 2>&1; then
+            "$term" -e "$0" &
+            exit 0
+        fi
+    done
+    notify-send "Error" "No supported terminal emulator found to launch script." &
+    exit 1
+fi
+
+# Define file paths
+RECENT_FILES_LIST="$HOME/scriptlogs/recentFiles.txt"
+TAIL_LIST="$HOME/scriptlogs/reverseRecent.txt"
+RECENTLY_XBEL_FILE=~/.local/share/recently-used.xbel
+
+# Create scriptlogs directory if it doesn't exist
+mkdir -p "$HOME/scriptlogs"
+
+# Infinite loop to continuously check recent files
+while true; do
+
+	# Ensure the recently-used.xbel file exists
+	if [[ ! -f "$RECENTLY_XBEL_FILE" ]]; then
+		notify-send "Error" "File $RECENTLY_XBEL_FILE does not exist. Script exiting." &
+		exit 1
+	fi
+
+	# Extract recent file paths from the recently-used.xbel file and cleanup path percent encoding
+	# NOTE: This Bash-only approach is less robust for highly complex/multibyte
+	#       UTF-8 characters or HTML/XML entities (like &amp;) compared to external tools (e.g., Python).
+	#       Specifically, &amp; will NOT be converted to & by this sed chain.
+	RECENT_FILES=$(grep -o 'file:///[^"]*' "$RECENTLY_XBEL_FILE" |
+	sed 's|file://||' |
+	# Start the sed command with its first -e, and then continue with more -e flags on subsequent lines.
+	# Comments are now on their own logical lines, preventing parsing issues.
+	sed -e 's/%25/%/g' \
+	    -e 's/%0A/\n/g' \
+	    -e 's/%20/ /g' \
+	    -e 's/%21/!/g' \
+	    -e 's/%22/"/g' \
+	    -e 's/%23/#/g' \
+	    -e 's/%24/\$/g' \
+	    -e 's/%26/\&/g' \
+	    -e 's/%27/'\''/g' \
+	    -e 's/%28/(/g' \
+	    -e 's/%29/)/g' \
+	    -e 's/%2A/*/g' \
+	    -e 's/%2B/+/g' \
+	    -e 's/%2C/,/g' \
+	    -e 's/%2D/-/g' \
+	    -e 's/%2E/\./g' \
+	    -e 's/%2F/\//g' \
+	    -e 's/%3A/:/g' \
+	    -e 's/%3B/;/g' \
+	    -e 's/%3C/</g' \
+	    -e 's/%3D/=/g' \
+	    -e 's/%3E/>/g' \
+	    -e 's/%3F/?/g' \
+	    -e 's/%40/@/g' \
+	    -e 's/%5B/[/g' \
+	    -e 's/%5C/\\/g' \
+	    -e 's/%5D/]/g' \
+	    -e 's/%5E/^/g' \
+	    -e 's/%5F/_/g' \
+	    -e 's/%60//g' \
+	    -e 's/%7B/{/g' \
+	    -e 's/%7C/|/g' \
+	    -e 's/%7D/}/g' \
+	    -e 's/%7E/~/g' \
+	    -e 's/&amp;/\&/g' \
+	    -e 's/%E2%81%84/⁄/g' \
+	) # End of sed chain and command substitution
+
+	# Save recent files to RECENT_FILES_LIST
+	echo "$RECENT_FILES" > "$RECENT_FILES_LIST"
+
+	# Get the last few recent files (the most recent 40 files)
+	RECENT_FILES_LAST_40=$(tail -n 40 "$RECENT_FILES_LIST")
+
+	# Save the recent 40 files to RECENT_FILES_LIST
+	echo "$RECENT_FILES_LAST_40" > "$RECENT_FILES_LIST"
+
+	# Place recent files list to an array
+	mapfile -t RECENT_FILES_ARRAY < "$RECENT_FILES_LIST"
+
+	# Check if the array is empty
+	if [ ${#RECENT_FILES_ARRAY[@]} -eq 0 ]; then
+		notify-send "No recent files found." &
+		sleep 5  # Pause for a moment before the next loop iteration
+		continue
+	fi
+
+	# Add line numbers to the recent files and display
+	nl "$RECENT_FILES_LIST" > "$TAIL_LIST"
+	cat "$TAIL_LIST"
+
+	# Prompt the user to select a file
+	echo "Please provide the sequence number of the accessed file: "
+	read -r SEQUENCE_NUM
+
+	# Validate user input
+	if [[ ! "$SEQUENCE_NUM" =~ ^[0-9]+$ ]] || [[ "$SEQUENCE_NUM" -lt 1 ]] || [[ "$SEQUENCE_NUM" -gt "${#RECENT_FILES_ARRAY[@]}" ]]; then
+		notify-send "Invalid input. Please enter a valid sequence number." &
+		continue
+	fi
+
+	# Get the selected file
+	SELECTED_FILE="${RECENT_FILES_ARRAY[SEQUENCE_NUM - 1]}"
+	# Open the folder with a file manager, being flexible for different DEs
+
+	# List of common file managers in a general preferred order.
+	# This order prioritizes commonly used managers in case multiple are installed.
+	declare -a FILE_MANAGER_CANDIDATES=(
+		"dolphin"    # KDE Plasma (e.g., Kubuntu, openSUSE KDE)
+		"nautilus"   # GNOME (e.g., Ubuntu, Fedora Workstation)
+		"nemo"       # Cinnamon (e.g., Linux Mint Cinnamon)
+		"caja"       # MATE (e.g., Linux Mint MATE, Ubuntu MATE)
+		"thunar"     # XFCE (e.g., Xubuntu, Linux Mint XFCE)
+		"pcmanfm-qt" # LXQt (e.g., Lubuntu, Fedora LXQt)
+		"pcmanfm"    # LXDE (older Lubuntu, various lightweight setups)
+	)
+
+	FOUND_FILE_MANAGER=""
+
+	# Iterate through candidates and use the first one found that exists
+	for fm_cmd in "${FILE_MANAGER_CANDIDATES[@]}"; do
+		if command -v "$fm_cmd" >/dev/null 2>&1; then
+			FOUND_FILE_MANAGER="$fm_cmd"
+			break # Found an executable file manager, stop searchingss
+		fi
+	done
+
+	if [[ -f "$SELECTED_FILE" ]]; then
+		# Open the file with the preferred application using xdg-open
+		xdg-open "$SELECTED_FILE" &
+	else
+		notify-send "Path does not exist: $SELECTED_FILE" &
+	fi
+done
+
+
+
+
+===== security_audit.sh =====
+#!/bin/bash
+
+# security_audit.sh
+# Fedora/Nobara Security Audit Script
+# Runs periodic system-wide security checks without overlapping with proactive monitor.
+# Now includes section headers and timestamps in all log entries.
+
+mkdir -p "$HOME/scriptlogs"
+LOGFILE="$HOME/scriptlogs/fedora-sec-audit.log"
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# ===== Utility Functions =====
+timestamp() {
+  date +"%Y-%m-%d %H:%M:%S"
+}
+
+log_info() {
+  echo -e "$(timestamp) ${YELLOW}[INFO]${NC} $1" | tee -a "$LOGFILE"
+}
+
+log_success() {
+  echo -e "$(timestamp) ${GREEN}[ OK ]${NC} $1" | tee -a "$LOGFILE"
+}
+
+log_warn() {
+  echo -e "$(timestamp) ${RED}[WARN]${NC} $1" | tee -a "$LOGFILE"
+}
+
+notify() {
+  notify-send "🛡️ Fedora Security Audit" "$1"
+}
+
+# ===== Check File Permissions =====
+check_permissions() {
+  echo -e "\n===== FILE PERMISSIONS CHECK ===== $(date) =====" | tee -a "$LOGFILE"
+  log_info "Checking sensitive file permissions..."
+  declare -A files=(
+    ["/etc/passwd"]="644"
+    ["/etc/shadow"]="000"
+    ["/etc/sudoers"]="440"
+  )
+
+  local issues=0
+  for file in "${!files[@]}"; do
+    if [ -f "$file" ]; then
+      perms=$(stat -c "%a" "$file")
+      if [ "$perms" -eq "${files[$file]}" ]; then
+        log_success "$file permissions are secure ($perms)."
+      else
+        log_warn "$file permissions are $perms (should be ${files[$file]})."
+        issues=1
+      fi
+    fi
+  done
+
+  if [ $issues -eq 1 ]; then
+    notify "⚠️ Security Audit: Permission issues found. See log."
+  fi
+}
+
+# ===== Check Rootkits with chkrootkit =====
+check_rootkits() {
+  echo -e "\n===== ROOTKIT SCAN ===== $(date) =====" | tee -a "$LOGFILE"
+  log_info "Running rootkit check with chkrootkit..."
+  if command -v chkrootkit &>/dev/null; then
+    output=$(sudo chkrootkit 2>&1 | tee -a "$LOGFILE")
+    if echo "$output" | grep -q "INFECTED"; then
+      notify "🚨 Security Audit: Rootkit suspicion detected!"
+    fi
+    log_success "chkrootkit scan complete."
+  else
+    log_warn "chkrootkit not installed. Install with: sudo dnf install chkrootkit -y"
+  fi
+}
+
+# ===== Malware Scan with ClamAV =====
+clamav_scan() {
+  echo -e "\n===== CLAMAV MALWARE SCAN ===== $(date) =====" | tee -a "$LOGFILE"
+  log_info "Running ClamAV malware scan..."
+  if command -v clamscan &>/dev/null; then
+    sudo freshclam
+    output=$(sudo nice -n 19 ionice -c2 -n7 clamscan -r -i \
+      --bell \
+      --exclude-dir="^/proc" \
+      --exclude-dir="^/sys" \
+      --exclude-dir="^/dev" \
+      --exclude-dir="^/run" \
+      --exclude-dir="^/tmp" \
+      --exclude-dir="^/var/log" \
+      /home /tmp 2>&1 | tee -a "$LOGFILE")
+
+    if echo "$output" | grep -q "Infected files: [1-9]"; then
+      notify "🦠 Security Audit: Malware detected by ClamAV!"
+    fi
+    log_success "ClamAV scan finished."
+  else
+    log_warn "ClamAV not installed. Install with: sudo dnf install clamav -y"
+  fi
+}
+
+# ===== Main =====
+echo -e "\n===== FEDORA SECURITY AUDIT STARTED ===== $(date) =====" | tee -a "$LOGFILE"
+check_permissions
+check_rootkits
+clamav_scan
+echo -e "\n===== FEDORA SECURITY AUDIT COMPLETED ===== $(date) =====" | tee -a "$LOGFILE"
+notify "✅ Security audit completed. Check $LOGFILE for details."
+
+
+===== monfailures.sh =====
+#!/usr/bin/env bash
+# monitor_system_failures.sh
+# Monitors critical and serious system failures across popular Linux distros.
+
+ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
+PIDFILE="$HOME/scriptlogs/monitor.pid"
+mkdir -p "$(dirname "$ALERT_LOG")"
+
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted"
+
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full"
+
+LOGFILES=(
+    "/var/log/syslog"           # Debian-based
+    "/var/log/messages"         # RHEL/Fedora/openSUSE
+    "/var/log/secure"
+    "/var/log/Xorg.0.log"
+    "/var/log/audit/audit.log"
+)
+
+pids=()
+
+send_notification() {
+    local message="$1"
+    local urgency="$2"
+    local active_user=$(who | grep '(:0)' | awk '{print $1}' | head -n 1)
+    if [ -n "$active_user" ]; then
+        local user_display=$(who | grep "$active_user" | grep '(:0)' | awk '{print $5}' | tr -d '()')
+        if [ -n "$user_display" ]; then
+            sudo -u "$active_user" DISPLAY="$user_display" notify-send \
+                --urgency="$urgency" --icon=dialog-error \
+                --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
+        fi
+    fi
+
+    if [ "$USER" != "root" ]; then
+        notify-send --urgency="$urgency" --icon=dialog-error \
+            --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
+    fi
+}
+
+check_error_severity() {
+    local line="$1"
+    if echo "$line" | grep -Eqi "$SHOW_STOPPER"; then
+        echo "CRITICAL"
+    elif echo "$line" | grep -Eqi "$SERIOUS_FAILURES"; then
+        echo "SERIOUS"
+    else
+        echo "IGNORE"
+    fi
+}
+
+process_alert() {
+    local source="$1"
+    local line="$2"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local severity
+    severity=$(check_error_severity "$line")
+
+    case "$severity" in
+        "CRITICAL")
+            if ! echo "$line" | grep -Eiq "screensaver"; then
+                echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
+                send_notification "$line" "critical"
+            fi
+            ;;
+        "SERIOUS")
+            echo "$timestamp [SERIOUS] $source: $line" >> "$ALERT_LOG"
+            ;;
+    esac
+}
+
+monitor_log_file() {
+    local logfile="$1"
+    if [ ! -f "$logfile" ]; then
+        echo "Log file '$logfile' not found. Skipping..."
+        return
+    fi
+
+    echo "Monitoring $logfile..."
+    (
+        tail -n 0 -F "$logfile" 2>/dev/null | while IFS= read -r line; do
+            local severity
+            severity=$(check_error_severity "$line")
+            if [ "$severity" != "IGNORE" ]; then
+                process_alert "$logfile" "$line"
+            fi
+        done
+    ) &
+    pids+=($!)
+}
+
+for logfile in "${LOGFILES[@]}"; do
+    monitor_log_file "$logfile"
+done
+
+if command -v journalctl > /dev/null; then
+    echo "Monitoring systemd journal..."
+    journalctl -f -p 3 --no-pager | while IFS= read -r line; do
+        local severity
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "systemd-journal" "$line"
+        fi
+    done &
+    pids+=($!)
+fi
+
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    dmesg -w 2>/dev/null | while IFS= read -r line; do
+        local severity
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "kernel-dmesg" "$line"
+        fi
+    done &
+    pids+=($!)
+fi
+
+cleanup() {
+    echo "Stopping monitoring..."
+    for pid in "${pids[@]}"; do
+        kill "$pid" 2>/dev/null
+    done
+    rm -f "$PIDFILE"
+    echo "Clean exit."
+    exit 0
+}
+
+trap cleanup SIGINT SIGTERM SIGHUP EXIT
+
+send_notification "System monitor started (CRITICAL notifications only)" "low"
+
+echo "=== Linux System Monitor Running ==="
+echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
+
+open_terminal_with_logs() {
+    [ -f "$ALERT_LOG" ] || return
+    local CRITICAL_LOGS
+    CRITICAL_LOGS=$(grep "\[CRITICAL\]" "$ALERT_LOG")
+    [ -z "$CRITICAL_LOGS" ] && return
+
+    TERM_CMDS=(
+        "konsole"
+        "gnome-terminal"
+        "xfce4-terminal"
+        "tilix"
+        "xterm"
+        "lxterminal"
+        "mate-terminal"
+        "alacritty"
+        "terminator"
+        "urxvt"
+        "kitty"
+        "deepin-terminal"
+        "qterminal"
+    )
+
+    for term in "${TERM_CMDS[@]}"; do
+        if command -v "$term" > /dev/null; then
+            "$term" -e bash -c "cat <<EOF
+$CRITICAL_LOGS
+EOF
+read -p 'Press Enter to close...'" &
+            return
+        fi
+    done
+
+    echo "No compatible terminal found to display critical logs."
+}
+
+open_terminal_with_logs
+wait
+
+

@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# hot_parts.sh - Detect hot components (CPU, GPU, NVMe, Battery, ACPI zones)
+# Author: Claive Alvin P. Acedilla (with ChatGPT refinements)
+# Uses sysfs for temperature monitoring. No lm-sensors required.
+
+LOGFILE="$HOME/scriptlogs/hot_parts.log"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB max log size
+MAX_OLD_LOGS=3                      # Keep 3 old log files
+mkdir -p "$(dirname "$LOGFILE")"
+
+# Log rotation function
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
+        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+        BACKUP_FILE="${LOGFILE}.${TIMESTAMP}.old"
+        mv "$LOGFILE" "$BACKUP_FILE"
+        echo "$(date) - LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")" >> "$LOGFILE"
+
+        # Clean up old logs (keep only MAX_OLD_LOGS)
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
+}
+
+trap 'echo "$(date) - SIGTERM received, exiting..." >> "$LOGFILE"; exit 0' TERM
+trap 'echo "$(date) - SIGINT received, exiting..." >> "$LOGFILE"; exit 0' INT
+
+NOTIFY=true    # Enable desktop notifications
+
+# Get safe threshold depending on sensor name
+get_threshold() {
+    case "$1" in
+        *cpu*|*k10temp*|*amdgpu*) echo 95 ;;   # CPU/GPU critical
+        *nvme*)                   echo 75 ;;   # NVMe SSDs throttle earlier
+        *BAT*|*bat*)              echo 50 ;;   # Batteries should stay cool
+        *acpitz*|*pch*)           echo 95 ;;   # ACPI/Chipset zones
+        *)                        echo 85 ;;   # Fallback
+    esac
+}
+
+print_alert() {
+    local part=$1
+    local temp=$2
+    echo "$(date) 🔥 Hot: $part — ${temp}°C" | tee -a "$LOGFILE"
+    if $NOTIFY; then
+        notify-send -u critical "🔥 Overheating Alert" "$part is at ${temp}°C" 2>>"$LOGFILE" || \
+            echo "$(date) ⚠️ notify-send failed" >> "$LOGFILE" &
+    fi
+}
+
+# Detect and monitor all hwmon devices
+check_hwmon() {
+    for dir in /sys/class/hwmon/hwmon*; do
+        [[ -d "$dir" ]] || continue
+        name=$(<"$dir/name")
+
+        for tfile in "$dir"/temp*_input; do
+            [[ -f "$tfile" ]] || continue
+            temp=$(( $(cat "$tfile") / 1000 ))
+            threshold=$(get_threshold "$name")
+
+            if (( temp > threshold )); then
+                label="${name}"
+                # If a label file exists (temp1_label, temp2_label, etc.), use it
+                lfile="${tfile%_*}_label"
+                [[ -f "$lfile" ]] && label="$name ($(cat "$lfile"))"
+
+                print_alert "$label" "$temp"
+            fi
+        done
+    done
+}
+
+# Initial log entry with configuration
+rotate_log
+echo "=== Hot Parts Monitor Started ===" >> "$LOGFILE"
+echo "$(date) - Configuration: MAX_LOG_SIZE=$((MAX_LOG_SIZE/1024/1024))MB, MAX_OLD_LOGS=$MAX_OLD_LOGS" >> "$LOGFILE"
+echo "$(date) - Monitoring interval: 5 seconds" >> "$LOGFILE"
+echo "$(date) - Notifications enabled: $NOTIFY" >> "$LOGFILE"
+
+while true; do
+    rotate_log  # Check log rotation at start of each cycle
+    echo "$(date) 🔎 Checking system temperatures..." >> "$LOGFILE"
+    check_hwmon
+    echo "$(date) ✅ Done." >> "$LOGFILE"
+    sleep 5
+done
