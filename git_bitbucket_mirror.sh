@@ -43,30 +43,18 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     # Show detailed changes
     echo "=== Detailed changes ===" | tee -a "$LOGFILE"
     git diff --stat | tee -a "$LOGFILE"
-    
-    # -----------------------------
-    # 3. AUTO-COMMIT all changes (no prompt)
-    # -----------------------------
-    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
-        echo "$(TIMESTAMP) - Auto-committing all changes..." | tee -a "$LOGFILE"
-        git add -A
-        git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOGFILE"
-        echo "✅ Changes committed automatically" | tee -a "$LOGFILE"
-    else
-        echo "No changes detected after copy" | tee -a "$LOGFILE"
-    fi
+fi
+
+# -----------------------------
+# 3. Check for ANY changes (modified, staged, or untracked)
+# -----------------------------
+if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+    echo "$(TIMESTAMP) - Auto-committing all changes..." | tee -a "$LOGFILE"
+    git add -A
+    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOGFILE"
+    echo "✅ Changes committed automatically" | tee -a "$LOGFILE"
 else
-    echo "Copy skipped" | tee -a "$LOGFILE"
-    
-    # -----------------------------
-    # 3b. Even if copy skipped, auto-commit any existing changes
-    # -----------------------------
-    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
-        echo "$(TIMESTAMP) - Auto-committing existing changes..." | tee -a "$LOGFILE"
-        git add -A
-        git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOGFILE"
-        echo "✅ Changes committed automatically" | tee -a "$LOGFILE"
-    fi
+    echo "No changes detected" | tee -a "$LOGFILE"
 fi
 
 # -----------------------------
@@ -76,7 +64,7 @@ echo "=== Unpushed commits ===" | tee -a "$LOGFILE"
 git log @{u}.. --oneline 2>/dev/null || echo "No unpushed commits" | tee -a "$LOGFILE"
 
 # -----------------------------
-# 5. ASK before pushing (optional - you can also auto-push)
+# 5. ASK before pushing
 # -----------------------------
 read -p "Push to remotes? (y/n): " -n 1 -r
 echo
