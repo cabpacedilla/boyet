@@ -61,6 +61,51 @@ log_status() {
     echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
+is_video_playing() {
+    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
+    BEGIN { found = 0 }
+    /Sink Input/ {next}
+    {
+        # Get application name
+        app_name = "unknown"
+        if (match($0, /application.name = "([^"]+)"/, arr)) {
+            app_name = arr[1]
+        } else if (match($0, /node.name = "([^"]+)"/, arr)) {
+            app_name = arr[1]
+        }
+        
+        # Check if this is a video app
+        is_video_app = 0
+        
+        # Video players
+        if (app_name ~ /dragonplayer/ || app_name == "dragonplayer" ||
+            app_name ~ /[Vv]LC/ || app_name == "VLC" || app_name == "vlc" ||
+            app_name ~ /celluloid/ || app_name == "celluloid" ||
+            app_name ~ /totem/ || app_name == "totem") {
+            is_video_app = 1
+        }
+        
+        # Browsers
+        if (app_name == "Vivaldi" || app_name == "Firefox" || 
+            app_name == "Chromium" || app_name == "chrome") {
+            is_video_app = 1
+        }
+        
+        # If it'\''s a video app and not corked, consider it playing
+        if (is_video_app && !/Corked: yes/ && !/pulse.corked = "true"/) {
+            found = 1
+        }
+        
+        # Also check for video role
+        if (/media.role/ && (/video/ || /Video/ || /movie/ || /Movie/)) {
+            found = 1
+        }
+    }
+    END { exit found ? 0 : 1 }
+    '
+    return $?
+}
+
 # --- Core Logic: Idle Management ---
 check_idle_status() {
     if [[ -f "$IDLE_STATUS_FILE" ]]; then
@@ -89,7 +134,8 @@ check_idle_status() {
             fi
         else
             # System is ACTIVE: Stop all screensaver processes immediately
-            pkill -f "screensaver-" 2>/dev/null
+            pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh" 2>/dev/null
+            pkill -9 -f "screensaver-" 2>/dev/null
             echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
         fi
     fi
@@ -99,11 +145,16 @@ check_idle_status() {
 start_swayidle() {
     # Clean up any existing swayidle instances first
     pkill -f "swayidle" 2>/dev/null
+        
+   # Only run swayidle if no video is playing
+	if ! is_video_playing; then
+		swayidle -w \
+			timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+			resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+	else
+		echo "Video playing, idle detection disabled"
+	fi
 
-    echo "$(date) - Starting swayidle (Timeout: $((IDLE_TIMEOUT * 60))s)" >> "$LOGFILE"
-    swayidle -w \
-        timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
-        resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
 }
 
 # --- Execution ---

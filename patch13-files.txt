@@ -1,0 +1,111 @@
+.icewm-startup
+Javascript Essential Training Linda.com
+Linux commands, directory structure and bash shell scripting
+LoopExcelData
+Portfolio - Simple Pomodoro Alarm in javascript.html
+SignupSigninAutoTestScript.groovy
+Staging and Production regression script.groovy
+ViewPortTest.groovy
+addToCartSeleniumPython.py
+all_scripts.txt
+autoUpdate.sh
+auto_system_update_nobara.sh
+auto_update.sh
+auto_update_nobara.sh
+autobackupsync.sh
+autobrightness.sh
+autosync.sh
+autoupdate.sh
+awesome_notifs.sh
+backlisten.sh
+bash_script_audioRipfromVideo.sh
+batteryAlertBashScript.sh
+battery_usage.sh
+btrfs_balance_quarterly.sh
+btrfs_scrub_monthly.sh
+c programming notes.txt
+calculator.htm
+callCheckServices.sh
+callRecentFiles.sh
+check_idle.sh
+check_services.sh
+checkmessage script app mac
+checkservices.sh
+checkservices_check.sh
+classify.py
+cputemp_alarm.sh
+createBrowser&FolderLoop.groovy
+current_template.txt
+download_filetypes
+find_jobs.py
+fortune app macos
+fortune.sh
+fortune4you.sh
+git_bitbucket_mirror.sh
+git_pull.sh
+glx_gears.sh
+hot_parts.sh
+java programming notes.txt
+job_rotate.sh
+job_search.log
+keyLocked.sh
+laptopLid_close.sh
+listen_idle.sh
+lockscreen.sh
+login_monitor.sh
+lowMemAlert.sh
+low_disk_space.sh
+maximize.sh
+monfailures.sh
+monitor_failures.sh
+monitoring_scripts_check.sh
+net_unplugged.sh
+news_monitor.sh
+nobara-torbrowser-isolation.sh
+notifWatchMacos.sh
+notify_fortune.sh
+optimize_kwin.sh
+pomodoro.htm
+pomodoro4222.htm
+power_usage.sh
+prevent_screensaver.sh
+preventscreensaver.sh
+randCowsayAnimalsRC.sh
+rand_screensavers.sh
+randscreensavers.sh
+recentDolphin.sh
+recentFiles.sh
+remove_ydotool.sh
+report-cusp.html
+report.html
+restoreResolution.sh
+results-cusp.xml
+results.html
+results.xml
+resume_handler.sh
+rss_monitor.sh
+rss_news_filte.sh
+rss_news_filter.sh
+run screensaver compiled
+run_screensaver.sh
+runscreensaver.sh
+save_session.sh
+secuirty_check.sh
+security_audit.sh
+security_check.sh
+seen_jobs.txt
+system_failure_monitor.sh
+test-sourceforge.txt
+test_unbound_cache.sh
+tile_rightleft.sh
+top.txt
+tor_persistent_iptables.sh
+trap_screensaver.sh
+unbound.conf
+update_screensavers.sh
+weather_alarm.sh
+weather_alarm_mateo.sh
+weather_updates.sh
+weatheralarm script app mac
+webPublishingWithHTML.html
+xfce4_cleanup.sh

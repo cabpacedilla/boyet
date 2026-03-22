@@ -1,116 +1,151 @@
 #!/usr/bin/env bash
-# -------------------------------------------------------------------
-# git_bitbucket_mirror.sh v2.5
-# Automatically syncs GitHub, Bitbucket, and SourceForge mirrors.
-# Includes Pre-commit file stats and full live terminal visibility.
-# -------------------------------------------------------------------
 
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
-# === CONFIG ===
 REPO_DIR="$HOME/Documents/boyet"
 SOURCE_DIR="$HOME/Documents/bin"
 GITHUB_REMOTE="origin"
 MIRRORS=("bitbucket" "sourceforge")
 BRANCH="master"
-LOGFILE="$HOME/scriptlogs/git_mirror_safe.log"
+LOGFILE="$HOME/scriptlogs/git_sync_safe.log"
 mkdir -p "$(dirname "$LOGFILE")"
 
 TIMESTAMP() { date '+%Y-%m-%d %H:%M:%S %Z'; }
 
-# Rotate logs if they exceed 2MB
-find "$(dirname "$LOGFILE")" -name "$(basename "$LOGFILE")" -size +2M -delete 2>/dev/null
+cd "$REPO_DIR" || exit 1
 
-# Prevent concurrent runs
-LOCKFILE="/tmp/git_mirror_safe.lock"
-exec 200>"$LOCKFILE"
-flock -n 200 || { echo "Another instance is running. Exiting."; exit 1; }
-
-START_TIME=$(date +%s)
+echo "$(TIMESTAMP) - Starting safe sync..." | tee -a "$LOGFILE"
 
 # -----------------------------
-# 1. Prepare Local Repo
+# 1. SHOW what will be copied (without copying yet)
 # -----------------------------
-echo "$(TIMESTAMP) - Copying files from $SOURCE_DIR to $REPO_DIR..." | tee -a "$LOGFILE"
-\cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/
+echo "=== Files in bin folder (to be copied) ===" | tee -a "$LOGFILE"
+ls -la "$SOURCE_DIR" | tee -a "$LOGFILE"
 
-cd "$REPO_DIR" || { echo "$(TIMESTAMP) - ERROR: Cannot cd to $REPO_DIR" | tee -a "$LOGFILE"; exit 1; }
+echo "=== Current files in repo (before copy) ===" | tee -a "$LOGFILE"
+ls -la "$REPO_DIR" | tee -a "$LOGFILE"
 
 # -----------------------------
-# 2. Pull & Rebase
+# 2. ASK before copying
 # -----------------------------
-echo "$(TIMESTAMP) - Syncing with $GITHUB_REMOTE/$BRANCH..." | tee -a "$LOGFILE"
-git fetch "$GITHUB_REMOTE" 2>&1 | tee -a "$LOGFILE"
-
-if git pull --rebase "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
-    echo "$(TIMESTAMP) - ✅ Rebase successful." | tee -a "$LOGFILE"
+read -p "Copy files from bin to repo? (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "$(TIMESTAMP) - Copying files..." | tee -a "$LOGFILE"
+    \cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/ 2>/dev/null
+    
+    # Show what changed in git
+    echo "=== Git changes after copy ===" | tee -a "$LOGFILE"
+    git status -s | tee -a "$LOGFILE"
+    echo "===============================" | tee -a "$LOGFILE"
+    
+    # Show detailed changes
+    echo "=== Detailed changes ===" | tee -a "$LOGFILE"
+    git diff --stat | tee -a "$LOGFILE"
+    
+    # -----------------------------
+    # 3. AUTO-COMMIT all changes (no prompt)
+    # -----------------------------
+    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+        echo "$(TIMESTAMP) - Auto-committing all changes..." | tee -a "$LOGFILE"
+        git add -A
+        git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOGFILE"
+        echo "✅ Changes committed automatically" | tee -a "$LOGFILE"
+    else
+        echo "No changes detected after copy" | tee -a "$LOGFILE"
+    fi
 else
-    echo "$(TIMESTAMP) - ⚠️ Rebase conflict or divergence. Attempting standard merge..." | tee -a "$LOGFILE"
-    git rebase --abort 2>&1 | tee -a "$LOGFILE"
-    git merge "$GITHUB_REMOTE/$BRANCH" --no-edit 2>&1 | tee -a "$LOGFILE"
+    echo "Copy skipped" | tee -a "$LOGFILE"
+    
+    # -----------------------------
+    # 3b. Even if copy skipped, auto-commit any existing changes
+    # -----------------------------
+    if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+        echo "$(TIMESTAMP) - Auto-committing existing changes..." | tee -a "$LOGFILE"
+        git add -A
+        git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOGFILE"
+        echo "✅ Changes committed automatically" | tee -a "$LOGFILE"
+    fi
 fi
 
 # -----------------------------
-# 3. Stage & Commit (With Pro-Tip Stats)
+# 4. SHOW what will be pushed
 # -----------------------------
-git add -A
+echo "=== Unpushed commits ===" | tee -a "$LOGFILE"
+git log @{u}.. --oneline 2>/dev/null || echo "No unpushed commits" | tee -a "$LOGFILE"
 
-# Check for changes
-if git diff --cached --quiet && git diff --quiet; then
-    echo "$(TIMESTAMP) - No changes to commit." | tee -a "$LOGFILE"
-else
-    # PRINT EXACT FILE CHANGES BEFORE COMMITTING
-    echo "--- File Change Summary ---" | tee -a "$LOGFILE"
-    git diff --cached --stat | tee -a "$LOGFILE"
-    echo "---------------------------" | tee -a "$LOGFILE"
-
-    echo "$(TIMESTAMP) - Committing local changes..." | tee -a "$LOGFILE"
-    git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" 2>&1 | tee -a "$LOGFILE"
+# -----------------------------
+# 5. ASK before pushing (optional - you can also auto-push)
+# -----------------------------
+read -p "Push to remotes? (y/n): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Push cancelled" | tee -a "$LOGFILE"
+    exit 0
 fi
 
 # -----------------------------
-# 4. Push Phase (Full Visibility)
+# 6. Push with error checking
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
-echo "$(TIMESTAMP) - Pushing to GitHub ($GITHUB_REMOTE)..." | tee -a "$LOGFILE"
-if git push "$GITHUB_REMOTE" "$BRANCH:$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
-    SUCCESS+=("origin ✅")
+# Push to GitHub (normal push first, not force)
+echo "$(TIMESTAMP) - Pushing to $GITHUB_REMOTE..." | tee -a "$LOGFILE"
+if git push "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+    SUCCESS+=("$GITHUB_REMOTE ✅")
 else
-    echo "$(TIMESTAMP) - ⚠️ Standard push failed. Attempting force push to origin..." | tee -a "$LOGFILE"
-    if git push --force "$GITHUB_REMOTE" "$BRANCH:$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
-         SUCCESS+=("origin ✅ (forced)")
+    echo "⚠️  Normal push failed. Try force push? (y/n): "
+    read -n 1 -r FORCE
+    echo
+    if [[ $FORCE =~ ^[Yy]$ ]]; then
+        if git push --force "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+            SUCCESS+=("$GITHUB_REMOTE ✅ (forced)")
+        else
+            FAIL+=("$GITHUB_REMOTE ❌")
+        fi
     else
-         FAIL+=("origin ❌")
+        FAIL+=("$GITHUB_REMOTE ❌ (cancelled)")
     fi
 fi
 
+# Push to mirrors (ask before each)
 for REMOTE in "${MIRRORS[@]}"; do
-    echo "$(TIMESTAMP) - Force pushing to $REMOTE..." | tee -a "$LOGFILE"
-    if git push --force "$REMOTE" "$BRANCH:$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
-        SUCCESS+=("$REMOTE ✅")
+    if git remote | grep -q "^$REMOTE$"; then
+        read -p "Push to $REMOTE? (y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "$(TIMESTAMP) - Pushing to $REMOTE..." | tee -a "$LOGFILE"
+            if git push "$REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+                SUCCESS+=("$REMOTE ✅")
+            else
+                read -p "Force push to $REMOTE? (y/n): " -n 1 -r FORCE
+                echo
+                if [[ $FORCE =~ ^[Yy]$ ]]; then
+                    if git push --force "$REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+                        SUCCESS+=("$REMOTE ✅ (forced)")
+                    else
+                        FAIL+=("$REMOTE ❌")
+                    fi
+                else
+                    FAIL+=("$REMOTE ❌")
+                fi
+            fi
+        fi
     else
-        FAIL+=("$REMOTE ❌")
+        echo "$REMOTE not configured, skipping" | tee -a "$LOGFILE"
     fi
 done
 
 # -----------------------------
-# 5. Final Report
+# 7. Final report
 # -----------------------------
-END_TIME=$(date +%s)
-ELAPSED=$(( END_TIME - START_TIME ))
-printf -v DURATION '%02dh %02dm %02ds' $((ELAPSED/3600)) $(((ELAPSED%3600)/60)) $((ELAPSED%60))
+echo ""
+echo "=== Final Summary ===" | tee -a "$LOGFILE"
+echo "Succeeded: ${#SUCCESS[@]}" | tee -a "$LOGFILE"
+printf '  %s\n' "${SUCCESS[@]}" | tee -a "$LOGFILE"
+echo "Failed: ${#FAIL[@]}" | tee -a "$LOGFILE"
+printf '  %s\n' "${FAIL[@]}" | tee -a "$LOGFILE"
 
-MSG=""
-[[ ${#SUCCESS[@]} -gt 0 ]] && MSG+="Succeeded:\n$(printf '%s\n' "${SUCCESS[@]}")\n"
-[[ ${#FAIL[@]} -gt 0 ]] && MSG+="Failed:\n$(printf '%s\n' "${FAIL[@]}")"
-
-echo "$(TIMESTAMP) - Sync duration: $DURATION" | tee -a "$LOGFILE"
-
-if [[ ${#FAIL[@]} -gt 0 ]]; then
-    notify-send -u critical "⚠️ Git Mirror Error" "Duration: $DURATION\n\n$MSG\n\nCheck $LOGFILE for details."
-else
-    notify-send "✅ Git Mirror Complete" "Duration: $DURATION\n\n$MSG"
-fi
+echo "$(TIMESTAMP) - Script completed safely" | tee -a "$LOGFILE"

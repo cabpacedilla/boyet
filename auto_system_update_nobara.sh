@@ -72,28 +72,43 @@ while true; do
 
         # 3. Run Update
         TEMP_SYNC_LOG=$(mktemp)
-        sudo nobara-sync cli | tee "$TEMP_SYNC_LOG" >> "$LOGFILE_GENERAL" 2>&1
-        EXIT_CODE=${PIPESTATUS[0]}
-
-        if [ $EXIT_CODE -eq 0 ] || grep -aiE "Complete!|All Updates complete" "$TEMP_SYNC_LOG" > /dev/null; then
-            # 4. Post-Update Housekeeping
-            sudo dnf autoremove -y >> "$LOGFILE_GENERAL" 2>&1
-            sudo dnf clean packages >> "$LOGFILE_GENERAL" 2>&1
-            sudo flatpak uninstall --unused -y >> "$LOGFILE_GENERAL" 2>&1
-            flatpak uninstall --user --unused -y >> "$LOGFILE_GENERAL" 2>&1
+		{
+			echo "=============================="
+			echo "Starting DNF/Package Updates"
+			echo "=============================="
+			sudo nobara-sync cli
+			DNF_EXIT=$?
+			
+			echo ""
+			echo "=============================="
+			echo "Starting Flatpak Updates"
+			echo "=============================="
+			sudo flatpak update -y && flatpak update --user -y
+			FLATPAK_EXIT=$?
+			
+			echo ""
+			echo "=============================="
+			echo "Update Summary"
+			echo "=============================="
+			if [ $DNF_EXIT -eq 0 ] && [ $FLATPAK_EXIT -eq 0 ]  || grep -aiE "Complete!|All Updates complete" "$TEMP_SYNC_LOG" > /dev/null; then
+				# 4. Post-Update Housekeeping
+				sudo dnf autoremove -y >> "$LOGFILE_GENERAL" 2>&1
+				sudo dnf clean packages >> "$LOGFILE_GENERAL" 2>&1
+				sudo flatpak uninstall --unused -y >> "$LOGFILE_GENERAL" 2>&1
+				flatpak uninstall --user --unused -y >> "$LOGFILE_GENERAL" 2>&1
             
-            # Log to History CSV
-            [[ ! -z "$PENDING_DNF" ]] && echo "$PENDING_DNF" | awk -v dt="$(date '+%Y-%m-%d')" 'NF {print dt ",DNF," $0}' >> "$HISTORY_LOG"
-            [[ ! -z "$PENDING_FP" ]] && echo "$PENDING_FP" | awk -v dt="$(date '+%Y-%m-%d')" 'NF {print dt ",Flatpak," $0}' >> "$HISTORY_LOG"
-            
-            # Final Success Notification
-            notify-send -t 0 "Updates Complete" "Successfully updated $TOTAL_COUNT items:\n\n$DISPLAY_LIST"
-        else
-            notify-send -u critical -t 0 "Auto-updates" "Update failed! Check logs at $LOGFILE_GENERAL"
-        fi
+				# Log to History CSV
+				[[ ! -z "$PENDING_DNF" ]] && echo "$PENDING_DNF" | awk -v dt="$(date '+%Y-%m-%d')" 'NF {print dt ",DNF," $0}' >> "$HISTORY_LOG"
+				[[ ! -z "$PENDING_FP" ]] && echo "$PENDING_FP" | awk -v dt="$(date '+%Y-%m-%d')" 'NF {print dt ",Flatpak," $0}' >> "$HISTORY_LOG"
+				
+				# Final Success Notification
+				notify-send -t 0 "Updates Complete" "Successfully updated $TOTAL_COUNT items:\n\n$DISPLAY_LIST"
+			else
+				notify-send -u critical -t 0 "Auto-updates" "Update failed! Check logs at $LOGFILE_GENERAL"
+			fi
+		} | tee "$TEMP_SYNC_LOG" >> "$LOGFILE_GENERAL" 2>&1
         rm -f "$TEMP_SYNC_LOG"
     fi
-
     rm -f "$LIST_TMP"
     sleep 1h
 done
