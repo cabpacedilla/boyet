@@ -48,7 +48,7 @@ fi
 # -----------------------------
 # 3. Check for ANY changes (modified, staged, or untracked)
 # -----------------------------
-if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null || [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then
     echo "$(TIMESTAMP) - Auto-committing all changes..." | tee -a "$LOGFILE"
     git add -A
     git commit -m "Auto-sync update on $(date '+%Y-%m-%d %H:%M:%S')" | tee -a "$LOGFILE"
@@ -79,7 +79,7 @@ fi
 SUCCESS=()
 FAIL=()
 
-# Push to GitHub (normal push first, not force)
+# Push to GitHub
 echo "$(TIMESTAMP) - Pushing to $GITHUB_REMOTE..." | tee -a "$LOGFILE"
 if git push "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
     SUCCESS+=("$GITHUB_REMOTE ✅")
@@ -94,11 +94,11 @@ else
             FAIL+=("$GITHUB_REMOTE ❌")
         fi
     else
-        FAIL+=("$GITHUB_REMOTE ❌ (cancelled)")
+        FAIL+=("$GITHUB_REMOTE ❌")
     fi
 fi
 
-# Push to mirrors (ask before each)
+# Push to mirrors
 for REMOTE in "${MIRRORS[@]}"; do
     if git remote | grep -q "^$REMOTE$"; then
         read -p "Push to $REMOTE? (y/n): " -n 1 -r
