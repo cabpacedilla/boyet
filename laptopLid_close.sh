@@ -23,10 +23,11 @@ cleanup() {
 trap cleanup EXIT
 
 # Auto-detect lid device (LID0, LID, LID1, etc.)
-LID_DEVICE=$(ls /proc/acpi/button/lid/ | head -n1)
+#~ LID_DEVICE=$(ls /proc/acpi/button/lid/ | head -n1)
+#~ LID_DEVICE=$(ls /proc/acpi/button/lid/)
 
 get_lid_state() {
-    awk '{print $2}' /proc/acpi/button/lid/"$LID_DEVICE"/state 2>/dev/null
+    awk '{print $2}' /proc/acpi/button/lid/*/state 2>/dev/null
 }
 
 # HDMI connected? (returns success if yes)
@@ -48,7 +49,8 @@ while true; do
             :
         else
             # Lid closed and HDMI NOT connected → suspend
-            systemctl suspend 
+            #systemctl suspend 
+            loginctl lock-session
         fi
     fi
 
