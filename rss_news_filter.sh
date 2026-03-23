@@ -1,5 +1,25 @@
 #!/usr/bin/env bash
 
+LOCK_FILE="/tmp/rss_news_filter_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Cleanup function
+cleanup() {
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
 # --- 1. CONFIGURATION ---
 ALERT_EMAIL="cabpacedilla@gmail.com"
 HISTORY_FILE="$HOME/.cache/practical_science_history.log"
