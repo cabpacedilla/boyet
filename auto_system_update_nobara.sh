@@ -46,7 +46,8 @@ while true; do
     
     # Flatpak: Extract App ID and Version, format as "ID (Version)"
     # We use sed to turn the tab/multiple spaces into " (" and add the closing ")"
-    PENDING_FP=$(flatpak remote-ls --updates --columns=application,version 2>/dev/null | awk 'NF > 1 {print $1 " (" $2 ")"}')
+    #PENDING_FP=$(flatpak remote-ls --updates --columns=application,version 2>/dev/null | awk 'NF > 1 {print $1 " (" $2 ")"}')
+    PENDING_FP=$(flatpak remote-ls --updates 2>/dev/null | tail -n +2 | awk '{if(NF>=2 && $2) print $1 " (" $2 ")"; else print $1}')
 
     if [[ -z "$PENDING_DNF" && -z "$PENDING_FP" ]]; then
         echo "$log_time - System is up to date." >> "$LOGFILE_GENERAL"
