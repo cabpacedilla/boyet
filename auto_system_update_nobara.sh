@@ -71,14 +71,14 @@ cleanup_lock() {
 }
 
 # ================= LOCK =================
-#~ exec 9>"$LOCK_FILE"
-#~ flock -n 9 || { 
-    #~ # LOGFILE exists because mkdir -p ran earlier
-    #~ echo "$(date '+%F %T') - Already running" | tee -a "$LOGFILE"
-    #~ exit 1
-#~ }
-#~ # Single trap handles all cleanup (cleanup functions already defined)
-#~ trap 'cleanup_lock; cleanup_keepalive' EXIT INT TERM
+exec 9>"$LOCK_FILE"
+flock -n 9 || { 
+    # LOGFILE exists because mkdir -p ran earlier
+    echo "$(date '+%F %T') - Already running" | tee -a "$LOGFILE"
+    exit 1
+}
+# Single trap handles all cleanup (cleanup functions already defined)
+trap 'cleanup_lock; cleanup_keepalive' EXIT INT TERM
 
 # ================= SAFETY =================
 # Note: check_dnf_lock has a TOCTOU race condition (process could start between check and execution)
