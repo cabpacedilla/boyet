@@ -71,14 +71,14 @@ cleanup_lock() {
 }
 
 # ================= LOCK =================
-exec 9>"$LOCK_FILE"
-flock -n 9 || { 
-    # LOGFILE exists because mkdir -p ran earlier
-    echo "$(date '+%F %T') - Already running" | tee -a "$LOGFILE"
-    exit 1
-}
-# Single trap handles all cleanup (cleanup functions already defined)
-trap 'cleanup_lock; cleanup_keepalive' EXIT INT TERM
+#~ exec 9>"$LOCK_FILE"
+#~ flock -n 9 || { 
+    #~ # LOGFILE exists because mkdir -p ran earlier
+    #~ echo "$(date '+%F %T') - Already running" | tee -a "$LOGFILE"
+    #~ exit 1
+#~ }
+#~ # Single trap handles all cleanup (cleanup functions already defined)
+#~ trap 'cleanup_lock; cleanup_keepalive' EXIT INT TERM
 
 # ================= SAFETY =================
 # Note: check_dnf_lock has a TOCTOU race condition (process could start between check and execution)
@@ -310,8 +310,15 @@ verify_system_health() {
     return $verification_failed
 }
 
-# Track if reboot notification has been sent to avoid spam
+# Track if reboot notification has been sent (persist across script restarts using a file)
+REBOOT_NOTIFIED_FILE="$STATE_DIR/reboot_notified"
 REBOOT_NOTIFIED=false
+
+# Load persisted reboot notification state with validation (no 'local' at top level)
+case "$(tr -d '[:space:]' < "$REBOOT_NOTIFIED_FILE" 2>/dev/null || echo false)" in
+    true) REBOOT_NOTIFIED=true ;;
+    *)    REBOOT_NOTIFIED=false ;;
+esac
 
 # Quick verification for periodic checks (no new log file)
 quick_verify() {
@@ -324,20 +331,25 @@ quick_verify() {
         issues_found=1
     fi
     
-    # Check if reboot needed for kernel (only notify once)
+    # Check if reboot needed for kernel (only notify once, persisted across script restarts)
     local installed_kernel
     local running_kernel
     installed_kernel=$(rpm -q kernel --last 2>/dev/null | head -n1 | awk '{print $1}' | sed 's/kernel-//')
     running_kernel=$(uname -r)
+    
     if [[ "$installed_kernel" != "$running_kernel" ]]; then
-        if [[ "$REBOOT_NOTIFIED" == "false" ]]; then
-            log "Quick check: Reboot recommended - kernel updated to $installed_kernel"
+        if [[ "$REBOOT_NOTIFIED" != "true" ]]; then
+            log "Quick check: Reboot recommended - kernel updated to $installed_kernel (current: $running_kernel)"
             notify "Reboot recommended - kernel update requires reboot" normal
             REBOOT_NOTIFIED=true
+            printf 'true' > "$REBOOT_NOTIFIED_FILE"
         fi
     else
-        # Reset notification flag if kernel matches (user rebooted)
-        REBOOT_NOTIFIED=false
+        # Kernel matches - reset notification flag (user rebooted)
+        if [[ "$REBOOT_NOTIFIED" != "false" ]]; then
+            REBOOT_NOTIFIED=false
+            printf 'false' > "$REBOOT_NOTIFIED_FILE"
+        fi
     fi
     
     return $issues_found
@@ -557,12 +569,14 @@ main() {
                 notify_complete
                 echo "$(date '+%F'),OK,DNF:${LAST_DNF_EXIT},FLATPAK:${LAST_FLATPAK_EXIT}" >> "$HISTORY_LOG"
                 log "Update successful"
+                # Note: Do NOT reset REBOOT_NOTIFIED here - that only happens when user actually reboots
             else
                 alert_failure "Update failed"
                 echo "$(date '+%F'),FAIL,DNF:${LAST_DNF_EXIT:-unknown},FLATPAK:${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
             fi
         else
             log "System is up to date."
+            notify "System is up to date." normal
             quick_verify
         fi
 
