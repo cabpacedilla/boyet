@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Set user in /etc/sudoers file without providing password with rsync command
-# add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
 
 LOCK_FILE="/tmp/autosync_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
