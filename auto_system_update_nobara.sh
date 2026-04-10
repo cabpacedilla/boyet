@@ -952,7 +952,7 @@ main() {
         else
             log "System is up to date."
             notify "System is up to date." normal
-            quick_verify
+            quick_verify || true 
             FAILURE_STREAK=0
         fi
 
