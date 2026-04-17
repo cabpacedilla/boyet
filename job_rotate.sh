@@ -1,13 +1,13 @@
 #!/bin/bash
 
-LOCK_FILE="/tmp/job_rotate_$(whoami).lock"
-exec 9>"${LOCK_FILE}"
-if ! flock -n 9; then
-    exit 1
-fi
+#~ LOCK_FILE="/tmp/job_rotate_$(whoami).lock"
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ exit 1
+#~ fi
 
-# Store our PID
-echo $$ > "$LOCK_FILE"
+#~ # Store our PID
+#~ echo $$ > "$LOCK_FILE"
 
 # Enhanced cleanup that only removes our PID file
 cleanup() {
