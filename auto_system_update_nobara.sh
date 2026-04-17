@@ -688,10 +688,7 @@ main() {
             fi
         else
             log "System is up to date."
-            if can_notify_idle; then
-                notify "System is up to date." normal 5000
-                update_notify_timestamp
-            fi
+            notify "System is up to date." critical 0
             quick_verify
         fi
 
