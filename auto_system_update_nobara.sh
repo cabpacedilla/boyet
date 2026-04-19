@@ -239,7 +239,7 @@ verify_system_health() {
     fi
     
     # 2. Check filesystem status (quick)
-    if findmnt -n -o OPTIONS / 2>/dev/null | grep -q "ro"; then
+    if findmnt -n -o OPTIONS / 2>/dev/null | grep -E '(^|,)ro(,|$)' >/dev/null; then
         log "ERROR: Root filesystem is mounted read-only!"
         verification_failed=1
     else
