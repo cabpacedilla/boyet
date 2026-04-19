@@ -35,18 +35,16 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "$(TIMESTAMP) - Copying files..." | tee -a "$LOGFILE"
     \cp -rf "$SOURCE_DIR/"* "$REPO_DIR"/ 2>/dev/null
     
-    # Show what changed in git
     echo "=== Git changes after copy ===" | tee -a "$LOGFILE"
     git status -s | tee -a "$LOGFILE"
     echo "===============================" | tee -a "$LOGFILE"
     
-    # Show detailed changes
     echo "=== Detailed changes ===" | tee -a "$LOGFILE"
     git diff --stat | tee -a "$LOGFILE"
 fi
 
 # -----------------------------
-# 3. Check for ANY changes (modified, staged, or untracked)
+# 3. Check for ANY changes
 # -----------------------------
 if ! git diff --quiet 2>/dev/null || ! git diff --cached --quiet 2>/dev/null || [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then
     echo "$(TIMESTAMP) - Auto-committing all changes..." | tee -a "$LOGFILE"
@@ -74,21 +72,26 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 # -----------------------------
-# 6. Push with error checking
+# 6. Push with proper error checking
 # -----------------------------
 SUCCESS=()
 FAIL=()
 
 # Push to GitHub
 echo "$(TIMESTAMP) - Pushing to $GITHUB_REMOTE..." | tee -a "$LOGFILE"
-if git push "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+git push "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"
+PUSH_EXIT=${PIPESTATUS[0]}
+
+if [[ $PUSH_EXIT -eq 0 ]]; then
     SUCCESS+=("$GITHUB_REMOTE ✅")
 else
-    echo "⚠️  Normal push failed. Try force push? (y/n): "
+    echo "⚠️  Normal push failed (exit code: $PUSH_EXIT). Try force push? (y/n): "
     read -n 1 -r FORCE
     echo
     if [[ $FORCE =~ ^[Yy]$ ]]; then
-        if git push --force "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+        git push --force "$GITHUB_REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"
+        FORCE_EXIT=${PIPESTATUS[0]}
+        if [[ $FORCE_EXIT -eq 0 ]]; then
             SUCCESS+=("$GITHUB_REMOTE ✅ (forced)")
         else
             FAIL+=("$GITHUB_REMOTE ❌")
@@ -105,13 +108,18 @@ for REMOTE in "${MIRRORS[@]}"; do
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo "$(TIMESTAMP) - Pushing to $REMOTE..." | tee -a "$LOGFILE"
-            if git push "$REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+            git push "$REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"
+            PUSH_EXIT=${PIPESTATUS[0]}
+            
+            if [[ $PUSH_EXIT -eq 0 ]]; then
                 SUCCESS+=("$REMOTE ✅")
             else
                 read -p "Force push to $REMOTE? (y/n): " -n 1 -r FORCE
                 echo
                 if [[ $FORCE =~ ^[Yy]$ ]]; then
-                    if git push --force "$REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"; then
+                    git push --force "$REMOTE" "$BRANCH" 2>&1 | tee -a "$LOGFILE"
+                    FORCE_EXIT=${PIPESTATUS[0]}
+                    if [[ $FORCE_EXIT -eq 0 ]]; then
                         SUCCESS+=("$REMOTE ✅ (forced)")
                     else
                         FAIL+=("$REMOTE ❌")
