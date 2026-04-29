@@ -73,6 +73,11 @@ alert_failure() {
     notify "$1" critical
 }
 
+system_up_to_date() {
+    log "System is up to date."
+    notify "System is up to date." critical 0
+}
+
 # ================= INTERNET CONNECTION DETECTION =================
 check_internet() {
     local endpoints=(
@@ -705,13 +710,13 @@ main() {
                 echo "$(date '+%F'),OK,DNF:${LAST_DNF_EXIT},FLATPAK:${LAST_FLATPAK_EXIT}" >> "$HISTORY_LOG"
                 log "Update cycle completed successfully"
                 update_success_timestamp
+                system_up_to_date
             else
                 echo "$(date '+%F'),FAIL,DNF:${LAST_DNF_EXIT:-unknown},FLATPAK:${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
                 log "Update cycle failed"
             fi
         else
-            log "System is up to date."
-            notify "System is up to date." critical 0
+            system_up_to_date
             quick_verify
         fi
 
