@@ -711,6 +711,7 @@ main() {
                 log "Update cycle completed successfully"
                 update_success_timestamp
                 system_up_to_date
+                quick_verify
             else
                 echo "$(date '+%F'),FAIL,DNF:${LAST_DNF_EXIT:-unknown},FLATPAK:${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
                 log "Update cycle failed"
