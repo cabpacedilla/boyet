@@ -490,6 +490,25 @@ notify_complete() {
     notify_complete_with_list
 }
 
+# ================= LOG UPDATED PACKAGES TO HISTORY (3-COLUMN FORMAT) =================
+log_updated_packages() {
+    local date_str=$(date '+%Y-%m-%d')
+    
+    # Log DNF packages that were updated
+    if [[ -s "$STATE_DIR/dnf_list" ]]; then
+        while IFS= read -r package; do
+            echo "$date_str DNF $package" >> "$HISTORY_LOG"
+        done < "$STATE_DIR/dnf_list"
+    fi
+    
+    # Log Flatpak packages that were updated
+    if [[ -s "$STATE_DIR/flatpak_list" ]]; then
+        while IFS= read -r package; do
+            echo "$date_str Flatpak $package" >> "$HISTORY_LOG"
+        done < "$STATE_DIR/flatpak_list"
+    fi
+}
+
 # ================= RUN UPDATES =================
 LAST_DNF_EXIT=""
 LAST_FLATPAK_EXIT=""
@@ -560,6 +579,9 @@ run_updates() {
         
         UPDATE_SUCCESS=0
         log_raw "Updates completed successfully"
+        
+        # Log each updated package to history (3-column format)
+        log_updated_packages
         
         # SEND NOTIFICATION IMMEDIATELY (before verification)
         notify_complete
@@ -679,6 +701,7 @@ main() {
         if updates_available; then
             notify_pending
             if run_updates; then
+                # Keep the original success logging line for backward compatibility
                 echo "$(date '+%F'),OK,DNF:${LAST_DNF_EXIT},FLATPAK:${LAST_FLATPAK_EXIT}" >> "$HISTORY_LOG"
                 log "Update cycle completed successfully"
                 update_success_timestamp

@@ -1,0 +1,4237 @@
+===== autosync =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/autosync_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+while inotifywait -r -e modify,create /home/claiveapa/Documents/; do
+	BACKUP_TIME=$(date +"%I:%M %p")
+	rsync -a --protect-args --delete \
+      --backup --backup-dir="/run/media/claiveapa/Data/claive/Documents/nobara/kde42/backups/$(date +%F)" \
+      --exclude='*.swp' --exclude='*.swo' --exclude='*.swx' --exclude='*~' \
+      --exclude='*.tmp' --exclude='*.bak' --exclude='*.autosave' --exclude='*.part' --exclude='*.crdownload' \
+      "/home/claiveapa/Documents/" "/run/media/claiveapa/Data/claive/Documents/nobara/kde42/main/"
+    STATUS=$?
+
+    if [[ $STATUS -eq 0 || $STATUS -eq 24 || $STATUS -eq 23 ]]; then
+        notify-send --app-name "✅ Auto-backup: $BACKUP_TIME" "Backup sync was successful (code $STATUS)."
+    else
+        notify-send --app-name "⚠️ Auto-backup: $BACKUP_TIME" "Backup sync encountered errors (code $STATUS)."
+    fi
+done
+
+===== autobrightness =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/autobrightness_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# Detect the amdgpu backlight device dynamically
+DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
+
+if [ -z "$DEVICE" ]; then
+    echo "No amdgpu backlight device found."
+    exit 1
+fi
+
+TARGET_PERCENT=90
+
+while true; do
+    CURRENT_BRIGHTNESS=$(brightnessctl -d "$DEVICE" get)
+    MAX_BRIGHTNESS=$(brightnessctl -d "$DEVICE" max)
+    CURRENT_PERCENT=$(( 100 * CURRENT_BRIGHTNESS / MAX_BRIGHTNESS ))
+
+    if [ "$CURRENT_PERCENT" -ne "$TARGET_PERCENT" ]; then
+        brightnessctl -d "$DEVICE" set "${TARGET_PERCENT}%"
+    fi
+
+    sleep 5
+done
+
+===== backlisten =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/backlisten_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+SCRIPT_NAME="checkservices.sh"
+SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
+MIN_INSTANCES=1
+COOLDOWN=5   # seconds between checks
+
+while true; do
+    # Find all running processes for the script with bash
+    PROCS=($(pgrep -f "bash $SCRIPT_PATH$"))
+    NUM_RUNNING=$(echo "$PROCS" | wc -w)
+
+    if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
+        # More than one instance? Kill extras and notify
+        PROC_ARRAY=($PROCS)
+        LAST_INDEX=$(( ${#PROC_ARRAY[@]} - 1 ))
+        for i in $(seq 0 $((LAST_INDEX - 1))); do
+            kill "${PROC_ARRAY[$i]}"
+            notify-send -t 10000 --app-name "💀 Check services" "Extra checkservices instance killed: PID ${PROC_ARRAY[$i]}" &
+        done
+    else
+        # Script not running, start it
+        if [ -x "$SCRIPT_PATH" ]; then
+            "$SCRIPT_PATH" > /dev/null 2>&1 &
+            notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
+            sleep 5
+        else
+            notify-send --app-name "⚠️ Check services" "checkservices script not found or not executable!" &
+        fi
+    fi
+
+    sleep "$COOLDOWN"
+done
+
+===== batteryAlertBashScript =====
+#!/usr/bin/env bash
+# This script alerts when battery level is low or high and adjusts brightness for battery optimization.
+# Written by Claive Alvin P. Acedilla. Modified for dynamic brightnessctl use.
+
+LOCK_FILE="/tmp/batteryAlertBashScript_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+notify()
+{
+   if [ "$1" = 'low' ]; then
+        ACTION="Plug"
+   elif [ "$1" = 'high' ]; then
+        ACTION="Unplug"
+   fi
+
+   notify-send -u critical --app-name "⚠️ Battery alert:" "Battery reached $2%. $ACTION the power cable to optimize battery life!"
+
+   # Uncomment to play sound
+   # if [ -f "$(which mpv)" ]; then
+   #     mpv ~/Music/battery-"$1".mp3 2>/dev/null
+   # fi
+}
+
+# Detect amdgpu_bl* device dynamically
+DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
+if [ -z "$DEVICE" ]; then
+    echo "No AMD GPU backlight device found. Exiting."
+    exit 1
+fi
+
+# Settings
+LOW_BATT=20
+HIGH_BATT=80
+FULL_BATT=100
+TARGET_BRIGHTNESS=90
+
+while true; do
+
+    # Get battery level and status
+    BATT_LEVEL=$(acpi -b | grep -P -o '[0-9]+(?=%)')
+    BATT_STATE=$(acpi -b | awk '{print $3}')
+
+    # Get current brightness percentage
+    CUR_BRIGHT=$(brightnessctl -d "$DEVICE" get)
+    MAX_BRIGHT=$(brightnessctl -d "$DEVICE" max)
+    CUR_PERCENT=$(( 100 * CUR_BRIGHT / MAX_BRIGHT ))
+
+    # Function to adjust brightness if not 90%
+    ensure_optimal_brightness() {
+        if [ "$CUR_PERCENT" -ne "$TARGET_BRIGHTNESS" ]; then
+            brightnessctl -d "$DEVICE" set "${TARGET_BRIGHTNESS}%"
+        fi
+    }
+
+    # 1. Notify if battery is low and discharging
+    if [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; then
+        notify low "$BATT_LEVEL"
+
+    # 2. If low but charging/unknown, adjust brightness
+    elif { [ "$BATT_LEVEL" -le "$LOW_BATT" ] && [[ "$BATT_STATE" == "Charging," || "$BATT_STATE" == "Unknown," ]]; }; then
+        ensure_optimal_brightness
+
+    # 3. Notify if battery is full or nearly full
+    elif { [ "$BATT_LEVEL" -ge "$HIGH_BATT" ] && [[ "$BATT_STATE" == "Charging," || "$BATT_STATE" == "Unknown," ]]; } || \
+         { [ "$BATT_LEVEL" -eq "$FULL_BATT" ] && [[ "$BATT_STATE" == "Full," || "$BATT_STATE" == "Discharging," ]]; } || \
+         { [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] && [ "$BATT_STATE" = "Not" ]; }; then
+        notify high "$BATT_LEVEL"
+
+    # 4. If battery is discharging and < 80%, just adjust brightness
+    elif { [ "$BATT_LEVEL" -le "$HIGH_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; } || \
+         { [ "$BATT_LEVEL" -gt "$HIGH_BATT" ] && [ "$BATT_STATE" = "Discharging," ]; }; then
+        ensure_optimal_brightness
+    fi
+
+    sleep 5
+done
+
+===== btrfs_balance_quarterly =====
+#!/usr/bin/env bash
+# Btrfs Balance Script – Twice-a-year, SSD/NVMe friendly (2026 edition)
+# Gentle data-only balance, metadata avoided unless really needed
+
+# --- Locking & Cleanup ---
+LOCK_FILE="/tmp/btrfs_balance_quarterly_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+echo $$ > "$LOCK_FILE"
+
+cleanup() {
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
+
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap cleanup EXIT
+
+set -o pipefail
+set -u
+
+# --- Configuration ---
+: "${LOG_DIR:=$HOME/scriptlogs}"
+: "${BALANCE_INTERVAL_DAYS:=180}"
+: "${DATA_USAGE_THRESHOLD:=15}"
+: "${MIN_FREE_GB:=15}"
+: "${MAX_RETRIES:=24}"
+: "${RETRY_STALE_DAYS:=200}"
+: "${MOUNTPOINT:=/}"
+: "${NOTIFICATIONS:=true}"
+
+mkdir -p "$LOG_DIR"
+LAST_RUN_FILE="$LOG_DIR/btrfs-balance-last-run"
+RETRY_COUNT_FILE="$LOG_DIR/btrfs-balance-retry-count"
+
+log() {
+    LOGFILE="$LOG_DIR/btrfs-balance-$(date +%Y-%m).log"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOGFILE"
+}
+
+notify() {
+    [[ "${NOTIFICATIONS}" == "true" ]] || return 0
+    command -v notify-send >/dev/null || return 0
+
+    if [[ "$1" == "-u" ]]; then
+        local urgency="$2"
+        local title="$3"
+        local message="$4"
+        local icon="drive-harddisk"
+
+        case "$urgency" in
+            critical) icon="dialog-error" ;;
+            normal)   icon="drive-harddisk" ;;
+            low)      icon="task-accepted" ;;
+        esac
+
+        notify-send -i "$icon" -u "$urgency" -t 0 "$title" "$message"
+    else
+        notify-send -i "task-accepted" -u normal -t 0 "Btrfs Balance" "$1"
+    fi
+}
+
+# --- Main Loop ---
+while true; do
+    NOW=$(date +%s)
+    LOGFILE="$LOG_DIR/btrfs-balance-$(date +%Y-%m).log"
+    SLEEP_DURATION=604800  # Default: 7 days
+
+    # Validations
+    if ! mountpoint -q "$MOUNTPOINT"; then
+        log "⚠️ $MOUNTPOINT not available, retrying in 1 week"
+        sleep 604800 && continue
+    fi
+
+    # Filesystem type check - retry if not Btrfs (handles external drives)
+    if ! findmnt -no FSTYPE "$MOUNTPOINT" 2>/dev/null | grep -q "^btrfs$"; then
+        log "⚠️ $MOUNTPOINT is not Btrfs or not mounted, retrying in 1 week"
+        sleep 604800 && continue
+    fi
+
+    # Timing Check
+    LAST_RUN=$(cat "$LAST_RUN_FILE" 2>/dev/null || echo "0")
+    DIFF_DAYS=$(( (NOW - LAST_RUN) / 86400 ))
+
+    if [[ "$DIFF_DAYS" -ge "$BALANCE_INTERVAL_DAYS" ]]; then
+        log "Btrfs balance daemon active (interval: ${BALANCE_INTERVAL_DAYS} days)"
+        log "Starting gentle balance on $MOUNTPOINT (days since last: $DIFF_DAYS)"
+
+        # Retry Counter Logic
+        RETRY_COUNT=$(cat "$RETRY_COUNT_FILE" 2>/dev/null || echo "0")
+        if [[ "$DIFF_DAYS" -gt "$RETRY_STALE_DAYS" ]]; then
+            rm -f "$RETRY_COUNT_FILE" && RETRY_COUNT=0
+        fi
+
+        if [[ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]]; then
+            log "🛑 Max retries reached. Manual intervention required."
+            notify -u critical "Balance Error" "Max retries reached – check logs!"
+            SLEEP_DURATION=2592000  # 30 days
+        else
+            # Space Check
+            AVAILABLE_GB=$(df -BG --output=avail "$MOUNTPOINT" 2>/dev/null | tail -n1 | tr -d 'G ')
+            AVAILABLE_GB=${AVAILABLE_GB:-0}
+            if [[ "$AVAILABLE_GB" -lt "$MIN_FREE_GB" ]]; then
+                log "⚠️ Low space (${AVAILABLE_GB}GB < ${MIN_FREE_GB}GB)"
+                notify -u critical "Balance Skipped" "Low space: ${AVAILABLE_GB}GB available."
+                sleep 604800 && continue
+            fi
+
+            # Check for active balance
+            if sudo btrfs balance status "$MOUNTPOINT" 2>&1 | grep -q "is running"; then
+                log "Balance already in progress – skipping"
+                sleep 604800 && continue
+            fi
+
+            notify "Starting gentle balance (dusage=${DATA_USAGE_THRESHOLD})..."
+
+            # Execute
+            if sudo ionice -c3 nice -n 19 \
+                btrfs balance start -B -dusage="${DATA_USAGE_THRESHOLD}" "$MOUNTPOINT" \
+                >> "$LOGFILE" 2>&1; then
+
+                log "✅ Balance completed successfully"
+                notify "✅ Gentle balance finished"
+                date +%s > "$LAST_RUN_FILE"
+                rm -f "$RETRY_COUNT_FILE"
+            else
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "$RETRY_COUNT" > "$RETRY_COUNT_FILE"
+                log "❌ Balance failed (attempt ${RETRY_COUNT}/${MAX_RETRIES})"
+                notify -u critical "⚠️ Balance Failed" "Attempt ${RETRY_COUNT}/${MAX_RETRIES}"
+            fi
+        fi
+    fi
+
+    sleep "$SLEEP_DURATION"
+done
+
+===== btrfs_scrub_monthly =====
+#!/usr/bin/env bash
+# Monthly Btrfs Scrub Script – Refined 2026 Edition (Final Stable)
+# SSD/NVMe friendly with idle I/O priority and resume support.
+set -euo pipefail
+
+# --- Pre-Loop Initialization ---
+: "${LOG_DIR:=$HOME/scriptlogs}"
+: "${MOUNTPOINT:=/}"
+: "${SCRUB_INTERVAL_DAYS:=30}"
+: "${NOTIFICATIONS:=true}"
+: "${SLEEP_HOURS:=1}"
+
+# Validate configuration
+if [[ ! "$SCRUB_INTERVAL_DAYS" =~ ^[0-9]+$ ]] || [[ "$SCRUB_INTERVAL_DAYS" -lt 1 ]]; then
+    echo "ERROR: SCRUB_INTERVAL_DAYS must be a positive integer" >&2
+    exit 1
+fi
+
+mkdir -p "$LOG_DIR"
+LAST_RUN_FILE="$LOG_DIR/btrfs-scrub-last-run"
+LOGFILE="$LOG_DIR/btrfs-scrub-$(date +%Y-%m).log"
+
+# --- Locking Strategy (commented out) ---
+LOCK_FILE="/tmp/btrfs_scrub_monthly_$(whoami).lock"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# --- Helper Functions ---
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOGFILE"
+}
+
+notify() {
+    [[ "${NOTIFICATIONS}" == "true" ]] || return 0
+    command -v notify-send >/dev/null || return 0
+
+    if [[ "$1" == "-u" ]]; then
+        # Format: -u urgency title message
+        notify-send -u "$2" -t 0 "$3" "$4"
+    else
+        # Format: title message
+        notify-send -u normal -t 0 "$1" "$2"
+    fi
+}
+
+cleanup() {
+    log "Daemon exiting. Releasing lock."
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
+
+# --- Trap Handling ---
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap cleanup EXIT
+
+# --- Main Daemon Loop ---
+FIRST_RUN=1
+
+while true; do
+    LOGFILE="$LOG_DIR/btrfs-scrub-$(date +%Y-%m).log"
+    
+    if [[ $FIRST_RUN -eq 1 ]]; then
+        log "Btrfs scrub daemon started (Interval: ${SCRUB_INTERVAL_DAYS} days)"
+        log "Monitoring $MOUNTPOINT, notifications: $NOTIFICATIONS"
+        FIRST_RUN=0
+    fi
+
+    if ! mountpoint -q "$MOUNTPOINT"; then
+        log "$MOUNTPOINT not available, retrying in ${SLEEP_HOURS}h"
+        sleep $((SLEEP_HOURS * 3600))
+        continue
+    fi
+
+    NOW=$(date +%s)
+    LAST_RUN=$(cat "$LAST_RUN_FILE" 2>/dev/null || echo "0")
+    DIFF_DAYS=$(( (NOW - LAST_RUN) / 86400 ))
+
+    if [[ "$DIFF_DAYS" -ge "$SCRUB_INTERVAL_DAYS" ]]; then
+        
+        # Use sudo for status check
+        SCRUB_STATUS=$(sudo btrfs scrub status "$MOUNTPOINT" 2>/dev/null || echo "")
+        
+        if [[ "$SCRUB_STATUS" == *"running"* ]]; then
+            log "Scrub already active in background. Waiting..."
+            sleep $((SLEEP_HOURS * 3600))
+            continue
+        fi
+
+        SCRUB_CMD="start"
+        # Robust regex check for various interruption states
+        if [[ "$SCRUB_STATUS" =~ (was aborted|cancelled|interrupted) ]]; then
+            SCRUB_CMD="resume"
+            log "Detected interrupted scrub, will resume"
+        fi
+        
+        log "Action: Executing $SCRUB_CMD (Days since last: $DIFF_DAYS)"
+        notify "Btrfs Maintenance" "Performing monthly $SCRUB_CMD..."
+
+        # Execution with low I/O priority
+        if ionice -c3 nice -n 19 sudo btrfs scrub "$SCRUB_CMD" -B "$MOUNTPOINT" >> "$LOGFILE" 2>&1; then
+            
+            FINAL_REPORT=$(sudo btrfs scrub status "$MOUNTPOINT" 2>/dev/null)
+            if echo "$FINAL_REPORT" | grep -qiE "no errors found|0 errors"; then
+                # Extract statistics for logging
+                DATA_SCRUBBED=$(echo "$FINAL_REPORT" | grep "Total to scrub" | awk '{print $4}' || echo "unknown")
+                log "Scrub completed successfully. Data scrubbed: $DATA_SCRUBBED"
+                date +%s > "$LAST_RUN_FILE"
+                notify "Btrfs Scrub Complete" "System integrity verified. No errors found."
+            else
+                ERROR_COUNT=$(echo "$FINAL_REPORT" | grep -i "error" | grep -v "0 errors" | awk '{print $2}' || echo "unknown")
+                log "Scrub finished with errors (count: $ERROR_COUNT). Check $LOGFILE"
+                notify -u critical "Btrfs Error" "Integrity issues found on $MOUNTPOINT"
+            fi
+        else
+            exit_code=$?
+            log "Scrub process failed with exit code $exit_code"
+            if [[ $exit_code -eq 1 ]]; then
+                notify -u critical "Btrfs Error" "Scrub failed to complete properly"
+            fi
+        fi
+    fi
+
+    sleep $((SLEEP_HOURS * 3600))
+done
+
+===== fortune4you =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/fortune4you_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+while true; do
+
+# Alert the random quote
+# notify-send -u critical --app-name "Fortune:" "$(fortune)"
+kdialog --title "Fortune" --msgbox "$(fortune)" &
+# kdialog --passivepopup "$(fortune)" --title "Fortune" &
+
+# Sleep in random time
+sleep "$(shuf -i1200-1500 -n1)"
+
+done
+
+===== job_rotate =====
+#!/bin/bash
+
+#~ LOCK_FILE="/tmp/job_rotate_$(whoami).lock"
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ exit 1
+#~ fi
+
+#~ # Store our PID
+#~ echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# --- CONFIGURATION ---
+BIN_DIR="$HOME/Documents/bin"
+SEEN_FILE="$BIN_DIR/seen_jobs.txt"
+LOG_FILE="$BIN_DIR/job_search.log"
+ALERT_EMAIL="cabpacedilla@gmail.com"
+
+mkdir -p "$BIN_DIR"
+touch "$SEEN_FILE"
+
+# Monthly Maintenance - Fixed: Use quotes and proper comparison
+[[ $(date +%d) == "01" ]] && > "$SEEN_FILE"
+
+echo "Job Search Engine Active. Mode: Acedilla-Resume Optimization."
+
+while true; do
+    echo "------------------------------------------------" >> "$LOG_FILE"
+    echo "$(date): Starting Search Cycle (LinkedIn, Indeed, JobStreet, Mynimo)..." >> "$LOG_FILE"
+
+    # Fixed: Remove leading zero to prevent octal interpretation
+    DAY_OF_YEAR=$(date +%j | sed 's/^0*//')
+    QUERY_INDEX=$((DAY_OF_YEAR % 3))
+
+    case $QUERY_INDEX in
+        0)
+            # Focus: SDET / Modern Automation (Cypress + Python) - EXCLUDE FULL-TIME
+            SELECTED_QUERY="(\"Senior QA\" OR SDET) AND (Python OR Cypress) AND (Selenium OR Postman OR API) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+            STRATEGY="SDET Specialist. Focus on Cypress/Python frameworks - CONTRACT/REMOTE ONLY"
+            ;;
+        1)
+            # Focus: QAOps / Linux Infrastructure - EXCLUDE FULL-TIME
+            SELECTED_QUERY="(\"Senior QA\" OR \"Automation Engineer\") AND (Bash OR Shell OR Linux OR DevOps) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+            STRATEGY="QAOps/Linux Specialist - CONTRACT/REMOTE ONLY"
+            ;;
+        2)
+            # Focus: Domain Expertise (Payroll, POS, Salesforce) - EXCLUDE FULL-TIME
+            SELECTED_QUERY="(\"Senior QA\" OR \"Software Tester\") AND (Payroll OR POS OR Salesforce OR \"E-commerce\") AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+            STRATEGY="Domain Expert - CONTRACT/REMOTE ONLY"
+            ;;
+    esac
+
+    echo "$(date): Strategy: $STRATEGY" >> "$LOG_FILE"
+    echo "$(date): Running Scraper for: $SELECTED_QUERY" >> "$LOG_FILE"
+
+    # Execution (5-minute timeout for 4 portals + human-delays)
+    RAW_RESULTS=$(timeout 300s python3 "$BIN_DIR/find_jobs.py" "$SELECTED_QUERY")
+    
+    NEW_JOBS_BODY=""
+    COUNT=0
+
+    while read -r line; do
+        [[ -z "$line" || "$line" == DEBUG* ]] && continue
+        
+        ID=$(echo "$line" | cut -d'|' -f1)
+        TITLE=$(echo "$line" | cut -d'|' -f2)
+        COMPANY=$(echo "$line" | cut -d'|' -f3)
+        LINK=$(echo "$line" | cut -d'|' -f4)
+
+        if ! grep -q "$ID" "$SEEN_FILE"; then
+            NEW_JOBS_BODY+=$'📍 '"$TITLE"$' @ '"$COMPANY"$'\n🔗 '"$LINK"$'\n\n'
+            echo "$ID" >> "$SEEN_FILE"
+            ((COUNT++))
+        fi
+    done <<< "$RAW_RESULTS"
+
+    if [[ -n "$NEW_JOBS_BODY" ]]; then
+        SUBJECT="[$COUNT New Contract/Remote Jobs] $STRATEGY"
+        {
+            echo "To: $ALERT_EMAIL"
+            echo "Subject: $SUBJECT"
+            echo "Content-Type: text/plain; charset=UTF-8"
+            echo ""
+            echo -e "Hi Claive,\n\nI found $COUNT potential contract/remote/freelance matches:\n\n$STRATEGY\n\n$NEW_JOBS_BODY\n---\nSearch Query: $SELECTED_QUERY"
+        } | msmtp -a default "$ALERT_EMAIL"
+        echo "$(date): SUCCESS - Sent email for $COUNT jobs." >> "$LOG_FILE"
+    else
+        echo "$(date): INFO - No new contract/remote matches found." >> "$LOG_FILE"
+    fi
+
+    # Jittered sleep (55-75 minutes)
+    MINS=$(( (RANDOM % 21) + 55 ))
+    echo "$(date): Sleeping for $MINS minutes..." >> "$LOG_FILE"
+    sleep "${MINS}m"
+done
+
+===== keyLocked =====
+#!/usr/bin/env bash
+# This script will notify when Caps Lock or Num Lock are on using the xset q command.
+# This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
+# October 2020
+
+# Steps for the task:
+# 1. Create a bin directory inside your home directory
+# 2. Change directory to the bin directory
+# 3. Create the bash script file below with nano or gedit and save it with a filename like keyLocked.sh
+# 4. Make file executable with chmod +x keyLocked.sh command
+# 5. Add the keyLocked.sh command in Startup applications
+# 6. Reboot the laptop
+# 7. Press the Caps Lock key
+# 8. A Caps Lock key notification message will be displayed
+# 9. Press the Num Lock key
+# 10. A Num Lock key notification message will be displayed
+
+LOCK_FILE="/tmp/keyLocked_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# Define LED mask values for key locks
+CAPS_LOCK="00000001"
+NUM_LOCK="00000002"
+CAPSNUM_LOCK="00000003"
+NO_LOCK="00000000"
+
+# Function to get LED mask value
+get_led_mask() {
+    xset q | grep 'LED mask' | awk '{ print $NF }'
+}
+
+# Main loop
+while true; do
+    LED_MASK=$(get_led_mask)
+
+    # Check if the LED mask command was successful
+    if [ $? -ne 0 ]; then
+        sleep 10
+        continue
+    fi
+
+    # Notify based on LED mask value
+    case "$LED_MASK" in
+        "$CAPS_LOCK")
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Caps lock is on."
+            ;;
+        "$NUM_LOCK")
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Num lock is on."
+            ;;
+        "$CAPSNUM_LOCK")
+            notify-send -t 9000 --app-name "⚠️ Key lock:" "Caps lock and Num lock are on."
+            ;;
+        "$NO_LOCK")
+            # Do nothing
+            ;;
+        *)
+            # Handle unexpected values
+            ;;
+    esac
+
+    sleep 10
+done
+
+
+===== laptopLid_close =====
+#!/usr/bin/env bash
+# Suspend only when lid is closed AND HDMI is NOT connected
+
+LOCK_FILE="/tmp/laptopLid_close_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# Auto-detect lid device (LID0, LID, LID1, etc.)
+#~ LID_DEVICE=$(ls /proc/acpi/button/lid/ | head -n1)
+#~ LID_DEVICE=$(ls /proc/acpi/button/lid/)
+
+get_lid_state() {
+    awk '{print $2}' /proc/acpi/button/lid/*/state 2>/dev/null
+}
+
+# HDMI connected? (returns success if yes)
+hdmi_connected() {
+    xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}'
+}
+
+# To avoid repeated suspends while lid remains closed
+PREV="open"
+
+while true; do
+    LID=$(get_lid_state)
+
+    # Trigger only when lid transitions from open → closed
+    if [[ "$LID" == "closed" && "$PREV" == "open" ]]; then
+        
+        if hdmi_connected; then
+            # Lid closed but HDMI is connected → do nothing
+            :
+        else
+            # Lid closed and HDMI NOT connected → suspend
+            #systemctl suspend 
+            loginctl lock-session
+        fi
+    fi
+
+    PREV="$LID"
+    sleep 0.1s
+done
+
+===== login_monitor =====
+#!/usr/bin/env bash
+# login_monitor.sh
+# Real-time login alerts for SSH, sudo, su attempts (success & failure)
+# Logs to ~/scriptlogs/login-monitor.log and sends desktop notifications
+# Requires: libnotify (notify-send command)
+
+LOCK_FILE="/tmp/login_monitor_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+LOGFILE="$HOME/scriptlogs/login-monitor.log"
+mkdir -p "$(dirname "$LOGFILE")"
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Export so notify-send works in GUI
+# export DISPLAY=:0
+# export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+
+# Cooldown seconds for identical repeated messages
+COOLDOWN=5
+declare -A last_event
+
+# Function to send notifications and log them
+send_alert() {
+    TITLE="$1"
+    MSG="$2"
+    URGENCY="$3"
+    notify-send "$TITLE" "$MSG" -u "$URGENCY" &
+    echo "[$(date '+%F %T')] [$TITLE] $MSG" >> "$LOGFILE"
+}
+
+echo "[$(date '+%F %T')] Starting login monitor..." | tee -a "$LOGFILE"
+notify-send "Login Monitor" "Starting login monitor..." &
+
+#~ journalctl -f -n0 -o short-iso --since now \
+  #~ _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su | \
+journalctl -f -n0 -o short-iso --no-tail \
+  _COMM=sshd _COMM=sshd-session _COMM=sudo _COMM=su |
+while read -r LINE; do
+    NOW=$(date +%s)
+    TS=$(date '+%F %T')
+
+    # --- SSH ---
+    if [[ "$LINE" =~ "sshd" || "$LINE" =~ "sshd-session" ]]; then
+        if [[ "$LINE" =~ "Accepted " ]]; then
+            USER=$(echo "$LINE" | grep -oP "for \K[^ ]+")
+            IP=$(echo "$LINE" | grep -oP "from \K[^ ]+")
+            EVENT_ID="ssh_success_${USER}_${IP}_$(echo "$LINE" | awk '{print $1}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            MSG="User: $USER | From: $IP | Time: $TS"
+            echo -e "✅ ${GREEN}[SSH SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "✅ SSH Login Success" "$MSG" critical
+
+        elif [[ "$LINE" =~ "Failed password" ]]; then
+            USER=$(echo "$LINE" | grep -oP "for \K[^ ]+")
+            IP=$(echo "$LINE" | grep -oP "from \K[^ ]+")
+            EVENT_ID="ssh_fail_${USER}_${IP}_${NOW}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            MSG="User: $USER | From: $IP | Time: $TS"
+            echo -e "⚠️ ${RED}[SSH FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
+            send_alert "⚠️ SSH Login Failed" "$MSG" critical
+        fi
+    fi
+
+    # --- SUDO ---
+    if [[ "$LINE" =~ "sudo" ]]; then
+        if [[ "$LINE" =~ "session opened" ]]; then
+            USER=$(echo "$LINE" | grep -oP "by \K[^ ]+")
+            EVENT_ID="sudo_success_${USER}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            RAW=$(journalctl _COMM=sudo -n5 -o cat | grep "COMMAND=" | tail -1)
+            CONTEXT=$(echo "$RAW" | sed -E 's/; COMMAND=.*//')
+            CMD=$(echo "$RAW" | sed -E 's/.*COMMAND=(.*)/\1/')
+            MSG="User: $USER | Time: $TS\n$CONTEXT\nCommand: $CMD"
+            echo -e "✅ ${GREEN}[SUDO SUCCESS]${NC} $LINE | $CONTEXT | Command: $CMD" | tee -a "$LOGFILE"
+            send_alert "✅ Sudo Success" "$MSG" critical
+
+        # Handle PAM authentication failures (first failure attempt - uses PAM log)
+        elif [[ "$LINE" =~ "pam_unix(sudo:auth): authentication failure" ]]; then
+            if [[ "$LINE" =~ "user="([^\ ]+) ]]; then
+                USER="${BASH_REMATCH[1]}"
+            else
+                USER="unknown"
+            fi
+
+            EVENT_ID="sudo_pam_fail_${USER}_${NOW}"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < 2 )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            # Extract PAM failure details from the log line
+            PAM_DETAILS=$(echo "$LINE" | sed -n 's/.*authentication failure; \(.*\)/\1/p')
+
+            # Don't try to get command for PAM failures - it's from previous session
+            MSG="User: $USER | Time: $TS\n$PAM_DETAILS\nCommand: (will be logged on final attempt)"
+            echo -e "⚠️ ${RED}[SUDO FAILURE]${NC} $LINE | $PAM_DETAILS | Command: (will be logged on final attempt)" | tee -a "$LOGFILE"
+            send_alert "⚠️ Sudo Failure" "$MSG" critical
+
+        # Handle sudo's own failure messages (successive attempts - uses sudo log)
+        elif [[ "$LINE" =~ "incorrect password attempts" ]] || [[ "$LINE" =~ "sorry, try again" ]] || [[ "$LINE" =~ "password attempts" ]]; then
+            # Simple approach: extract username using awk after sudo[pid]:
+            USER=$(echo "$LINE" | awk -F'sudo\\[[0-9]*\\]: *' '{print $2}' | awk '{print $1}')
+
+            # If that fails, try alternative extraction
+            if [[ -z "$USER" ]] || [[ "$USER" == ":" ]]; then
+                # Use sed to extract first word after sudo[number]:
+                USER=$(echo "$LINE" | sed -n 's/.*sudo\[[0-9]*\]: *\([^ ]*\).*/\1/p')
+            fi
+
+            # Final fallback
+            if [[ -z "$USER" ]]; then
+                USER="unknown"
+            fi
+
+            EVENT_ID="sudo_fail_${USER}_${NOW}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+            if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < 2 )); then
+                continue
+            fi
+            last_event[$EVENT_ID]=$NOW
+
+            # For sudo's own logs, extract command directly from the line
+            if [[ "$LINE" =~ COMMAND=(.+)$ ]]; then
+                CMD="${BASH_REMATCH[1]}"
+                CONTEXT=$(echo "$LINE" | sed -E 's/; COMMAND=.*//')
+            else
+                # Fallback to journal query
+                RAW=$(journalctl _COMM=sudo -n5 -o cat | grep "COMMAND=" | tail -1)
+                CONTEXT=$(echo "$RAW" | sed -E 's/; COMMAND=.*//')
+                CMD=$(echo "$RAW" | sed -E 's/.*COMMAND=(.*)/\1/')
+            fi
+
+            MSG="User: $USER | Time: $TS\n$CONTEXT\nCommand: $CMD"
+            echo -e "⚠️ ${RED}[SUDO FAILURE]${NC} $LINE | $CONTEXT | Command: $CMD" | tee -a "$LOGFILE"
+            send_alert "⚠️ Sudo Failure" "$MSG" critical
+        fi
+    fi
+
+    # --- SU ---
+    if [[ "$LINE" =~ " su[" && "$LINE" =~ "session opened" ]]; then
+        USER=$(echo "$LINE" | grep -oP "by \K[^ ]+")
+        EVENT_ID="su_success_${USER}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+        if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < COOLDOWN )); then
+            continue
+        fi
+        last_event[$EVENT_ID]=$NOW
+
+        MSG="User: $USER | Time: $TS"
+        echo -e "✅ ${GREEN}[SU SUCCESS]${NC} $LINE" | tee -a "$LOGFILE"
+        send_alert "✅ su Login Success" "$MSG" critical
+
+    elif [[ "$LINE" =~ " su[" && "$LINE" =~ "authentication failure" ]]; then
+        # Extract both the source user (ruser) and target user (user) from su failure
+        if [[ "$LINE" =~ ruser=([^[:space:]]+) ]]; then
+            SOURCE_USER="${BASH_REMATCH[1]}"
+        elif [[ "$LINE" =~ logname=([^[:space:]]+) ]]; then
+            SOURCE_USER="${BASH_REMATCH[1]}"
+        else
+            SOURCE_USER="unknown"
+        fi
+
+        if [[ "$LINE" =~ user=([^[:space:]]+)$ ]] || [[ "$LINE" =~ user=([^[:space:]]+)[[:space:]] ]]; then
+            TARGET_USER="${BASH_REMATCH[1]}"
+        else
+            TARGET_USER="unknown"
+        fi
+
+        # Make each su failure unique
+        EVENT_ID="su_fail_${SOURCE_USER}_${TARGET_USER}_${NOW}_$(echo "$LINE" | awk '{print $1"_"$2}')"
+
+        if [[ -n "${last_event[$EVENT_ID]}" ]] && (( NOW - last_event[$EVENT_ID] < 2 )); then
+            continue
+        fi
+        last_event[$EVENT_ID]=$NOW
+
+        MSG="Source User: $SOURCE_USER | Target User: $TARGET_USER | Time: $TS"
+        echo -e "⚠️ ${RED}[SU FAILURE]${NC} $LINE" | tee -a "$LOGFILE"
+        send_alert "⚠️ su Failure" "$MSG" critical
+    fi
+done
+
+===== low_disk_space =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/low_disk_space_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# Configuration
+INTERVAL=120
+LEVELS=$(seq 80 1 100)
+LAST_ALERT=0
+MOUNT_POINT="/"
+LOG_FILE="$HOME/scriptlogs/disk_monitor.log"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))   # 50 MB
+MAX_OLD_LOGS=5
+
+# Dependencies
+REQUIRED_CMDS=(df awk sed date stat notify-send find sort xargs)
+for cmd in "${REQUIRED_CMDS[@]}"; do
+    command -v "$cmd" >/dev/null 2>&1 || {
+        echo "Missing dependency: $cmd" >&2
+        exit 1
+    }
+done
+
+# Create log directory if it doesn't exist
+mkdir -p "$(dirname "$LOG_FILE")"
+
+# Logging
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $1" >> "$LOG_FILE"
+}
+
+# Log rotation
+rotate_log() {
+    local size
+    size=$(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0)
+    if [ "$size" -gt $MAX_LOG_SIZE ]; then
+        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
+        BACKUP_FILE="${LOG_FILE}.${TIMESTAMP}.old"
+        mv "$LOG_FILE" "$BACKUP_FILE" 2>/dev/null || return
+        touch "$LOG_FILE"
+        log_message "LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")"
+        find "$(dirname "$LOG_FILE")" -maxdepth 1 -name "$(basename "$LOG_FILE")*.old" \
+            -type f -printf "%T@ %p\n" 2>/dev/null | sort -nr | \
+            awk "NR>$MAX_OLD_LOGS {print \$2}" | xargs -r rm -f --
+    fi
+}
+
+# Safe notifications
+safe_notify_send() {
+    local urgency="$1"
+    local app_name="$2"
+    local message="$3"
+
+    [ -z "$message" ] && return
+    if [ ${#message} -gt 1000 ]; then
+        message="${message:0:997}..."
+    fi
+
+    notify-send --urgency="$urgency" --app-name "$app_name" "$message" 2>/dev/null || \
+        log_message "WARNING: notify-send failed (no session bus?)"
+}
+
+# Initial setup
+rotate_log
+log_message "=== Disk Monitoring Script Started ==="
+log_message "Monitoring mount point: $MOUNT_POINT"
+log_message "Check interval: $INTERVAL seconds"
+log_message "Alert thresholds: 80% to 100%"
+log_message "Max log size: $((MAX_LOG_SIZE / 1024 / 1024))MB"
+log_message "Max old logs to keep: $MAX_OLD_LOGS"
+
+# Main loop
+while true; do
+    rotate_log
+
+    USED_PERCENT=$(df "$MOUNT_POINT" 2>/dev/null | awk 'NR==2 {print $5}' | sed 's/%//')
+    [[ "$USED_PERCENT" =~ ^[0-9]+$ ]] || USED_PERCENT=0
+
+    for LEVEL in $LEVELS; do
+        if [ "$USED_PERCENT" -ge "$LEVEL" ] && [ "$LAST_ALERT" -lt "$LEVEL" ]; then
+            ALERT_MESSAGE="Disk usage has reached ${USED_PERCENT}%. Threshold: ${LEVEL}%."
+            safe_notify_send "critical" "Low disk space" "$ALERT_MESSAGE"
+            log_message "ALERT: Disk usage ${USED_PERCENT}% >= ${LEVEL}% threshold"
+            LAST_ALERT=$LEVEL
+        fi
+    done
+
+    if [ "$USED_PERCENT" -lt 80 ]; then
+        if [ "$LAST_ALERT" -ne 0 ]; then
+            RECOVERY_MESSAGE="Disk usage normalized to ${USED_PERCENT}%"
+            safe_notify_send "normal" "Disk space normal" "$RECOVERY_MESSAGE"
+            log_message "INFO: Disk usage normalized to ${USED_PERCENT}%"
+        fi
+        LAST_ALERT=0
+    fi
+
+    sleep $INTERVAL
+done
+
+===== lowMemAlert =====
+#!/usr/bin/env bash
+# Low Memory Alert Script (Robust + Diagnostic)
+# Works on any Linux distro, detects swapping, tracks per-process memory growth
+
+LOCK_FILE="/tmp/lowMemAlert_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+MEMFREE_LIMIT_PERCENT=5
+CHECK_INTERVAL=5
+MAX_PROCESSES=10
+LOG_FILE="$HOME/lowmem_alert.log"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))   # 50 MB
+
+# -----------------------------
+# Core detection: Get memory stats robustly
+# -----------------------------
+get_memory_stats() {
+    if command -v free >/dev/null 2>&1; then
+        read TOTAL_MEM MEMFREE < <(free -m | awk 'NR==2 {print $2, $7}')
+    elif [ -r /proc/meminfo ]; then
+        TOTAL_MEM=$(awk '/MemTotal:/ {print int($2/1024)}' /proc/meminfo)
+        MEMFREE=$(awk '/MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+    else
+        echo "Error: Cannot determine memory stats." >&2
+        exit 1
+    fi
+}
+
+# -----------------------------
+# Diagnostics: Swap detection
+# -----------------------------
+detect_swap_activity() {
+    SWAP_USED=$(awk '/SwapTotal:/ {total=$2} /SwapFree:/ {free=$2} END{print int((total-free)/1024)}' /proc/meminfo)
+    SWAP_TOTAL=$(awk '/SwapTotal:/ {print int($2/1024)}' /proc/meminfo)
+}
+
+# -----------------------------
+# Diagnostics: Per-process memory growth
+# -----------------------------
+track_process_memory_growth() {
+    PROC_MEM_FILE="$HOME/.proc_mem_usage"
+    ps -eo pid,comm,rss --no-headers | sort -k3 -nr > /tmp/current_mem_usage
+
+    if [ -f "$PROC_MEM_FILE" ]; then
+        echo "Memory growth since last check:"
+        join -1 1 -2 1 <(sort /tmp/current_mem_usage) "$PROC_MEM_FILE" | \
+            awk '{growth=$3-$4; if(growth>0) printf "%s (%s): +%.1f MB\n",$2,$1,growth/1024}'
+    fi
+
+    cp /tmp/current_mem_usage "$PROC_MEM_FILE"
+}
+
+# -----------------------------
+# Top memory consumers
+# -----------------------------
+get_top_processes() {
+    ps -eo pid,comm,%mem,rss --sort=-%mem --no-headers | head -n "$MAX_PROCESSES" | \
+        awk '{size_mb=$4/1024; size_str=(size_mb>=1024)?sprintf("%.1f GB",size_mb/1024):sprintf("%.0f MB",size_mb);
+              printf "PID %s (%s): %.2f%% (%s)\n",$1,$2,$3,size_str}'
+}
+
+# -----------------------------
+# Log rotation
+# -----------------------------
+rotate_log() {
+    if [ -f "$LOG_FILE" ]; then
+        LOG_SIZE=$(stat -c%s "$LOG_FILE")
+        if [ "$LOG_SIZE" -ge "$MAX_LOG_SIZE" ]; then
+            mv "$LOG_FILE" "$LOG_FILE.$(date +%Y%m%d%H%M%S).bak"
+            touch "$LOG_FILE"
+        fi
+    fi
+}
+
+# -----------------------------
+# Notification
+# -----------------------------
+send_notification() {
+    local msg="$1"
+    notify-send -u critical "⚠ Low Memory Alert" "$msg"
+}
+
+# -----------------------------
+# Main loop
+# -----------------------------
+while true; do
+    get_memory_stats
+    detect_swap_activity
+
+    THRESHOLD=$(( TOTAL_MEM * MEMFREE_LIMIT_PERCENT / 100 ))
+
+    if [[ "$MEMFREE" =~ ^[0-9]+$ ]] && [ "$MEMFREE" -le "$THRESHOLD" ]; then
+        TOP_PROCESSES=$(get_top_processes)
+        track_process_memory_growth
+
+        NOTIF="$(date '+%H:%M:%S')
+Total RAM: ${TOTAL_MEM} MB
+Available: ${MEMFREE} MB (Threshold: ${THRESHOLD} MB)
+Swap used: ${SWAP_USED} MB / ${SWAP_TOTAL} MB
+
+Top memory consumers:
+$TOP_PROCESSES"
+
+        echo "[$(date)] $NOTIF" >> "$LOG_FILE"
+        rotate_log
+        send_notification "$NOTIF"
+    fi
+
+    sleep "$CHECK_INTERVAL"
+done
+
+===== power_usage =====
+#!/usr/bin/env bash
+# -------------------------------------------------------------------------
+# power_usage.sh — Enhanced GUI Battery & Process Monitor (kdialog Version)
+# -------------------------------------------------------------------------
+
+LOCK_FILE="/tmp/power_usage_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+echo $$ > "$LOCK_FILE"
+
+# Clean up lock file and close any open kdialogs on exit
+cleanup() {
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    pkill -f "kdialog --title Power" 2>/dev/null
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+LOG_FILE="$HOME/scriptlogs/power_usage.log"
+INTERVAL=2700  # 45 Minutes
+
+# Power estimation constants (Fallback if sysfs power_now is missing)
+CPU_POWER_IDLE=2.0
+CPU_POWER_PER_CORE=4.0
+MEM_POWER_PER_GB=0.5
+
+# Battery Thresholds
+LOW_BATTERY=20
+CRITICAL_BATTERY=10
+
+CUMULATIVE_ENERGY_KWH=0
+
+safe_bc() {
+    echo "scale=6; $1" | bc -l 2>/dev/null || echo "0"
+}
+
+get_system_info() {
+    CPU_CORES=$(nproc 2>/dev/null || echo 4)
+    TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    TOTAL_RAM_GB=$(safe_bc "$TOTAL_RAM_KB / 1024 / 1024")
+    
+    # Init CPU tracking
+    read -r cpu user nice system idle iowait irq softirq steal guest < /proc/stat
+    PREV_TOTAL=$((user + nice + system + idle + iowait + irq + softirq + steal))
+    PREV_IDLE=$idle
+    PREV_TIMESTAMP=$(date +%s)
+}
+
+get_battery_info() {
+    local bat
+    bat=$(find /sys/class/power_supply/ -name "BAT*" | head -n 1)
+    [[ -z "$bat" ]] && { echo "No Battery Found"; return 1; }
+
+    local cap=$(cat "$bat/capacity" 2>/dev/null || echo "0")
+    local stat=$(cat "$bat/status" 2>/dev/null || echo "Unknown")
+
+    local p_now_uw=$(cat "$bat/power_now" 2>/dev/null || echo "0")
+    local v_now_uv=$(cat "$bat/voltage_now" 2>/dev/null || echo "0")
+    local c_now_ua=$(cat "$bat/current_now" 2>/dev/null || echo "0")
+
+    local real_watts=0
+    if [[ "$p_now_uw" -gt 0 ]]; then
+        real_watts=$(safe_bc "$p_now_uw / 1000000")
+    elif [[ "$c_now_ua" -gt 0 && "$v_now_uv" -gt 0 ]]; then
+        real_watts=$(safe_bc "($c_now_ua * $v_now_uv) / 1000000000000")
+    fi
+
+    local e_now_uwh=$(cat "$bat/energy_now" 2>/dev/null || echo "0")
+    local c_now_uah=$(cat "$bat/charge_now" 2>/dev/null || echo "0")
+    
+    local Wh_remaining=0
+    if [[ "$e_now_uwh" -gt 0 ]]; then
+        Wh_remaining=$(safe_bc "$e_now_uwh / 1000000")
+    else
+        Wh_remaining=$(safe_bc "($c_now_uah * $v_now_uv) / 1000000000000")
+    fi
+
+    local time_str="N/A"
+    if [[ $(echo "$real_watts > 0.5" | bc -l) -eq 1 && "$stat" == "Discharging" ]]; then
+        local hours_left=$(safe_bc "$Wh_remaining / $real_watts")
+        local h=$(echo "$hours_left / 1" | bc)
+        local m=$(echo "($hours_left - $h) * 60 / 1" | bc)
+        time_str=$(printf "%02dh %02dm" "$h" "$m")
+    elif [[ "$stat" == "Charging" ]]; then
+        time_str="Charging..."
+    else
+        time_str="Stationary"
+    fi
+
+    echo -e "State: $stat\nLevel: ${cap}%\nLive Draw: ${real_watts}W\nEst. Time: $time_str"
+}
+
+get_average_cpu_usage() {
+    read -r cpu user nice system idle iowait irq softirq steal guest < /proc/stat
+    local total=$((user + nice + system + idle + iowait + irq + softirq + steal))
+    local diff_total=$((total - PREV_TOTAL))
+    local diff_idle=$((idle - PREV_IDLE))
+    local cpu_avg=$(safe_bc "100 * ($diff_total - $diff_idle) / $diff_total")
+    PREV_TOTAL=$total; PREV_IDLE=$idle
+    echo "$cpu_avg"
+}
+
+get_average_mem_usage() {
+    local mem_total=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    local mem_available=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+    echo $(safe_bc "100 * ($mem_total - $mem_available) / $mem_total")
+}
+
+get_process_power_consumption() {
+    local avg_cpu=$(get_average_cpu_usage)
+    local avg_mem=$(get_average_mem_usage)
+    local est_power=$(safe_bc "$CPU_POWER_IDLE + ($avg_cpu / 100) * $CPU_CORES * $CPU_POWER_PER_CORE + ($avg_mem / 100) * $TOTAL_RAM_GB * $MEM_POWER_PER_GB")
+    local now=$(date +%s)
+    local elapsed=$((now - PREV_TIMESTAMP))
+    local energy_interval_kwh=$(safe_bc "$est_power * ($elapsed / 3600) / 1000")
+    CUMULATIVE_ENERGY_KWH=$(safe_bc "$CUMULATIVE_ENERGY_KWH + $energy_interval_kwh")
+    PREV_TIMESTAMP=$now
+    echo "$avg_cpu|$avg_mem|$est_power|$energy_interval_kwh|$CUMULATIVE_ENERGY_KWH"
+}
+
+get_top_processes() {
+    # Using Tabs (\t) for flexible alignment in kdialog variable-width fonts
+    echo -e "PID\tCOMMAND\t%CPU\t%MEM"
+    ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 6 | tail -n +2 | while read -r p c cpu mem; do
+        # Truncate command to 15 chars to keep tabs predictable
+        local short_c="${c:0:15}"
+        echo -e "$p\t$short_c\t$cpu\t$mem"
+    done
+}
+
+main() {
+    mkdir -p "$(dirname "$LOG_FILE")"
+    get_system_info
+    sleep 2
+
+    while true; do
+        # 1. Close any previous Power Usage dialogs to prevent stacking
+        pkill -f "kdialog --title Power" 2>/dev/null
+
+        # 2. Gather Data
+        bat_out=$(get_battery_info)
+        current_cap=$(echo "$bat_out" | grep "Level:" | grep -oP '\d+' | head -1)
+        
+        power_data=$(get_process_power_consumption)
+        IFS='|' read -r cpu mem pwr_w int_kwh cum_kwh <<< "$power_data"
+        top_p=$(get_top_processes)
+
+        # 3. Format Summary
+        summary="==============================
+  🔋 POWER STATUS: $(date '+%H:%M:%S')
+==============================
+$bat_out
+
+💻 LOAD: CPU: $cpu% | MEM: $mem%
+Est. Load Power: ${pwr_w}W
+Interval Energy: ${int_kwh}kWh
+
+🔝 TOP PROCESSES:
+$top_p
+=============================="
+
+        # 4. Save to Log
+        echo -e "$summary" >> "$LOG_FILE"
+
+        # 5. Launch kdialog based on battery health
+        if [ "$current_cap" -le "$CRITICAL_BATTERY" ]; then
+            kdialog --title "Power: CRITICAL ${current_cap}%" --error "$summary\n\nPLUG IN NOW!" &
+        elif [ "$current_cap" -le "$LOW_BATTERY" ]; then
+            kdialog --title "Power: LOW ${current_cap}%" --sorry "$summary" &
+        else
+            kdialog --title "Power Usage Monitor" --msgbox "$summary" &
+        fi
+
+        # 6. Wait for next interval
+        sleep "$INTERVAL"
+    done
+}
+
+main
+
+===== runscreensaver =====
+#!/usr/bin/env bash
+# This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
+# In KDE 6.3, run one screensaver application in your screensavers folder then right click on the title bar
+# then cick configure special application settings in More Actions with the following settings
+# 1. Window class (applicatoin) field = substring match for the start of the filenames of the screensavers "screensaver-"
+# 2. Match whole window clas field = Yes
+# 3. Window type field = All selected
+# 4. Fullscreen Size & Position property = Force; Yes
+
+#~ LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ exit 1
+#~ fi
+
+#~ # Store our PID
+#~ echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+#~ cleanup() {
+    #~ # Only remove if it's our PID (prevents removing another process's lock)
+    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        #~ rm -f "$LOCK_FILE"
+    #~ fi
+    #~ flock -u 9
+    #~ exec 9>&-
+#~ }
+
+#~ trap cleanup EXIT
+
+# --- Environment Setup ---
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
+# --- Configuration ---
+LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB
+MAX_OLD_LOGS=3
+IDLE_TIMEOUT=1                       # Minutes until idle
+SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
+RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
+IDLE_STATUS_FILE="/tmp/sway_idle_status"
+
+# Ensure log directory exists and state is clean
+mkdir -p "$(dirname "$LOGFILE")"
+
+# --- Helper functions ---
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_SIZE" ]; then
+        mv "$LOGFILE" "${LOGFILE}.$(date '+%Y%m%d_%H%M%S').old"
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$((MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
+}
+
+# Initialize idle state as active (avoid stale "idle" leftover)
+echo "active" > "$IDLE_STATUS_FILE"
+
+log_status() {
+    rotate_log  # Check log rotation before writing
+    echo "$(date) - Checking idle status" >> "$LOGFILE"
+}
+
+is_video_playing() {
+    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
+    BEGIN { found = 0 }
+    /Sink Input/ {next}
+    {
+        # Get application name
+        app_name = "unknown"
+        if (match($0, /application.name = "([^"]+)"/, arr)) {
+            app_name = arr[1]
+        } else if (match($0, /node.name = "([^"]+)"/, arr)) {
+            app_name = arr[1]
+        }
+        
+        # Check if this is a video app
+        is_video_app = 0
+        
+        # Video players
+        if (app_name ~ /dragonplayer/ || app_name == "dragonplayer" ||
+            app_name ~ /[Vv]LC/ || app_name == "VLC" || app_name == "vlc" ||
+            app_name ~ /celluloid/ || app_name == "celluloid" ||
+            app_name ~ /totem/ || app_name == "totem") {
+            is_video_app = 1
+        }
+        
+        # Browsers
+        if (app_name == "Vivaldi" || app_name == "Firefox" || 
+            app_name == "Chromium" || app_name == "chrome") {
+            is_video_app = 1
+        }
+        
+        # If it'\''s a video app and not corked, consider it playing
+        if (is_video_app && !/Corked: yes/ && !/pulse.corked = "true"/) {
+            found = 1
+        }
+        
+        # Also check for video role
+        if (/media.role/ && (/video/ || /Video/ || /movie/ || /Movie/)) {
+            found = 1
+        }
+    }
+    END { exit found ? 0 : 1 }
+    '
+    return $?
+}
+
+# --- Core Logic: Idle Management ---
+check_idle_status() {
+    if [[ -f "$IDLE_STATUS_FILE" ]]; then
+        idle_status=$(<"$IDLE_STATUS_FILE")
+
+        if [[ "$idle_status" == "idle" ]]; then
+            # 1. Start the NEXT screensaver in the background
+            # This allows it to load while the current one is still visible
+            "$SCREENSAVER_SCRIPT" &
+
+            # 2. Transition Window: Wait for the new screensaver to initialize
+            # This prevents the "black flash" between programs.
+            #sleep 2
+
+            # 3. Handle the Overlap:
+            # pgrep -c counts how many screensavers are currently running.
+            current_count=$(pgrep -c -f "screensaver-")
+
+            if [ "$current_count" -gt 1 ]; then
+                # If more than one is running, kill the OLDEST instance only (-o)
+                pkill -o -f "screensaver-" 2>/dev/null
+                echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
+            else
+                # On the very first run, we don't kill anything.
+                echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
+            fi
+        else
+            # System is ACTIVE: Stop all screensaver processes immediately
+            pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh" 2>/dev/null
+            pkill -9 -f "screensaver-" 2>/dev/null
+            echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
+        fi
+    fi
+}
+
+# --- Background Task: Swayidle ---
+start_swayidle() {
+    # Clean up any existing swayidle instances first
+    pkill -f "swayidle" 2>/dev/null
+        
+   # Only run swayidle if no video is playing
+	if ! is_video_playing; then
+		swayidle -w \
+			timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+			resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+	else
+		echo "Video playing, idle detection disabled"
+	fi
+
+}
+
+# --- Execution ---
+start_swayidle
+
+# Main loop to continuously check idle status
+while true; do
+    log_status
+    check_idle_status
+    sleep 10 # Check every 10 seconds for idle status (you can adjust this duration)
+done
+
+===== security_check =====
+#!/usr/bin/env bash
+
+# fedora-proactive-sec.sh
+# Version 1.3 - Added Gmail Alerts via msmtp
+
+LOCK_FILE="/tmp/security_check_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    echo "Script is already running."
+    exit 1
+fi
+
+echo $$ > "$LOCK_FILE"
+
+cleanup() {
+    log_info "Shutting down security monitor..."
+    pkill -P $$ 
+    [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]] && rm -f "$LOCK_FILE"
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+mkdir -p "$HOME/scriptlogs"
+LOGFILE="$HOME/scriptlogs/fedora-sec-proactive.log"
+# Your target email
+ALERT_EMAIL="cabpacedilla@gmail.com"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# ===== Utility Functions =====
+notify() { notify-send "🛡️ Security Alert" "$1" & }
+
+send_email() {
+    # This sends the alert to your Gmail
+    echo -e "Subject: 🛡️ Security Alert from $(hostname)\n\nEvent: $1\nTime: $(date)\nHost: $(hostname)" | msmtp "$ALERT_EMAIL"
+}
+
+log_info() { echo -e "${YELLOW}[INFO]${NC} $1" | tee -a "$LOGFILE"; }
+log_success() { echo -e "${GREEN}[ OK ]${NC} $1" | tee -a "$LOGFILE"; }
+
+log_warn() { 
+    echo -e "${RED}[WARN]${NC} $1" | tee -a "$LOGFILE"
+    notify "$1"
+    # Send email in the background so the script doesn't lag
+    send_email "$1" & 
+}
+
+# ===== Enable and Configure auditd =====
+enable_auditd() {
+    if ! systemctl is-active --quiet auditd; then
+        sudo systemctl enable --now auditd
+    fi
+    AUDIT_RULES="/etc/audit/rules.d/proactive.rules"
+    if [ ! -f "$AUDIT_RULES" ]; then
+        sudo tee "$AUDIT_RULES" > /dev/null <<EOF
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/sudoers -p wa -k sudoers_changes
+-w /bin/su -p x -k su_exec
+EOF
+        sudo augenrules --load
+    fi
+}
+
+# ===== New: USB Monitoring =====
+monitor_usb() {
+    log_info "Starting USB monitor..."
+    udevadm monitor --subsystem-match=usb --property | while read -r line; do
+        if echo "$line" | grep -q "ID_MODEL="; then
+            device=$(echo "$line" | cut -d'=' -f2)
+            log_warn "USB Device Detected: $device"
+        fi
+    done
+}
+
+# ===== New: Login Failure Monitoring =====
+monitor_logins() {
+    log_info "Starting Login monitor..."
+    journalctl -f -t login -t gdm-password -t sshd | while read -r line; do
+        if echo "$line" | grep -qiE "fail|unauthenticated|invalid user"; then
+            log_warn "LOGIN FAILURE: Suspicious access attempt detected!"
+        fi
+    done
+}
+
+# ===== Existing Engines =====
+monitor_logs_proactively() {
+    log_info "Starting Journal monitoring..."
+    journalctl -f -p err..emerg | while read -r line; do
+        if echo "$line" | grep -qiE "unauthorized|denied|attack|exploit|rootkit|brute"; then
+            log_warn "Threat Detected: $(echo "$line" | cut -c1-60)"
+        fi
+    done
+}
+
+real_time_audit_alerts() {
+    log_info "Starting Auditd stream..."
+    sudo tail -n0 -f /var/log/audit/audit.log | while read -r line; do
+        if echo "$line" | grep -E "passwd_changes|shadow_changes|su_exec|sudoers_changes"; then
+            event_type=$(echo "$line" | grep -oP "key=\"\K[^\"]+")
+            log_warn "CRITICAL: Sensitive file access! ($event_type)"
+        fi
+    done
+}
+
+monitor_services_loop() {
+    while true; do
+        for service in auditd firewalld; do
+            if ! systemctl is-active --quiet "$service"; then
+                log_warn "SERVICE DOWN: $service"
+            fi
+        done
+        sleep 60
+    done
+}
+
+# ===== Main =====
+clear
+echo "-------------------------------------------"
+echo "    Enhanced Fedora Security Monitor V1.3    "
+echo "-------------------------------------------"
+
+enable_auditd
+
+monitor_logs_proactively &
+real_time_audit_alerts &
+monitor_services_loop &
+monitor_usb &
+monitor_logins &
+
+log_success "All security engines active."
+wait
+
+===== weather_alarm =====
+#!/usr/bin/env bash
+# Weather Alarm Script (enhanced multi‑day peaks) - COMPLETE FIXED VERSION
+# Dependencies: curl, jq, bc, notify-send, kdialog
+# Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
+
+LOCK_FILE="/tmp/weather_alarm_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# ------------------------
+# Enhanced Logging System
+# ------------------------
+LOG_LEVEL_DEBUG=0
+LOG_LEVEL_INFO=1
+LOG_LEVEL_WARN=2
+LOG_LEVEL_ERROR=3
+
+# Set default log level (can be overridden with WEATHER_LOG_LEVEL env var)
+LOG_LEVEL=${WEATHER_LOG_LEVEL:-$LOG_LEVEL_INFO}
+LOG_FILE="${WEATHER_LOG_FILE:-$HOME/scriptlogs/weather_log.txt}"
+ALERT_STATE_FILE="$HOME/.weather_alert_state.json"
+ALERT_EMAIL="cabpacedilla@gmail.com"
+
+# Create log directory if it doesn't exist
+mkdir -p "$(dirname "$LOG_FILE")"
+
+setup_log_rotation() {
+    local max_size=500000  # 500KB
+    
+    if [[ -f "$LOG_FILE" ]] && (( $(stat -c%s "$LOG_FILE" 2>/dev/null || echo 0) > max_size )); then
+        log_info "Rotating log file (size exceeded ${max_size} bytes)"
+        mv "$LOG_FILE" "${LOG_FILE}.old" 2>/dev/null || true
+        touch "$LOG_FILE"
+        
+        # Clean up old logs (keep only 5 most recent)
+        ls -tp "$LOG_FILE".* 2>/dev/null | tail -n +6 | xargs -r rm -- 2>/dev/null || true
+    fi
+}
+
+log() {
+    local level="$1"
+    local message="$2"
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local level_str=""
+    
+    case "$level" in
+        $LOG_LEVEL_DEBUG) level_str="DEBUG" ;;
+        $LOG_LEVEL_INFO) level_str="INFO" ;;
+        $LOG_LEVEL_WARN) level_str="WARN" ;;
+        $LOG_LEVEL_ERROR) level_str="ERROR" ;;
+        *) level_str="UNKNOWN" ;;
+    esac
+    
+    local log_entry="[$timestamp] [$level_str] $message"
+    
+    # Only print to terminal for WARN and ERROR, or if debug mode
+    if [[ $level -ge $LOG_LEVEL_WARN ]] || [[ $LOG_LEVEL -eq $LOG_LEVEL_DEBUG ]]; then
+        echo "$log_entry"
+    fi
+    
+    # Always append to log file
+    echo "$log_entry" >> "$LOG_FILE"
+}
+
+log_debug() { log $LOG_LEVEL_DEBUG "$1"; }
+log_info() { log $LOG_LEVEL_INFO "$1"; }
+log_warn() { log $LOG_LEVEL_WARN "$1"; }
+log_error() { log $LOG_LEVEL_ERROR "$1"; }
+
+# Function tracing for debugging
+log_function_enter() {
+    log_debug "ENTER: ${FUNCNAME[1]} - Args: $*"
+}
+
+log_function_exit() {
+    log_debug "EXIT: ${FUNCNAME[1]} - Return: $1"
+}
+
+# Variable state logging
+log_variable() {
+    local var_name="$1"
+    local var_value="$2"
+    log_debug "VAR: $var_name = '$var_value'"
+}
+
+# API call logging
+log_api_call() {
+    log_debug "API CALL: $1"
+}
+
+log_api_response() {
+    log_debug "API RESPONSE: ${1:0:200}..."  # First 200 chars to avoid huge logs
+}
+
+# ------------------------
+# Alert State Management
+# ------------------------
+save_alert_state() {
+    local alert_type="$1"
+    local value="$2"
+    local timestamp=$(date +%s)
+    
+    # Create or update state file
+    if [[ -f "$ALERT_STATE_FILE" ]]; then
+        local current_state=$(cat "$ALERT_STATE_FILE")
+    else
+        local current_state="{}"
+    fi
+    
+    local new_state=$(echo "$current_state" | jq --arg type "$alert_type" \
+        --argjson value "$value" \
+        --argjson time "$timestamp" \
+        '. + {($type): {"value": $value, "time": $time}}' 2>/dev/null)
+    
+    if [[ -n "$new_state" ]]; then
+        echo "$new_state" > "$ALERT_STATE_FILE"
+    fi
+}
+
+should_alert() {
+    local alert_type="$1"
+    local current_value="$2"
+    local threshold="${3:-0}"
+    
+    # Ensure numeric values for calculations
+    current_value=${current_value:-0}
+    threshold=${threshold:-0}
+    
+    if [[ ! -f "$ALERT_STATE_FILE" ]]; then
+        return 0  # Always alert if no state file
+    fi
+    
+    local state=$(cat "$ALERT_STATE_FILE" 2>/dev/null || echo "{}")
+    local last_value=$(echo "$state" | jq -r ".\"$alert_type\".value // \"\"" 2>/dev/null)
+    local last_time=$(echo "$state" | jq -r ".\"$alert_type\".time // \"\"" 2>/dev/null)
+    
+    # If no previous state, alert
+    if [[ -z "$last_value" ]]; then
+        return 0
+    fi
+    
+    # Ensure last_value is numeric
+    last_value=${last_value:-0}
+    
+    # Check if value changed significantly or last alert was more than 1 hour ago
+    local value_diff=$(echo "scale=2; $current_value - $last_value" | bc -l 2>/dev/null || echo "999")
+    local time_diff=$(( $(date +%s) - last_time ))
+    
+    if (( $(echo "($value_diff >= $threshold) || ($value_diff <= -$threshold)" | bc -l 2>/dev/null || echo 1) )) || \
+       (( time_diff > 3600 )); then
+        return 0
+    fi
+    
+    return 1
+}
+
+# ------------------------
+# Configuration & API Key Management
+# ------------------------
+initialize_script() {
+    log_function_enter
+    
+    if [[ -n "$WEATHER_API_KEY" ]]; then
+        API_KEY="$WEATHER_API_KEY"
+        log_debug "Using API key from environment variable"
+    elif command -v secret-tool >/dev/null 2>&1; then
+        API_KEY=$(secret-tool lookup service weatherapi username "$(whoami)" 2>/dev/null)
+        log_debug "Using API key from secret-tool"
+    else
+        log_error "Weather API key not found"
+        echo "Weather API key not found. Please set it using:"
+        echo "export WEATHER_API_KEY='your_key_here' in ~/.bashrc"
+        return 1
+    fi
+
+    # Validate API key (simple check)
+    if [[ ${#API_KEY} -lt 20 ]]; then
+        log_warn "API key seems too short; double check it."
+    fi
+
+    BASE_URL="http://api.weatherapi.com/v1"
+    INTERVAL=1800
+    ALERT_WINDOW=30
+
+    # Setup log rotation
+    setup_log_rotation
+    
+    log_debug "Configuration loaded: BASE_URL=$BASE_URL, INTERVAL=$INTERVAL, ALERT_WINDOW=$ALERT_WINDOW"
+    log_function_exit "success"
+    return 0
+}
+
+# ------------------------
+# Utilities
+# ------------------------
+compare_bc() {
+    local expression="$1"
+    # Ensure expression is valid before passing to bc
+    if [[ -z "$expression" ]]; then
+        return 1
+    fi
+    local result=$(echo "$expression" | bc -l 2>/dev/null || echo "0")
+    [[ "$result" == "1" ]]
+}
+
+safe_extract_value() {
+    local json="$1"
+    local path="$2"
+    local default="$3"
+    
+    local value=$(echo "$json" | jq -r "$path" 2>/dev/null)
+    if [[ "$value" == "null" || -z "$value" || "$value" == "null" ]]; then
+        echo "$default"
+    else
+        echo "$value"
+    fi
+}
+
+deg_to_dir() {
+    log_function_enter "$1"
+    local deg="$1"
+    log_variable "deg" "$deg"
+    
+    # GUARD: Validate input is a number
+    if ! [[ "$deg" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+        log_error "Invalid degree input: $deg"
+        log_function_exit "Unknown"
+        echo "Unknown"
+        return 1
+    fi
+    
+    # GUARD: Protect bc from invalid operations
+    local normalized_deg=$(echo "scale=0; ($deg + 360) % 360" | bc -l 2>/dev/null)
+    if [[ $? -ne 0 || -z "$normalized_deg" ]]; then
+        log_error "BC calculation failed for degree: $deg"
+        log_function_exit "Unknown"
+        echo "Unknown"
+        return 1
+    fi
+    
+    local directions=("N" "NNE" "NE" "ENE" "E" "ESE" "SE" "SSE" 
+                      "S" "SSW" "SW" "WSW" "W" "WNW" "NW" "NNW")
+    local idx=$(echo "scale=0; ($normalized_deg + 11.25) / 22.5" | bc -l)
+    idx=${idx%.*}  # Remove decimal part
+    
+    # Handle index out of bounds
+    if [[ $idx -ge 16 ]]; then
+        idx=0
+    fi
+    
+    local result="${directions[$idx]}"
+    log_debug "Converted $deg° to $result (normalized: $normalized_deg, index: $idx)"
+    log_function_exit "$result"
+    echo "$result"
+}
+
+time_to_minutes() {
+    log_function_enter "$1"
+    local time_str="$1"
+    local hour minute
+    log_variable "time_str" "$time_str"
+
+    [[ -z "$time_str" ]] && { 
+        log_error "Empty time string"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+
+    if [[ ! "$time_str" =~ (AM|PM|am|pm) ]]; then
+        hour=$(echo "$time_str" | cut -d: -f1 | sed 's/^0*//')
+        minute=$(echo "$time_str" | cut -d: -f2 | sed 's/^0*//')
+        [[ ! "$hour" =~ ^[0-9]+$ ]] && { 
+            log_error "Invalid hour in 24h time: $hour"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        [[ ! "$minute" =~ ^[0-9]+$ ]] && { 
+            log_error "Invalid minute in 24h time: $minute"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        # FIXED: Use base-10 conversion for comparisons
+        [[ $((10#$hour)) -gt 23 ]] && { 
+            log_error "Hour out of range: $hour"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        [[ $((10#$minute)) -gt 59 ]] && { 
+            log_error "Minute out of range: $minute"
+            log_function_exit "0"
+            echo "0"; 
+            return 1; 
+        }
+        # FIXED: Use base-10 conversion to prevent octal interpretation
+        local result=$(( (10#$hour) * 60 + (10#$minute) ))
+        log_debug "24h time $time_str converted to $result minutes"
+        log_function_exit "$result"
+        echo $result
+        return 0
+    fi
+
+    hour=$(echo "$time_str" | cut -d: -f1 | sed 's/^0*//')
+    minute=$(echo "$time_str" | cut -d: -f2 | sed 's/[^0-9]//g')
+    [[ ! "$hour" =~ ^[0-9]+$ ]] && { 
+        log_error "Invalid hour in 12h time: $hour"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+    [[ ! "$minute" =~ ^[0-9]+$ ]] && { 
+        log_error "Invalid minute in 12h time: $minute"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+    # FIXED: Use base-10 conversion for comparisons
+    [[ $((10#$hour)) -gt 12 || $((10#$hour)) -lt 1 ]] && { 
+        log_error "Hour out of 12h range: $hour"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+    [[ $((10#$minute)) -gt 59 ]] && { 
+        log_error "Minute out of range: $minute"
+        log_function_exit "0"
+        echo "0"; 
+        return 1; 
+    }
+
+    if [[ "$time_str" =~ (AM|am) ]]; then
+        [[ $hour -eq 12 ]] && hour=0
+    elif [[ "$time_str" =~ (PM|pm) ]]; then
+        [[ $hour -ne 12 ]] && hour=$((hour + 12))
+    fi
+
+    # FIXED: Use base-10 conversion to prevent octal interpretation
+    local result=$(( (10#$hour) * 60 + (10#$minute) ))
+    log_debug "12h time $time_str converted to $result minutes (24h: $hour:$minute)"
+    log_function_exit "$result"
+    echo $result
+}
+
+# Convert 24-hour time to 12-hour format with AM/PM
+format_time_12hr() {
+    log_function_enter "$1"
+    local time_24hr="$1"
+    local hour minute ampm
+    
+    # Extract hour and minute, remove leading zeros for bash arithmetic
+    hour=$(echo "$time_24hr" | cut -d: -f1 | sed 's/^0*//')
+    minute=$(echo "$time_24hr" | cut -d: -f2 | sed 's/^0*//')
+    
+    # Handle empty values
+    hour=${hour:-0}
+    minute=${minute:-0}
+    
+    # Determine AM/PM and convert hour
+    if [[ $hour -eq 0 ]]; then
+        hour=12
+        ampm="AM"
+    elif [[ $hour -eq 12 ]]; then
+        ampm="PM"
+    elif [[ $hour -gt 12 ]]; then
+        hour=$((hour - 12))
+        ampm="PM"
+    else
+        ampm="AM"
+    fi
+    
+    # Safe printf without octal interpretation
+    minute=$(printf "%02d" "$((10#$minute))")
+    
+    local result="${hour}:${minute} ${ampm}"
+    log_debug "Converted $time_24hr to $result"
+    log_function_exit "$result"
+    echo "$result"
+}
+
+# API response validation
+check_api_response() {
+    local response="$1"
+    local endpoint="$2"
+    log_function_enter "$endpoint"
+    log_variable "endpoint" "$endpoint"
+    log_api_response "$response"
+
+    # Guard against empty responses
+    if [[ -z "$response" || "$response" == "null" ]]; then
+        log_error "Empty or null response from $endpoint API"
+        log_function_exit "1"
+        return 1
+    fi
+
+    # Guard against non-JSON responses (like HTML error pages)
+    if [[ ! "$response" =~ ^[[:space:]]*\{ ]] && [[ ! "$response" =~ ^[[:space:]]*\[ ]]; then
+        log_error "Non-JSON response from $endpoint API: ${response:0:100}..."
+        log_function_exit "1"
+        return 1
+    fi
+
+    # Guard against jq parsing failures
+    if ! echo "$response" | jq -e . >/dev/null 2>&1; then
+        log_error "Invalid JSON structure from $endpoint API"
+        log_function_exit "1"
+        return 1
+    fi
+
+    # Guard against API error messages
+    local error=$(echo "$response" | jq -r '.error.message // empty' 2>/dev/null)
+    if [[ -n "$error" ]]; then
+        log_error "API Error ($endpoint): $error"
+        log_function_exit "1"
+        return 1
+    fi
+
+    log_debug "API response validation successful for $endpoint"
+    log_function_exit "0"
+    return 0
+}
+
+send_email_alert() {
+    local subject="$1"
+    local body="$2"
+
+    # Use printf to handle the newlines properly for the email body
+    {
+        echo "To: $ALERT_EMAIL"
+        echo "Subject: $subject"
+        echo "Content-Type: text/plain; charset=UTF-8"
+        echo ""
+        echo -e "$body"
+    } | msmtp -a default "$ALERT_EMAIL"
+
+    if [[ $? -eq 0 ]]; then
+        log_info "Email alert successfully sent to $ALERT_EMAIL"
+    else
+        log_error "Failed to send email via msmtp. Check your ~/.msmtprc configuration."
+    fi
+}
+	
+# ------------------------
+# Advice System (with pressure in inHg)
+# ------------------------
+give_advice() {
+    log_function_enter "$1"
+    local advice_type="$1"
+    local advice=""
+    
+    case "$advice_type" in
+        "heat_extreme") advice="Stay indoors, hydrate" ;;
+        "heat_high") advice="Avoid sun, drink water" ;;
+        "heat_mild") advice="Stay hydrated" ;;
+        "heat_low") advice="Pleasant weather" ;;
+        "cold_extreme") advice="Layer up, limit outdoors" ;;
+        "cold_high") advice="Heavy coat needed" ;;
+        "cold_mild") advice="Light jacket recommended" ;;
+        "cold_low") advice="Dress comfortably" ;;
+        "humidity_extreme") advice="Use AC/dehumidifier" ;;
+        "humidity_high") advice="Stay cool" ;;
+        "humidity_moderate") advice="Slightly heavy air" ;;
+        "humidity_low") advice="Dry air" ;;
+        "rain_storm") advice="Seek shelter" ;;
+        "rain_heavy") advice="Stay indoors" ;;
+        "rain_moderate") advice="Use umbrella, raincoat and boots" ;;
+		"rain_light") advice="Use umbrella" ;;
+        "rain_none") advice="No rain" ;;
+        "wind_storm") advice="Stay indoors" ;;
+        "wind_strong") advice="Secure items" ;;
+        "wind_moderate") advice="Steady breeze" ;;
+        "wind_light") advice="Gentle breeze" ;;
+        "wind_none") advice="Calm" ;;
+        "uv_extreme") advice="Stay in shade" ;;
+        "uv_high") advice="Sunscreen + hat/umbrella" ;;
+        "uv_moderate") advice="Use sunscreen" ;;
+        "uv_low") advice="Safe sun exposure" ;;
+        "pollution_extreme") advice="Stay indoors" ;;
+        "pollution_very_unhealthy") advice="Avoid outdoors" ;;
+        "pollution_high") advice="Limit exposure" ;;
+        "pollution_moderate") advice="Use caution" ;;
+        "pollution_light") advice="Mostly fine air" ;;
+        "pressure_very_high") advice="Very high - clear" ;;
+        "pressure_high") advice="High - fair" ;;
+        "pressure_normal") advice="Normal - typical" ;;
+        "pressure_low") advice="Low - rain likely" ;;
+        "pressure_very_low") advice="Very low - storms" ;;
+        "thunderstorm") advice="Stay inside" ;;
+        "fog") advice="Drive carefully" ;;
+        "snow") advice="Dress warm" ;;
+        "sunrise") advice="Start your day fresh" ;;
+        "sunset") advice="Relax and enjoy the evening" ;;
+        "moonrise") advice="Look up at the rising Moon" ;;
+        "moonset") advice="Catch the Moon before it sets" ;;
+        "full_moon") advice="Perfect night for stargazing" ;;
+        "new_moon") advice="Ideal time to spot faint stars" ;;
+        "first_quarter") advice="Half-lit Moon in the sky" ;;
+        "last_quarter") advice="Waning Moon for night observation" ;;
+        "eclipse") advice="Don't miss this celestial event" ;;
+        *) advice="" ;;
+    esac
+    
+    log_debug "Advice for $advice_type: $advice"
+    log_function_exit "$advice"
+    echo "$advice"
+}
+
+# Fixed assessment function - compute once, reuse results
+assess_weather() {
+    log_function_enter "$1 $2 $3"
+    local type="$1" value="$2" unit="$3"
+    local level advice emoji alert_threshold=0
+    log_variable "type" "$type"
+    log_variable "value" "$value"
+    log_variable "unit" "$unit"
+
+    # Ensure value is numeric for comparisons
+    if ! [[ "$value" =~ ^-?[0-9]+(\.[0-9]+)?$ ]]; then
+        value=0
+    fi
+
+    case "$type" in
+        "temperature")
+            if compare_bc "$value >= 40"; then
+                level="extreme_heat"; advice=$(give_advice heat_extreme); emoji="🔥"; alert_threshold=1
+            elif compare_bc "$value >= 35"; then
+                level="high_heat"; advice=$(give_advice heat_high); emoji="🔥"
+            elif compare_bc "$value >= 30"; then
+                level="moderate_heat"; advice=$(give_advice heat_mild); emoji="🌡"
+            elif compare_bc "$value >= 25"; then
+                level="mild_heat"; advice=$(give_advice heat_low); emoji="🌤"
+            elif compare_bc "$value >= 20"; then
+                level="pleasant"; advice=$(give_advice heat_low); emoji="😊"
+            elif compare_bc "$value >= 15"; then
+                level="cool"; advice=$(give_advice cold_low); emoji="🧥"
+            elif compare_bc "$value >= 5"; then
+                level="cold"; advice=$(give_advice cold_mild); emoji="❄️"
+            elif compare_bc "$value >= 0"; then
+                level="very_cold"; advice=$(give_advice cold_high); emoji="🥶"
+            else
+                level="extreme_cold"; advice=$(give_advice cold_extreme); emoji="🥶"; alert_threshold=1
+            fi
+            ;;
+        "rain")
+            if compare_bc "$value >= 50"; then
+                level="storm"; advice=$(give_advice rain_storm); emoji="⛈"; alert_threshold=1
+            elif compare_bc "$value >= 7.6"; then
+                level="heavy"; advice=$(give_advice rain_heavy); emoji="🌧"; alert_threshold=1
+            elif compare_bc "$value >= 2.5"; then
+                level="moderate"; advice=$(give_advice rain_moderate); emoji="🌧"; alert_threshold=1
+            elif compare_bc "$value > 0"; then
+                level="light"; advice=$(give_advice rain_light); emoji="🌦"; alert_threshold=1
+            else
+                level="none"; advice=$(give_advice rain_none); emoji="☀️"
+            fi
+            ;;
+        "wind")
+            if compare_bc "$value >= 80"; then
+                level="storm"; advice=$(give_advice wind_storm); emoji="🌪"; alert_threshold=1
+            elif compare_bc "$value >= 40"; then
+                level="strong"; advice=$(give_advice wind_strong); emoji="💨"; alert_threshold=1
+            elif compare_bc "$value >= 20"; then
+                level="moderate"; advice=$(give_advice wind_moderate); emoji="💨"
+            elif compare_bc "$value >= 10"; then
+                level="light"; advice=$(give_advice wind_light); emoji="🍃"
+            else
+                level="calm"; advice=$(give_advice wind_none); emoji="🌀"
+            fi
+            ;;
+        "uv")
+            if compare_bc "$value >= 8"; then
+                level="extreme"; advice=$(give_advice uv_extreme); emoji="🔥"; alert_threshold=1
+            elif compare_bc "$value >= 6"; then
+                level="high"; advice=$(give_advice uv_high); emoji="😎"; alert_threshold=1
+            elif compare_bc "$value >= 3"; then
+                level="moderate"; advice=$(give_advice uv_moderate); emoji="🌞"
+            else
+                level="low"; advice=$(give_advice uv_low); emoji="🌤"
+            fi
+            ;;
+        "pollution")
+            case "$value" in
+                1) level="good"; advice="Air quality is good"; emoji="🌿" ;;
+                2) level="light"; advice=$(give_advice pollution_light); emoji="🙂" ;;
+                3) level="moderate"; advice=$(give_advice pollution_moderate); emoji="🌫" ;;
+                4) level="unhealthy"; advice=$(give_advice pollution_high); emoji="☠️"; alert_threshold=1 ;;
+                5) level="very_unhealthy"; advice=$(give_advice pollution_very_unhealthy); emoji="☠️"; alert_threshold=1 ;;
+                6) level="hazardous"; advice=$(give_advice pollution_extreme); emoji="☠️☠️"; alert_threshold=1 ;;
+                *) level="unknown"; advice="Air quality unknown"; emoji="❓" ;;
+            esac
+            ;;
+        "humidity")
+            if compare_bc "$value >= 85"; then
+                level="extreme"; advice=$(give_advice humidity_extreme); emoji="💦"
+            elif compare_bc "$value >= 70"; then
+                level="high"; advice=$(give_advice humidity_high); emoji="💧"
+            elif compare_bc "$value >= 50"; then
+                level="moderate"; advice=$(give_advice humidity_moderate); emoji="💧"
+            else
+                level="low"; advice=$(give_advice humidity_low); emoji="🏜"
+            fi
+            ;;
+        "visibility")
+            if compare_bc "$value >= 10"; then
+                level="excellent"; advice="Excellent visibility"; emoji="👁"
+            elif compare_bc "$value >= 5"; then
+                level="good"; advice="Good visibility"; emoji="👁"
+            elif compare_bc "$value >= 2"; then
+                level="moderate"; advice="Moderate visibility"; emoji="🌫"
+            elif compare_bc "$value >= 1"; then
+                level="poor"; advice="Poor visibility"; emoji="🌫"
+            else
+                level="very_poor"; advice="Very poor visibility"; emoji="🌫"
+            fi
+            ;;
+        "pressure")
+            # Atmospheric pressure in inches of mercury (inHg) - FIXED thresholds
+            if compare_bc "$value >= 30.2"; then
+                level="very_high"; advice=$(give_advice pressure_very_high); emoji="🔵"
+            elif compare_bc "$value >= 29.9"; then
+                level="high"; advice=$(give_advice pressure_high); emoji="🔷"
+            elif compare_bc "$value >= 29.5"; then
+                level="normal"; advice=$(give_advice pressure_normal); emoji="🌤"
+            elif compare_bc "$value >= 29.0"; then
+                level="low"; advice=$(give_advice pressure_low); emoji="🌧"; alert_threshold=1
+            else
+                level="very_low"; advice=$(give_advice pressure_very_low); emoji="⛈"; alert_threshold=1
+            fi
+            ;;
+    esac
+
+    local result="$level|$advice|$emoji|$alert_threshold|$value|$unit"
+    log_debug "Assessment for $type: level=$level, alert=$alert_threshold, advice=$advice"
+    log_function_exit "$result"
+    echo "$result"
+}
+
+# Helper function to get all metrics at once (FIXED recursion issue)
+get_weather_metrics() {
+    local type="$1" value="$2" unit="$3"
+    local assessment=$(assess_weather "$type" "$value" "$unit")
+    echo "$assessment"
+}
+
+validate_coordinates() {
+    log_function_enter "$1"
+    local coords="$1"
+    log_variable "coords" "$coords"
+    
+    # Check if coordinates match the pattern: lat,lon (with optional negative signs)
+    if [[ ! "$coords" =~ ^-?[0-9]{1,3}\.[0-9]+,-?[0-9]{1,3}\.[0-9]+$ ]]; then
+        log_error "Coordinate format invalid: $coords"
+        log_function_exit "1"
+        return 1
+    fi
+    
+    # Extract latitude and longitude
+    local lat=$(echo "$coords" | cut -d, -f1)
+    local lon=$(echo "$coords" | cut -d, -f2)
+    
+    # Validate latitude range (-90 to 90)
+    if compare_bc "$lat < -90" || compare_bc "$lat > 90"; then
+        log_error "Latitude out of range: $lat"
+        log_function_exit "1"
+        return 1
+    fi
+    
+    # Validate longitude range (-180 to 180)
+    if compare_bc "$lon < -180" || compare_bc "$lon > 180"; then
+        log_error "Longitude out of range: $lon"
+        log_function_exit "1"
+        return 1
+    fi
+    
+    log_debug "Coordinates validated successfully: lat=$lat, lon=$lon"
+    log_function_exit "0"
+    return 0
+}
+
+# ------------------------
+# Location detection
+# ------------------------
+CURL_OPTS=(
+  -sS
+  --connect-timeout 20
+  --max-time 30
+  --retry 5
+  --retry-delay 5
+  --retry-max-time 60
+  --retry-all-errors
+  -L
+  --compressed
+)
+
+get_location() {
+    log_info "Detecting precise location..."
+
+    # --- Attempt 1: ip-api.com ---
+    local geo_data=$(curl -s "http://ip-api.com/json/")
+    LAT=$(echo "$geo_data" | jq -r '.lat // empty')
+    LON=$(echo "$geo_data" | jq -r '.lon // empty')
+
+    # --- Attempt 2: ipapi.co (Fallback) ---
+    if [[ -z "$LAT" || -z "$LON" ]]; then
+        log_warn "Primary geo-detection failed. Trying ipapi.co..."
+        geo_data=$(curl -s "https://ipapi.co/json/")
+        LAT=$(echo "$geo_data" | jq -r '.latitude // empty')
+        LON=$(echo "$geo_data" | jq -r '.longitude // empty')
+    fi
+
+    # --- Validation & Reverse Geocoding ---
+    if [[ -n "$LAT" && -n "$LON" ]]; then
+        # Map the coordinates to a real city/district name (e.g., Talisay vs Cebu City)
+        # We use a custom User-Agent to comply with Nominatim's usage policy
+        CITY=$(curl -s -A "WeatherAlarmScript/1.0" \
+            "https://nominatim.openstreetmap.org/reverse?lat=$LAT&lon=$LON&format=json" \
+            | jq -r '.address.city // .address.town // .address.municipality // .address.village // "Unknown Location"')
+        
+        WEATHER_QUERY="$LAT,$LON"
+        log_info "Location Found: $CITY ($WEATHER_QUERY)"
+    else
+        log_error "Critical: Could not detect location from any service."
+        return 1
+    fi
+}
+
+# ------------------------
+# Fetch weather data (forecast + astronomy)
+# ------------------------
+get_weather() {
+    log_function_enter
+    log_variable "LAT" "$LAT"
+    log_variable "LON" "$LON"
+    
+    log_api_call "WeatherAPI forecast"
+    FORECAST=$(curl "${CURL_OPTS[@]}" \
+        "$BASE_URL/forecast.json?key=$API_KEY&q=$LAT,$LON&days=2&aqi=yes&alerts=yes")
+    if ! check_api_response "$FORECAST" "forecast"; then
+        log_error "Failed to fetch weather data"
+        log_function_exit "failure"
+        return 1
+    fi
+
+    log_api_call "WeatherAPI astronomy"
+    ASTRONOMY=$(curl "${CURL_OPTS[@]}" \
+        "$BASE_URL/astronomy.json?key=$API_KEY&q=$LAT,$LON")
+    if ! check_api_response "$ASTRONOMY" "astronomy"; then
+        log_warn "Failed to fetch astronomy data. Continuing with weather only..."
+        ASTRONOMY='{"astronomy":{"astro":{"sunrise":"","sunset":"","moonrise":"","moonset":"","moon_phase":""}}}'
+    fi
+
+    # Use safe extraction for all values
+    TEMP_C=$(safe_extract_value "$FORECAST" '.current.temp_c' '0')
+    FEELS=$(safe_extract_value "$FORECAST" '.current.feelslike_c' '0')
+    HUMIDITY=$(safe_extract_value "$FORECAST" '.current.humidity' '0')
+    WIND_KPH=$(safe_extract_value "$FORECAST" '.current.wind_kph' '0')
+    WIND_DIR_DEG=$(safe_extract_value "$FORECAST" '.current.wind_degree' '0')
+    WIND_DIR=$(deg_to_dir "$WIND_DIR_DEG")
+    PRECIP=$(safe_extract_value "$FORECAST" '.current.precip_mm' '0')
+    UV=$(safe_extract_value "$FORECAST" '.current.uv' '0')
+    VIS=$(safe_extract_value "$FORECAST" '.current.vis_km' '0')
+    PRESSURE_MB=$(safe_extract_value "$FORECAST" '.current.pressure_mb' '0')
+    PRESSURE_IN=$(safe_extract_value "$FORECAST" '.current.pressure_in' '0')
+    CONDITION=$(safe_extract_value "$FORECAST" '.current.condition.text' '')
+    AQI=$(safe_extract_value "$FORECAST" '.current.air_quality["us-epa-index"]' '0')
+    PM25=$(safe_extract_value "$FORECAST" '.current.air_quality.pm2_5' '0')
+
+    SUNRISE=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.sunrise' '')
+    SUNSET=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.sunset' '')
+    MOONRISE=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.moonrise' '')
+    MOONSET=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.moonset' '')
+    MOON_PHASE=$(safe_extract_value "$ASTRONOMY" '.astronomy.astro.moon_phase' '')
+
+    # Log all extracted values
+    log_debug "Weather data extracted: TEMP_C=$TEMP_C, HUMIDITY=$HUMIDITY, WIND_KPH=$WIND_KPH, PRECIP=$PRECIP, UV=$UV, PRESSURE_IN=$PRESSURE_IN, AQI=$AQI"
+    log_debug "Astronomy data: SUNRISE=$SUNRISE, SUNSET=$SUNSET, MOON_PHASE=$MOON_PHASE"
+    
+    log_function_exit "success"
+    return 0
+}
+
+# ------------------------
+# Data extraction functions
+# ------------------------
+extract_peak_data() {
+    log_function_enter "$2"
+    local forecast_json="$1"
+    local day_index="$2"
+    log_variable "day_index" "$day_index"
+    
+    # GUARD: Validate input JSON
+    if [[ -z "$forecast_json" || "$forecast_json" == "null" ]]; then
+        log_error "Empty or null forecast JSON for day $day_index"
+        log_function_exit "fallback"
+        echo "0|Unknown|0|Unknown|0|Unknown|0|Unknown||||||"
+        return 1
+    fi
+
+    # GUARD: Validate day index exists
+    local day_count=$(echo "$forecast_json" | jq -r '.forecast.forecastday | length' 2>/dev/null)
+    if [[ "$day_count" -le "$day_index" ]]; then
+        log_error "Day index $day_index out of range (total days: $day_count)"
+        log_function_exit "fallback"
+        echo "0|Unknown|0|Unknown|0|Unknown|0|Unknown||||||"
+        return 1
+    fi
+
+    # Extract all peak data
+    local max_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | max_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
+    local min_temp_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.temp_c != null)] | min_by(.temp_c) | {time: .time, value: .temp_c} // \"\"" 2>/dev/null)
+    local uv_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.uv != null and .uv >= 0)] | max_by(.uv) | {time: .time, value: .uv} // \"\"" 2>/dev/null)
+    local rain_data=$(echo "$forecast_json" | jq -r ".forecast.forecastday[$day_index].hour | [.[] | select(.precip_mm != null)] | max_by(.precip_mm) | {time: .time, value: .precip_mm} // \"\"" 2>/dev/null)
+
+    # Parse extracted data with fallbacks
+    local max_temp_value="0" max_temp_time="Unknown"
+    local min_temp_value="0" min_temp_time="Unknown" 
+    local peak_uv_value="0" uv_hour="Unknown"
+    local rain_peak="0" rain_time="Unknown"
+
+    [[ -n "$max_temp_data" && "$max_temp_data" != "null" ]] && {
+        max_temp_value=$(echo "$max_temp_data" | jq -r '.value // 0')
+        local temp_time=$(echo "$max_temp_data" | jq -r '.time // ""')
+        [[ -n "$temp_time" ]] && max_temp_time=$(echo "$temp_time" | cut -d' ' -f2)
+    }
+
+    [[ -n "$min_temp_data" && "$min_temp_data" != "null" ]] && {
+        min_temp_value=$(echo "$min_temp_data" | jq -r '.value // 0')
+        local temp_time=$(echo "$min_temp_data" | jq -r '.time // ""')
+        [[ -n "$temp_time" ]] && min_temp_time=$(echo "$temp_time" | cut -d' ' -f2)
+    }
+
+    [[ -n "$uv_data" && "$uv_data" != "null" ]] && {
+        peak_uv_value=$(echo "$uv_data" | jq -r '.value // 0')
+        local uv_time=$(echo "$uv_data" | jq -r '.time // ""')
+        [[ -n "$uv_time" ]] && uv_hour=$(echo "$uv_time" | cut -d' ' -f2)
+    }
+
+    [[ -n "$rain_data" && "$rain_data" != "null" ]] && {
+        rain_peak=$(echo "$rain_data" | jq -r '.value // 0')
+        local rain_time_raw=$(echo "$rain_data" | jq -r '.time // ""')
+        [[ -n "$rain_time_raw" ]] && rain_time=$(echo "$rain_time_raw" | cut -d' ' -f2)
+    }
+
+    # Format times
+    [[ "$max_temp_time" != "Unknown" ]] && max_temp_time=$(format_time_12hr "$max_temp_time" 2>/dev/null || echo "Unknown")
+    [[ "$min_temp_time" != "Unknown" ]] && min_temp_time=$(format_time_12hr "$min_temp_time" 2>/dev/null || echo "Unknown")
+    [[ "$uv_hour" != "Unknown" ]] && uv_hour=$(format_time_12hr "$uv_hour" 2>/dev/null || echo "Unknown")
+    [[ "$rain_time" != "Unknown" ]] && rain_time=$(format_time_12hr "$rain_time" 2>/dev/null || echo "Unknown")
+
+    # Get assessments once (FIXED recursion issue)
+    local temp_assessment=$(get_weather_metrics temperature "$max_temp_value" "°C")
+    local rain_assessment=$(get_weather_metrics rain "$rain_peak" "mm") 
+    local uv_assessment=$(get_weather_metrics uv "$peak_uv_value" "")
+
+    local temp_advice=$(echo "$temp_assessment" | cut -d'|' -f2)
+    local temp_emoji=$(echo "$temp_assessment" | cut -d'|' -f3)
+    local rain_advice=$(echo "$rain_assessment" | cut -d'|' -f2)
+    local rain_emoji=$(echo "$rain_assessment" | cut -d'|' -f3)
+    local uv_advice=$(echo "$uv_assessment" | cut -d'|' -f2)
+    local uv_emoji=$(echo "$uv_assessment" | cut -d'|' -f3)
+
+    local result="${max_temp_value:-0}|${max_temp_time:-Unknown}|${min_temp_value:-0}|${min_temp_time:-Unknown}|${peak_uv_value:-0}|${uv_hour:-Unknown}|${rain_peak:-0}|${rain_time:-Unknown}|${temp_advice}|${temp_emoji}|${rain_advice}|${rain_emoji}|${uv_advice}|${uv_emoji}"
+    
+    log_debug "Peak data for day $day_index: max_temp=$max_temp_value, min_temp=$min_temp_value, uv=$peak_uv_value, rain=$rain_peak"
+    log_function_exit "success"
+    echo "$result"
+}
+
+# ------------------------
+# Alert Generation Functions
+# ------------------------
+generate_alerts() {
+    log_function_enter
+    ALERTS=()
+
+    # Get all weather metrics at once (FIXED recursion issue)
+    local temp_assessment=$(get_weather_metrics temperature "$TEMP_C" "°C")
+    local rain_assessment=$(get_weather_metrics rain "$PRECIP" "mm")
+    local wind_assessment=$(get_weather_metrics wind "$WIND_KPH" "km/h")
+    local uv_assessment=$(get_weather_metrics uv "$UV" "")
+    local pollution_assessment=$(get_weather_metrics pollution "$AQI" "")
+    local pressure_assessment=$(get_weather_metrics pressure "$PRESSURE_IN" "inHg")
+
+    # Parse assessments
+    local temp_level=$(echo "$temp_assessment" | cut -d'|' -f1)
+    local temp_advice=$(echo "$temp_assessment" | cut -d'|' -f2)
+    local temp_emoji=$(echo "$temp_assessment" | cut -d'|' -f3)
+    local temp_alert=$(echo "$temp_assessment" | cut -d'|' -f4)
+
+    local rain_level=$(echo "$rain_assessment" | cut -d'|' -f1)
+    local rain_advice=$(echo "$rain_assessment" | cut -d'|' -f2)
+    local rain_emoji=$(echo "$rain_assessment" | cut -d'|' -f3)
+    local rain_alert=$(echo "$rain_assessment" | cut -d'|' -f4)
+
+    local wind_level=$(echo "$wind_assessment" | cut -d'|' -f1)
+    local wind_advice=$(echo "$wind_assessment" | cut -d'|' -f2)
+    local wind_emoji=$(echo "$wind_assessment" | cut -d'|' -f3)
+    local wind_alert=$(echo "$wind_assessment" | cut -d'|' -f4)
+
+    local uv_level=$(echo "$uv_assessment" | cut -d'|' -f1)
+    local uv_advice=$(echo "$uv_assessment" | cut -d'|' -f2)
+    local uv_emoji=$(echo "$uv_assessment" | cut -d'|' -f3)
+    local uv_alert=$(echo "$uv_assessment" | cut -d'|' -f4)
+
+    local pollution_level=$(echo "$pollution_assessment" | cut -d'|' -f1)
+    local pollution_advice=$(echo "$pollution_assessment" | cut -d'|' -f2)
+    local pollution_emoji=$(echo "$pollution_assessment" | cut -d'|' -f3)
+    local pollution_alert=$(echo "$pollution_assessment" | cut -d'|' -f4)
+
+    local pressure_level=$(echo "$pressure_assessment" | cut -d'|' -f1)
+    local pressure_advice=$(echo "$pressure_assessment" | cut -d'|' -f2)
+    local pressure_emoji=$(echo "$pressure_assessment" | cut -d'|' -f3)
+    local pressure_alert=$(echo "$pressure_assessment" | cut -d'|' -f4)
+
+    # Generate alerts with state management
+    if [[ "$temp_alert" == "1" ]] && should_alert "temperature_$temp_level" "$TEMP_C" "5"; then
+        case "$temp_level" in
+            "extreme_heat") 
+                ALERTS+=("$temp_emoji Extreme heat ($TEMP_C°C) → $temp_advice")
+                save_alert_state "temperature_$temp_level" "$TEMP_C"
+                ;;
+            "extreme_cold") 
+                ALERTS+=("$temp_emoji Extreme cold ($TEMP_C°C) → $temp_advice")
+                save_alert_state "temperature_$temp_level" "$TEMP_C"
+                ;;
+        esac
+    fi
+
+    if [[ "$rain_alert" == "1" ]] && should_alert "rain_$rain_level" "$PRECIP" "2"; then
+        case "$rain_level" in
+            "storm") 
+                ALERTS+=("$rain_emoji Storming ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+            "heavy") 
+                ALERTS+=("$rain_emoji Heavy rain ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+            "moderate") 
+                ALERTS+=("$rain_emoji Moderate rain ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+            "light") 
+                ALERTS+=("$rain_emoji Light rain ($PRECIP mm) → $rain_advice")
+                save_alert_state "rain_$rain_level" "$PRECIP"
+                ;;
+        esac
+    fi
+
+    if [[ "$wind_alert" == "1" ]] && should_alert "wind_$wind_level" "$WIND_KPH" "10"; then
+        case "$wind_level" in
+            "storm") 
+                ALERTS+=("$wind_emoji Storm-force wind ($WIND_KPH km/h) → $wind_advice")
+                save_alert_state "wind_$wind_level" "$WIND_KPH"
+                ;;
+            "strong") 
+                ALERTS+=("$wind_emoji Strong wind ($WIND_KPH km/h) → $wind_advice")
+                save_alert_state "wind_$wind_level" "$WIND_KPH"
+                ;;
+        esac
+    fi
+
+    if [[ "$uv_alert" == "1" ]] && should_alert "uv_$uv_level" "$UV" "1"; then
+        case "$uv_level" in
+            "extreme") 
+                ALERTS+=("$uv_emoji Extreme UV ($UV) → $uv_advice")
+                save_alert_state "uv_$uv_level" "$UV"
+                ;;
+            "high") 
+                ALERTS+=("$uv_emoji High UV ($UV) → $uv_advice")
+                save_alert_state "uv_$uv_level" "$UV"
+                ;;
+        esac
+    fi
+
+    if [[ "$pollution_alert" == "1" ]] && should_alert "pollution_$pollution_level" "$AQI" "1"; then
+        case "$pollution_level" in
+            "unhealthy") 
+                ALERTS+=("$pollution_emoji Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $pollution_advice")
+                save_alert_state "pollution_$pollution_level" "$AQI"
+                ;;
+            "very_unhealthy") 
+                ALERTS+=("$pollution_emoji Very Unhealthy (AQI $AQI, PM2.5: $PM25 µg/m³) → $pollution_advice")
+                save_alert_state "pollution_$pollution_level" "$AQI"
+                ;;
+            "hazardous") 
+                ALERTS+=("$pollution_emoji Hazardous (AQI $AQI, PM2.5: $PM25 µg/m³) → $pollution_advice")
+                save_alert_state "pollution_$pollution_level" "$AQI"
+                ;;
+        esac
+    fi
+
+    if [[ "$pressure_alert" == "1" ]] && should_alert "pressure_$pressure_level" "$PRESSURE_IN" "0.1"; then
+        case "$pressure_level" in
+            "very_low") 
+                ALERTS+=("$pressure_emoji Very low pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+            "low") 
+                ALERTS+=("$pressure_emoji Low pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+            "very_high")
+                ALERTS+=("$pressure_emoji Very high pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+            "high")
+                ALERTS+=("$pressure_emoji High pressure ($PRESSURE_IN inHg) → $pressure_advice")
+                save_alert_state "pressure_$pressure_level" "$PRESSURE_IN"
+                ;;
+        esac
+    fi
+
+    # Special condition alerts
+    [[ "$CONDITION" =~ [Tt]hunder|[Ll]ightning|[Ss]torm ]] && should_alert "thunderstorm" "1" "0" && {
+        ALERTS+=("⚡ Thunderstorm detected → $(give_advice thunderstorm)")
+        save_alert_state "thunderstorm" "1"
+    }
+
+    [[ "$CONDITION" =~ [Ff]og ]] && should_alert "fog" "1" "0" && {
+        ALERTS+=("🌫 Fog detected → $(give_advice fog)")
+        save_alert_state "fog" "1"
+    }
+
+    [[ "$CONDITION" =~ [Ss]now ]] && should_alert "snow" "1" "0" && {
+        ALERTS+=("❄️ Snow detected → $(give_advice snow)")
+        save_alert_state "snow" "1"
+    }
+    
+    log_debug "Generated ${#ALERTS[@]} current condition alerts"
+    log_function_exit "${#ALERTS[@]} alerts"
+}
+
+process_peak_alerts() {
+    log_function_enter
+    PEAK_ALERTS=()
+    
+    # Process today and tomorrow's peak data
+    for day_index in 0 1; do
+        local day_date=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day_index].date")
+        local peak_data=$(extract_peak_data "$FORECAST" "$day_index")
+        
+        IFS='|' read -r max_temp max_temp_time min_temp min_temp_time peak_uv uv_hour rain_peak rain_time temp_advice temp_emoji rain_advice rain_emoji uv_advice uv_emoji <<< "$peak_data"
+        
+        log_debug "Day $day_index ($day_date) peaks - Max: ${max_temp}°C, Min: ${min_temp}°C, UV: $peak_uv, Rain: ${rain_peak}mm"
+        
+        # Alert for extreme temperature peaks
+        if compare_bc "$max_temp >= 38"; then
+            local alert_key="peak_temp_${day_date}_max"
+            if should_alert "$alert_key" "$max_temp" "2"; then
+                PEAK_ALERTS+=("🔥 Peak Heat Alert: ${max_temp}°C at $max_temp_time on $day_date")
+                save_alert_state "$alert_key" "$max_temp"
+            fi
+        fi
+        
+        if compare_bc "$min_temp <= 0"; then
+            local alert_key="peak_temp_${day_date}_min" 
+            if should_alert "$alert_key" "$min_temp" "1"; then
+                PEAK_ALERTS+=("🥶 Freezing Alert: ${min_temp}°C at $min_temp_time on $day_date")
+                save_alert_state "$alert_key" "$min_temp"
+            fi
+        fi
+        
+        # Alert for extreme UV
+        if compare_bc "$peak_uv >= 8"; then
+            local alert_key="peak_uv_${day_date}"
+            if should_alert "$alert_key" "$peak_uv" "1"; then
+                PEAK_ALERTS+=("🌞 Extreme UV Alert: $peak_uv at $uv_hour on $day_date")
+                save_alert_state "$alert_key" "$peak_uv"
+            fi
+        fi
+        
+        # Alert for heavy rain
+        if compare_bc "$rain_peak >= 20"; then
+            local alert_key="peak_rain_${day_date}"
+            if should_alert "$alert_key" "$rain_peak" "5"; then
+                PEAK_ALERTS+=("🌧️ Heavy Rain Alert: ${rain_peak}mm at $rain_time on $day_date")
+                save_alert_state "$alert_key" "$rain_peak"
+            fi
+        fi
+    done
+    
+    log_debug "Generated ${#PEAK_ALERTS[@]} peak alerts"
+    log_function_exit "${#PEAK_ALERTS[@]} alerts"
+}
+
+process_astronomy_alerts() {
+    log_function_enter
+    ASTRONOMY_ALERTS=()
+    
+    local localtime=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2)
+    local hour=${localtime%:*}
+    local minute=${localtime#*:}
+    
+    # FIXED: Use base-10 conversion to prevent octal interpretation
+    local now=$(( (10#$hour) * 60 + (10#$minute) ))
+
+    local sunrise_minutes=$(time_to_minutes "$SUNRISE")
+    local sunset_minutes=$(time_to_minutes "$SUNSET")
+    local moonrise_minutes=$(time_to_minutes "$MOONRISE")
+    local moonset_minutes=$(time_to_minutes "$MOONSET")
+
+    # Sunrise/Sunset alerts
+    if (( now >= sunrise_minutes - ALERT_WINDOW && now <= sunrise_minutes )); then
+        local alert_key="sunrise_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("☀️ Sunrise in ${ALERT_WINDOW}min at $SUNRISE → $(give_advice sunrise)")
+            save_alert_state "$alert_key" "$now"
+        fi
+    elif (( now >= sunset_minutes - ALERT_WINDOW && now <= sunset_minutes )); then
+        local alert_key="sunset_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("🌇 Sunset in ${ALERT_WINDOW}min at $SUNSET → $(give_advice sunset)")
+            save_alert_state "$alert_key" "$now"
+        fi
+    fi
+
+    # Moonrise/Moonset alerts
+    if (( now >= moonrise_minutes - ALERT_WINDOW && now <= moonrise_minutes )); then
+        local alert_key="moonrise_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("🌙 Moonrise in ${ALERT_WINDOW}min at $MOONRISE → $(give_advice moonrise)")
+            save_alert_state "$alert_key" "$now"
+        fi
+    elif (( now >= moonset_minutes - ALERT_WINDOW && now <= moonset_minutes )); then
+        local alert_key="moonset_$(date +%Y%m%d)"
+        if should_alert "$alert_key" "$now" "0"; then
+            ASTRONOMY_ALERTS+=("🌘 Moonset in ${ALERT_WINDOW}min at $MOONSET → $(give_advice moonset)")
+            save_alert_state "$alert_key" "$now"
+        fi
+    fi
+
+    # Special moon phase alerts
+    case "$MOON_PHASE" in
+        "Full Moon")
+            local alert_key="full_moon_$(date +%Y%m)"
+            if should_alert "$alert_key" "1" "0"; then
+                ASTRONOMY_ALERTS+=("🌕 Full Moon Tonight → $(give_advice full_moon)")
+                save_alert_state "$alert_key" "1"
+            fi
+            ;;
+        "New Moon")
+            local alert_key="new_moon_$(date +%Y%m)"
+            if should_alert "$alert_key" "1" "0"; then
+                ASTRONOMY_ALERTS+=("🌑 New Moon Tonight → $(give_advice new_moon)")
+                save_alert_state "$alert_key" "1"
+            fi
+            ;;
+    esac
+    
+    log_debug "Generated ${#ASTRONOMY_ALERTS[@]} astronomy alerts"
+    log_function_exit "${#ASTRONOMY_ALERTS[@]} alerts"
+}
+
+# ------------------------
+# Notification System
+# ------------------------
+send_notifications() {
+    log_function_enter
+    
+    # Generate all types of alerts
+    generate_alerts
+    process_peak_alerts
+    process_astronomy_alerts
+
+    MESSAGE=""
+    
+	# Combine all alerts
+   local ALL_ALERTS=("${ALERTS[@]}" "${PEAK_ALERTS[@]}" "${ASTRONOMY_ALERTS[@]}")
+    
+    if [[ ${#ALL_ALERTS[@]} -gt 0 ]]; then
+        # 1. Build the Alarms Section (The Header)
+        ALERT_CONTENT="\n🚨 WEATHER ALARMS FOR $CITY\n"
+        ALERT_CONTENT+="==============================\n"
+        for a in "${ALL_ALERTS[@]}"; do
+            ALERT_CONTENT+="• $a\n"
+        done
+        #ALERT_CONTENT+="\n"
+
+        # 2. Append General Info (The Footer)
+        MESSAGE="${ALERT_CONTENT}"
+
+        log_info "Processing ${#ALL_ALERTS[@]} total alerts"
+
+        # 3. Send via Email (using msmtp)
+        # We use the length of the alerts as a 'state' so we don't spam identical emails
+        if should_alert "email_trigger" "${#ALL_ALERTS[@]}" 0; then
+             send_email_alert "Weather Alert: ${#ALL_ALERTS[@]} Alarms in $CITY - ${ALL_ALERTS[0]}" "$MESSAGE"
+             save_alert_state "email_trigger" "${#ALL_ALERTS[@]}"
+        fi
+        
+        # 4. Desktop Notifications (Critical Only)
+        for alert in "${ALL_ALERTS[@]}"; do
+            if [[ "$alert" =~ 🔥|🥶|🌪|⛈|☠️ ]]; then
+                if command -v notify-send >/dev/null 2>&1; then
+                    notify-send "CRITICAL Weather Alert" "$alert" -u critical -t 10000
+                fi
+            fi
+        done
+    fi
+
+    # Get current assessments for display (FIXED - no recursion)
+    local current_temp=$(get_weather_metrics temperature "$TEMP_C" "°C")
+    local current_humidity=$(get_weather_metrics humidity "$HUMIDITY" "%")
+    local current_wind=$(get_weather_metrics wind "$WIND_KPH" "km/h")
+    local current_rain=$(get_weather_metrics rain "$PRECIP" "mm")
+    local current_uv=$(get_weather_metrics uv "$UV" "")
+    local current_pressure=$(get_weather_metrics pressure "$PRESSURE_IN" "inHg")
+    local current_pollution=$(get_weather_metrics pollution "$AQI" "")
+    local current_visibility=$(get_weather_metrics visibility "$VIS" "km")
+
+    MESSAGE+="\n📊 Current ($CITY: $LAT, $LON):\n"
+    MESSAGE+="• 🌡 Temp: $TEMP_C°C (Feels: $FEELS°C) → $(echo "$current_temp" | cut -d'|' -f2) $(echo "$current_temp" | cut -d'|' -f3)\n"
+    MESSAGE+="• 💧 Humidity: $HUMIDITY% → $(echo "$current_humidity" | cut -d'|' -f2) $(echo "$current_humidity" | cut -d'|' -f3)\n"
+    MESSAGE+="• 💨 Wind: $WIND_KPH km/h ($WIND_DIR) → $(echo "$current_wind" | cut -d'|' -f2) $(echo "$current_wind" | cut -d'|' -f3)\n"
+    MESSAGE+="• 🌧 Rain: $PRECIP mm → $(echo "$current_rain" | cut -d'|' -f2) $(echo "$current_rain" | cut -d'|' -f3)\n"
+    MESSAGE+="• 🌞 UV: $UV → $(echo "$current_uv" | cut -d'|' -f2) $(echo "$current_uv" | cut -d'|' -f3)\n"
+    MESSAGE+="• 📊 Pressure: $PRESSURE_IN inHg → $(echo "$current_pressure" | cut -d'|' -f2) $(echo "$current_pressure" | cut -d'|' -f3)\n"
+    MESSAGE+="• 🌫 Air Quality: AQI $AQI (PM2.5: $PM25 µg/m³) → $(echo "$current_pollution" | cut -d'|' -f2) $(echo "$current_pollution" | cut -d'|' -f3)\n"
+    MESSAGE+="• 👁 Visibility: $VIS km → $(echo "$current_visibility" | cut -d'|' -f2) $(echo "$current_visibility" | cut -d'|' -f3)\n\n"
+
+    MESSAGE+="📅 Upcoming Hours Forecast:\n"
+    LOCAL_HOUR=$(echo "$FORECAST" | jq -r '.location.localtime' | cut -d' ' -f2 | cut -d: -f1)
+    for i in {1..3}; do
+        # FIXED: Use base-10 conversion to prevent octal interpretation
+        idx=$(( (10#$LOCAL_HOUR) + i ))
+        day=0
+        if (( idx > 23 )); then
+            idx=$((idx - 24))
+            day=1
+        fi
+        hr_time_24hr=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].time" | cut -d' ' -f2)
+        hr_time=$(format_time_12hr "$hr_time_24hr")
+        hr_temp=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].temp_c")
+        hr_rain=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].precip_mm")
+        hr_pressure=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$day].hour[$idx].pressure_in")
+        
+        local hr_rain_assessment=$(get_weather_metrics rain "$hr_rain" "mm")
+        local hr_rain_advice=$(echo "$hr_rain_assessment" | cut -d'|' -f2)
+        local hr_rain_emoji=$(echo "$hr_rain_assessment" | cut -d'|' -f3)
+
+        MESSAGE+="• $hr_time → $hr_temp°C, $hr_rain mm, $hr_pressure inHg"
+        [[ -n "$hr_rain_advice" ]] && MESSAGE+=" → $hr_rain_advice $hr_rain_emoji"
+        MESSAGE+="\n"
+    done
+
+    # Add peak data to the display
+    MESSAGE+="\n📅 Next 2 Days Peak Forecast:\n"
+    for i in 0 1; do
+        day_date=$(echo "$FORECAST" | jq -r ".forecast.forecastday[$i].date")
+        local peak_data=$(extract_peak_data "$FORECAST" "$i")
+        IFS='|' read -r max_temp max_temp_time min_temp min_temp_time peak_uv uv_hour rain_peak rain_time temp_advice temp_emoji rain_advice rain_emoji uv_advice uv_emoji <<< "$peak_data"
+
+        MESSAGE+="• $day_date:\n"
+        MESSAGE+="  - 🌡 Max: ${max_temp}°C at $max_temp_time $temp_emoji\n"
+        MESSAGE+="  - 🌡 Min: ${min_temp}°C at $min_temp_time $temp_emoji\n"
+        MESSAGE+="  - 🌞 UV: ${peak_uv} at $uv_hour $uv_emoji\n"
+        MESSAGE+="  - 🌧 Rain: ${rain_peak}mm at $rain_time $rain_emoji\n\n"
+    done
+
+    MESSAGE+="🌌 Astronomy:\n"
+    MESSAGE+="🌅 Sunrise: $SUNRISE | 🌇 Sunset: $SUNSET\n"
+    MESSAGE+="🌙 Moonrise: $MOONRISE | 🌘 Moonset: $MOONSET\n"
+    MESSAGE+="🌔 Moon Phase: $MOON_PHASE\n"
+    
+    # Send the main notification
+    local current_time_12hr=$(date +"%I:%M %p")
+    log_info "Sending comprehensive notification for $CITY at $current_time_12hr"
+    
+    if command -v kdialog >/dev/null 2>&1; then
+        kdialog --title "Weather Update - $CITY ($current_time_12hr)" --msgbox "$MESSAGE" 2>/dev/null ||
+        log_warn "KDialog notification failed"
+    else
+        echo -e "Weather Update - $CITY ($current_time_12hr)\n\n$MESSAGE"
+    fi
+    
+    echo -e "$(date): Weather Update\n$MESSAGE" >> "$LOG_FILE"
+    log_function_exit "success"
+}
+
+# ------------------------
+# Main execution workflow
+# ------------------------
+fetch_and_process_weather() {
+    log_function_enter
+    
+    if ! get_location; then
+        log_error "Location detection failed"
+        return 1
+    fi
+    
+    if ! get_weather; then
+        log_error "Weather data fetch failed"
+        return 1
+    fi
+    
+    if ! send_notifications; then
+        log_error "Notification failed"
+        return 1
+    fi
+    
+    log_function_exit "success"
+    return 0
+}
+
+main() {
+    log_info "Starting weather monitoring script"
+    
+    if ! initialize_script; then
+        log_error "Failed to initialize script"
+        exit 1
+    fi
+    
+    local consecutive_failures=0
+    while true; do
+        if fetch_and_process_weather; then
+            consecutive_failures=0
+            log_info "Weather update completed successfully, sleeping for $INTERVAL seconds"
+            sleep "$INTERVAL"
+        else
+            ((consecutive_failures++))
+            log_error "Weather update failed (attempt $consecutive_failures)"
+            
+            if [[ $consecutive_failures -ge 5 ]]; then
+                log_error "Too many consecutive failures, exiting"
+                exit 1
+            fi
+            sleep 300  # 5 minutes before retry
+        fi
+    done
+}
+
+# ------------------------
+# Script Entry Point
+# ------------------------
+if [[ "$1" == "--setup" ]]; then
+    log_info "Setup mode activated"
+    echo "Weather Alarm Script Setup"
+    echo "=========================="
+    echo "1. API key should be set in ~/.bashrc as:"
+    echo "   export WEATHER_API_KEY='your_key_here'"
+    echo ""
+    echo "2. Log level can be set with:"
+    echo "   export WEATHER_LOG_LEVEL=0 (DEBUG) to 3 (ERROR)"
+    echo ""
+    echo "3. Log file can be set with:"
+    echo "   export WEATHER_LOG_FILE='/path/to/log.txt'"
+    echo ""
+    echo "4. Run normally: ./weather_script.sh"
+    echo "   Run in debug: ./weather_script.sh --debug"
+    exit 0
+fi
+
+if [[ "$1" == "--debug" ]]; then
+    export WEATHER_LOG_LEVEL=0
+    log_info "Debug mode activated - maximum logging enabled"
+fi
+
+if [[ "$1" == "--test" ]]; then
+    echo "Testing weather script components..."
+    export WEATHER_LOG_LEVEL=0
+    initialize_script && get_location && get_weather && send_notifications
+    exit $?
+fi
+
+# Start the main script
+main "$@"
+
+===== auto_system_update_nobara =====
+#!/usr/bin/env bash
+set -uo pipefail   # NO -e - we handle errors gracefully
+
+# ================= CONFIG =================
+STATE_DIR="$HOME/.auto_update_state"
+LOG_DIR="$HOME/scriptlogs"
+LOGFILE="$LOG_DIR/nobara_update_log.txt"
+HISTORY_LOG="$LOG_DIR/update_history.csv"
+VERIFICATION_LOG_DIR="$STATE_DIR/verifications"
+LOCK_FILE="/tmp/auto_system_update_nobara_$(whoami).lock"
+
+DRY_RUN=false
+TIMEOUT_SECONDS=3600
+MIN_DISK_SPACE_GB=5
+MIN_DISK_SPACE_WARN_GB=10
+MIN_BATTERY_PCT=30
+MAX_LOG_AGE_DAYS=30
+MAX_VERIFICATION_AGE_DAYS=90
+MAX_NOTIFICATION_ITEMS=30
+
+# Critical services to monitor (triggers warning if any fail)
+readonly CRITICAL_SERVICES="NetworkManager.service|sshd.service|dbus.service|systemd-logind.service"
+
+mkdir -p "$STATE_DIR" "$LOG_DIR" "$VERIFICATION_LOG_DIR" || {
+    echo "FATAL: Cannot create required directories" >&2
+    exit 1
+}
+
+rm -f "$STATE_DIR/last_result" 2>/dev/null || true
+
+# ================= LOG =================
+log() {
+    echo "$(date '+%F %T') - $*" | tee -a "$LOGFILE"
+}
+
+log_raw() {
+    echo "$*" | tee -a "$LOGFILE"
+}
+
+log_blank() {
+    echo "" >> "$LOGFILE"
+    echo ""
+}
+
+# ================= NOTIFY =================
+notify() {
+    [[ "$DRY_RUN" == "true" ]] && return 0
+    command -v notify-send >/dev/null || return 0
+    notify-send -u "${2:-normal}" -t "${3:-5000}" "Auto Update" "$1"
+}
+
+notify_with_list() {
+    local title="$1"
+    local body="$2"
+    local urgency="${3:-normal}"
+    local timeout="${4:-0}"
+    
+    [[ "$DRY_RUN" == "true" ]] && return 0
+    command -v notify-send >/dev/null || return 0
+    
+    local formatted_body="${body//\\n/$'\n'}"
+    if [[ ${#formatted_body} -gt 3000 ]]; then
+        formatted_body="${formatted_body:0:3000}..."
+    fi
+    
+    notify-send -u "$urgency" -t "$timeout" "Auto Update: $title" "$formatted_body" 2>/dev/null || {
+        DISPLAY=:0 notify-send -u "$urgency" -t "$timeout" "Auto Update: $title" "$formatted_body" 2>/dev/null || true
+    }
+}
+
+alert_failure() {
+    log "ALERT: $1"
+    notify "$1" critical
+}
+
+# ================= INTERNET CONNECTION DETECTION =================
+check_internet() {
+    local endpoints=(
+        "https://www.google.com"
+        "https://www.cloudflare.com"
+        "https://www.microsoft.com"
+    )
+    
+    for endpoint in "${endpoints[@]}"; do
+        if curl -s --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ================= GLOBAL CLEANUP =================
+KEEP_ALIVE_PID=""
+
+cleanup_keepalive() {
+    if [[ -n "$KEEP_ALIVE_PID" ]]; then
+        kill "$KEEP_ALIVE_PID" 2>/dev/null || true
+        KEEP_ALIVE_PID=""
+    fi
+}
+
+cleanup_lock() {
+    rm -f "$LOCK_FILE" 2>/dev/null || true
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
+
+# ================= LOCK =================
+exec 9>"$LOCK_FILE"
+flock -n 9 || { 
+    echo "$(date '+%F %T') - Already running" | tee -a "$LOGFILE"
+    exit 1
+}
+trap 'cleanup_lock; cleanup_keepalive' EXIT INT TERM
+
+# ================= SAFETY CHECKS =================
+check_dnf_lock() {
+    if pgrep -x dnf >/dev/null || pgrep -x rpm >/dev/null; then
+        log "DNF/RPM already running, skipping..."
+        return 1
+    fi
+    return 0
+}
+
+check_disk() {
+    local avail
+    avail=$(df -BG / | awk 'NR==2 {print $4}' | tr -d G)
+    
+    if [[ ! "$avail" =~ ^[0-9]+$ ]]; then
+        log "Could not determine disk space (got: '$avail')"
+        return 1
+    fi
+    
+    if [[ "$avail" -lt "$MIN_DISK_SPACE_GB" ]]; then
+        log "Low disk space: ${avail}GB available (min ${MIN_DISK_SPACE_GB}GB)"
+        return 1
+    fi
+    return 0
+}
+
+BATTERY_WARNING_LOGGED=false
+
+check_battery() {
+    local battery_found=false
+    for bat in /sys/class/power_supply/BAT* /sys/class/power_supply/BATT*; do
+        [[ -f "$bat/capacity" ]] || continue
+        battery_found=true
+        local cap status
+        cap=$(<"$bat/capacity")
+        status=$(<"$bat/status")
+        
+        if [[ ! "$cap" =~ ^[0-9]+$ ]]; then
+            log "Unexpected battery capacity value: '$cap'"
+            return 1
+        fi
+        
+        if [[ "$status" != "Charging" && "$status" != "Full" && "$cap" -lt "$MIN_BATTERY_PCT" ]]; then
+            log "Low battery: ${cap}% (min ${MIN_BATTERY_PCT}%), status: $status"
+            return 1
+        fi
+    done
+    
+    if ! $battery_found && ! $BATTERY_WARNING_LOGGED; then
+        log "No battery detected (desktop mode)"
+        BATTERY_WARNING_LOGGED=true
+    fi
+    return 0
+}
+
+# ================= COOLDOWN FUNCTIONS =================
+can_notify_idle() {
+    local last_notify_file="$STATE_DIR/last_notify_idle"
+    [[ ! -f "$last_notify_file" ]] && return 0
+    local last_time=$(cat "$last_notify_file" 2>/dev/null || echo 0)
+    [[ $(( $(date +%s) - last_time )) -gt 21600 ]]
+}
+
+can_notify_failure() {
+    local last_failure_file="$STATE_DIR/last_failure_notify"
+    [[ ! -f "$last_failure_file" ]] && return 0
+    local last_time=$(cat "$last_failure_file" 2>/dev/null || echo 0)
+    [[ $(( $(date +%s) - last_time )) -gt 3600 ]]
+}
+
+can_notify_warning() {
+    local last_warning_file="$STATE_DIR/last_warning_notify"
+    [[ ! -f "$last_warning_file" ]] && return 0
+    local last_time=$(cat "$last_warning_file" 2>/dev/null || echo 0)
+    [[ $(( $(date +%s) - last_time )) -gt 86400 ]]
+}
+
+can_notify_info() {
+    local last_info_file="$STATE_DIR/last_info_notify"
+    [[ ! -f "$last_info_file" ]] && return 0
+    local last_time=$(cat "$last_info_file" 2>/dev/null || echo 0)
+    [[ $(( $(date +%s) - last_time )) -gt 3600 ]]
+}
+
+update_notify_timestamp() { date +%s > "$STATE_DIR/last_notify_idle"; }
+update_failure_timestamp() { date +%s > "$STATE_DIR/last_failure_notify"; }
+update_warning_timestamp() { date +%s > "$STATE_DIR/last_warning_notify"; }
+update_info_timestamp() { date +%s > "$STATE_DIR/last_info_notify"; }
+update_success_timestamp() { date +%s > "$STATE_DIR/last_success"; }
+
+# ================= POST-UPDATE VERIFICATION (LIGHTWEIGHT) =================
+# Checks critical services, filesystem, and errors - NO heavy rpm -Va
+verify_system_health() {
+    local verification_log="$VERIFICATION_LOG_DIR/verification_$(date +%F-%H%M%S).log"
+    local verification_failed=0
+    local has_critical_failure=false
+    local new_failures=""
+    
+    log "Running post-update system verification (quick check)..."
+    
+    # 1. Check for failed services (especially critical ones)
+    local failed_services
+    failed_services=$(systemctl --failed --no-legend 2>/dev/null | awk '{print $1}' || true)
+    
+    if [[ -n "$failed_services" ]]; then
+        log "WARNING: Failed services detected:"
+        echo "$failed_services" | while read -r service; do
+            log "  - $service"
+        done
+        
+        # Check if any critical service failed
+        while IFS= read -r service; do
+            if [[ -n "$service" ]] && echo "$service" | grep -qiE "$CRITICAL_SERVICES"; then
+                log "CRITICAL: Critical service failure: $service"
+                has_critical_failure=true
+                new_failures+="  • $service (CRITICAL)\n"
+            elif [[ -n "$service" ]]; then
+                new_failures+="  • $service\n"
+            fi
+        done <<< "$failed_services"
+        
+        verification_failed=1
+    else
+        log "All services running normally."
+    fi
+    
+    # 2. Check filesystem status (quick)
+    if findmnt -n -o OPTIONS / 2>/dev/null | grep -E '(^|,)ro(,|$)' >/dev/null; then
+        log "ERROR: Root filesystem is mounted read-only!"
+        verification_failed=1
+    else
+        log "Root filesystem writable."
+    fi
+    
+    # 3. Check for critical kernel errors since boot (limit to 10 lines)
+    local critical_errors
+    critical_errors=$(journalctl -b -p 2 --no-pager 2>/dev/null | head -10 || true)
+    if [[ -n "$critical_errors" ]]; then
+        log "WARNING: Critical kernel errors detected (first 10 lines shown)"
+        echo "$critical_errors" | while read -r line; do
+            log "  $line"
+        done
+        verification_failed=1
+    else
+        log "No critical kernel errors found."
+    fi
+    
+    # Write verification report
+    {
+        echo "=========================================="
+        echo "Nobara Post-Update Verification Report"
+        echo "=========================================="
+        echo "Time: $(date '+%F %T')"
+        echo "Host: $(hostname)"
+        echo "Kernel: $(uname -r)"
+        echo ""
+        echo "1. FAILED SERVICES:"
+        echo "------------------"
+        if [[ -n "$failed_services" ]]; then
+            echo "$failed_services"
+        else
+            echo "None"
+        fi
+        echo ""
+        echo "2. CRITICAL SERVICE FAILURES:"
+        echo "----------------------------"
+        if [[ "$has_critical_failure" == "true" ]]; then
+            echo "YES - Manual intervention recommended"
+        else
+            echo "None"
+        fi
+        echo ""
+        echo "3. FILESYSTEM STATUS:"
+        echo "--------------------"
+        if findmnt -n -o OPTIONS / 2>/dev/null | grep -q "ro"; then
+            echo "READ-ONLY - CRITICAL"
+        else
+            echo "Writable - OK"
+        fi
+        echo ""
+        echo "4. KERNEL ERRORS (last 10):"
+        echo "--------------------------"
+        echo "$critical_errors"
+        echo ""
+        echo "=========================================="
+        if [[ $verification_failed -eq 1 ]]; then
+            echo "STATUS: ISSUES DETECTED"
+        else
+            echo "STATUS: HEALTHY"
+        fi
+        echo "=========================================="
+    } > "$verification_log" 2>&1
+    
+    cat "$verification_log" >> "$LOGFILE"
+    
+    # Send notification if issues found
+    if [[ $verification_failed -eq 1 ]]; then
+        log "Post-update verification found issues - see $verification_log"
+        
+        if [[ "$has_critical_failure" == "true" ]]; then
+            notify_with_list "⚠️ CRITICAL ISSUES DETECTED" "Critical services failed after update:\n\n$new_failures\n\nCheck log: $verification_log" "critical" 0
+        else
+            notify "Post-update issues detected - check verification log" normal
+        fi
+    else
+        log "Post-update verification passed - system healthy"
+    fi
+    
+    # Clean old verification logs
+    find "$VERIFICATION_LOG_DIR" -type f -name "verification_*.log" -mtime +"$MAX_VERIFICATION_AGE_DAYS" -delete 2>/dev/null || true
+    
+    return $verification_failed
+}
+
+# ================= REBOOT TRACKING =================
+REBOOT_NOTIFIED_FILE="$STATE_DIR/reboot_notified"
+REBOOT_NOTIFIED=false
+
+case "$(tr -d '[:space:]' < "$REBOOT_NOTIFIED_FILE" 2>/dev/null || echo false)" in
+    true) REBOOT_NOTIFIED=true ;;
+    *)    REBOOT_NOTIFIED=false ;;
+esac
+
+quick_verify() {
+    local issues_found=0
+    
+    # Check for failed services
+    if systemctl --failed --no-legend 2>/dev/null | grep -q "."; then
+        log "Quick check: Failed services detected"
+        notify "System degraded - check 'systemctl --failed'" critical
+        issues_found=1
+    fi
+    
+    # Check if reboot needed for kernel
+    local installed_kernel
+    local running_kernel
+    installed_kernel=$(rpm -q kernel --last 2>/dev/null | head -n1 | awk '{print $1}' | sed 's/kernel-//')
+    running_kernel=$(uname -r)
+    
+    if [[ "$installed_kernel" != "$running_kernel" ]]; then
+        if [[ "$REBOOT_NOTIFIED" != "true" ]]; then
+            log "Quick check: Reboot recommended - kernel updated to $installed_kernel (current: $running_kernel)"
+            notify "🔁 RESTART REQUIRED!\n\nKernel updated from $running_kernel to $installed_kernel\nPlease reboot your system." critical 0
+            REBOOT_NOTIFIED=true
+            printf 'true' > "$REBOOT_NOTIFIED_FILE"
+        fi
+    else
+        if [[ "$REBOOT_NOTIFIED" != "false" ]]; then
+            REBOOT_NOTIFIED=false
+            printf 'false' > "$REBOOT_NOTIFIED_FILE"
+        fi
+    fi
+    
+    return $issues_found
+}
+
+# ================= FETCH UPDATES =================
+fetch_pending_updates() {
+    local tmp
+    tmp=$(mktemp) || { log "Failed to create temp file"; return 1; }
+    
+    trap 'rm -f "$tmp"' RETURN
+
+    # Metadata refresh
+    sudo dnf makecache -q >> "$LOGFILE" 2>&1 || true
+    sudo dnf check-update > "$tmp" 2>/dev/null || true
+    
+    # Extract DNF updates
+    if grep -q -E '\.(x86_64|noarch|i686|aarch64)' "$tmp" 2>/dev/null; then
+        grep -E '\.(x86_64|noarch|i686|aarch64)' "$tmp" \
+            | awk '{print $1 " (" $2 ")"}' > "$STATE_DIR/dnf_list"
+    else
+        > "$STATE_DIR/dnf_list"
+    fi
+
+    # Extract Flatpak updates
+    if command -v flatpak >/dev/null; then
+        flatpak remote-ls --updates 2>/dev/null | tail -n +2 \
+            | awk '{if(NF>=2) print $1 " (" $2 ")"; else print $1}' \
+            > "$STATE_DIR/flatpak_list" 2>/dev/null || true
+    else
+        > "$STATE_DIR/flatpak_list"
+    fi
+}
+
+updates_available() {
+    [[ -s "$STATE_DIR/dnf_list" || -s "$STATE_DIR/flatpak_list" ]]
+}
+
+# ================= BUILD NOTIFICATION LISTS =================
+build_update_list() {
+    local dnf_list=""
+    local flatpak_list=""
+    local dnf_count=0
+    local flatpak_count=0
+    
+    if [[ -s "$STATE_DIR/dnf_list" ]]; then
+        dnf_count=$(wc -l < "$STATE_DIR/dnf_list")
+        dnf_list="📦 <b>Packages ($dnf_count):</b>\n"
+        local i=0
+        while IFS= read -r line && [[ $i -lt $MAX_NOTIFICATION_ITEMS ]]; do
+            dnf_list+="  • $line\n"
+            ((i++))
+        done < "$STATE_DIR/dnf_list"
+        if [[ $dnf_count -gt $MAX_NOTIFICATION_ITEMS ]]; then
+            dnf_list+="  ... and $((dnf_count - MAX_NOTIFICATION_ITEMS)) more\n"
+        fi
+    fi
+    
+    if [[ -s "$STATE_DIR/flatpak_list" ]]; then
+        flatpak_count=$(wc -l < "$STATE_DIR/flatpak_list")
+        flatpak_list="🟢 <b>Flatpaks ($flatpak_count):</b>\n"
+        local i=0
+        while IFS= read -r line && [[ $i -lt $MAX_NOTIFICATION_ITEMS ]]; do
+            flatpak_list+="  • $line\n"
+            ((i++))
+        done < "$STATE_DIR/flatpak_list"
+        if [[ $flatpak_count -gt $MAX_NOTIFICATION_ITEMS ]]; then
+            flatpak_list+="  ... and $((flatpak_count - MAX_NOTIFICATION_ITEMS)) more\n"
+        fi
+    fi
+    
+    local combined_list=""
+    if [[ -n "$dnf_list" ]]; then
+        combined_list="$dnf_list"
+    fi
+    if [[ -n "$flatpak_list" ]]; then
+        [[ -n "$combined_list" ]] && combined_list+="\n"
+        combined_list+="$flatpak_list"
+    fi
+    
+    echo "$combined_list"
+    return $((dnf_count + flatpak_count))
+}
+
+# ================= NOTIFICATIONS =================
+notify_pending() {
+    local update_list
+    local total_count
+    
+    update_list=$(build_update_list)
+    total_count=$?
+    
+    if [[ -n "$update_list" ]]; then
+        notify_with_list "📦 Updates Detected" "Installing $total_count updates...\n\n$update_list" "normal" 0
+    else
+        notify "Found updates: $total_count items" normal
+    fi
+    
+    # Log to file as well
+    if [[ -s "$STATE_DIR/dnf_list" ]]; then
+        log_raw "Pending packages:"
+        while IFS= read -r line; do log_raw "  $line"; done < "$STATE_DIR/dnf_list"
+    fi
+    if [[ -s "$STATE_DIR/flatpak_list" ]]; then
+        log_raw "Pending flatpaks:"
+        while IFS= read -r line; do log_raw "  $line"; done < "$STATE_DIR/flatpak_list"
+    fi
+}
+
+notify_complete_with_list() {
+    local update_list
+    local total_count
+    
+    update_list=$(build_update_list)
+    total_count=$?
+    
+    if [[ -n "$update_list" ]]; then
+        notify_with_list "✅ Updates Complete" "Successfully updated $total_count items!\n\n$update_list" "normal" 10000
+    else
+        notify "Updates completed successfully" normal
+    fi
+}
+
+notify_complete() {
+    notify_complete_with_list
+}
+
+# ================= RUN UPDATES =================
+LAST_DNF_EXIT=""
+LAST_FLATPAK_EXIT=""
+
+run_updates() {
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log "[DRY_RUN] Skipping actual updates."
+        LAST_DNF_EXIT="dry-run"
+        LAST_FLATPAK_EXIT="dry-run"
+        return 0
+    fi
+
+    check_dnf_lock || { 
+        LAST_DNF_EXIT="locked"
+        LAST_FLATPAK_EXIT="skipped"
+        return 1 
+    }
+
+    local DNF_EXIT=1 FLATPAK_EXIT=1
+    local UPDATE_SUCCESS=1
+    local TEMP_SYNC_LOG
+    TEMP_SYNC_LOG=$(mktemp)
+
+    # Start keep-alive loop (redirect output to /dev/null to reduce noise)
+    while true; do 
+        sudo -n true 2>/dev/null
+        sleep 60
+    done &> /dev/null &
+    KEEP_ALIVE_PID=$!
+
+    # Run Nobara sync - capture output to both log and temp file for success detection
+    log_raw "=============================="
+    log_raw "Starting Nobara System Update"
+    log_raw "=============================="
+    
+    timeout "$TIMEOUT_SECONDS" sudo nobara-sync cli 2>&1 | tee -a "$LOGFILE" | tee "$TEMP_SYNC_LOG"
+    DNF_EXIT=${PIPESTATUS[0]}
+    log_raw "Nobara-sync exit code: $DNF_EXIT"
+    
+    # Flatpak updates
+    log_blank
+    log_raw "=============================="
+    log_raw "Starting Flatpak Updates"
+    log_raw "=============================="
+    
+    timeout "$TIMEOUT_SECONDS" sudo flatpak update -y 2>&1 | tee -a "$LOGFILE"
+    FLATPAK_EXIT=${PIPESTATUS[0]}
+    log_raw "Flatpak (system) exit code: $FLATPAK_EXIT"
+    
+    if [[ $FLATPAK_EXIT -eq 0 ]]; then
+        timeout "$TIMEOUT_SECONDS" flatpak update --user -y 2>&1 | tee -a "$LOGFILE"
+        FLATPAK_EXIT=${PIPESTATUS[0]}
+        log_raw "Flatpak (user) exit code: $FLATPAK_EXIT"
+    fi
+
+    LAST_DNF_EXIT="$DNF_EXIT"
+    LAST_FLATPAK_EXIT="$FLATPAK_EXIT"
+
+    log_blank
+    log_raw "=============================="
+    log_raw "Update Summary"
+    log_raw "=============================="
+    
+    # LENIENT SUCCESS CHECK - matches your original working script
+    # Success if: (both exit codes are 0) OR (log contains "Complete!" or "All Updates complete")
+    if [[ $DNF_EXIT -eq 0 && $FLATPAK_EXIT -eq 0 ]] || \
+       grep -qiE "Complete!|All Updates complete|Successfully" "$TEMP_SYNC_LOG" 2>/dev/null; then
+        
+        UPDATE_SUCCESS=0
+        log_raw "Updates completed successfully"
+        
+        # SEND NOTIFICATION IMMEDIATELY (before verification)
+        notify_complete
+        
+        # Run post-update cleanup
+        log "Running post-update cleanup..."
+        sudo dnf autoremove -y 2>&1 | tee -a "$LOGFILE"
+        sudo dnf clean packages 2>&1 | tee -a "$LOGFILE"
+        sudo flatpak uninstall --unused -y 2>&1 | tee -a "$LOGFILE"
+        flatpak uninstall --user --unused -y 2>&1 | tee -a "$LOGFILE"
+        
+        log_blank
+        log_raw "=============================="
+        log_raw "Post-Update Verification"
+        log_raw "=============================="
+        
+        # Run verification (lightweight - no rpm -Va)
+        verify_system_health || true
+    else
+        log_raw "Updates failed (Nobara: $DNF_EXIT, Flatpak: $FLATPAK_EXIT)"
+        alert_failure "Update failed - check log for details"
+    fi
+
+    # Clean up temp file
+    rm -f "$TEMP_SYNC_LOG" 2>/dev/null || true
+    
+    cleanup_keepalive
+    return "$UPDATE_SUCCESS"
+}
+
+# ================= ROTATE LOGS =================
+rotate_logs() {
+    find "$LOG_DIR" -type f \( -name "*.txt" -o -name "*.csv" \) -mtime +"$MAX_LOG_AGE_DAYS" -delete 2>/dev/null
+}
+
+# ================= MAIN LOOP WITH EXPONENTIAL SLEEP =================
+main() {
+    for arg in "$@"; do
+        if [[ "$arg" == "--dry-run" ]]; then
+            DRY_RUN=true
+            break
+        fi
+    done
+    
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log "Auto-update service starting (PID $$) - DRY RUN MODE"
+    else
+        log "Auto-update service starting (PID $$)"
+    fi
+
+    local retry_delay=60
+    local max_delay=3600
+
+    while true; do
+        # ================= INTERNET CONNECTION CHECK WITH EXPONENTIAL SLEEP =================
+        if ! check_internet; then
+            local offline_start=$(date +%s)
+            local sleep_time=60      # Start with 1 minute
+            local max_sleep=3600     # Max 1 hour
+            local notified_prolonged=false
+            
+            log "🌐 No internet connection detected"
+            if can_notify_warning; then
+                notify "🌐 No internet connection - updates postponed" "normal" 5000
+                update_warning_timestamp
+            fi
+            
+            # Exponential backoff until internet returns
+            while ! check_internet; do
+                local offline_min=$(( ($(date +%s) - offline_start) / 60 ))
+                log "Still offline after ${offline_min} minutes, sleeping ${sleep_time}s before next check"
+                
+                # Notify once after 30 minutes of being offline
+                if (( offline_min >= 30 )) && [[ "$notified_prolonged" == "false" ]]; then
+                    if can_notify_warning; then
+                        notify "Still offline after 30 minutes - updates will resume when connection returns" "normal" 5000
+                        update_warning_timestamp
+                        notified_prolonged=true
+                    fi
+                fi
+                
+                sleep "$sleep_time"
+                
+                # Exponential backoff with cap
+                sleep_time=$(( sleep_time * 2 ))
+                if (( sleep_time > max_sleep )); then
+                    sleep_time=$max_sleep
+                fi
+            done
+            
+            local offline_duration=$(( ($(date +%s) - offline_start) / 60 ))
+            log "🌐 Internet connection restored after ${offline_duration} minutes"
+            notify "🌐 Internet connection restored - resuming update checks" "normal" 5000
+        fi
+        
+        # Disk check
+        if ! check_disk; then 
+            log "Disk check failed, retrying in ${retry_delay}s"
+            sleep "$retry_delay"
+            retry_delay=$(( retry_delay * 2 > max_delay ? max_delay : retry_delay * 2 ))
+            continue
+        fi
+        
+        # Battery check
+        if ! check_battery; then 
+            log "Battery check failed, retrying in ${retry_delay}s"
+            sleep "$retry_delay"
+            retry_delay=$(( retry_delay * 2 > max_delay ? max_delay : retry_delay * 2 ))
+            continue
+        fi
+
+        # Reset retry delay after successful checks
+        retry_delay=60
+
+        fetch_pending_updates
+
+        if updates_available; then
+            notify_pending
+            if run_updates; then
+                echo "$(date '+%F'),OK,DNF:${LAST_DNF_EXIT},FLATPAK:${LAST_FLATPAK_EXIT}" >> "$HISTORY_LOG"
+                log "Update cycle completed successfully"
+                update_success_timestamp
+            else
+                echo "$(date '+%F'),FAIL,DNF:${LAST_DNF_EXIT:-unknown},FLATPAK:${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
+                log "Update cycle failed"
+            fi
+        else
+            log "System is up to date."
+            notify "System is up to date." critical 0
+            quick_verify
+        fi
+
+        rotate_logs
+        sleep 1h
+    done
+}
+
+main "$@"
+
+===== backlisten =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/backlisten_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+SCRIPT_NAME="checkservices.sh"
+SCRIPT_PATH="$HOME/Documents/bin/$SCRIPT_NAME"
+MIN_INSTANCES=1
+COOLDOWN=5   # seconds between checks
+
+while true; do
+    # Find all running processes for the script with bash
+    PROCS=($(pgrep -f "bash $SCRIPT_PATH$"))
+    NUM_RUNNING=$(echo "$PROCS" | wc -w)
+
+    if [ "$NUM_RUNNING" -ge "$MIN_INSTANCES" ]; then
+        # More than one instance? Kill extras and notify
+        PROC_ARRAY=($PROCS)
+        LAST_INDEX=$(( ${#PROC_ARRAY[@]} - 1 ))
+        for i in $(seq 0 $((LAST_INDEX - 1))); do
+            kill "${PROC_ARRAY[$i]}"
+            notify-send -t 10000 --app-name "💀 Check services" "Extra checkservices instance killed: PID ${PROC_ARRAY[$i]}" &
+        done
+    else
+        # Script not running, start it
+        if [ -x "$SCRIPT_PATH" ]; then
+            "$SCRIPT_PATH" > /dev/null 2>&1 &
+            notify-send -t 10000 --app-name "✅ Check services" "checkservices started." &
+            sleep 5
+        else
+            notify-send --app-name "⚠️ Check services" "checkservices script not found or not executable!" &
+        fi
+    fi
+
+    sleep "$COOLDOWN"
+done
+
+===== monfailures =====
+#!/usr/bin/env bash
+# monitor_system_failures.sh
+# Monitors critical and serious system failures across popular Linux distros.
+
+LOCK_FILE="/tmp/monfailures_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+ALERT_LOG="$HOME/scriptlogs/monitor_alerts.log"
+PIDFILE="$HOME/scriptlogs/monitor.pid"
+mkdir -p "$(dirname "$ALERT_LOG")"
+
+SHOW_STOPPER="panic|kernel BUG|oops|machine check|MCE|thermal.*shutdown|plasmashell.*crashed|kwin_wayland.*crashed|kwin_x11.*crashed|Xorg.*crashed|wayland.*crashed|GDM.*crashed|SDDM.*crashed|emergency mode|rescue mode|out of memory|OOM killer|filesystem.*readonly|hardware error|fatal|segfault|login.*failed.*repeatedly|dracut.*failed|mount.*failed.*at boot|soft lockup|hard lockup|watchdog: BUG|page allocation failure|journal aborted"
+
+SERIOUS_FAILURES="GPU hang|GPU fault|GPU reset|DRM error|i915.*error|amdgpu.*error|nouveau.*error|plasma.*segfault|plasma.*core dumped|compositor.*crashed|systemd.*failed|mount.*failed|disk.*error|I/O error|memory.*error|temperature.*critical|network.*unreachable|network.*down|link.*down|authentication.*failed.*repeatedly|swap.*exhausted|drkonqi|pulseaudio.*crashed|pipewire.*crashed|wireplumber.*crashed|dbus.*crash|journal.*disk.*full"
+
+LOGFILES=(
+    "/var/log/syslog"           # Debian-based
+    "/var/log/messages"         # RHEL/Fedora/openSUSE
+    "/var/log/secure"
+    "/var/log/Xorg.0.log"
+    "/var/log/audit/audit.log"
+)
+
+pids=()
+
+send_notification() {
+    local message="$1"
+    local urgency="$2"
+    local active_user=$(who | grep '(:0)' | awk '{print $1}' | head -n 1)
+    if [ -n "$active_user" ]; then
+        local user_display=$(who | grep "$active_user" | grep '(:0)' | awk '{print $5}' | tr -d '()')
+        if [ -n "$user_display" ]; then
+            sudo -u "$active_user" DISPLAY="$user_display" notify-send \
+                --urgency="$urgency" --icon=dialog-error \
+                --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
+        fi
+    fi
+
+    if [ "$USER" != "root" ]; then
+        notify-send --urgency="$urgency" --icon=dialog-error \
+            --app-name="System Monitor" "System Alert" "$message" 2>/dev/null
+    fi
+}
+
+check_error_severity() {
+    local line="$1"
+    if echo "$line" | grep -Eqi "$SHOW_STOPPER"; then
+        echo "CRITICAL"
+    elif echo "$line" | grep -Eqi "$SERIOUS_FAILURES"; then
+        echo "SERIOUS"
+    else
+        echo "IGNORE"
+    fi
+}
+
+process_alert() {
+    local source="$1"
+    local line="$2"
+    local timestamp
+    timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    local severity
+    severity=$(check_error_severity "$line")
+
+    case "$severity" in
+        "CRITICAL")
+            if ! echo "$line" | grep -Eiq "screensaver"; then
+                echo "$timestamp [CRITICAL] $source: $line" >> "$ALERT_LOG"
+                send_notification "$line" "critical"
+            fi
+            ;;
+        "SERIOUS")
+            echo "$timestamp [SERIOUS] $source: $line" >> "$ALERT_LOG"
+            ;;
+    esac
+}
+
+monitor_log_file() {
+    local logfile="$1"
+    if [ ! -f "$logfile" ]; then
+        echo "Log file '$logfile' not found. Skipping..."
+        return
+    fi
+
+    echo "Monitoring $logfile..."
+    (
+        tail -n 0 -F "$logfile" 2>/dev/null | while IFS= read -r line; do
+            local severity
+            severity=$(check_error_severity "$line")
+            if [ "$severity" != "IGNORE" ]; then
+                process_alert "$logfile" "$line"
+            fi
+        done
+    ) &
+    pids+=($!)
+}
+
+for logfile in "${LOGFILES[@]}"; do
+    monitor_log_file "$logfile"
+done
+
+if command -v journalctl > /dev/null; then
+    echo "Monitoring systemd journal..."
+    journalctl -f -p 3 --no-pager | while IFS= read -r line; do
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "systemd-journal" "$line"
+        fi
+    done &
+    pids+=($!)
+fi
+
+if command -v dmesg > /dev/null; then
+    echo "Monitoring dmesg..."
+    dmesg -w 2>/dev/null | while IFS= read -r line; do
+        local severity
+        severity=$(check_error_severity "$line")
+        if [ "$severity" != "IGNORE" ]; then
+            process_alert "kernel-dmesg" "$line"
+        fi
+    done &
+    pids+=($!)
+fi
+
+cleanup() {
+    echo "Stopping monitoring..."
+    for pid in "${pids[@]}"; do
+        kill "$pid" 2>/dev/null
+    done
+    rm -f "$PIDFILE"
+    echo "Clean exit."
+    exit 0
+}
+
+trap cleanup SIGINT SIGTERM SIGHUP EXIT
+
+send_notification "System monitor started (CRITICAL notifications only)" "low"
+
+echo "=== Linux System Monitor Running ==="
+echo "Logging CRITICAL and SERIOUS issues, notifying only CRITICAL."
+
+open_terminal_with_logs() {
+    [ -f "$ALERT_LOG" ] || return
+    local CRITICAL_LOGS
+    CRITICAL_LOGS=$(grep "\[CRITICAL\]" "$ALERT_LOG")
+    [ -z "$CRITICAL_LOGS" ] && return
+
+    TERM_CMDS=(
+        "konsole"
+        "gnome-terminal"
+        "xfce4-terminal"
+        "tilix"
+        "xterm"
+        "lxterminal"
+        "mate-terminal"
+        "alacritty"
+        "terminator"
+        "urxvt"
+        "kitty"
+        "deepin-terminal"
+        "qterminal"
+    )
+
+    for term in "${TERM_CMDS[@]}"; do
+        if command -v "$term" > /dev/null; then
+            "$term" -e bash -c "cat <<EOF
+$CRITICAL_LOGS
+EOF
+read -p 'Press Enter to close...'" &
+            return
+        fi
+    done
+
+    echo "No compatible terminal found to display critical logs."
+}
+
+open_terminal_with_logs
+wait
+
+===== rss_news_filter =====
+#!/usr/bin/env bash
+
+LOCK_FILE="/tmp/rss_news_filter_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Cleanup function
+cleanup() {
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
+
+trap cleanup EXIT
+
+# --- 1. CONFIGURATION ---
+ALERT_EMAIL="cabpacedilla@gmail.com"
+HISTORY_FILE="$HOME/.cache/practical_science_history.log"
+LOGSEQ_JOURNAL="$HOME/Documents/Logseq/journals/$(date +%Y_%m_%d).md"
+mkdir -p "$(dirname "$HISTORY_FILE")"
+mkdir -p "$(dirname "$LOGSEQ_JOURNAL")"
+
+# --- 2. THE FILTER ENGINE ---
+SLOP_PAT="tiktok|lamborghini|supercar|gaming|celebrity|gossip|rumor|entertainment|fashion|luxury|brand|influencer|scandal"
+
+# Breakthrough keywords
+PRACTICAL="cured|eradicated|fda approved|fast-tracked|treatment|human trial|vaccine|sustainable|carbon-neutral"
+THEORETICAL="breakthrough|revolutionary|milestone|first ever|world first|discovery|astonishing|self-replicate|high-efficiency|unprecedented|mystery solved|new class of|rethinking|paradigm shift"
+
+# --- 3. THE FEED LIST ---
+FEEDS=(
+    "https://www.nature.com/nature/research-articles.rss"
+    "https://phys.org/rss-feed/"
+    "https://www.newscientist.com/section/news/feed/"
+    "https://www.eurekalert.org/rss/breaking.xml"
+    "https://www.quantamagazine.org/feed/"
+    "https://www.sciencedaily.com/rss/top/science.xml"
+    "https://www.sciencedaily.com/rss/top/health.xml"
+    "https://www.sciencedaily.com/rss/top/environment.xml"
+    "https://www.sciencedaily.com/rss/top/technology.xml"
+    "https://www.sciencedaily.com/rss/mind_brain.xml"
+    "https://www.sciencedaily.com/rss/health_medicine/nutrition.xml"
+    "https://www.sciencedaily.com/rss/health_medicine/fitness.xml"
+    "https://www.sciencedaily.com/rss/mind_brain/sleep.xml"
+    "https://www.technologyreview.com/feed/"
+    "https://newatlas.com/index.rss"
+    "https://news.ycombinator.com/rss"
+    "https://hnrss.org/best"
+    "http://feeds.arstechnica.com/arstechnica/index"
+    "https://news.mit.edu/rss/topic/computer-science-and-technology"
+    "https://thehackernews.com/feeds/posts/default"
+)
+
+# --- 4. HELPERS ---
+decode_html_entities() {
+    echo "$1" | python3 -c "import sys, html, urllib.parse; print(html.unescape(urllib.parse.unquote(sys.stdin.read().strip())))"
+}
+
+# --- 5. MAIN LOOP ---
+while true; do
+    for URL in "${FEEDS[@]}"; do
+        RAW_XML=$(curl -sL -A "Mozilla/5.0" --connect-timeout 15 "$URL") || continue
+        ITEMS=$(echo "$RAW_XML" | sed -e 's/<\/item>/<\/item>\n/g' -e 's/<\/entry>/<\/entry>\n/g' | grep -E '<item|<entry')
+
+        while IFS= read -r ITEM; do
+            [[ -z "$ITEM" ]] && continue
+            
+            TITLE=$(echo "$ITEM" | sed -n 's/.*<title[^>]*>\(.*\)<\/title>.*/\1/p' | sed 's/<!\[CDATA\[//g;s/\]\]>//g' | head -n1 | xargs)
+            LINK=$(echo "$ITEM" | sed -n 's/.*<link>\([^<]*\)<\/link>.*/\1/p' | head -n1)
+            [[ -z "$LINK" ]] && LINK=$(echo "$ITEM" | sed -n 's/.*href="\([^"]*\)".*/\1/p' | head -n1)
+            DESC=$(echo "$ITEM" | sed -n 's/.*<description[^>]*>\(.*\)<\/description>.*/\1/p' | sed 's/<!\[CDATA\[//g;s/\]\]>//g' | head -n1 | xargs)
+
+            TITLE=$(decode_html_entities "$TITLE")
+            DESC=$(decode_html_entities "$DESC")
+
+            [[ ${#TITLE} -lt 15 || -z "$LINK" ]] && continue
+            grep -qF "$LINK" "$HISTORY_FILE" && continue
+
+            if echo "$TITLE $DESC" | tr '[:upper:]' '[:lower:]' | grep -qiE "$SLOP_PAT"; then
+                continue
+            fi
+
+            # --- LOGIC: BREAKTHROUGH OR NOTHING ---
+            FINAL_TAG=""
+            URGENCY="normal"
+
+            if echo "$TITLE $DESC" | grep -qiE "$PRACTICAL|$THEORETICAL"; then
+                FINAL_TAG="🔥 BREAKTHROUGH "
+                URGENCY="critical"
+            fi
+
+            # --- NOTIFICATIONS ---
+            (
+                ACTION=$(notify-send -u "$URGENCY" -a "News Alert" \
+                    -t 0 \
+                    --hint=int:transient:0 \
+                    --action="open=Read Article" \
+                    "💡 $FINAL_TAG" "$TITLE")
+
+                if [[ "$ACTION" == "open" ]]; then
+                    xdg-open "$LINK" >/dev/null 2>&1
+                fi
+            ) &
+
+            # --- EMAIL ---
+            (
+                # If no tag, the subject starts directly with the Title
+                echo -e "Subject: ${FINAL_TAG}${TITLE}\n\nDate: $(date)\nLink: $LINK\n\nDescription: $DESC" | msmtp -t "$ALERT_EMAIL"
+            ) &
+
+            # --- LOGGING ---
+            # Using empty string for tag column if it's not a breakthrough
+            echo "$(date '+%Y-%m-%d %H:%M') | $FINAL_TAG | Feed | $TITLE | $LINK" >> "$HISTORY_FILE"
+            echo "- ${TITLE} [Link](${LINK})" >> "$LOGSEQ_JOURNAL"
+
+        done <<< "$ITEMS"
+    done
+    sleep 1800 
+done
+
