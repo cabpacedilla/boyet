@@ -141,5 +141,5 @@ start_swayidle
 while true; do
     log_status
     check_idle_status
-    sleep 10 # Check every 10 seconds for idle status (you can adjust this duration)
+    sleep 2 # Check every seconds for idle status (you can adjust this duration)
 done
