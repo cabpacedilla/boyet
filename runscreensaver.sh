@@ -124,14 +124,13 @@ start_swayidle() {
     pkill -f "swayidle" 2>/dev/null
         
    # Only run swayidle if no video is playing
-	if ! is_video_playing; then
+	if is_video_playing; then
+		echo "Video playing, idle detection disabled"
+	else
 		swayidle -w \
 			timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
 			resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
-	else
-		echo "Video playing, idle detection disabled"
 	fi
-
 }
 
 # --- Execution ---
