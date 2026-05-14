@@ -1679,3 +1679,9 @@ Lun 11 May 2026 05:54:14 N.H. PST: Strategy: Domain Expert - CONTRACT/REMOTE ONL
 Lun 11 May 2026 05:54:14 N.H. PST: Running Scraper for: ("Senior QA" OR "Software Tester") AND (Payroll OR POS OR Salesforce OR "E-commerce") AND (Contract OR Remote OR Part-time OR Freelance) NOT ("Full-time" OR Permanent)
 Lun 11 May 2026 05:55:28 N.H. PST: SUCCESS - Sent email for 3 jobs.
 Lun 11 May 2026 05:55:28 N.H. PST: Sleeping for 57 minutes...
+------------------------------------------------
+Huw 14 May 2026 08:52:26 N.U. PST: Starting Search Cycle (LinkedIn, Indeed, JobStreet, Mynimo)...
+Huw 14 May 2026 08:52:26 N.U. PST: Strategy: Domain Expert - CONTRACT/REMOTE ONLY
+Huw 14 May 2026 08:52:26 N.U. PST: Running Scraper for: ("Senior QA" OR "Software Tester") AND (Payroll OR POS OR Salesforce OR "E-commerce") AND (Contract OR Remote OR Part-time OR Freelance) NOT ("Full-time" OR Permanent)
+Huw 14 May 2026 08:53:39 N.U. PST: SUCCESS - Sent email for 3 jobs.
+Huw 14 May 2026 08:53:39 N.U. PST: Sleeping for 62 minutes...

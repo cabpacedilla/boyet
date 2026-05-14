@@ -10,20 +10,20 @@
 LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
 if ! flock -n 9; then
-    exit 1
+    exit 1
 fi
 
 # Store our PID
 echo $$ > "$LOCK_FILE"
 
-#~ # Enhanced cleanup that only removes our PID file
+Enhanced cleanup that only removes our PID file
 cleanup() {
-    # Only remove if it's our PID (prevents removing another process's lock)
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-    flock -u 9
-    exec 9>&-
+     # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
 }
 
 trap cleanup EXIT
@@ -35,9 +35,9 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 
 # --- Configuration ---
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
-MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB
+MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB
 MAX_OLD_LOGS=3
-IDLE_TIMEOUT=1                       # Minutes until idle
+IDLE_TIMEOUT=1                       # Minutes until idle
 SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
 RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"
@@ -47,90 +47,92 @@ mkdir -p "$(dirname "$LOGFILE")"
 
 # --- Helper functions ---
 rotate_log() {
-    if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_SIZE" ]; then
-        mv "$LOGFILE" "${LOGFILE}.$(date '+%Y%m%d_%H%M%S').old"
-        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$((MAX_OLD_LOGS + 1)) | xargs rm -f --
-    fi
+    if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_SIZE" ]; then
+        mv "$LOGFILE" "${LOGFILE}.$(date '+%Y%m%d_%H%M%S').old"
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$((MAX_OLD_LOGS + 1)) | xargs rm -f --
+    fi
 }
 
 # Initialize idle state as active (avoid stale "idle" leftover)
 echo "active" > "$IDLE_STATUS_FILE"
 
 log_status() {
-    rotate_log  # Check log rotation before writing
-    echo "$(date) - Checking idle status" >> "$LOGFILE"
+    rotate_log  # Check log rotation before writing
+    echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
 is_video_playing() {
-    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
-    BEGIN { found = 0 }
-    /Sink Input/ {next}
-    {
-        if (match($0, /application.name = "([^"]+)"/, arr)) {
-            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
-                found = 1
-            }
-        }
-    }
-    END {
-        if (found)
-            print "playing"
-        else
-            print "not playing"
-        exit found ? 0 : 1
-    }
-    '
-    return $?
+    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
+    BEGIN { found = 0 }
+    /Sink Input/ {next}
+    {
+        if (match($0, /application.name = "([^"]+)"/, arr)) {
+            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
+                found = 1
+            }
+        }
+    }
+    END {
+        if (found)
+            print "playing"
+        else
+            print "not playing"
+        exit found ? 0 : 1
+    }
+    '
+    return $?
 }
 
 # --- Core Logic: Idle Management ---
 check_idle_status() {
-    if [[ -f "$IDLE_STATUS_FILE" ]]; then
-        idle_status=$(<"$IDLE_STATUS_FILE")
+    if [[ -f "$IDLE_STATUS_FILE" ]]; then
+        idle_status=$(<"$IDLE_STATUS_FILE")
 
-        if [[ "$idle_status" == "idle" ]]; then
-            # 1. Start the NEXT screensaver in the background
-            # This allows it to load while the current one is still visible
-            "$SCREENSAVER_SCRIPT" &
+        if [[ "$idle_status" == "idle" ]]; then
+            # 1. Start the NEXT screensaver in the background
+            # This allows it to load while the current one is still visible
+            "$SCREENSAVER_SCRIPT" &
 
-            # 2. Transition Window: Wait for the new screensaver to initialize
-            # This prevents the "black flash" between programs.
-            #sleep 2
+            # 2. Transition Window: Wait for the new screensaver to initialize
+            # This prevents the "black flash" between programs.
+            #sleep 2
 
-            # 3. Handle the Overlap:
-            # pgrep -c counts how many screensavers are currently running.
-            current_count=$(pgrep -c -f "screensaver-")
+            # 3. Handle the Overlap:
+            # pgrep -c counts how many screensavers are currently running.
+            current_count=$(pgrep -c -f "screensaver-")
 
-            if [ "$current_count" -gt 1 ]; then
-                # If more than one is running, kill the OLDEST instance only (-o)
-                pkill -o -f "screensaver-" 2>/dev/null
-                echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
-            else
-                # On the very first run, we don't kill anything.
-                echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
-            fi
-        else
-            # System is ACTIVE: Stop all screensaver processes immediately
-            pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh" 2>/dev/null
-            pkill -9 -f "screensaver-" 2>/dev/null
-            echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
-        fi
-    fi
+            if [ "$current_count" -gt 1 ]; then
+                # If more than one is running, kill the OLDEST instance only (-o)
+                pkill -o -f "screensaver-" 2>/dev/null
+                echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
+            else
+                # On the very first run, we don't kill anything.
+                echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
+            fi
+        else
+            # System is ACTIVE: Stop all screensaver processes immediately
+            pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh" 2>/dev/null
+            pkill -9 -f "screensaver-" 2>/dev/null
+            echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
+        fi
+    fi
 }
 
 # --- Background Task: Swayidle ---
 start_swayidle() {
-    # Clean up any existing swayidle instances first
-    pkill -f "swayidle" 2>/dev/null
-        
-   # Only run swayidle if no video is playing
-	if is_video_playing; then
+    # Clean up any existing swayidle instances first
+    pkill -f "swayidle" 2>/dev/null
+        
+   # Only run swayidle if no video is playing
+	video_status=$(is_video_playing)
+	if [ "$video_status" = "playing" ]; then
 		echo "Video playing, idle detection disabled"
-	else
+	elif [ "$video_status" = "not playing" ]; then
 		swayidle -w \
 			timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
 			resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
 	fi
+
 }
 
 # --- Execution ---
@@ -138,7 +140,7 @@ start_swayidle
 
 # Main loop to continuously check idle status
 while true; do
-    log_status
-    check_idle_status
-    sleep 2 # Check every seconds for idle status (you can adjust this duration)
+    log_status
+    check_idle_status
+    sleep 10 # Check every 10 seconds for idle status (you can adjust this duration)
 done
