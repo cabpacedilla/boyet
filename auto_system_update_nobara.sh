@@ -1,28 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Nobara Linux Auto-Update Daemon (Merged: Script2 + Security + Multi-Internet)
-# ============================================================================
-# This is a BEST-EFFORT tool for personal desktop use.
-# 
-# Features:
-#   - Script 2 architecture (rollback, atomic writes, smart sleep, drift-free)
-#   + Script 1 security checks (post_update_security_check)
-#   + Script 1 multiple internet endpoints
-#
-# What it DOES do:
-#   - Checks for and installs updates automatically
-#   - Logs all changes for auditability
-#   - Notifies you of pending updates and completion
-#   - Verifies system health after updates
-#   - Tracks pre-update state for potential manual rollback
-#   - Performs security checks after updates (AppArmor, services, ports, auth)
-#
-# What it does NOT do (and cannot reliably do):
-#   - Automatic rollback on boot failure (requires boot-time detection)
-#   - Transactional updates (Fedora/Nobara is eventually consistent)
-#   - Guarantee rollback safety across all failure modes
-#
-# For boot failure recovery, see the manual rollback commands below.
+# Nobara Linux Auto-Update Daemon
 # ============================================================================
 
 set -uo pipefail
@@ -32,7 +10,6 @@ STATE_DIR="$HOME/.auto_update_state"
 LOG_DIR="$HOME/scriptlogs"
 LOGFILE="$LOG_DIR/nobara_update_log.txt"
 HISTORY_LOG="$LOG_DIR/update_history.csv"
-PACKAGE_HISTORY_LOG="$LOG_DIR/package_history.csv"
 VERIFICATION_LOG_DIR="$STATE_DIR/verifications"
 LOCK_FILE="$STATE_DIR/auto_update.lock"
 
@@ -52,19 +29,16 @@ mkdir -p "$STATE_DIR" "$LOG_DIR" "$VERIFICATION_LOG_DIR" "$LOG_DIR/archive" || {
     exit 1
 }
 
-# Initialize CSV headers
+# Initialize CSV header for update_history.csv
 if [[ ! -s "$HISTORY_LOG" ]]; then
-    printf '%s\n' "DATE,STATUS,DNF_EXIT,FLATPAK_EXIT,DNF_COUNT,FLATPAK_COUNT" > "$HISTORY_LOG"
-fi
-if [[ ! -s "$PACKAGE_HISTORY_LOG" ]]; then
-    printf '%s\n' "DATE,TYPE,PACKAGE,VERSION" > "$PACKAGE_HISTORY_LOG"
+    printf '%s\n' "DATE,STATUS,DNF_COUNT,FLATPAK_COUNT" > "$HISTORY_LOG"
 fi
 
 # Persist timestamps
 SYSTEM_UPTODATE_LOG_FILE="$STATE_DIR/last_system_uptodate_log"
 SYSTEM_UPTODATE_NOTIFY_FILE="$STATE_DIR/last_system_uptodate_notify"
 
-# Pre-update state tracking (for manual rollback reference)
+# Pre-update state tracking
 PRE_UPDATE_KERNEL_FILE="$STATE_DIR/pre_update_kernel"
 PRE_UPDATE_TRANSACTION_FILE="$STATE_DIR/pre_update_transaction"
 POST_UPDATE_KERNEL_FILE="$STATE_DIR/post_update_kernel"
@@ -97,7 +71,7 @@ safe_write_timestamp() {
 
 safe_write_content() {
     local target="$1"
-    local content="$2"
+content="$2"
     local tmp
     tmp=$(mktemp "$STATE_DIR/tmp.content.XXXXXX") 2>/dev/null || return 1
     printf '%s\n' "$content" > "$tmp" 2>/dev/null || { rm -f "$tmp"; return 1; }
@@ -182,7 +156,7 @@ system_up_to_date() {
     notify "System is up to date." normal 3000
 }
 
-# ================= INTERNET (MULTI-ENDPOINT from Script 1) =================
+# ================= INTERNET =================
 check_internet() {
     local endpoints=(
         "https://www.google.com"
@@ -197,7 +171,6 @@ check_internet() {
         fi
     done
     
-    # Fallback to DNF metadata check
     sudo dnf makecache --timer -q 2>/dev/null && return 0
     return 1
 }
@@ -323,12 +296,10 @@ update_success_timestamp() { safe_write_timestamp "$STATE_DIR/last_success"; }
 
 # ================= PRE-UPDATE STATE TRACKING =================
 track_pre_update_state() {
-    # Save current kernel version for reference
     local current_kernel=$(uname -r)
     echo "$current_kernel" > "$PRE_UPDATE_KERNEL_FILE"
     log "📝 Pre-update kernel saved for reference: $current_kernel"
     
-    # Save current DNF transaction ID for reference
     local trans_id=$(dnf history list 2>/dev/null | grep -v "^ID" | head -1 | awk '{print $1}')
     if [[ -n "$trans_id" && "$trans_id" =~ ^[0-9]+$ ]]; then
         echo "$trans_id" > "$PRE_UPDATE_TRANSACTION_FILE"
@@ -447,16 +418,14 @@ verify_system_health() {
     return $verification_failed
 }
 
-# ================= SECURITY CHECKS (from Script 1) =================
+# ================= SECURITY CHECKS =================
 post_update_security_check() {
     log "Running post-update security checks..."
 
-    # 1. AppArmor check
     if command -v aa-status >/dev/null 2>&1; then
         aa-status >> "$LOGFILE" 2>&1 || log "AppArmor check failed"
     fi
 
-    # 2. Critical services
     for svc in NetworkManager sshd dbus systemd-logind firewalld auditd; do
         if systemctl is-active --quiet "$svc" 2>/dev/null; then
             log "✅ $svc is active"
@@ -465,13 +434,11 @@ post_update_security_check() {
         fi
     done
 
-    # 3. Listening ports sanity (show listening ports only)
     log "Listening ports (ss -tulpn):"
     ss -tulpn 2>/dev/null | head -50 | while read -r line; do
         log_raw "  $line"
     done
 
-    # 4. Authentication failures (last hour)
     local auth_failures
     auth_failures=$(journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep -c "Failed password" || echo 0)
     if [[ $auth_failures -gt 0 ]]; then
@@ -481,13 +448,11 @@ post_update_security_check() {
         log "✅ No authentication failures in last hour"
     fi
 
-    # 5. Kernel errors (priority 3 - errors)
     log "Recent kernel errors (last 50 lines):"
     journalctl -b -p 3 --no-pager 2>/dev/null | tail -50 | while read -r line; do
         log_raw "  $line"
     done
 
-    # 6. Check for failed systemd units
     local failed_units
     failed_units=$(systemctl --failed --no-legend 2>/dev/null | grep -v "drkonqi-coredump-processor" | awk '{print $1}' || true)
     if [[ -n "$failed_units" ]]; then
@@ -502,10 +467,9 @@ post_update_security_check() {
     log "Post-update security checks completed."
 }
 
-# ================= REBOOT TRACKING (FIXED) =================
+# ================= REBOOT TRACKING =================
 REBOOT_NOTIFIED_FILE="$STATE_DIR/reboot_notified"
 
-# Helper function to check if reboot is actually needed
 is_reboot_needed() {
     local installed_kernel
     local running_kernel
@@ -514,13 +478,10 @@ is_reboot_needed() {
     [[ -z "$installed_kernel" ]] && installed_kernel=$(rpm -q kernel --last 2>/dev/null | head -n1 | awk '{print $1}' | sed 's/kernel-//')
     running_kernel=$(uname -r)
     
-    # Return 0 (true) if reboot is needed, 1 (false) if not
     [[ -n "$installed_kernel" && "$installed_kernel" != "$running_kernel" ]]
 }
 
-# Clear reboot notification if no longer needed
 clear_reboot_notification_if_not_needed() {
-    # Debug: Log current kernel comparison
     if is_reboot_needed; then
         log "DEBUG: reboot IS needed (kernel versions differ)"
     else
@@ -529,7 +490,7 @@ clear_reboot_notification_if_not_needed() {
     
     if ! is_reboot_needed; then
         if [[ -f "$REBOOT_NOTIFIED_FILE" ]]; then
-            local content=$(<"$REBOOT_NOTIFIED_FILE")
+content=$(<"$REBOOT_NOTIFIED_FILE")
             if [[ "$(tr -d '[:space:]' <<< "$content")" == "true" ]]; then
                 safe_write_content "$REBOOT_NOTIFIED_FILE" "false"
                 log "Cleared reboot notification (kernel versions now match)"
@@ -541,10 +502,9 @@ clear_reboot_notification_if_not_needed() {
     return 1
 }
 
-# Load initial state
 REBOOT_NOTIFIED=false
 if [[ -f "$REBOOT_NOTIFIED_FILE" ]]; then
-    local content=$(<"$REBOOT_NOTIFIED_FILE")
+content=$(<"$REBOOT_NOTIFIED_FILE")
     if [[ "$(tr -d '[:space:]' <<< "$content")" == "true" ]]; then
         REBOOT_NOTIFIED=true
         log "DEBUG: Loaded REBOOT_NOTIFIED=true from file"
@@ -556,7 +516,6 @@ fi
 quick_verify() {
     local issues_found=0
     
-    # First, clear notification if no longer needed
     clear_reboot_notification_if_not_needed
     
     if systemctl --failed --no-legend 2>/dev/null | grep -v "drkonqi-coredump-processor" | grep -q "."; then
@@ -574,7 +533,6 @@ quick_verify() {
     log "DEBUG: Kernel check - installed: $installed_kernel, running: $running_kernel"
     
     if [[ -n "$installed_kernel" && "$installed_kernel" != "$running_kernel" ]]; then
-        # Reboot is actually needed
         if [[ "$REBOOT_NOTIFIED" != "true" ]]; then
             log "Quick check: Reboot recommended - kernel updated to $installed_kernel (current: $running_kernel)"
             log "   Manual rollback if needed: sudo grubby --set-default /boot/vmlinuz-$running_kernel"
@@ -586,7 +544,6 @@ quick_verify() {
             log "DEBUG: Reboot needed but already notified (REBOOT_NOTIFIED=$REBOOT_NOTIFIED)"
         fi
     else
-        # Kernels match - no reboot needed
         if [[ "$REBOOT_NOTIFIED" == "true" ]]; then
             safe_write_content "$REBOOT_NOTIFIED_FILE" "false"
             REBOOT_NOTIFIED=false
@@ -694,7 +651,6 @@ notify_pending() {
         notify "Found updates: $total_count items" normal
     fi
     
-    # Log to file as well
     if [[ -s "$STATE_DIR/dnf_list" ]]; then
         log_raw "Pending packages:"
         while IFS= read -r line; do log_raw "  $line"; done < "$STATE_DIR/dnf_list"
@@ -706,59 +662,37 @@ notify_pending() {
 }
 
 notify_complete() {
-    # Build the list of what was JUST installed BEFORE clearing
     local update_list
     local total_count
     
-    # Build list from the current state (what was just installed)
     update_list=$(build_update_list)
     total_count=$(cat "$STATE_DIR/update_count" 2>/dev/null || echo 0)
     
-    # Send completion notification WITH the list
     if [[ -n "$update_list" ]]; then
         notify_with_list "✅ Updates Complete" "Successfully updated $total_count items!\n\n$update_list" "normal" 10000
     else
         notify "Updates completed successfully" normal
     fi
     
-    # THEN clear the lists
     > "$STATE_DIR/dnf_list" 2>/dev/null || true
     > "$STATE_DIR/flatpak_list" 2>/dev/null || true
 }
 
-# ================= CSV ESCAPE =================
-csv_escape() {
-    local input="$1"
-    if [[ "$input" =~ [,\"] ]]; then
-        input="${input//\"/\"\"}"
-        printf '"%s"' "$input"
-    else
-        printf '%s' "$input"
-    fi
-}
-
+# ================= LOG UPDATED PACKAGES (Direct to HISTORY_LOG) =================
 log_updated_packages() {
     local date_str=$(date '+%Y-%m-%d')
     
+    # Log DNF packages directly to HISTORY_LOG
     if [[ -s "$STATE_DIR/dnf_list" ]]; then
-        while IFS= read -r package; do
-            local pkg_name="${package%% (*}"
-            local pkg_version="${package##*\(}"
-            pkg_version="${pkg_version%\)}"
-            printf '%s,DNF,%s,%s\n' "$date_str" "$(csv_escape "$pkg_name")" "$(csv_escape "$pkg_version")" >> "$PACKAGE_HISTORY_LOG"
+        while IFS= read -r line; do
+            printf '%s %s\n' "$date_str" "DNF $line" >> "$HISTORY_LOG"
         done < "$STATE_DIR/dnf_list"
     fi
     
+    # Log Flatpak packages directly to HISTORY_LOG
     if [[ -s "$STATE_DIR/flatpak_list" ]]; then
-        while IFS= read -r package; do
-            local flatpak_name="${package%% (*}"
-            local flatpak_id="${package##*\(}"
-            flatpak_id="${flatpak_id%\)}"
-            if [[ "$flatpak_name" == "$flatpak_id" ]]; then
-                printf '%s,Flatpak,%s,\n' "$date_str" "$(csv_escape "$package")" >> "$PACKAGE_HISTORY_LOG"
-            else
-                printf '%s,Flatpak,%s,%s\n' "$date_str" "$(csv_escape "$flatpak_name")" "$(csv_escape "$flatpak_id")" >> "$PACKAGE_HISTORY_LOG"
-            fi
+        while IFS= read -r line; do
+            printf '%s %s\n' "$date_str" "Flatpak $line" >> "$HISTORY_LOG"
         done < "$STATE_DIR/flatpak_list"
     fi
 }
@@ -786,7 +720,7 @@ run_updates() {
     local TEMP_SYNC_LOG
     TEMP_SYNC_LOG=$(mktemp_safe) || return 1
 
-    sudo -v || {
+    sudo -n true 2>/dev/null || {
         log "ERROR: Cannot obtain sudo privileges"
         LAST_DNF_EXIT="no-sudo"
         LAST_FLATPAK_EXIT="no-sudo"
@@ -794,10 +728,8 @@ run_updates() {
         return 1
     }
 
-    # Track pre-update state for manual rollback reference
     track_pre_update_state
 
-    # Simple keep-alive that exits when parent dies
     (
         while kill -0 "$PPID" 2>/dev/null; do
             sudo -n true 2>/dev/null
@@ -866,10 +798,11 @@ run_updates() {
     fi
     
     if [[ $UPDATE_SUCCESS -eq 0 ]]; then
-        # Save post-update kernel for reference
         uname -r > "$POST_UPDATE_KERNEL_FILE" 2>/dev/null || true
         
+        # Log individual packages directly to HISTORY_LOG
         log_updated_packages
+        
         notify_complete
         
         if [[ "$ENABLE_AUTOREMOVE" == "true" ]]; then
@@ -888,7 +821,6 @@ run_updates() {
         log_raw "=============================="
         verify_system_health || true
         
-        # Run security checks (from Script 1)
         post_update_security_check
     fi
 
@@ -998,33 +930,40 @@ main() {
         fetch_pending_updates
 
         if updates_available; then
+            # Get counts BEFORE update
             local dnf_count=0
             local flatpak_count=0
             [[ -s "$STATE_DIR/dnf_list" ]] && dnf_count=$(wc -l < "$STATE_DIR/dnf_list")
             [[ -s "$STATE_DIR/flatpak_list" ]] && flatpak_count=$(wc -l < "$STATE_DIR/flatpak_list")
             
-            printf '%s,STARTED,,,%d,%d\n' "$(date '+%F')" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
+            # Log the pending summary: OK,DNF:X,FLATPAK:Y
+            printf '%s,OK,DNF:%d,FLATPAK:%d\n' "$(date '+%F')" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
+            
             notify_pending
             
             if run_updates; then
-                printf '%s,SUCCESS,%s,%s,%d,%d\n' "$(date '+%F')" "${LAST_DNF_EXIT}" "${LAST_FLATPAK_EXIT}" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
+                # Individual packages are logged inside run_updates() by log_updated_packages()
+                
+                # Log final state after updates: OK,DNF:0,FLATPAK:0
+                printf '%s,OK,DNF:0,FLATPAK:0\n' "$(date '+%F')" >> "$HISTORY_LOG"
+                
                 log "Update cycle completed successfully"
                 update_success_timestamp
                 system_up_to_date
                 quick_verify
             else
-                printf '%s,FAIL,%s,%s,%d,%d\n' "$(date '+%F')" "${LAST_DNF_EXIT:-unknown}" "${LAST_FLATPAK_EXIT:-unknown}" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
+                printf '%s,FAIL,DNF:%s,FLATPAK:%s\n' "$(date '+%F')" "${LAST_DNF_EXIT:-unknown}" "${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
                 log "Update cycle failed"
             fi
         else
-            printf '%s,UP_TO_DATE,0,0,0,0\n' "$(date '+%F')" >> "$HISTORY_LOG"
+            # No updates available
+            printf '%s,OK,DNF:0,FLATPAK:0\n' "$(date '+%F')" >> "$HISTORY_LOG"
             system_up_to_date
             quick_verify
         fi
 
         rotate_logs
         
-        # Add random jitter to prevent herd execution (3600 ± 60 seconds)
         local jitter=$((RANDOM % 120 - 60))
         local adjusted_interval=$((3600 + jitter))
         
