@@ -71,7 +71,7 @@ safe_write_timestamp() {
 
 safe_write_content() {
     local target="$1"
-content="$2"
+    local content="$2"
     local tmp
     tmp=$(mktemp "$STATE_DIR/tmp.content.XXXXXX") 2>/dev/null || return 1
     printf '%s\n' "$content" > "$tmp" 2>/dev/null || { rm -f "$tmp"; return 1; }
@@ -490,7 +490,8 @@ clear_reboot_notification_if_not_needed() {
     
     if ! is_reboot_needed; then
         if [[ -f "$REBOOT_NOTIFIED_FILE" ]]; then
-content=$(<"$REBOOT_NOTIFIED_FILE")
+			local content
+            content=$(<"$REBOOT_NOTIFIED_FILE")
             if [[ "$(tr -d '[:space:]' <<< "$content")" == "true" ]]; then
                 safe_write_content "$REBOOT_NOTIFIED_FILE" "false"
                 log "Cleared reboot notification (kernel versions now match)"
@@ -504,7 +505,7 @@ content=$(<"$REBOOT_NOTIFIED_FILE")
 
 REBOOT_NOTIFIED=false
 if [[ -f "$REBOOT_NOTIFIED_FILE" ]]; then
-content=$(<"$REBOOT_NOTIFIED_FILE")
+    content=$(<"$REBOOT_NOTIFIED_FILE")
     if [[ "$(tr -d '[:space:]' <<< "$content")" == "true" ]]; then
         REBOOT_NOTIFIED=true
         log "DEBUG: Loaded REBOOT_NOTIFIED=true from file"
