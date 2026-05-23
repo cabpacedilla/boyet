@@ -176,33 +176,33 @@ check_internet() {
 }
 
 # ================= LOCK HANDLING =================
-#~ KEEP_ALIVE_PID=""
-#~ LOCK_ACQUIRED=false
+KEEP_ALIVE_PID=""
+LOCK_ACQUIRED=false
 
-#~ cleanup_keepalive() {
-    #~ if [[ -n "${KEEP_ALIVE_PID:-}" ]] && kill -0 "$KEEP_ALIVE_PID" 2>/dev/null; then
-        #~ kill "$KEEP_ALIVE_PID" 2>/dev/null || true
-        #~ wait "$KEEP_ALIVE_PID" 2>/dev/null || true
-    #~ fi
-    #~ KEEP_ALIVE_PID=""
-#~ }
+cleanup_keepalive() {
+    if [[ -n "${KEEP_ALIVE_PID:-}" ]] && kill -0 "$KEEP_ALIVE_PID" 2>/dev/null; then
+        kill "$KEEP_ALIVE_PID" 2>/dev/null || true
+        wait "$KEEP_ALIVE_PID" 2>/dev/null || true
+    fi
+    KEEP_ALIVE_PID=""
+}
 
-#~ cleanup_lock() {
-    #~ if [[ "${LOCK_ACQUIRED:-false}" == "true" ]]; then
-        #~ flock -u 9 2>/dev/null || true
-        #~ exec 9>&- 2>/dev/null || true
-        #~ rm -f "$LOCK_FILE" 2>/dev/null || true
-        #~ LOCK_ACQUIRED=false
-    #~ fi
-#~ }
+cleanup_lock() {
+    if [[ "${LOCK_ACQUIRED:-false}" == "true" ]]; then
+        flock -u 9 2>/dev/null || true
+        exec 9>&- 2>/dev/null || true
+        rm -f "$LOCK_FILE" 2>/dev/null || true
+        LOCK_ACQUIRED=false
+    fi
+}
 
-#~ exec 9>"$LOCK_FILE"
-#~ if ! flock -n 9; then
-    #~ printf '%s - Already running\n' "$(date '+%F %T')" | tee -a "$LOGFILE"
-    #~ exit 1
-#~ fi
-#~ LOCK_ACQUIRED=true
-#~ trap 'cleanup_keepalive; cleanup_lock' EXIT INT TERM
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    printf '%s - Already running\n' "$(date '+%F %T')" | tee -a "$LOGFILE"
+    exit 1
+fi
+LOCK_ACQUIRED=true
+trap 'cleanup_keepalive; cleanup_lock' EXIT INT TERM
 
 # ================= SAFETY CHECKS =================
 check_package_lock() {
