@@ -2141,3 +2141,7 @@ Lin 24 May 2026 01:47:17 N.H. PST: Strategy: SDET Specialist. Focus on Cypress/P
 Lin 24 May 2026 01:47:17 N.H. PST: Running Scraper for: ("Senior QA" OR SDET) AND (Python OR Cypress) AND (Selenium OR Postman OR API) AND (Contract OR Remote OR Part-time OR Freelance) NOT ("Full-time" OR Permanent)
 Lin 24 May 2026 01:48:16 N.H. PST: SUCCESS - Sent email for 12 jobs.
 Lin 24 May 2026 01:48:16 N.H. PST: Sleeping for 67 minutes...
+------------------------------------------------
+Lin 24 May 2026 02:39:54 N.H. PST: Starting Search Cycle (LinkedIn, Indeed, JobStreet, Mynimo)...
+Lin 24 May 2026 02:39:54 N.H. PST: Strategy: SDET Specialist. Focus on Cypress/Python frameworks - CONTRACT/REMOTE ONLY
+Lin 24 May 2026 02:39:54 N.H. PST: Running Scraper for: ("Senior QA" OR SDET) AND (Python OR Cypress) AND (Selenium OR Postman OR API) AND (Contract OR Remote OR Part-time OR Freelance) NOT ("Full-time" OR Permanent)
