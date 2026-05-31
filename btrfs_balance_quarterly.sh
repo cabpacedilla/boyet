@@ -19,8 +19,8 @@ cleanup() {
     exec 9>&- 2>/dev/null || true
 }
 
-trap 'exit 130' INT
-trap 'exit 143' TERM
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM
 trap cleanup EXIT
 
 set -o pipefail
@@ -123,7 +123,7 @@ while true; do
 
             # Execute
             if sudo ionice -c3 nice -n 19 \
-                btrfs balance start -B -dusage="${DATA_USAGE_THRESHOLD}" "$MOUNTPOINT" \
+                btrfs balance start -dusage="${DATA_USAGE_THRESHOLD}" "$MOUNTPOINT" \
                 >> "$LOGFILE" 2>&1; then
 
                 log "✅ Balance completed successfully"
