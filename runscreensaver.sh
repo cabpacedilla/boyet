@@ -15,26 +15,26 @@
 # ============================================================================
 
 # --- Process Lock (Prevent multiple instances) ---
-LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
-exec 9>"${LOCK_FILE}"
-if ! flock -n 9; then
-    exit 0  # Already running, exit silently
-fi
+#~ LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ exit 0  # Already running, exit silently
+#~ fi
 
-# Store our PID
-echo $$ > "$LOCK_FILE"
+#~ # Store our PID
+#~ echo $$ > "$LOCK_FILE"
 
-# Enhanced cleanup that only removes our PID file
-cleanup() {
-    # Only remove if it's our PID (prevents removing another process's lock)
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
-}
+#~ # Enhanced cleanup that only removes our PID file
+#~ cleanup() {
+    #~ # Only remove if it's our PID (prevents removing another process's lock)
+    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        #~ rm -f "$LOCK_FILE"
+    #~ fi
+    #~ flock -u 9 2>/dev/null || true
+    #~ exec 9>&- 2>/dev/null || true
+#~ }
 
-trap cleanup EXIT
+#~ trap cleanup EXIT
 
 # --- Environment Setup ---
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -138,7 +138,7 @@ start_swayidle() {
     elif [ "$video_status" = "not playing" ]; then
         swayidle -w \
             timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
-            resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" 
+            resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
         echo "$(date) - swayidle started with ${IDLE_TIMEOUT} minute timeout" >> "$LOGFILE"
     fi
 }

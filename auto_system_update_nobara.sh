@@ -196,13 +196,13 @@ cleanup_lock() {
     fi
 }
 
-exec 9>"$LOCK_FILE"
-if ! flock -n 9; then
-    printf '%s - Already running\n' "$(date '+%F %T')" | tee -a "$LOGFILE"
-    exit 1
-fi
-LOCK_ACQUIRED=true
-trap 'cleanup_keepalive; cleanup_lock' EXIT INT TERM
+# exec 9>"$LOCK_FILE"
+# if ! flock -n 9; then
+#     printf '%s - Already running\n' "$(date '+%F %T')" | tee -a "$LOGFILE"
+#     exit 1
+# fi
+# LOCK_ACQUIRED=true
+# trap 'cleanup_keepalive; cleanup_lock' EXIT INT TERM
 
 # ================= SAFETY CHECKS =================
 check_package_lock() {
