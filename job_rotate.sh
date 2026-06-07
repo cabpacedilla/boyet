@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 LOCK_FILE="/tmp/job_rotate_$(whoami).lock"
 exec 9>"${LOCK_FILE}"

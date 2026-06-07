@@ -41,6 +41,7 @@ SCRIPTS=(
     "power_usage"
     "runscreensaver"
     "security_check"
+    "visa_sponsorship_search"
 )
 
 COOLDOWN=30   # seconds between checks
