@@ -106,7 +106,7 @@ while true; do
         fi
 
         # Process control – match by full script path (robust)
-        PROCS=($(pgrep -f "$SCRIPT_PATH"))
+        PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
         NUM_RUNNING=${#PROCS[@]}
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
