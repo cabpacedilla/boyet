@@ -15,26 +15,26 @@
 # ============================================================================
 
 # --- Process Lock (Prevent multiple instances) ---
-#~ LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
-#~ exec 9>"${LOCK_FILE}"
-#~ if ! flock -n 9; then
-    #~ exit 0  # Already running, exit silently
-#~ fi
+LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 0  # Already running, exit silently
+fi
 
-#~ # Store our PID
-#~ echo $$ > "$LOCK_FILE"
+# Store our PID
+echo $$ > "$LOCK_FILE"
 
-#~ # Enhanced cleanup that only removes our PID file
-#~ cleanup() {
-    #~ # Only remove if it's our PID (prevents removing another process's lock)
-    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        #~ rm -f "$LOCK_FILE"
-    #~ fi
-    #~ flock -u 9 2>/dev/null || true
-    #~ exec 9>&- 2>/dev/null || true
-#~ }
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
 
-#~ trap cleanup EXIT
+trap cleanup EXIT
 
 # --- Environment Setup ---
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -124,31 +124,35 @@ check_idle_status() {
     fi
 }
 
-# --- Background Task: Swayidle ---
-start_swayidle() {
-    # Clean up any existing swayidle instances first
-    pkill -f "swayidle" 2>/dev/null
-    
-    # Only run swayidle if no video is playing
-    video_status=$(is_video_playing)
-    if [ "$video_status" = "playing" ]; then
-        echo "$(date) - Video playing, idle detection disabled" >> "$LOGFILE"
-        pkill -9 -f "randscreensavers.sh" 2>/dev/null
-        pkill -9 -f "screensaver-" 2>/dev/null
-    elif [ "$video_status" = "not playing" ]; then
-        swayidle -w \
-            timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
-            resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
-        echo "$(date) - swayidle started with ${IDLE_TIMEOUT} minute timeout" >> "$LOGFILE"
-    fi
-}
+# --- Background Task: Swayidle (no longer called at startup; managed in loop) ---
+# (start_swayidle function removed; swayidle is started/killed inside main loop)
 
 # --- Execution ---
-start_swayidle
-
-# Main loop to continuously check idle status
+# Main loop: check video status at the start of every iteration
 while true; do
     log_status
-    check_idle_status
+
+    # Re-check video playing status each loop
+    video_status=$(is_video_playing)
+
+    if [[ "$video_status" == "playing" ]]; then
+        # Video is playing → disable idle detection
+        pkill -f "swayidle" 2>/dev/null
+        pkill -9 -f "randscreensavers.sh" 2>/dev/null
+        pkill -9 -f "screensaver-" 2>/dev/null
+        echo "active" > "$IDLE_STATUS_FILE"
+        echo "$(date) - Video playing, idle detection disabled" >> "$LOGFILE"
+    else
+        # No video playing → ensure swayidle is running
+        if ! pgrep -f "swayidle" > /dev/null; then
+            swayidle -w \
+                timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+                resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+            echo "$(date) - swayidle started (video stopped)" >> "$LOGFILE"
+        fi
+        # Check idle status to start/stop screensavers
+        check_idle_status
+    fi
+
     sleep 10
 done

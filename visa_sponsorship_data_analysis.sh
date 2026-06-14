@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # ============================================================
-# Himalayas Job Search - Senior QA/SDET Roles (Semantic Mode)
-# Keyword-based search for maximum coverage with minimal API calls
-# VERSION: 2.1 - Fixed grep newline bug and invalid seniorities
+# Himalayas Job Search - Senior Data Analysis Roles
+# Runs continuously with jittered intervals (~22 times/day)
 # ============================================================
 
-set -Euo pipefail
+set -uo pipefail
 
 # --- CONFIGURATION ---
 readonly BIN_DIR="$HOME/Documents/bin"
@@ -13,7 +12,7 @@ readonly SEEN_FILE="$BIN_DIR/jobs_seen.txt"
 readonly LOG_DIR="$HOME/scriptlogs/job_search"
 readonly JSON_LOG_FILE="$BIN_DIR/visa_job_search.jsonl"  
 readonly HEARTBEAT_FILE="$BIN_DIR/visa_job_engine.heartbeat"
-readonly EMAIL_TO="cabpacedilla@gmail.com"
+readonly EMAIL_TO="claive21@hotmail.com"
 
 # IMPORTANT: Set to true for worldwide search, false for visa-friendly countries only
 readonly INCLUDE_WORLDWIDE=true
@@ -21,113 +20,81 @@ readonly INCLUDE_WORLDWIDE=true
 mkdir -p "$LOG_DIR" "$BIN_DIR"
 touch "$SEEN_FILE" "$JSON_LOG_FILE"
 
-# --- LOCKING ---
-readonly LOCK_FILE="/tmp/visa_job_scraper_$(whoami).lock"
-exec 9>"$LOCK_FILE"
-
-if ! flock -n 9; then
-    echo "$(date): Another instance running, exiting." >&2
-    exit 1
-fi
-
-echo $$ > "$LOCK_FILE"
-
-cleanup() {
-    pkill -P $$ 2>/dev/null
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
-}
-
-trap '
-    visa_json_log "WARN" "SIGTERM received"
-    cleanup
-    exit 143
-' TERM
-
-trap '
-    visa_json_log "WARN" "SIGINT received"
-    cleanup
-    exit 130
-' INT
-
-trap '
-    rc=$?
-    if (( rc != 0 )); then
-        visa_json_log "ERROR" "Unexpected exit rc=$rc line=$LINENO"
-    else
-        visa_json_log "INFO" "Normal exit"
-    fi
-    cleanup
-' EXIT
-
-trap '
-    rc=$?
-    visa_json_log "ERROR" "ERR trap rc=$rc line=$LINENO command=${BASH_COMMAND}"
-' ERR
 
 # ============================================================
-# SEMANTIC KEYWORDS (instead of fixed job titles)
-# These are broad, high-recall terms that capture real-world variations
+# JOB TITLES
 # ============================================================
-readonly QA_KEYWORDS=(
-    "QA"
-    "Quality Assurance"
-    "Test Engineer"
-    "Software Test"
-    "SDET"
-    "Automation Test"
-    "Quality Engineering"
-    "IT Professional"
-    "Linux Desktop"
-    "Ubuntu Desktop"
+readonly VISA_JOB_TITLES=(
+    "Senior Data Analyst"
+    "Lead Data Analyst"
+    "Principal Data Analyst"
+    "Data Analytics Manager"
+    "Senior Business Intelligence Analyst"
+    "Lead Business Intelligence Analyst"
+    "BI Manager"
+    "Analytics Manager"
+    "Senior Insights Analyst"
+    "Lead Insights Analyst"
+    "Data Analysis Team Lead"
+    "Director of Data Analysis"
+    "Senior Data Scientist"          # if role focuses on analysis/insights
+    "Lead Data Scientist"            # with emphasis on analytics
+    "Senior Reporting Analyst"
+    "Lead Reporting Analyst"
+    "Data Governance Analyst Senior"
+    "Senior Product Analyst"
+    "Lead Product Analyst"
+    "Analytics Architect"
+    "Data Strategy Analyst Senior"
 )
 
 # ============================================================
-# SENIORITY LEVELS - UPDATED to only API-supported values
-# API only accepts: Senior, Lead, Manager
-# Staff, Principal, Junior removed (caused API errors)
+# SENIORITY LEVELS
 # ============================================================
 readonly VISA_SENIORITY_LEVELS=(
     "Senior"
     "Lead"
     "Manager"
+    "Staff"
+    "Principal"
 )
 
 # ============================================================
-# VISA-FRIENDLY COUNTRIES (unchanged)
+# VISA-FRIENDLY COUNTRIES
 # ============================================================
 readonly VISA_FRIENDLY_COUNTRIES=(
-    "AU" "DE" "GB" "CA" "IE" "NL" "SG" "AE"
+    "AU"  # Australia (482, 186 visas)
+    "DE"  # Germany (Blue Card)
+    "GB"  # United Kingdom (Skilled Worker)
+    "CA"  # Canada (Global Talent Stream)
+    "IE"  # Ireland (Critical Skills)
+    "NL"  # Netherlands (Highly Skilled Migrant)
+    "SG"  # Singapore (Employment Pass)
+    "AE"  # UAE (Golden Visa)
 )
 
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
 visa_log() {
-    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-    echo "$msg"
-    echo "$msg" >> "$LOG_DIR/job_search_$(date +%Y%m%d).log"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_DIR/job_search_$(date +%Y%m%d).log"
 }
 
 visa_json_log() {
     local level="$1"
     local message="$2"
     local timestamp=$(date -Iseconds)
-    echo "{\"timestamp\":\"$timestamp\",\"level\":\"$level\",\"message\":\"$message\"}" >> "$JSON_LOG_FILE" 2>/dev/null || true
+    echo "{\"timestamp\":\"$timestamp\",\"level\":\"$level\",\"message\":\"$message\"}" >> "$JSON_LOG_FILE"
+    # Rotate JSON log if it grows beyond 10 MB
     if [[ $(stat -c%s "$JSON_LOG_FILE" 2>/dev/null) -gt 10485760 ]]; then
         tail -n 5000 "$JSON_LOG_FILE" > "$JSON_LOG_FILE.tmp"
         mv "$JSON_LOG_FILE.tmp" "$JSON_LOG_FILE"
     fi
 }
 
-# FIXED: Heartbeat function now strips newlines
 visa_update_heartbeat() {
     local count="$1"
-    local clean_count=$(echo "$count" | tr -d '\n\r' | xargs)
-    echo "$(date +%s):$clean_count" > "$HEARTBEAT_FILE"
+    echo "$(date +%s):$count" > "$HEARTBEAT_FILE"
 }
 
 visa_job_is_seen() {
@@ -158,27 +125,22 @@ visa_rotate_seen_file() {
 }
 
 # ============================================================
-# HIMALAYAS API SEARCH (Keyword + Seniority)
+# HIMALAYAS API SEARCH (NO PIPELINES, NO PROCESS SUBSTITUTION)
 # ============================================================
 visa_search_himalayas() {
     local keyword="$1"
     local seniority="$2"
     local results_file="$3"
-    local count=0  # Initialize properly
+    local count=0
     
-    # Skip invalid seniority values
-    if [[ ! "$seniority" =~ ^(Senior|Lead|Manager)$ ]]; then
-        visa_log "⚠️ Skipping invalid seniority: $seniority (not supported by API)"
-        return 0
-    fi
-    
-    visa_log "🌄 Searching Himalayas: keyword='$keyword' seniority='$seniority'"
+    visa_log "🌄 Searching Himalayas API: $keyword ($seniority)"
     
     local encoded_keyword=$(echo "$keyword" | sed 's/ /%20/g')
     
     local url
     if [[ "$INCLUDE_WORLDWIDE" == "true" ]]; then
         url="https://himalayas.app/jobs/api/search?q=${encoded_keyword}&seniority=${seniority}&worldwide=true&employment_type=Full%20Time"
+        visa_log "   Location: Worldwide"
     else
         local location_params=""
         for country in "${VISA_FRIENDLY_COUNTRIES[@]}"; do
@@ -189,15 +151,17 @@ visa_search_himalayas() {
             fi
         done
         url="https://himalayas.app/jobs/api/search?q=${encoded_keyword}&seniority=${seniority}&${location_params}&employment_type=Full%20Time"
+        visa_log "   Location: Visa-friendly countries only"
     fi
     
     local response=$(curl -s --max-time 30 "$url" 2>/dev/null)
     
     if [[ -z "$response" ]] || [[ "$response" == "[]" ]]; then
-        visa_log "   No results"
+        visa_log "   No results from Himalayas"
         return 0
     fi
     
+    # Write jq output to a temporary file (no pipeline in the while loop)
     local jq_temp=$(mktemp)
     echo "$response" | timeout 10s jq -r '.jobs[]? | 
         .title as $title |
@@ -209,6 +173,7 @@ visa_search_himalayas() {
         (.currency // "") as $salary_currency |
         "\($title)|\($company)|\($location)|\($url)|\($salary_min)|\($salary_max)|\($salary_currency)"' 2>/dev/null > "$jq_temp"
     
+    # Read from the temporary file – no subshell
     while IFS='|' read -r title company location url salary_min salary_max salary_currency; do
         if [[ -z "$title" ]] || [[ -z "$company" ]]; then
             continue
@@ -222,18 +187,18 @@ visa_search_himalayas() {
                 salary_text=" (${salary_currency}${salary_min}-${salary_max})"
             fi
             
-            echo "HIMALAYAS|$seniority|$title|$company|$location|$url|$salary_text" >> "$results_file"
+            echo "HIMALAYAS|$seniority|$title|$company|$location|$url|Remote$salary_text" >> "$results_file"
             visa_mark_job_seen "$job_id"
-            count=$((count + 1))
+            ((count++))
         fi
     done < "$jq_temp"
     
     rm -f "$jq_temp"
-    visa_log "   ✓ Found $count new jobs"
+    visa_log "   ✓ Found $count new jobs from Himalayas"
 }
 
 # ============================================================
-# EMAIL FUNCTION
+# EMAIL FUNCTION (NO PIPELINES, NO PROCESS SUBSTITUTION)
 # ============================================================
 visa_send_email() {
     local results_file="$1"
@@ -244,7 +209,7 @@ visa_send_email() {
         return 0
     fi
     
-    local subject="🎯 Visa Sponsorships Job Alert: $total_count new QA/SDET positions (semantic search)"
+    local subject="🎯 Visa Sponsorships Job Alert: $total_count new Senior Data Analysis positions"
     
     {
         echo "To: $EMAIL_TO"
@@ -253,37 +218,37 @@ visa_send_email() {
         echo ""
         echo "Hi Claive,"
         echo ""
-        echo "🌍 Found $total_count new QA/SDET opportunities using semantic keyword search:"
+        echo "🌍 Found $total_count new senior QA/SDET opportunities:"
         echo ""
         echo "============================================================"
-        echo "SEARCH METHOD:"
-        echo "  Keywords: ${QA_KEYWORDS[*]}"
-        echo "  Seniorities: ${VISA_SENIORITY_LEVELS[*]}"
+        echo "LEGEND:"
+        echo "  🌍 Remote roles (always available)"
         if [[ "$INCLUDE_WORLDWIDE" == "false" ]]; then
-            echo "  Location: Visa-friendly countries only (${VISA_FRIENDLY_COUNTRIES[*]})"
-        else
-            echo "  Location: Worldwide"
+            echo ""
+            echo "📍 LOCATION FILTER: Visa-friendly countries only"
+            echo "   Countries: ${VISA_FRIENDLY_COUNTRIES[*]}"
         fi
         echo "============================================================"
         echo ""
     } > /tmp/visa_email_body.txt
 
+    # Use a temporary file for filtering (no pipeline)
     local grep_temp=$(mktemp)
     grep "^HIMALAYAS" "$results_file" > "$grep_temp" 2>/dev/null
     
     if [[ -s "$grep_temp" ]]; then
-        echo "📌 NEW JOB POSTINGS:" >> /tmp/visa_email_body.txt
+        echo "🌍 REMOTE ROLES:" >> /tmp/visa_email_body.txt
         echo "" >> /tmp/visa_email_body.txt
         
         while IFS='|' read -r source seniority title company location url salary; do
+            local clean_company="$company"
             local salary_display=""
-            if [[ -n "$salary" && "$salary" != "null" ]]; then
+            if [[ "$salary" != "Remote" && "$salary" != "null" && -n "$salary" ]]; then
                 salary_display=" - $salary"
             fi
             
-            echo "📍 $title @ $company ($location)$salary_display" >> /tmp/visa_email_body.txt
+            echo "📍 $title @ $clean_company$salary_display" >> /tmp/visa_email_body.txt
             echo "   🔗 $url" >> /tmp/visa_email_body.txt
-            echo "   🎓 Seniority: $seniority" >> /tmp/visa_email_body.txt
             echo "" >> /tmp/visa_email_body.txt
         done < "$grep_temp"
     fi
@@ -292,20 +257,24 @@ visa_send_email() {
     {
         echo "---"
         echo "📊 SUMMARY"
-        echo "   Total new jobs: $total_count"
+        echo "   Total jobs found: $total_count"
+        echo ""
+        echo "🔍 SEARCH CRITERIA"
+        echo "   Seniority levels: ${VISA_SENIORITY_LEVELS[*]}"
+        echo "   Job titles: ${VISA_JOB_TITLES[*]}"
         echo ""
         echo "📅 Search performed on: $(date)"
         echo ""
-        echo "💡 Apply quickly – positions may close soon."
+        echo "💡 Apply quickly! These positions may close soon."
         echo ""
         echo "---"
-        echo "🔧 To modify search keywords or seniority levels, edit the script."
+        echo "🔧 To modify search parameters, edit the script configuration."
     } >> /tmp/visa_email_body.txt
 
     msmtp -a default "$EMAIL_TO" < /tmp/visa_email_body.txt 2>/dev/null
     
     if [[ $? -eq 0 ]]; then
-        visa_log "Email sent with $total_count jobs (semantic mode)"
+        visa_log "Email sent with $total_count jobs (clean format)"
     else
         visa_log "Failed to send email"
     fi
@@ -314,42 +283,42 @@ visa_send_email() {
 }
 
 # ============================================================
-# MAIN SEARCH CYCLE (Keyword × Seniority)
+# MAIN SEARCH CYCLE
 # ============================================================
 visa_main_cycle() {
     visa_rotate_seen_file
-    visa_json_log "INFO" "Starting semantic job search cycle"
+    visa_json_log "INFO" "Starting visa sponsorship search cycle"
     
     visa_log "=========================================="
-    visa_log "Semantic Job Search Started"
-    visa_log "Keywords: ${QA_KEYWORDS[*]}"
-    visa_log "Seniorities: ${VISA_SENIORITY_LEVELS[*]}"
+    visa_log "Himalayas Job Search Started"
     visa_log "=========================================="
     
     local temp_results=$(mktemp)
-    local total_found=0
+    local VISA_COUNT=0
     
-    for keyword in "${QA_KEYWORDS[@]}"; do
+    for title in "${VISA_JOB_TITLES[@]}"; do
         for seniority in "${VISA_SENIORITY_LEVELS[@]}"; do
-            visa_search_himalayas "$keyword" "$seniority" "$temp_results"
+            visa_search_himalayas "$title" "$seniority" "$temp_results"
         done
     done
     
-    # FIXED: grep -c can add newlines, so we clean the output
-    # Using awk instead for cleaner number handling
-    total_found=$(awk '/^HIMALAYAS/ {count++} END {print count+0}' "$temp_results")
+    local total_count
+    total_count=$(grep -c "^HIMALAYAS" "$temp_results" 2>/dev/null || echo "0")
+    VISA_COUNT=$total_count
     
     visa_log "=========================================="
-    visa_log "Search Complete - Found $total_found new jobs"
+    visa_log "Search Complete - Found $total_count new jobs"
     visa_log "=========================================="
     
-    if [[ "$total_found" -gt 0 ]]; then
-        visa_send_email "$temp_results" "$total_found"
+    if [[ "$total_count" -gt 0 ]]; then
+        visa_send_email "$temp_results" "$total_count"
+        
         echo ""
         echo "📊 JOB SEARCH SUMMARY:"
-        echo "   Total new jobs: $total_found"
+        echo "   Himalayas: $total_count"
         echo ""
-        visa_json_log "SUCCESS" "Sent email with $total_found jobs (semantic search)"
+        
+        visa_json_log "SUCCESS" "Sent email with $total_count visa sponsorship jobs"
     else
         visa_json_log "INFO" "No new jobs found"
     fi
@@ -357,14 +326,14 @@ visa_main_cycle() {
     cat "$temp_results" >> "$LOG_DIR/job_search_$(date +%Y%m%d).log" 2>/dev/null
     rm -f "$temp_results"
     
-    visa_update_heartbeat "$total_found"
+    visa_update_heartbeat "$VISA_COUNT"
     visa_json_log "INFO" "Cycle complete"
     
     visa_log "Search complete!"
 }
 
 # ============================================================
-# INFINITE LOOP WITH JITTER (~22 runs/day)
+# INFINITE LOOP WITH JITTER (~22 runs per day)
 # ============================================================
 while true; do
     visa_main_cycle

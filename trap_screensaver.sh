@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 # This script runs randomly selected screensaver- programs every 15 seconds.
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"

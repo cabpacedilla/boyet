@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Run glxgears, capture stderr, and extract the last FPS value
 fps=$(glxgears 2>&1 | awk '/FPS/ {print $3}' | tail -1 | cut -d. -f1)
