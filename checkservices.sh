@@ -2,28 +2,28 @@
 # Multi-script monitor: ensures scripts in SCRIPTS array are running,
 # kills extras, and notifies if missing.
 
-#~ LOCK_FILE="/tmp/checkservices_$(whoami).lock"
-#~ exec 9>"${LOCK_FILE}"
-#~ if ! flock -n 9; then
-    #~ exit 1
-#~ fi
+LOCK_FILE="/tmp/checkservices_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 1
+fi
 
-#~ # Store our PID
-#~ echo $$ > "$LOCK_FILE"
+# Store our PID
+echo $$ > "$LOCK_FILE"
 
-#~ # Enhanced cleanup that only removes our PID file
-#~ cleanup() {
-    #~ # Only remove if it's our PID (prevents removing another process's lock)
-    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        #~ rm -f "$LOCK_FILE"
-    #~ fi
-    #~ flock -u 9
-    #~ exec 9>&-
-#~ }
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9
+    exec 9>&-
+}
 
-#~ trap cleanup EXIT
+trap cleanup EXIT
 
-# Base scripts (always run)
+# Base scripts that do NOT require internet (always run)
 SCRIPTS=(
     "autosync"
     "autobrightness"
@@ -32,7 +32,6 @@ SCRIPTS=(
     "btrfs_balance_quarterly"
     "btrfs_scrub_monthly"
     "fortune4you"
-    "job_rotate"
     "keyLocked"
     "laptopLid_close"
     "login_monitor"
@@ -41,7 +40,6 @@ SCRIPTS=(
     "power_usage"
     "runscreensaver"
     "security_check"
-    "visa_sponsorship_search"
 )
 
 COOLDOWN=30   # seconds between checks
@@ -63,7 +61,11 @@ while true; do
     ACTIVE_SCRIPTS=("${SCRIPTS[@]}")
     
     # 2. Define scripts that REQUIRE an internet connection
-    INTERNET_REQUIRED=("weather_alarm")
+    INTERNET_REQUIRED=(
+        "weather_alarm"
+        "job_rotate"
+        "visa_sponsorship_search"
+    )
 
     # 3. Connectivity Logic
     if check_internet; then
@@ -103,9 +105,8 @@ while true; do
             continue
         fi
 
-        # Process control
-        #PROCS=($(pgrep -f "bash $SCRIPT_PATH$"))
-        PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
+        # Process control – match by full script path (robust)
+        PROCS=($(pgrep -f "$SCRIPT_PATH"))
         NUM_RUNNING=${#PROCS[@]}
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
