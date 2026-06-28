@@ -81,7 +81,7 @@ while true; do
             
             # Identify and kill offline processes
             SCRIPT_FNAME="${script}.sh"
-            PIDS=$(pgrep -f "$HOME/Documents/bin/$SCRIPT_FNAME")
+            PIDS=$(pgrep -f "bash $HOME/Documents/bin/$SCRIPT_FNAME")
             if [[ -n "$PIDS" ]]; then
                 for pid in $PIDS; do
                     kill "$pid"
