@@ -743,7 +743,7 @@ run_updates() {
     log_raw "Starting Nobara System Update"
     log_raw "=============================="
     
-    timeout "$TIMEOUT_SECONDS" sudo nobara-sync cli 2>&1 | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
+    timeout "$TIMEOUT_SECONDS" sudo nobara-sync all 2>&1 | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
     DNF_EXIT=${PIPESTATUS[0]}
     log_raw "Nobara-sync exit code: $DNF_EXIT"
     
