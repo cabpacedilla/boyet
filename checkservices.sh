@@ -81,7 +81,9 @@ while true; do
             
             # Identify and kill offline processes
             SCRIPT_FNAME="${script}.sh"
-            PIDS=$(pgrep -f "bash $HOME/Documents/bin/$SCRIPT_FNAME")
+            
+            #PIDS=$(pgrep -f "bash $HOME/Documents/bin/$SCRIPT_FNAME")
+            PROCS=($(pgrep -f "$SCRIPT_BASENAME"))
             if [[ -n "$PIDS" ]]; then
                 for pid in $PIDS; do
                     kill "$pid"
@@ -106,7 +108,8 @@ while true; do
         fi
 
         # Process control – match by full script path (robust)
-        PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
+        #PROCS=($(pgrep -f "bash $SCRIPT_PATH"))
+        PROCS=($(pgrep -f "$SCRIPT_BASENAME"))
         NUM_RUNNING=${#PROCS[@]}
 
         if [ "$NUM_RUNNING" -gt "$MIN_INSTANCES" ]; then
@@ -118,7 +121,7 @@ while true; do
             done
         elif [ "$NUM_RUNNING" -lt "$MIN_INSTANCES" ]; then
             # Respawn missing services
-            "$SCRIPT_PATH" &
+            bash "$SCRIPT_PATH" &
             notify-send -t 5000 --app-name "✅ CheckServices" "$SCRIPT_NAME started."
             sleep 2
         fi
