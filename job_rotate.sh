@@ -39,27 +39,42 @@ while true; do
     echo "------------------------------------------------" >> "$LOG_FILE"
     echo "$(date): Starting Search Cycle (LinkedIn, Indeed, JobStreet, Mynimo)..." >> "$LOG_FILE"
 
-    # Fixed: Remove leading zero to prevent octal interpretation
-    DAY_OF_YEAR=$(date +%j | sed 's/^0*//')
-    QUERY_INDEX=$((DAY_OF_YEAR % 3))
+    # Calculate day of year (remove leading zeros to avoid octal issues)
+	DAY_OF_YEAR=$(date +%j | sed 's/^0*//')
+	QUERY_INDEX=$((DAY_OF_YEAR % 6))
 
-    case $QUERY_INDEX in
-        0)
-            # Focus: SDET / Modern Automation (Cypress + Python) - EXCLUDE FULL-TIME
-            SELECTED_QUERY="(\"Senior QA\" OR SDET) AND (Python OR Cypress) AND (Selenium OR Postman OR API) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
-            STRATEGY="SDET Specialist. Focus on Cypress/Python frameworks - CONTRACT/REMOTE ONLY"
-            ;;
-        1)
-            # Focus: QAOps / Linux Infrastructure - EXCLUDE FULL-TIME
-            SELECTED_QUERY="(\"Senior QA\" OR \"Automation Engineer\") AND (Bash OR Shell OR Linux OR DevOps) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
-            STRATEGY="QAOps/Linux Specialist - CONTRACT/REMOTE ONLY"
-            ;;
-        2)
-            # Focus: Domain Expertise (Payroll, POS, Salesforce) - EXCLUDE FULL-TIME
-            SELECTED_QUERY="(\"Senior QA\" OR \"Software Tester\") AND (Payroll OR POS OR Salesforce OR \"E-commerce\") AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
-            STRATEGY="Domain Expert - CONTRACT/REMOTE ONLY"
-            ;;
-    esac
+	case $QUERY_INDEX in
+		0)
+			# Strategy 0: SDET / Modern Automation (Cypress + Python) - CONTRACT/REMOTE ONLY
+			SELECTED_QUERY="(\"Senior QA\" OR SDET OR \"Automation Engineer\" OR \"Test Automation\") AND (Python OR Cypress OR Selenium OR Postman OR API) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+			STRATEGY="SDET / Automation Specialist - CONTRACT/REMOTE ONLY"
+			;;
+		1)
+			# Strategy 1: QAOps / Linux Infrastructure - CONTRACT/REMOTE ONLY
+			SELECTED_QUERY="(\"Senior QA\" OR \"Quality Engineer\" OR \"Test Engineer\" OR \"Software Test\") AND (Bash OR Shell OR Linux OR DevOps OR CI/CD) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+			STRATEGY="QAOps / Linux Infrastructure - CONTRACT/REMOTE ONLY"
+			;;
+		2)
+			# Strategy 2: Domain Expert (Payroll, POS, Salesforce, E-commerce) - CONTRACT/REMOTE ONLY
+			SELECTED_QUERY="(\"Senior QA\" OR \"Quality Assurance\" OR \"Software Tester\") AND (Payroll OR POS OR Salesforce OR \"E-commerce\" OR ERP) AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+			STRATEGY="Domain Expert (Payroll/POS/Salesforce) - CONTRACT/REMOTE ONLY"
+			;;
+		3)
+			# Strategy 3: Leadership & Management (Lead, Manager, Architect) - CONTRACT/REMOTE ONLY
+			SELECTED_QUERY="(\"QA Lead\" OR \"Senior QA Lead\" OR \"Lead QA Engineer\" OR \"QA Manager\" OR \"Quality Assurance Manager\" OR \"Test Architect\" OR \"QA Architect\" OR \"Test Automation Architect\" OR \"Quality Engineering Architect\") AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+			STRATEGY="Leadership / Management / Architect - CONTRACT/REMOTE ONLY"
+			;;
+		4)
+			# Strategy 4: Specialized Hardware / Firmware / Embedded / Systems - CONTRACT/REMOTE ONLY
+			SELECTED_QUERY="(\"Hardware QA\" OR \"Firmware Test\" OR \"Integration Test\" OR \"Embedded QA\" OR \"Systems QA\" OR \"Hardware Test\") AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+			STRATEGY="Hardware / Firmware / Embedded QA - CONTRACT/REMOTE ONLY"
+			;;
+		5)
+			# Strategy 5: Emerging Technologies (AI, ML, Fintech, Payments) - CONTRACT/REMOTE ONLY
+			SELECTED_QUERY="(\"AI QA\" OR \"ML Test Engineer\" OR \"Fintech QA\" OR \"Payments QA\" OR \"Machine Learning Test\") AND (Contract OR Remote OR Part-time OR Freelance) NOT (\"Full-time\" OR Permanent)"
+			STRATEGY="AI / ML / Fintech / Payments QA - CONTRACT/REMOTE ONLY"
+			;;
+	esac
 
     echo "$(date): Strategy: $STRATEGY" >> "$LOG_FILE"
     echo "$(date): Running Scraper for: $SELECTED_QUERY" >> "$LOG_FILE"

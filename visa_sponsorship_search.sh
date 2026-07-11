@@ -22,68 +22,99 @@ mkdir -p "$LOG_DIR" "$BIN_DIR"
 touch "$SEEN_FILE" "$JSON_LOG_FILE"
 
 # --- LOCKING ---
-#~ readonly LOCK_FILE="/tmp/visa_job_scraper_$(whoami).lock"
-#~ exec 9>"$LOCK_FILE"
+readonly LOCK_FILE="/tmp/visa_job_scraper_$(whoami).lock"
+exec 9>"$LOCK_FILE"
 
-#~ if ! flock -n 9; then
-    #~ echo "$(date): Another instance running, exiting." >&2
-    #~ exit 1
-#~ fi
+if ! flock -n 9; then
+    echo "$(date): Another instance running, exiting." >&2
+    exit 1
+fi
 
-#~ echo $$ > "$LOCK_FILE"
+echo $$ > "$LOCK_FILE"
 
-#~ cleanup() {
-    #~ pkill -P $$ 2>/dev/null
-    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        #~ rm -f "$LOCK_FILE"
-    #~ fi
-    #~ flock -u 9 2>/dev/null || true
-    #~ exec 9>&- 2>/dev/null || true
-#~ }
+cleanup() {
+    pkill -P $$ 2>/dev/null
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
 
-#~ trap '
-    #~ visa_json_log "WARN" "SIGTERM received"
-    #~ cleanup
-    #~ exit 143
-#~ ' TERM
+trap '
+    visa_json_log "WARN" "SIGTERM received"
+    cleanup
+    exit 143
+' TERM
 
-#~ trap '
-    #~ visa_json_log "WARN" "SIGINT received"
-    #~ cleanup
-    #~ exit 130
-#~ ' INT
+trap '
+    visa_json_log "WARN" "SIGINT received"
+    cleanup
+    exit 130
+' INT
 
-#~ trap '
-    #~ rc=$?
-    #~ if (( rc != 0 )); then
-        #~ visa_json_log "ERROR" "Unexpected exit rc=$rc line=$LINENO"
-    #~ else
-        #~ visa_json_log "INFO" "Normal exit"
-    #~ fi
-    #~ cleanup
-#~ ' EXIT
+trap '
+    rc=$?
+    if (( rc != 0 )); then
+        visa_json_log "ERROR" "Unexpected exit rc=$rc line=$LINENO"
+    else
+        visa_json_log "INFO" "Normal exit"
+    fi
+    cleanup
+' EXIT
 
-#~ trap '
-    #~ rc=$?
-    #~ visa_json_log "ERROR" "ERR trap rc=$rc line=$LINENO command=${BASH_COMMAND}"
-#~ ' ERR
+trap '
+    rc=$?
+    visa_json_log "ERROR" "ERR trap rc=$rc line=$LINENO command=${BASH_COMMAND}"
+' ERR
 
 # ============================================================
 # SEMANTIC KEYWORDS (instead of fixed job titles)
 # These are broad, high-recall terms that capture real-world variations
 # ============================================================
 readonly QA_KEYWORDS=(
+    # Core QA Titles
     "QA"
     "Quality Assurance"
+    "Quality Engineer"
     "Test Engineer"
     "Software Test"
+    
+    # Automation & SDET Focus
     "SDET"
     "Automation Test"
+    "Test Automation"
     "Quality Engineering"
-    "Senior QA Lead"          
-    "Principal QA"            
-    "QA Manager"              
-    "Test Automation Architect" 
+    
+    # Leadership & Senior Roles
+    "Senior QA"
+    "Senior Quality Engineer"
+    "Senior SDET"
+    "QA Lead"
+    "Senior QA Lead"
+    "Lead QA Engineer"
+    "QA Manager"
+    "Quality Assurance Manager"
+    
+    # Architecture & Strategy Roles
+    "Test Architect"
+    "QA Architect"
+    "Test Automation Architect"
+    "Quality Engineering Architect"
+    
+    # Specialized (Hardware/Integration/Firmware)
+    "Hardware QA"
+    "Firmware Test"
+    "Integration Test"
+    "Embedded QA"
+    "Systems QA"
+    
+    # Emerging / AI & Fintech
+    "AI QA"
+    "ML Test Engineer"
+    "Fintech QA"
+    "Payments QA"
+    
     "Data Encoder"
 )
 
