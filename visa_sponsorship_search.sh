@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ============================================================
 # Himalayas Job Search - Senior QA/SDET Roles (Semantic Mode)
-# VERSION: 2.11 - Final production release
+# VERSION: 2.28 - Production final (frozen)
 # ============================================================
 
 # --- IMMUTABLE CONFIGURATION ---
-readonly SCRIPT_VERSION="2.11"
+readonly SCRIPT_VERSION="2.28"
 
 set -Euo pipefail
 
@@ -24,7 +24,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$SHOW_HELP" == "true" ]]; then
+if $SHOW_HELP; then
     cat <<EOF
 Usage: $0 [OPTION]
 
@@ -39,7 +39,7 @@ EOF
     exit 0
 fi
 
-if [[ "$SHOW_VERSION" == "true" ]]; then
+if $SHOW_VERSION; then
     echo "visa_job_search.sh version ${SCRIPT_VERSION}"
     echo "Himalayas Job Search - Senior QA/SDET Roles (Semantic Mode)"
     exit 0
@@ -57,13 +57,27 @@ readonly INCLUDE_WORLDWIDE=true
 mkdir -p "$LOG_DIR" "$BIN_DIR"
 touch "$SEEN_FILE" "$JSON_LOG_FILE"
 
-# --- DEPENDENCY CHECK ---
-for cmd in jq curl msmtp; do
+# --- DEPENDENCY CHECK (only for packages not guaranteed to be present) ---
+for cmd in jq curl msmtp flock md5sum; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "Error: Required dependency '$cmd' is not installed. Exiting." >&2
         exit 1
     fi
 done
+
+# --- PORTABILITY: Build curl retry arguments (detect --retry-all-errors) ---
+CURL_RETRY_ARGS=(
+    --retry 3
+    --retry-delay 2
+    --retry-connrefused
+)
+
+# Check both --help and --help all for maximum compatibility
+if curl --help 2>/dev/null | grep -q -- '--retry-all-errors' ||
+   curl --help all 2>/dev/null | grep -q -- '--retry-all-errors'; then
+    CURL_RETRY_ARGS+=(--retry-all-errors)
+fi
+readonly CURL_RETRY_ARGS
 
 # --- LOCKING ---
 readonly LOCK_FILE="/tmp/visa_job_scraper_$(whoami).lock"
@@ -74,23 +88,21 @@ if ! flock -n 9; then
     exit 1
 fi
 
-echo $$ > "$LOCK_FILE"
+printf '%d\n' "$$" > "$LOCK_FILE"
 
 # --- CLEANUP ---
 cleanup() {
-    rm -f /tmp/visa_email_body.txt 2>/dev/null || true
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
+    # Release the advisory lock first, then remove the informational PID file.
     flock -u 9 2>/dev/null || true
     exec 9>&- 2>/dev/null || true
+    rm -f "$LOCK_FILE"
 }
 
-# --- TRAPS ---
-# TERM and INT: log and exit – cleanup runs in EXIT trap
+# --- TRAPS (signal handling for graceful shutdown) ---
 trap 'visa_json_log "WARN" "SIGTERM received"; exit 143' TERM
 trap 'visa_json_log "WARN" "SIGINT received"; exit 130' INT
 
+# EXIT trap runs cleanup on any exit (normal or error)
 trap '
     rc=$?
     if (( rc == 0 )); then
@@ -101,10 +113,10 @@ trap '
     cleanup
 ' EXIT
 
-# ERR trap: best-effort logging for unhandled errors
+# ERR trap logs unexpected errors before the EXIT trap runs
 trap '
     rc=$?
-    visa_json_log "ERROR" "ERR trap rc=$rc line=$LINENO command=${BASH_COMMAND:-unknown}"
+    visa_json_log "ERROR" "ERR trap rc=$rc line=$LINENO cmd=${BASH_COMMAND@Q}"
 ' ERR
 
 # ============================================================
@@ -135,7 +147,8 @@ visa_log() {
 visa_json_log() {
     local level="$1"
     local message="$2"
-    local timestamp=$(date -Iseconds)
+    local timestamp
+    timestamp=$(date -Iseconds)
     local version="${SCRIPT_VERSION:-unknown}"
     jq -cn \
         --arg ts "$timestamp" \
@@ -145,16 +158,32 @@ visa_json_log() {
         '{timestamp:$ts, version:$ver, level:$lvl, message:$msg}' \
         >> "$JSON_LOG_FILE" 2>/dev/null || true
 
+    # Rotate JSON log atomically if it grows too large
     if [[ $(stat -c%s "$JSON_LOG_FILE" 2>/dev/null || echo 0) -gt 10485760 ]]; then
-        tail -n 5000 "$JSON_LOG_FILE" > "$JSON_LOG_FILE.tmp"
-        mv "$JSON_LOG_FILE.tmp" "$JSON_LOG_FILE"
+        local dir tmp_rotate
+        dir=$(dirname "$JSON_LOG_FILE")
+        if tmp_rotate=$(mktemp -p "$dir" .json_log.XXXXXX 2>/dev/null); then
+            tail -n 5000 "$JSON_LOG_FILE" > "$tmp_rotate" 2>/dev/null
+            mv "$tmp_rotate" "$JSON_LOG_FILE"
+        else
+            # Fallback: direct write (less atomic but better than nothing)
+            tail -n 5000 "$JSON_LOG_FILE" > "$JSON_LOG_FILE.tmp" 2>/dev/null
+            mv "$JSON_LOG_FILE.tmp" "$JSON_LOG_FILE"
+        fi
     fi
 }
 
 visa_update_heartbeat() {
-    local count="$1"
-    local clean_count=$(echo "$count" | tr -d '\n\r' | xargs)
-    echo "$(date +%s):$clean_count" > "$HEARTBEAT_FILE"
+    # Atomic update: write to temp in the same directory, then move.
+    # If the temp file creation fails, fall back to direct write.
+    local dir tmp_heartbeat
+    dir=$(dirname "$HEARTBEAT_FILE")
+    if tmp_heartbeat=$(mktemp -p "$dir" .heartbeat.XXXXXX 2>/dev/null); then
+        printf '%s:%s\n' "$(date +%s)" "$1" > "$tmp_heartbeat"
+        mv "$tmp_heartbeat" "$HEARTBEAT_FILE"
+    else
+        printf '%s:%s\n' "$(date +%s)" "$1" > "$HEARTBEAT_FILE"
+    fi
 }
 
 visa_job_is_seen() {
@@ -162,7 +191,7 @@ visa_job_is_seen() {
 }
 
 visa_mark_job_seen() {
-    echo "$1" >> "$SEEN_FILE"
+    printf '%s\n' "$1" >> "$SEEN_FILE"
 }
 
 visa_rotate_seen_file() {
@@ -183,10 +212,8 @@ visa_rotate_seen_file() {
         done
     fi
 
-    # Purge all logs (including rotated archives) older than 30 days
     find "$LOG_DIR" -name "job_search_*.log*" -type f -mtime +30 -delete 2>/dev/null || true
 
-    # Rotate main log if > 50MB
     local main_log="$LOG_DIR/job_search_$(date +%Y%m%d).log"
     if [[ -f "$main_log" ]]; then
         local size
@@ -220,7 +247,7 @@ visa_search_himalayas() {
     encoded_keyword=$(jq -rn --arg kw "$keyword" '$kw | @uri')
     
     local url
-    if [[ "$INCLUDE_WORLDWIDE" == "true" ]]; then
+    if $INCLUDE_WORLDWIDE; then
         url="https://himalayas.app/jobs/api/search?q=${encoded_keyword}&seniority=${seniority}&worldwide=true&employment_type=Full%20Time"
     else
         local location_params=""
@@ -234,17 +261,62 @@ visa_search_himalayas() {
         url="https://himalayas.app/jobs/api/search?q=${encoded_keyword}&seniority=${seniority}&${location_params}&employment_type=Full%20Time"
     fi
     
-    local response
-    response=$(curl -s --max-time 30 "$url" 2>/dev/null) || true
+    # --- Create temp file for curl stderr ---
+    local curl_err
+    if ! curl_err=$(mktemp -p "${TMPDIR:-/tmp}"); then
+        visa_log "   ⚠️ mktemp failed for curl_err"
+        output_count_ref=0
+        return 1
+    fi
     
-    if [[ -z "$response" ]] || [[ "$response" == "[]" ]]; then
-        visa_log "   No results (or API timeout/connection failure)"
+    local response
+    local curl_rc
+    # Use if/else to capture exit code without changing global shell options
+    if response=$(curl -fsS \
+        --connect-timeout 10 \
+        --max-time 30 \
+        "${CURL_RETRY_ARGS[@]}" \
+        "$url" 2>"$curl_err"); then
+        curl_rc=0
+    else
+        curl_rc=$?
+    fi
+    
+    if (( curl_rc != 0 )); then
+        local err_msg
+        err_msg=$(<"$curl_err")
+        visa_log "   ⚠️ curl failed (exit $curl_rc): ${err_msg:-no error message}"
+        rm -f "$curl_err"
+        output_count_ref=0
+        return 0
+    fi
+    rm -f "$curl_err"   # curl_err is no longer needed
+    
+    # --- Validate JSON and ensure .jobs is an array ---
+    if ! jq -e '.jobs | arrays' <<<"$response" >/dev/null 2>&1; then
+        visa_log "   ⚠️ Invalid response: missing .jobs array"
         output_count_ref=0
         return 0
     fi
     
-    local jq_temp=$(mktemp)
-    echo "$response" | timeout 10s jq -r '.jobs[]? | 
+    local job_count
+    job_count=$(jq -r '.jobs | length' <<<"$response" 2>/dev/null || echo 0)
+    if (( job_count == 0 )); then
+        visa_log "   No jobs found in response"
+        output_count_ref=0
+        return 0
+    fi
+    
+    # --- Create temp file for jq extraction ---
+    local jq_temp
+    if ! jq_temp=$(mktemp -p "${TMPDIR:-/tmp}"); then
+        visa_log "   ⚠️ mktemp failed for jq_temp"
+        output_count_ref=0
+        return 1
+    fi
+    
+    # --- Extract jobs; on failure, clean up and return ---
+    if ! jq -r '.jobs[]? | 
         .title as $title | 
         .companyName as $company | 
         ((.locationRestrictions // ["Worldwide"])[0]) as $location | 
@@ -252,14 +324,24 @@ visa_search_himalayas() {
         (.minSalary // "") as $salary_min | 
         (.maxSalary // "") as $salary_max | 
         (.currency // "") as $salary_currency | 
-        "\($title)|\($company)|\($location)|\($url)|\($salary_min)|\($salary_max)|\($salary_currency)"' 2>/dev/null > "$jq_temp" || true
+        "\($title)|\($company)|\($location)|\($url)|\($salary_min)|\($salary_max)|\($salary_currency)"' <<<"$response" > "$jq_temp" 2>/dev/null
+    then
+        visa_log "   ⚠️ jq extraction failed"
+        rm -f "$jq_temp"
+        output_count_ref=0
+        return 0
+    fi
     
+    # --- Process extracted jobs ---
     while IFS='|' read -r title company location url salary_min salary_max salary_currency; do
         if [[ -z "$title" ]] || [[ -z "$company" ]]; then
             continue
         fi
         
-        local job_hash=$(echo -n "$url" | md5sum | awk '{print $1}')
+        # Use md5sum for fast deterministic identifiers (not cryptographic)
+        local job_hash
+        job_hash=$(printf '%s' "$url" | md5sum)
+        job_hash="${job_hash%% *}"
         local job_id="him-${job_hash:0:10}"
         
         if ! visa_job_is_seen "$job_id"; then
@@ -268,13 +350,14 @@ visa_search_himalayas() {
                 salary_text=" (${salary_currency}${salary_min}-${salary_max})"
             fi
             
-            echo "HIMALAYAS|$seniority|$title|$company|$location|$url|$salary_text" >> "$results_file"
+            printf '%s\n' "HIMALAYAS|$seniority|$title|$company|$location|$url|$salary_text" >> "$results_file"
             visa_mark_job_seen "$job_id"
             count=$((count + 1))
         fi
     done < "$jq_temp"
     
     rm -f "$jq_temp"
+    
     visa_log "   ✓ Found $count new jobs"
     
     output_count_ref=$count
@@ -286,78 +369,89 @@ visa_search_himalayas() {
 visa_send_email() {
     local results_file="$1"
     local total_count="$2"
+    local rc=0
     
-    if [[ $total_count -eq 0 ]]; then
+    if (( total_count == 0 )); then
         visa_log "No new jobs found, skipping email"
         return 0
     fi
     
     local subject="🎯 Visa Sponsorships Job Alert: $total_count new QA/SDET positions (semantic search)"
     
-    {
-        echo "To: $EMAIL_TO"
-        echo "Subject: $subject"
-        echo "Content-Type: text/plain; charset=UTF-8"
-        echo ""
-        echo "Hi Claive,"
-        echo ""
-        echo "🌍 Found $total_count new QA/SDET opportunities using semantic keyword search:"
-        echo ""
-        echo "============================================================"
-        echo "SEARCH METHOD:"
-        echo "  Keywords: ${QA_KEYWORDS[*]}"
-        echo "  Seniorities: ${VISA_SENIORITY_LEVELS[*]}"
-        if [[ "$INCLUDE_WORLDWIDE" == "false" ]]; then
-            echo "  Location: Visa-friendly countries only (${VISA_FRIENDLY_COUNTRIES[*]})"
-        else
-            echo "  Location: Worldwide"
-        fi
-        echo "============================================================"
-        echo ""
-    } > /tmp/visa_email_body.txt
-
-    local grep_temp=$(mktemp)
-    # Match only lines starting with HIMALAYAS| (first field exactly HIMALAYAS)
-    grep '^HIMALAYAS|' "$results_file" > "$grep_temp" 2>/dev/null || true
+    local email_body
+    if ! email_body=$(mktemp -p "${TMPDIR:-/tmp}"); then
+        visa_log "Failed to create email temp file"
+        return 1
+    fi
     
-    if [[ -s "$grep_temp" ]]; then
-        echo "📌 NEW JOB POSTINGS:" >> /tmp/visa_email_body.txt
-        echo "" >> /tmp/visa_email_body.txt
-        
+    # Build email header (using printf for structured data)
+    {
+        printf 'To: %s\n' "$EMAIL_TO"
+        printf 'Subject: %s\n' "$subject"
+        printf 'Content-Type: text/plain; charset=UTF-8\n'
+        printf '\n'
+        printf 'Hi Claive,\n'
+        printf '\n'
+        printf '🌍 Found %d new QA/SDET opportunities using semantic keyword search:\n' "$total_count"
+        printf '\n'
+        printf '============================================================\n'
+        printf 'SEARCH METHOD:\n'
+        printf '  Keywords: %s\n' "${QA_KEYWORDS[*]}"
+        printf '  Seniorities: %s\n' "${VISA_SENIORITY_LEVELS[*]}"
+        if ! $INCLUDE_WORLDWIDE; then
+            printf '  Location: Visa-friendly countries only (%s)\n' "${VISA_FRIENDLY_COUNTRIES[*]}"
+        else
+            printf '  Location: Worldwide\n'
+        fi
+        printf '============================================================\n'
+        printf '\n'
+    } > "$email_body"
+
+    # List jobs using process substitution – no temporary file needed
+    {
+        local first=1
         while IFS='|' read -r source seniority title company location url salary; do
+            if (( first )); then
+                printf '📌 NEW JOB POSTINGS:\n'
+                printf '\n'
+                first=0
+            fi
+            
             local salary_display=""
             if [[ -n "$salary" && "$salary" != "null" ]]; then
                 salary_display=" - $salary"
             fi
             
-            echo "📍 $title @ $company ($location)$salary_display" >> /tmp/visa_email_body.txt
-            echo "   🔗 $url" >> /tmp/visa_email_body.txt
-            echo "   🎓 Seniority: $seniority" >> /tmp/visa_email_body.txt
-            echo "" >> /tmp/visa_email_body.txt
-        done < "$grep_temp"
-    fi
-    rm -f "$grep_temp"
+            printf '📍 %s @ %s (%s)%s\n' "$title" "$company" "$location" "$salary_display"
+            printf '   🔗 %s\n' "$url"
+            printf '   🎓 Seniority: %s\n' "$seniority"
+            printf '\n'
+        done < <(grep '^HIMALAYAS|' "$results_file" 2>/dev/null)
+    } >> "$email_body"
 
+    # Summary
     {
-        echo "---"
-        echo "📊 SUMMARY"
-        echo "   Total new jobs: $total_count"
-        echo ""
-        echo "📅 Search performed on: $(date)"
-        echo ""
-        echo "💡 Apply quickly – positions may close soon."
-        echo ""
-        echo "---"
-        echo "🔧 To modify search keywords or seniority levels, edit the script."
-    } >> /tmp/visa_email_body.txt
+        printf '\n---\n'
+        printf '📊 SUMMARY\n'
+        printf '   Total new jobs: %d\n' "$total_count"
+        printf '\n'
+        printf '📅 Search performed on: %s\n' "$(date)"
+        printf '\n'
+        printf '💡 Apply quickly – positions may close soon.\n'
+        printf '\n'
+        printf '---\n'
+        printf '🔧 To modify search keywords or seniority levels, edit the script.\n'
+    } >> "$email_body"
 
-    if msmtp -a default "$EMAIL_TO" < /tmp/visa_email_body.txt; then
-        visa_log "Email sent with $total_count jobs (semantic mode)"
-    else
+    if ! msmtp -a default "$EMAIL_TO" < "$email_body"; then
         visa_log "Failed to send email"
+        rc=1
+    else
+        visa_log "Email sent with $total_count jobs (semantic mode)"
     fi
     
-    rm -f /tmp/visa_email_body.txt
+    rm -f "$email_body"
+    return "$rc"
 }
 
 # ============================================================
@@ -373,7 +467,12 @@ visa_main_cycle() {
     visa_log "Seniorities: ${VISA_SENIORITY_LEVELS[*]}"
     visa_log "=========================================="
     
-    local temp_results=$(mktemp)
+    local temp_results
+    if ! temp_results=$(mktemp -p "${TMPDIR:-/tmp}"); then
+        visa_log "FATAL: Could not create temp results file"
+        return 1
+    fi
+    
     local total_found=0
     
     for keyword in "${QA_KEYWORDS[@]}"; do
@@ -388,7 +487,7 @@ visa_main_cycle() {
     visa_log "Search Complete - Found $total_found new jobs"
     visa_log "=========================================="
     
-    if [[ "$total_found" -gt 0 ]]; then
+    if (( total_found > 0 )); then
         visa_send_email "$temp_results" "$total_found"
         echo ""
         echo "📊 JOB SEARCH SUMMARY:"
@@ -400,6 +499,8 @@ visa_main_cycle() {
     fi
     
     cat "$temp_results" >> "$LOG_DIR/job_search_$(date +%Y%m%d).log" 2>/dev/null || true
+    
+    # Explicit cleanup
     rm -f "$temp_results"
     
     visa_update_heartbeat "$total_found"
@@ -411,7 +512,7 @@ visa_main_cycle() {
 # ============================================================
 # EXECUTION FLOW
 # ============================================================
-if [[ "$RUN_ONCE" == "true" ]]; then
+if $RUN_ONCE; then
     visa_log "Executing single test pass (--once matched)..."
     visa_main_cycle
     exit 0
