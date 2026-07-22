@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd "/run/media/claiveapa/Data/claive/Documents/nobara/wallpapers/"
+cd "/home/claiveapa/Music/"
 
 # Start miniserve with thumbnail gallery and index page
-/usr/local/bin/miniserve --port 8080 . &
+/usr/local/bin/miniserve --port 8081 . &
 
 # Wait for miniserve to initialize
 sleep 2
@@ -15,7 +15,7 @@ sleep 2
 sleep 3
 
 # Use the reserved zrok share (permanent URL) – run in background
-/usr/bin/zrok share reserved --headless wallpapers >> /home/claiveapa/wallpaper_url.log 2>&1 &
+/usr/bin/zrok share reserved --headless boyetaudio >> /home/claiveapa/music_url.log 2>&1 &
 
 # Keep the script alive
 wait

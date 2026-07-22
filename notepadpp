@@ -1,0 +1,3 @@
+#!/bin/bash
+WINEPREFIX="/home/claiveapa/Games" wine "/home/claiveapa/Games/drive_c/Program Files/Notepad++/notepad++.exe" "$@" &
+disown
