@@ -64,7 +64,6 @@ while true; do
     INTERNET_REQUIRED=(
         "weather_alarm"
         "job_rotate"
-        "visa_sponsorship_search"
     )
 
     # 3. Connectivity Logic
