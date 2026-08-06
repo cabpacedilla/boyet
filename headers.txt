@@ -1,0 +1,87 @@
+* Host ph.jobstreet.com:443 was resolved.
+* IPv6: 2606:4700:440d::ac40:923a, 2606:4700:4404::6812:29c6
+* IPv4: 104.18.41.198, 172.64.146.58
+*   Trying [2606:4700:440d::ac40:923a]:443...
+* ALPN: curl offers h2,http/1.1
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [1575 bytes data]
+* SSL Trust Anchors:
+*   CAfile: /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [1210 bytes data]
+* TLSv1.3 (IN), TLS change cipher, Change cipher spec (1):
+{ [1 bytes data]
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+{ [19 bytes data]
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+{ [2483 bytes data]
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+{ [80 bytes data]
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+{ [52 bytes data]
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+} [52 bytes data]
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / X25519MLKEM768 / id-ecPublicKey
+* ALPN: server accepted h2
+* Server certificate:
+*   subject: CN=ph.jobstreet.com
+*   start date: Jun 24 09:57:00 2026 GMT
+*   expire date: Sep 22 10:56:58 2026 GMT
+*   issuer: C=US; O=Google Trust Services; CN=WE1
+*   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA256
+*   Certificate level 1: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+*   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+*   subjectAltName: "ph.jobstreet.com" matches cert's "ph.jobstreet.com"
+* SSL certificate verified via OpenSSL.
+* Established connection to ph.jobstreet.com (2606:4700:440d::ac40:923a port 443) from 2001:4454:367:3d00:c47c:87bb:3595:f946 port 46684 
+* using HTTP/2
+* [HTTP/2] [1] OPENED stream for https://ph.jobstreet.com/api/chalice-search/v4/search?siteKey=PH-Main&userQuery=QA%20Engineer&page=1&salaryType=monthly&salaryRange=150000-
+* [HTTP/2] [1] [:method: GET]
+* [HTTP/2] [1] [:scheme: https]
+* [HTTP/2] [1] [:authority: ph.jobstreet.com]
+* [HTTP/2] [1] [:path: /api/chalice-search/v4/search?siteKey=PH-Main&userQuery=QA%20Engineer&page=1&salaryType=monthly&salaryRange=150000-]
+* [HTTP/2] [1] [accept-encoding: deflate, gzip, br]
+* [HTTP/2] [1] [user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36]
+* [HTTP/2] [1] [accept: application/json, text/plain, */*]
+* [HTTP/2] [1] [accept-language: en-US,en;q=0.9]
+* [HTTP/2] [1] [referer: https://ph.jobstreet.com/]
+* [HTTP/2] [1] [origin: https://ph.jobstreet.com]
+* [HTTP/2] [1] [x-seek-site: ph]
+} [5 bytes data]
+> GET /api/chalice-search/v4/search?siteKey=PH-Main&userQuery=QA%20Engineer&page=1&salaryType=monthly&salaryRange=150000- HTTP/2
+> Host: ph.jobstreet.com
+> Accept-Encoding: deflate, gzip, br
+> User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36
+> Accept: application/json, text/plain, */*
+> Accept-Language: en-US,en;q=0.9
+> Referer: https://ph.jobstreet.com/
+> Origin: https://ph.jobstreet.com
+> x-seek-site: ph
+> 
+* Request completely sent off
+} [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+{ [230 bytes data]
+< HTTP/2 404 
+< date: Wed, 05 Aug 2026 15:43:33 GMT
+< content-type: text/html
+< set-cookie: JobseekerSessionId=1e0ca1b2-93b4-44f0-8797-c9a8e57b4600; Max-Age=31104000; Domain=.jobstreet.com; Path=/
+< set-cookie: JobseekerVisitorId=1e0ca1b2-93b4-44f0-8797-c9a8e57b4600; Max-Age=157680000; Domain=.jobstreet.com; Path=/
+< set-cookie: __cf_bm=oG4SRzfH3vLUFVqEl5AmmHF1TJCoPXQjyloNQhLxBKo-1785944613.7230692-1.0.1.1-EYCuIcMAPkUkY8e6jKwGrXA65aCi254JjL5B9W6zGacbn0D514c89hV3_5bWsRAM7TbABoYl6NZKOBdI9ue.gmQ4sBtrAS2cNNQLEf_0aLGN35yN84xdS3.xiREdWfkX; HttpOnly; SameSite=None; Secure; Path=/; Domain=jobstreet.com; Expires=Wed, 05 Aug 2026 16:13:33 GMT
+< set-cookie: _cfuvid=gexfuFahulYGYBpXZIjwYy3s9XjqG3rtdgXsIn2be.w-1785944613.7230692-1.0.1.1-oKG2FYZDOrhkOmQtWG3JsS8CRKDoa.KRcbJtN.76lVc; HttpOnly; SameSite=None; Secure; Path=/; Domain=jobstreet.com
+< vary: accept-encoding
+< strict-transport-security: max-age=157680000
+< seek-melways: true
+< x-request-id: 94b356dd-2182-4656-8710-91fce8faf821
+< content-encoding: gzip
+< server: cloudflare
+< cf-ray: a266eb0bc9a41d2d-HKG
+< 
+{ [5 bytes data]
+* Connection #0 to host ph.jobstreet.com:443 left intact
