@@ -832,7 +832,7 @@ _notify_email() {
         printf '   Evidence count: %d\n' "$evidence" >> "$body"
         printf '   Last seen: %s\n' "$most_recent" >> "$body"
         printf '   Classifier agreement: %d classifiers\n' "$classifiers" >> "$body"
-        printf '   https://ph.jobstreet.com/jobs?keywords=%s\n' "$encoded_name" >> "$body"
+        echo "   https://ph.jobstreet.com/jobs?keywords=$encoded_name" >> "$body"
     done
 
     printf '\n---\nSource: JobStreet Philippines\n' >> "$body"

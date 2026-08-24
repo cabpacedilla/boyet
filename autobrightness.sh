@@ -29,7 +29,7 @@ if [ -z "$DEVICE" ]; then
     exit 1
 fi
 
-TARGET_PERCENT=90
+TARGET_PERCENT=100
 
 while true; do
     CURRENT_BRIGHTNESS=$(brightnessctl -d "$DEVICE" get)
