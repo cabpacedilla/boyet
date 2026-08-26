@@ -755,7 +755,7 @@ run_updates() {
     log_raw "Starting Flatpak Updates"
     log_raw "=============================="
     
-    timeout "$TIMEOUT_SECONDS" sudo flatpak update -y 2>&1 | tee -a "$LOGFILE"
+    timeout "$TIMEOUT_SECONDS" sudo flatpak update -y --no-static-deltas 2>&1 | tee -a "$LOGFILE"
     FLATPAK_EXIT=${PIPESTATUS[0]}
     log_raw "Flatpak (system) exit code: $FLATPAK_EXIT"
     
@@ -763,8 +763,8 @@ run_updates() {
     
     if [[ $FLATPAK_EXIT -ne 0 ]]; then
         log "Running flatpak repair..."
-        sudo flatpak repair --system -y >> "$LOGFILE" 2>&1 || true
-        flatpak repair --user -y >> "$LOGFILE" 2>&1 || true
+        sudo flatpak repair --system >> "$LOGFILE" 2>&1 || true
+        flatpak repair --user >> "$LOGFILE" 2>&1 || true
     fi
     
     if [[ $FLATPAK_EXIT -eq 0 ]]; then
