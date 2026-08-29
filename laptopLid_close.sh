@@ -7,7 +7,8 @@
 #   2. AND no HDMI monitor is connected
 #
 # Dependencies (optional but recommended):
-#   - acpid / acpi_listen  → Instant lid detection
+#   - acpid / acpi_listen  → Instant lid detection.
+#   - Enable acpid service with sudo systemctl enable --now acpid
 #   - udevadm              → Instant HDMI hotplug detection
 #
 
