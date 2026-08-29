@@ -10,9 +10,6 @@
 #   - acpid / acpi_listen  → Instant lid detection
 #   - udevadm              → Instant HDMI hotplug detection
 #
-# Fallback: If acpi_listen is missing, falls back to 1-second
-# polling (still efficient and locks within 1 second).
-# ============================================================
 
  --- Single-Instance Lock ---
 LOCK_FILE="/tmp/laptopLid_close_$(whoami).lock"
