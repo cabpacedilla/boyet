@@ -23,7 +23,9 @@
 #
 # DISCLAIMER:
 #   All rights belong to the respective DeviantArt artists.
-#   Usage is for personal, non-commercial use only. 
+#   This script fetches random images; content is unfiltered
+#   beyond DeviantArt's "nonadult" rating. Viewer discretion
+#   is advised. Usage is personal and non-commercial only.
 
 # ============================================================
 # CONFIGURATION
