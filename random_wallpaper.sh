@@ -3,11 +3,32 @@
 # ============================================================
 # RANDOM WALLPAPER SCRIPT
 # ============================================================
+#
+# DESCRIPTION:
+#   Fetches random, unseen digital art from DeviantArt and
+#   sets it as KDE Plasma desktop wallpaper.
+#
+# HOW IT WORKS:
+#   1. Category Cycling - Shuffles art categories (e.g.,
+#      "landscapes", "cyberpunk") for diverse styles.
+#   2. API Fetch - Queries DeviantArt via 'deviousq' for up
+#      to 100 image URLs per search term.
+#   3. History Check - Uses ~/scriptlogs/wallpaper_history.txt
+#      to avoid repeats (stores ~2.14M unique URLs).
+#   4. Selection - Randomly samples up to 100 candidates. If
+#      all seen, greps history for unseen; fallback to repeat.
+#   5. Application - Downloads chosen image to /tmp and applies
+#      via 'plasma-apply-wallpaperimage'.
+#   6. Loop - Repeats every SLEEP_INTERVAL (default 60s).
+#
+# DISCLAIMER:
+#   All rights belong to the respective DeviantArt artists.
+#   Usage is for personal, non-commercial use only. 
 
 # ============================================================
 # CONFIGURATION
 # ============================================================
-HISTORY_SIZE=2140000         # ~4 years of unique wallpapers (1 change/min)
+HISTORY_SIZE=2140000         # Unique wallpapers URL history
 SEARCH_LIMIT=100             # Fetch 100 results per search
 SLEEP_INTERVAL=60            # Seconds between wallpaper changes
 MAX_ATTEMPTS=100             # Try up to 100 random candidates before fallback
