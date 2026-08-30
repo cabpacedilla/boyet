@@ -2,25 +2,25 @@
 # Multi-script monitor: ensures scripts in SCRIPTS array are running,
 # kills extras, and notifies if missing.
 
-LOCK_FILE="/tmp/checkservices_$(whoami).lock"
-exec 9>"${LOCK_FILE}"
+set -o pipefail
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+
+# --- Secure lock ---
+if [[ -z "${XDG_RUNTIME_DIR:-}" || ! -d "$XDG_RUNTIME_DIR" ]]; then
+    echo "ERROR: XDG_RUNTIME_DIR unavailable" >&2
+    exit 1
+fi
+LOCK_FILE="$XDG_RUNTIME_DIR/checkservices.lock"
+exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
     exit 1
 fi
+printf '%s\n' "$$" >&9
 
-# Store our PID
-echo $$ > "$LOCK_FILE"
-
-# Enhanced cleanup that only removes our PID file
 cleanup() {
-    # Only remove if it's our PID (prevents removing another process's lock)
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-    flock -u 9
-    exec 9>&-
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
 }
-
 trap cleanup EXIT
 
 # Base scripts that do NOT require internet (always run)

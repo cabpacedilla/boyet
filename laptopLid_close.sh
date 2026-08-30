@@ -1,83 +1,94 @@
 #!/usr/bin/env bash
 # ============================================================
-# Laptop Lid & HDMI Monitor
+# Laptop Lid & HDMI Monitor (with retry)
 # ============================================================
-# Locks the session when:
-#   1. The lid is closed
-#   2. AND no HDMI monitor is connected
-#
-# Dependencies (optional but recommended):
-#   - acpid / acpi_listen  → Instant lid detection.
-#   - Enable acpid service with sudo systemctl enable --now acpid
-#   - udevadm              → Instant HDMI hotplug detection
-#
 
- --- Single-Instance Lock ---
-LOCK_FILE="/tmp/laptopLid_close_$(whoami).lock"
-exec 9>"${LOCK_FILE}"
-if ! flock -n 9; then
+set -o pipefail
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+if [[ $EUID -eq 0 ]]; then
+    echo "ERROR: Do not run this script as root." >&2
     exit 1
 fi
 
-echo $$ > "$LOCK_FILE"
+# --- Secure lock ---
+if [[ -z "${XDG_RUNTIME_DIR:-}" || ! -d "$XDG_RUNTIME_DIR" ]]; then
+    echo "ERROR: XDG_RUNTIME_DIR unavailable." >&2
+    exit 1
+fi
+LOCK_FILE="$XDG_RUNTIME_DIR/laptopLid_close.lock"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    exit 1
+fi
+printf '%s\n' "$$" >&9
 
-# --- Cleanup ---
 cleanup() {
-    # Kill the udevadm background process if it's running
-    if [[ -n "$UDEV_PID" ]] && kill -0 "$UDEV_PID" 2>/dev/null; then
-        kill "$UDEV_PID" 2>/dev/null
-    fi
-
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
+    kill "$UDEV_PID" 2>/dev/null || true
+    kill "$ACPID_PID" 2>/dev/null || true
     flock -u 9 2>/dev/null || true
     exec 9>&- 2>/dev/null || true
 }
-
 trap cleanup EXIT
 
-# --- Helper Functions ---
+# --- HDMI detection (prefer kscreen-doctor, fallback xrandr) ---
+hdmi_connected() {
+    if command -v kscreen-doctor &>/dev/null; then
+        kscreen-doctor -o 2>/dev/null | grep -qi HDMI
+    else
+        xrandr 2>/dev/null | grep ' connected' | grep -qi HDMI
+    fi
+}
+
 get_lid_state() {
     awk '{print $2}' /proc/acpi/button/lid/*/state 2>/dev/null
 }
 
-hdmi_connected() {
-    xrandr | grep ' connected' | grep -qi 'HDMI'
-}
-
+# --- check_and_lock with retry ---
 check_and_lock() {
-    if [[ "$(get_lid_state)" == "closed" ]] && ! hdmi_connected; then
-        loginctl lock-session
+    local lid_state
+    lid_state="$(get_lid_state)"
+    if [[ "$lid_state" != "closed" ]]; then
+        return
     fi
+
+    # Retry HDMI detection up to 5 times, with 0.5s intervals
+    for ((i=0; i<5; i++)); do
+        if hdmi_connected; then
+            # HDMI is connected – do not lock
+            return
+        fi
+        sleep 0.5
+    done
+
+    # If we get here, HDMI is still disconnected – lock the session
+    loginctl lock-session
 }
 
-# --- Check once at startup ---
+# --- Initial check ---
 check_and_lock
 
-# --- Start udev monitor in background for HDMI events ---
-if command -v udevadm &>/dev/null; then
-    (
-        udevadm monitor --subsystem-match=drm --property 2>/dev/null | while read -r line; do
-            if [[ "$line" =~ "HOTPLUG=1" ]] || [[ "$line" =~ "change" ]]; then
-                check_and_lock
-            fi
-        done
-    ) &
-    UDEV_PID=$!
-fi
+# --- Monitors ---
+(
+    udevadm monitor --subsystem-match=drm --property 2>/dev/null | while read -r line; do
+        if [[ "$line" =~ "HOTPLUG=1" ]] || [[ "$line" =~ "change" ]]; then
+            check_and_lock
+        fi
+    done
+) &
+UDEV_PID=$!
 
-# --- Main Event Loop (Ideal: with acpi_listen) ---
-while true; do
-    # Wait up to 5 seconds for a lid event.
-    # If a lid event arrives, handle it instantly.
-    # If nothing happens for 5 seconds, run a backup check.
-    if read -t 5 event < <(acpi_listen); then
+(
+    acpi_listen 2>/dev/null | while read -r event; do
         if [[ "$event" == *"button/lid"* ]]; then
             check_and_lock
         fi
-    else
-        # Backup safety net (catches edge cases if udevadm fails)
-        check_and_lock
-    fi
+    done
+) &
+ACPID_PID=$!
+
+# --- Periodic fallback ---
+while true; do
+    sleep 5
+    check_and_lock
 done

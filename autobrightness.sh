@@ -38,7 +38,7 @@ fi
 
 BRIGHTNESS_FILE="/sys/class/backlight/${DEVICE}/brightness"
 MAX_BRIGHTNESS=$(cat "/sys/class/backlight/${DEVICE}/max_brightness" 2>/dev/null)
-TARGET_PERCENT=100
+TARGET_PERCENT=90
 
 if [ -z "$MAX_BRIGHTNESS" ]; then
     echo "Cannot read max brightness for $DEVICE" >&2
