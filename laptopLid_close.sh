@@ -29,6 +29,7 @@ if [[ -z "${XDG_RUNTIME_DIR:-}" || ! -d "$XDG_RUNTIME_DIR" ]]; then
     echo "ERROR: XDG_RUNTIME_DIR unavailable" >&2
     exit 1
 fi
+
 LOCK_FILE="$XDG_RUNTIME_DIR/$(basename "$0" .sh).lock"   # dynamic name
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
