@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # This script alerts when battery level is low or high and adjusts brightness for battery optimization.
 # Written by Claive Alvin P. Acedilla. Modified for dynamic brightnessctl use.
 

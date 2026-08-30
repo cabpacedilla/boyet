@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # Monthly Btrfs Scrub Script – Refined 2026 Edition (Final Stable)
 # SSD/NVMe friendly with idle I/O priority and resume support.
 set -euo pipefail

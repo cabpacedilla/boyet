@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # ============================================================
 # Laptop Lid & HDMI Monitor (with retry)
 # ============================================================
 
 set -o pipefail
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 if [[ $EUID -eq 0 ]]; then
     echo "ERROR: Do not run this script as root." >&2

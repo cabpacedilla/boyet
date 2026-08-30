@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # Set user in /etc/sudoers file without providing password with rsync command
 # add line <username> ALL=(ALL) NOPASSWD: /usr/bin/rsync
 ORIGIN=~/Documents/

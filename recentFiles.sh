@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # This script is used to monitor and access recently used files
 # This script was assembled written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # June 2024

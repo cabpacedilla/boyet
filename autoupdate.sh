@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # This script will automatically update updateable packages in Nobara Linux.
 # Modified from the original script by Claive Alvin P. Acedilla.
 # Runs as soon as any updates are available and includes security updates of pinned packages.
