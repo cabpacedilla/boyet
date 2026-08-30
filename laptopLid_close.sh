@@ -1,99 +1,122 @@
 #!/usr/bin/env bash
 # ============================================================
-# Locks session when lid closed AND no HDMI connected
-# 
-# Dependencies:  
-#   - acpi_listen (from acpid) – for instant lid events.
-#     Install: sudo dnf install acpid   (Fedora/Nobara)
-#              sudo apt install acpid   (Debian/Ubuntu)
+# Locks session when lid closed AND no external display connected.
+# Uses native systemd D-Bus and kernel DRM sysfs – works on Wayland & X11.
+#
+# IMPORTANT CONFIGURATION:
+# To prevent systemd from suspending before this script evaluates:
+# Set the following in /etc/systemd/logind.conf (or /etc/systemd/logind.conf.d/lid.conf):
+#   HandleLidSwitch=ignore
+#   HandleLidSwitchExternalPower=ignore
+#   HandleLidSwitchDocked=ignore
+# Then apply with: sudo systemctl restart systemd-logind
 # ============================================================
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 set -o pipefail
+
+# ---------- Initialisation ----------
+UDEV_PID=""
+BUSCTL_PID=""
 
 if [[ $EUID -eq 0 ]]; then
     echo "ERROR: Do not run this script as root." >&2
     exit 1
 fi
 
-# --- Secure lock ---
+# ---------- Single instance lock ----------
 if [[ -z "${XDG_RUNTIME_DIR:-}" || ! -d "$XDG_RUNTIME_DIR" ]]; then
-    echo "ERROR: XDG_RUNTIME_DIR unavailable." >&2
+    echo "ERROR: XDG_RUNTIME_DIR unavailable" >&2
     exit 1
 fi
-LOCK_FILE="$XDG_RUNTIME_DIR/laptopLid_close.lock"
+LOCK_FILE="$XDG_RUNTIME_DIR/$(basename "$0" .sh).lock"   # dynamic name
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
+    echo "ERROR: Another instance is running." >&2
     exit 1
 fi
 printf '%s\n' "$$" >&9
 
 cleanup() {
-    kill "$UDEV_PID" 2>/dev/null || true
-    kill "$ACPID_PID" 2>/dev/null || true
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
+    # Kill the entire process group of each monitor (kills child processes too)
+    [[ -n "$UDEV_PID" ]] && kill -TERM -"$UDEV_PID" 2>/dev/null || true
+    [[ -n "$BUSCTL_PID" ]] && kill -TERM -"$BUSCTL_PID" 2>/dev/null || true
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
-# --- HDMI detection (prefer kscreen-doctor, fallback xrandr) ---
-hdmi_connected() {
-    if command -v kscreen-doctor &>/dev/null; then
-        kscreen-doctor -o 2>/dev/null | grep -qi HDMI
-    else
-        xrandr 2>/dev/null | grep ' connected' | grep -qi HDMI
-    fi
-}
-
+# ---------- Lid state: D-Bus (systemd-logind) with fallback ----------
 get_lid_state() {
-    awk '{print $2}' /proc/acpi/button/lid/*/state 2>/dev/null
+    local state
+    if command -v busctl &>/dev/null; then
+        state=$(busctl --system get-property org.freedesktop.login1 \
+                      /org/freedesktop/login1 \
+                      org.freedesktop.login1.Manager \
+                      LidClosed 2>/dev/null | awk '{print $2}')
+        [[ "$state" == "true" ]] && { echo "closed"; return; }
+        [[ "$state" == "false" ]] && { echo "open"; return; }
+    fi
+
+    # Fallback (older systems)
+    local proc_state
+    proc_state=$(awk '{print $2}' /proc/acpi/button/lid/*/state 2>/dev/null)
+    [[ -n "$proc_state" ]] && echo "$proc_state" || echo "open"
 }
 
-# --- check_and_lock with retry ---
+# ---------- External display detection via DRM sysfs (Wayland-safe) ----------
+hdmi_connected() {
+    for status_file in /sys/class/drm/card*-*/status; do
+        [[ -f "$status_file" ]] || continue
+        # Skip internal panels
+        [[ "$status_file" =~ eDP|LVDS ]] && continue
+        if grep -q "^connected$" "$status_file" 2>/dev/null; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ---------- Main lock logic ----------
 check_and_lock() {
     local lid_state
     lid_state="$(get_lid_state)"
-    if [[ "$lid_state" != "closed" ]]; then
-        return
-    fi
+    [[ "$lid_state" != "closed" ]] && return
 
-    # Retry HDMI detection up to 5 times, with 0.5s intervals
+    # Retry to allow hotplug events to settle
     for ((i=0; i<5; i++)); do
         if hdmi_connected; then
-            # HDMI is connected – do not lock
             return
         fi
         sleep 0.5
     done
 
-    # If we get here, HDMI is still disconnected – lock the session
+    # No external display – lock the session via systemd
+    logger "laptopLid_close: Lid closed with no external display. Locking session."
     loginctl lock-session
 }
 
-# --- Initial check ---
+# ---------- Initial check on script start ----------
 check_and_lock
 
-# --- Monitors ---
+# ---------- Event monitors ----------
+# 1. DRM hotplug events (external display plug/unplug)
 (
     udevadm monitor --subsystem-match=drm --property 2>/dev/null | while read -r line; do
-        if [[ "$line" =~ "HOTPLUG=1" ]] || [[ "$line" =~ "change" ]]; then
+        if [[ "$line" == *"HOTPLUG=1"* ]]; then
             check_and_lock
         fi
     done
 ) &
 UDEV_PID=$!
 
+# 2. D-Bus lid events (native systemd signals)
 (
-    acpi_listen 2>/dev/null | while read -r event; do
-        if [[ "$event" == *"button/lid"* ]]; then
+    busctl monitor org.freedesktop.login1 2>/dev/null | while read -r line; do
+        if [[ "$line" == *"LidClosed"* ]]; then
             check_and_lock
         fi
     done
 ) &
-ACPID_PID=$!
+BUSCTL_PID=$!
 
-# --- Periodic fallback ---
-while true; do
-    sleep 5
-    check_and_lock
-done
+# ---------- Wait for background processes ----------
+wait
