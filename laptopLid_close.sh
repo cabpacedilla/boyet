@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # ============================================================
-# Laptop Lid & HDMI Monitor (with retry)
+# Locks session when lid closed AND no HDMI connected
+# 
+# Dependencies:  
+#   - acpi_listen (from acpid) – for instant lid events.
+#     Install: sudo dnf install acpid   (Fedora/Nobara)
+#              sudo apt install acpid   (Debian/Ubuntu)
 # ============================================================
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 set -o pipefail
 
 if [[ $EUID -eq 0 ]]; then
