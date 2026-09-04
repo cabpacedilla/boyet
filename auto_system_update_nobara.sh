@@ -435,9 +435,9 @@ post_update_security_check() {
     log "Running post-update security checks..."
 
     # --- AppArmor check (commented out) ---
-    # if command -v aa-status >/dev/null 2>&1; then
-    #     aa-status >> "$LOGFILE" 2>&1 || log "AppArmor check failed"
-    # fi
+    if command -v aa-status >/dev/null 2>&1; then
+        aa-status >> "$LOGFILE" 2>&1 || log "AppArmor check failed"
+    fi
 
     for svc in NetworkManager sshd dbus systemd-logind firewalld auditd; do
         if systemctl is-active --quiet "$svc" 2>/dev/null; then
