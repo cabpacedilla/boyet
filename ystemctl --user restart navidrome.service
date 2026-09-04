@@ -1,0 +1,46 @@
+[0;1;32m●[0m navidrome.service - Navidrome Music Server
+     Loaded: loaded (]8;;file://claiveapa/home/claiveapa/.config/systemd/user/navidrome.service\/home/claiveapa/.config/systemd/user/navidrome.service]8;;\; [0;1;32menabled[0m; preset: [0;1;38:5:185mdisabled[0m)
+    Drop-In: /usr/lib/systemd/user/service.d
+             └─]8;;file://claiveapa/usr/lib/systemd/user/service.d/10-timeout-abort.conf\10-timeout-abort.conf]8;;\
+     Active: [0;1;32mactive (running)[0m since Sun 2026-08-30 14:01:19 PST; 21h ago
+ Invocation: 0e361262bc774e4c8dcd7acb57e76dda
+   Main PID: 2669 (music_navidrome)
+      Tasks: 15[0;38:5:245m (limit: 11716)[0m
+     Memory: 64.5M (peak: 83.4M, swap: 6.1M, swap peak: 40.6M, zswap: 113.7K)
+        CPU: 7min 18.147s
+     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/navidrome.service
+             ├─[0;38:5:245m2669 /bin/bash /home/claiveapa/Documents/bin/music_navidrome.sh[0m
+             └─[0;38:5:245m2683 /usr/local/bin/navidrome --configfile /home/claiveapa/.config/navidrome/navidrome.toml[0m
+
+Ago 30 14:01:19 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:01:19+08:00" level=info msg="Mounting LastFM Auth routes" path=/api/lastfm
+Ago 30 14:01:19 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:01:19+08:00" level=info msg="Mounting ListenBrainz Auth routes" path=/api/listenbrainz
+Ago 30 14:01:19 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:01:19+08:00" level=info msg="Mounting Background images routes" path=/backgrounds
+Ago 30 14:01:19 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:01:19+08:00" level=info msg="Mounting WebUI routes" path=/app
+Ago 30 14:01:19 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:01:19+08:00" level=info msg="----> Navidrome server is ready!" address="0.0.0.0:8081" startupTime=350.2ms tlsEnabled=false
+Ago 30 14:01:21 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:01:21+08:00" level=info msg="Finished processing Music Folder" added=0 deleted=0 elapsed=302.7ms folder=/home/claiveapa/Music playlistsImported=0 updated=0
+Ago 30 14:02:19 claiveapa music_navidrome.sh[2683]: time="2026-08-30T14:02:19+08:00" level=info msg="Finished processing Music Folder" added=0 deleted=0 elapsed=152.9ms folder=/home/claiveapa/Music playlistsImported=0 updated=0
+Ago 31 10:52:55 claiveapa music_navidrome.sh[2683]: time="2026-08-31T10:52:55+08:00" level=warning msg="HTTP: GET http://navidrome.share.zrok.io/api/playlist?_end=0&_sort=name&_start=-100" elapsedTime="221.247µs" httpStatus=401 remoteAddr=49.145.104.250 requestId=claiveapa/KR1ivz9g7X-000008 responseSize=29
+Ago 31 10:52:55 claiveapa music_navidrome.sh[2683]: time="2026-08-31T10:52:55+08:00" level=warning msg="HTTP: GET http://navidrome.share.zrok.io/api/transcoding?_end=1000&_order=ASC&_sort=name&_start=0" elapsedTime="182.805µs" httpStatus=401 remoteAddr=49.145.104.250 requestId=claiveapa/KR1ivz9g7X-000009 responseSize=29
+Ago 31 10:52:55 claiveapa music_navidrome.sh[2683]: time="2026-08-31T10:52:55+08:00" level=warning msg="HTTP: GET http://navidrome.share.zrok.io/api/album?_end=12&_order=DESC&_sort=recently_added&_start=0" elapsedTime="90.802µs" httpStatus=401 remoteAddr=49.145.104.250 requestId=claiveapa/KR1ivz9g7X-000010 responseSize=29
+
+● zrok-share-navidrome.service - zrok Share: navidrome
+     Loaded: loaded (]8;;file://claiveapa/home/claiveapa/.config/systemd/user/zrok-share-navidrome.service\/home/claiveapa/.config/systemd/user/zrok-share-navidrome.service]8;;\; [0;1;32menabled[0m; preset: [0;1;38:5:185mdisabled[0m)
+    Drop-In: /usr/lib/systemd/user/service.d
+             └─]8;;file://claiveapa/usr/lib/systemd/user/service.d/10-timeout-abort.conf\10-timeout-abort.conf]8;;\
+     Active: activating (auto-restart) (Result: exit-code) since Mon 2026-08-31 11:29:46 PST; 8s ago
+ Invocation: b7995fd2fdab4219aa7c4cf532891c44
+    Process: 2683264 ExecStart=/usr/bin/zrok share reserved --headless navidrome http://localhost:8081 [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 2683264 (code=exited, status=1/FAILURE)
+   Mem peak: 34.9M
+        CPU: 176ms
+
+● zrok-share-wallpapers.service - zrok Share: wallpapers4
+     Loaded: loaded (]8;;file://claiveapa/home/claiveapa/.config/systemd/user/zrok-share-wallpapers.service\/home/claiveapa/.config/systemd/user/zrok-share-wallpapers.service]8;;\; [0;1;32menabled[0m; preset: [0;1;38:5:185mdisabled[0m)
+    Drop-In: /usr/lib/systemd/user/service.d
+             └─]8;;file://claiveapa/usr/lib/systemd/user/service.d/10-timeout-abort.conf\10-timeout-abort.conf]8;;\
+     Active: activating (auto-restart) (Result: exit-code) since Mon 2026-08-31 11:29:45 PST; 9s ago
+ Invocation: a5ee7455b6dd41c891f6bd94c6aea77d
+    Process: 2682589 ExecStart=/usr/bin/zrok share reserved --headless --backend-mode web wallpapers4 /run/media/claiveapa/Data/claive/Documents/nobara/wallpapers/ [0;1;31m(code=exited, status=1/FAILURE)[0m
+   Main PID: 2682589 (code=exited, status=1/FAILURE)
+   Mem peak: 37.2M
+        CPU: 180ms

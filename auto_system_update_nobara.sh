@@ -172,7 +172,8 @@ check_internet() {
         fi
     done
     
-    sudo dnf makecache --timer -q 2>/dev/null && return 0
+    # Use sudo -n to avoid hanging; removed unsupported --timer
+    sudo -n dnf makecache -q 2>/dev/null && return 0
     return 1
 }
 
@@ -197,19 +198,29 @@ cleanup_lock() {
     fi
 }
 
-# exec 9>"$LOCK_FILE"
-# if ! flock -n 9; then
-#     printf '%s - Already running\n' "$(date '+%F %T')" | tee -a "$LOGFILE"
-#     exit 1
-# fi
-# LOCK_ACQUIRED=true
-# trap 'cleanup_keepalive; cleanup_lock' EXIT INT TERM
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+     printf '%s - Already running\n' "$(date '+%F %T')" | tee -a "$LOGFILE"
+     exit 1
+fi
+LOCK_ACQUIRED=true
+trap 'cleanup_keepalive; cleanup_lock' EXIT INT TERM
 
 # ================= SAFETY CHECKS =================
 check_package_lock() {
-    pgrep -x dnf >/dev/null 2>&1 && { log "DNF already running, skipping..."; return 1; }
-    pgrep -x rpm >/dev/null 2>&1 && { log "RPM already running, skipping..."; return 1; }
-    pgrep -x packagekitd >/dev/null 2>&1 && { log "PackageKit running, skipping..."; return 1; }
+    # Use ps to detect processes across all users
+    if ps -C dnf --no-headers >/dev/null 2>&1; then
+        log "DNF already running, skipping..."
+        return 1
+    fi
+    if ps -C rpm --no-headers >/dev/null 2>&1; then
+        log "RPM already running, skipping..."
+        return 1
+    fi
+    if ps -C packagekitd --no-headers >/dev/null 2>&1; then
+        log "PackageKit running, skipping..."
+        return 1
+    fi
     return 0
 }
 
@@ -351,8 +362,8 @@ verify_system_health() {
     
     local critical_errors
     critical_errors=$(journalctl --since "$update_start_time" -p 2 --no-pager 2>/dev/null | \
-        grep -v -E "drkonqi|coredump|wireplumber.*crashed" | \
-        head -10 || true)
+		grep -v -E "drkonqi|coredump|wireplumber.*crashed" | \
+		grep -v "^-- No entries" | head -10 || true)
     if [[ -n "$critical_errors" ]]; then
         log "WARNING: Critical kernel errors detected since update start"
         verification_failed=1
@@ -423,9 +434,10 @@ verify_system_health() {
 post_update_security_check() {
     log "Running post-update security checks..."
 
-    if command -v aa-status >/dev/null 2>&1; then
-        aa-status >> "$LOGFILE" 2>&1 || log "AppArmor check failed"
-    fi
+    # --- AppArmor check (commented out) ---
+    # if command -v aa-status >/dev/null 2>&1; then
+    #     aa-status >> "$LOGFILE" 2>&1 || log "AppArmor check failed"
+    # fi
 
     for svc in NetworkManager sshd dbus systemd-logind firewalld auditd; do
         if systemctl is-active --quiet "$svc" 2>/dev/null; then
@@ -436,18 +448,27 @@ post_update_security_check() {
     done
 
     log "Listening ports (ss -tulpn):"
-    ss -tulpn 2>/dev/null | head -50 | while read -r line; do
+    # Use sudo to show process names; fallback to ss without -p if sudo fails
+    if sudo -n ss -tulpn 2>/dev/null | head -50 | while read -r line; do
         log_raw "  $line"
-    done
-
-    local auth_failures
-    auth_failures=$(journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep -c "Failed password" || echo 0)
-    if [[ $auth_failures -gt 0 ]]; then
-        log "⚠️ $auth_failures authentication failures detected in last hour"
-        journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep "Failed password" | tail -10 >> "$LOGFILE"
+    done; then
+        : # success
     else
-        log "✅ No authentication failures in last hour"
+        ss -tulpn 2>/dev/null | head -50 | while read -r line; do
+            log_raw "  $line"
+        done
     fi
+
+    # --- SSH authentication failure check (commented out) ---
+    # local auth_failures
+    # auth_failures=$(journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep -c "Failed password")
+    # [[ -z "$auth_failures" ]] && auth_failures=0
+    # if [[ $auth_failures -gt 0 ]]; then
+    #     log "⚠️ $auth_failures authentication failures detected in last hour"
+    #     journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep "Failed password" | tail -10 >> "$LOGFILE"
+    # else
+    #     log "✅ No authentication failures in last hour"
+    # fi
 
     log "Recent kernel errors (last 50 lines):"
     journalctl -b -p 3 --no-pager 2>/dev/null | tail -50 | while read -r line; do
@@ -564,10 +585,11 @@ fetch_pending_updates() {
     tmp=$(mktemp_safe) || return 1
     
     {
-        sudo dnf makecache --timer -q >> "$LOGFILE" 2>&1 || true
+        # Removed unsupported --timer; use -q only
+        sudo -n dnf makecache -q >> "$LOGFILE" 2>&1 || true
         
         local dnf_rc=0
-        sudo dnf check-update > "$tmp" 2>/dev/null || dnf_rc=$?
+        sudo -n dnf check-update > "$tmp" 2>/dev/null || dnf_rc=$?
         
         if [[ $dnf_rc -eq 1 ]]; then
             log "DNF check-update encountered an error"
@@ -680,21 +702,21 @@ notify_complete() {
     > "$STATE_DIR/flatpak_list" 2>/dev/null || true
 }
 
-# ================= LOG UPDATED PACKAGES (Direct to HISTORY_LOG) =================
+# ================= LOG UPDATED PACKAGES (as extra lines) =================
 log_updated_packages() {
     local date_str=$(date '+%Y-%m-%d')
     
-    # Log DNF packages directly to HISTORY_LOG
+    # Log DNF packages (non-CSV, just appended)
     if [[ -s "$STATE_DIR/dnf_list" ]]; then
         while IFS= read -r line; do
-            printf '%s %s\n' "$date_str" "DNF $line" >> "$HISTORY_LOG"
+            printf '%s DNF %s\n' "$date_str" "$line" >> "$HISTORY_LOG"
         done < "$STATE_DIR/dnf_list"
     fi
     
-    # Log Flatpak packages directly to HISTORY_LOG
+    # Log Flatpak packages (non-CSV)
     if [[ -s "$STATE_DIR/flatpak_list" ]]; then
         while IFS= read -r line; do
-            printf '%s %s\n' "$date_str" "Flatpak $line" >> "$HISTORY_LOG"
+            printf '%s Flatpak %s\n' "$date_str" "$line" >> "$HISTORY_LOG"
         done < "$STATE_DIR/flatpak_list"
     fi
 }
@@ -744,7 +766,9 @@ run_updates() {
     log_raw "Starting Nobara System Update"
     log_raw "=============================="
     
-    timeout "$TIMEOUT_SECONDS" sudo nobara-sync all 2>&1 | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
+    # Use --preserve-status to get the real exit code of nobara-sync
+    # Pipe yes to automatically answer the interactive prompt
+    timeout --preserve-status "$TIMEOUT_SECONDS" bash -c "yes | sudo nobara-sync all" 2>&1 | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
     DNF_EXIT=${PIPESTATUS[0]}
     log_raw "Nobara-sync exit code: $DNF_EXIT"
     
@@ -756,7 +780,7 @@ run_updates() {
     log_raw "Starting Flatpak Updates"
     log_raw "=============================="
     
-    timeout "$TIMEOUT_SECONDS" sudo flatpak update -y --no-static-deltas 2>&1 | tee -a "$LOGFILE"
+    timeout --preserve-status "$TIMEOUT_SECONDS" sudo flatpak update -y --no-static-deltas 2>&1 | tee -a "$LOGFILE"
     FLATPAK_EXIT=${PIPESTATUS[0]}
     log_raw "Flatpak (system) exit code: $FLATPAK_EXIT"
     
@@ -769,7 +793,7 @@ run_updates() {
     fi
     
     if [[ $FLATPAK_EXIT -eq 0 ]]; then
-        timeout "$TIMEOUT_SECONDS" flatpak update --user -y 2>&1 | tee -a "$LOGFILE"
+        timeout --preserve-status "$TIMEOUT_SECONDS" flatpak update --user -y 2>&1 | tee -a "$LOGFILE"
         FLATPAK_EXIT=${PIPESTATUS[0]}
         log_raw "Flatpak (user) exit code: $FLATPAK_EXIT"
     fi
@@ -802,7 +826,7 @@ run_updates() {
     if [[ $UPDATE_SUCCESS -eq 0 ]]; then
         uname -r > "$POST_UPDATE_KERNEL_FILE" 2>/dev/null || true
         
-        # Log individual packages directly to HISTORY_LOG
+        # Log individual packages (non-CSV, appended)
         log_updated_packages
         
         notify_complete
@@ -938,28 +962,29 @@ main() {
             [[ -s "$STATE_DIR/dnf_list" ]] && dnf_count=$(wc -l < "$STATE_DIR/dnf_list")
             [[ -s "$STATE_DIR/flatpak_list" ]] && flatpak_count=$(wc -l < "$STATE_DIR/flatpak_list")
             
-            # Log the pending summary: OK,DNF:X,FLATPAK:Y
-            printf '%s,OK,DNF:%d,FLATPAK:%d\n' "$(date '+%F')" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
+            # Log the pending summary (CSV format: DATE,STATUS,DNF_COUNT,FLATPAK_COUNT)
+            printf '%s,OK,%d,%d\n' "$(date '+%F')" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
             
             notify_pending
             
             if run_updates; then
                 # Individual packages are logged inside run_updates() by log_updated_packages()
                 
-                # Log final state after updates: OK,DNF:0,FLATPAK:0
-                printf '%s,OK,DNF:0,FLATPAK:0\n' "$(date '+%F')" >> "$HISTORY_LOG"
+                # Log final state after updates (CSV)
+                printf '%s,OK,0,0\n' "$(date '+%F')" >> "$HISTORY_LOG"
                 
                 log "Update cycle completed successfully"
                 update_success_timestamp
                 system_up_to_date
                 quick_verify
             else
-                printf '%s,FAIL,DNF:%s,FLATPAK:%s\n' "$(date '+%F')" "${LAST_DNF_EXIT:-unknown}" "${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
+                # Log failure (CSV) – note that DNF_COUNT and FLATPAK_COUNT are not applicable, but we can put exit codes or unknown
+                printf '%s,FAIL,%s,%s\n' "$(date '+%F')" "${LAST_DNF_EXIT:-unknown}" "${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
                 log "Update cycle failed"
             fi
         else
-            # No updates available
-            printf '%s,OK,DNF:0,FLATPAK:0\n' "$(date '+%F')" >> "$HISTORY_LOG"
+            # No updates available – log OK with 0 counts
+            printf '%s,OK,0,0\n' "$(date '+%F')" >> "$HISTORY_LOG"
             system_up_to_date
             quick_verify
         fi
