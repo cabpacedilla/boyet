@@ -59,8 +59,6 @@ check_internet() {
             return 0
         fi
     done
-    
-    sudo -n dnf makecache -q 2>/dev/null && return 0
     return 1
 }
 
