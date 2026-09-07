@@ -47,11 +47,20 @@ MIN_INSTANCES=1
 
 # --- Function to check Internet connectivity ---
 check_internet() {
-    # Check Google and Cloudflare for high reliability
-    if curl -s --connect-timeout 5 "https://www.google.com" >/dev/null 2>&1 || \
-       curl -s --connect-timeout 5 "https://www.cloudflare.com" >/dev/null 2>&1; then
-        return 0
-    fi
+    local endpoints=(
+        "https://www.google.com"
+        "https://www.cloudflare.com"
+        "https://www.microsoft.com"
+        "https://mirrors.fedoraproject.org"
+    )
+    
+    for endpoint in "${endpoints[@]}"; do
+        if curl -fsI --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    
+    sudo -n dnf makecache -q 2>/dev/null && return 0
     return 1
 }
 

@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+
+# ============================================================
+# SINGLE-INSTANCE LOCK
+# ============================================================
+LOCK_FILE="$HOME/.cache/random_wallpaper.lock"
+mkdir -p "$(dirname "$LOCK_FILE")"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "$(date) - Another instance is already running. Exiting." >> "$LOGFILE"
+    exit 1
+fi
+trap 'flock -u 9; exec 9>&-' EXIT
+
 # ============================================================
 # RANDOM WALLPAPER SCRIPT
 # ============================================================
@@ -8,6 +22,19 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/
 # DESCRIPTION:
 #   Fetches random, unseen digital art from DeviantArt and
 #   sets it as KDE Plasma desktop wallpaper.
+#   Falls back to Variety (local wallpaper rotation) when offline.
+#
+# DEPENDENCIES:
+#   - deviousq      - Command-line DeviantArt search tool
+#                     (https://github.com/foxlet/deviousq)
+#   - plasma-apply-wallpaperimage - KDE Plasma wallpaper setter
+#                     (included with KDE Plasma Workspace)
+#   - wget          - For downloading images
+#   - Variety       - OPTIONAL but RECOMMENDED for offline fallback
+#                     Install: sudo dnf install variety
+#                     MUST BE CONFIGURED with a local wallpaper folder
+#                     (e.g., ~/Pictures/Wallpapers/) – the script only
+#                     calls `variety --next` to rotate its pre-set collection.
 #
 # HOW IT WORKS:
 #   1. Category Cycling - Shuffles art categories (e.g.,
@@ -21,6 +48,8 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/
 #   5. Application - Downloads chosen image to /tmp and applies
 #      via 'plasma-apply-wallpaperimage'.
 #   6. Loop - Repeats every SLEEP_INTERVAL (default 60s).
+#   7. Offline Fallback - If no internet, uses 'variety --next'
+#      to rotate local wallpapers (requires Variety configured).
 #
 # DISCLAIMER:
 #   All rights belong to the respective DeviantArt artists.
@@ -84,6 +113,25 @@ mkdir -p "$HOME/scriptlogs"
 echo "$(date) - Random Wallpaper Script Started (History size: $HISTORY_SIZE)" >> "$LOGFILE"
 
 # ============================================================
+# RELIABLE INTERNET CHECK
+# ============================================================
+check_internet() {
+    local endpoints=(
+        "https://www.google.com"
+        "https://www.cloudflare.com"
+        "https://www.microsoft.com"
+        "https://mirrors.fedoraproject.org"
+    )
+    
+    for endpoint in "${endpoints[@]}"; do
+        if curl -fsI --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# ============================================================
 # CATEGORY CYCLING (Random Permutation without replacement)
 # ============================================================
 shuffle_categories() {
@@ -123,6 +171,24 @@ is_in_history() {
 # MAIN LOOP
 # ============================================================
 while true; do
+
+    # --------------------------------------------------------
+    # 0. CHECK INTERNET CONNECTIVITY FIRST
+    # --------------------------------------------------------
+    if ! check_internet; then
+        echo "$(date) - No internet connection. Falling back to Variety." >> "$LOGFILE"
+
+        # Check if Variety is installed
+        if command -v variety >/dev/null 2>&1; then
+            variety --next
+            echo "$(date) - Variety wallpaper changed." >> "$LOGFILE"
+        else
+            echo "$(date) - WARNING: Variety is not installed. Skipping wallpaper change." >> "$LOGFILE"
+        fi
+
+        sleep "$SLEEP_INTERVAL"
+        continue
+    fi
 
     # --------------------------------------------------------
     # 1. PICK NEXT CATEGORY
