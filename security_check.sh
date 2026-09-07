@@ -370,7 +370,7 @@ validate_audit_rules() {
     local loaded_rules
     local missing=0
 
-    if [[ ! -f "$audit_rules" ]]; then
+    if ! sudo test -f "$audit_rules"; then
         log_warn \
             "CRITICAL: Expected audit rule file is missing: $audit_rules"
         return 1
@@ -388,7 +388,7 @@ validate_audit_rules() {
         [[ -z "$expected_rule" ]] && continue
         [[ "$expected_rule" == \#* ]] && continue
 
-        if ! grep -Fqx -- "$expected_rule" "$audit_rules"; then
+        if ! sudo grep -Fqx -- "$expected_rule" "$audit_rules"; then
             log_warn \
                 "AUDIT RULE DRIFT: Missing from $audit_rules: $expected_rule"
             missing=1
