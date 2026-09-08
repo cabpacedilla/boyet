@@ -6,14 +6,14 @@ export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/
 # ============================================================
 # SINGLE-INSTANCE LOCK
 # ============================================================
-#~ LOCK_FILE="$HOME/.cache/random_wallpaper.lock"
-#~ mkdir -p "$(dirname "$LOCK_FILE")"
-#~ exec 9>"$LOCK_FILE"
-#~ if ! flock -n 9; then
-    #~ echo "$(date) - Another instance is already running. Exiting."
-    #~ exit 1
-#~ fi
-#~ trap 'flock -u 9; exec 9>&-' EXIT
+LOCK_FILE="$HOME/.cache/random_wallpaper.lock"
+mkdir -p "$(dirname "$LOCK_FILE")"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "$(date) - Another instance is already running. Exiting."
+    exit 1
+fi
+trap 'flock -u 9; exec 9>&-' EXIT
 
 # ============================================================
 # RANDOM WALLPAPER SCRIPT - WEIGHTED RANDOM SOURCE SELECTION
@@ -230,7 +230,7 @@ use_variety() {
     fi
     
     # Redirect all output to ensure clean stdout
-    variety >/dev/null 2>&1
+    variety --next >/dev/null 2>&1
     local result=$?
     
     if [ $result -eq 0 ]; then
