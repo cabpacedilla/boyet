@@ -7637,3 +7637,77 @@
 {"timestamp":"2026-09-07T20:24:10+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
 {"timestamp":"2026-09-07T20:24:10+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
 {"timestamp":"2026-09-07T20:24:10+08:00","version":"2.28","level":"INFO","message":"Sleeping for 63 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-07T21:27:10+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-07T21:27:31+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-07T21:27:31+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-07T21:27:32+08:00","version":"2.28","level":"INFO","message":"Sleeping for 55 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-07T22:22:32+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-07T22:22:53+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-07T22:22:53+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-07T22:22:53+08:00","version":"2.28","level":"INFO","message":"Sleeping for 73 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-07T23:35:53+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-07T23:36:08+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-07T23:36:08+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-07T23:36:08+08:00","version":"2.28","level":"INFO","message":"Sleeping for 72 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T00:48:08+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T00:48:22+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T00:48:22+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T00:48:22+08:00","version":"2.28","level":"INFO","message":"Sleeping for 73 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T02:01:22+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T02:01:35+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T02:01:35+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T02:01:35+08:00","version":"2.28","level":"INFO","message":"Sleeping for 56 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T02:57:35+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T02:57:49+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T02:57:49+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T02:57:49+08:00","version":"2.28","level":"INFO","message":"Sleeping for 59 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T03:56:49+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T03:57:02+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T03:57:02+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T03:57:02+08:00","version":"2.28","level":"INFO","message":"Sleeping for 74 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T05:11:02+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T05:11:20+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T05:11:20+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T05:11:20+08:00","version":"2.28","level":"INFO","message":"Sleeping for 68 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T06:19:20+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T06:19:37+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T06:19:37+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T06:19:37+08:00","version":"2.28","level":"INFO","message":"Sleeping for 74 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T07:33:37+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T07:33:50+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T07:33:50+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T07:33:50+08:00","version":"2.28","level":"INFO","message":"Sleeping for 68 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T08:41:50+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T08:42:13+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T08:42:13+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T08:42:13+08:00","version":"2.28","level":"INFO","message":"Sleeping for 67 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T12:17:37+08:00","version":"2.28","level":"WARN","message":"SIGTERM received"}
+{"timestamp":"2026-09-08T12:17:37+08:00","version":"2.28","level":"ERROR","message":"Exit rc=143"}
+{"timestamp":"2026-09-08T12:19:40+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T12:20:07+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T12:20:07+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T12:20:07+08:00","version":"2.28","level":"INFO","message":"Sleeping for 64 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T16:27:45+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T16:28:01+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T16:28:01+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T16:28:01+08:00","version":"2.28","level":"INFO","message":"Sleeping for 66 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T19:20:33+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T19:20:52+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T19:20:52+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T19:20:52+08:00","version":"2.28","level":"INFO","message":"Sleeping for 67 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T20:27:52+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T20:28:10+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T20:28:10+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T20:28:10+08:00","version":"2.28","level":"INFO","message":"Sleeping for 61 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T21:29:10+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T21:29:29+08:00","version":"2.28","level":"ERROR","message":"ERR trap rc=2 line=445 cmd='printf '\\''---\\n'\\'''"}
+{"timestamp":"2026-09-08T21:29:36+08:00","version":"2.28","level":"ERROR","message":"ERR trap rc=2 line=494 cmd='return \"$rc\"'"}
+{"timestamp":"2026-09-08T21:29:36+08:00","version":"2.28","level":"SUCCESS","message":"Sent email with 1 jobs (semantic search)"}
+{"timestamp":"2026-09-08T21:29:36+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T21:29:36+08:00","version":"2.28","level":"INFO","message":"Sleeping for 62 minutes (jittered 55-75 min)"}
+{"timestamp":"2026-09-08T22:31:11+08:00","version":"2.28","level":"WARN","message":"SIGTERM received"}
+{"timestamp":"2026-09-08T22:31:11+08:00","version":"2.28","level":"ERROR","message":"Exit rc=143"}
+{"timestamp":"2026-09-08T22:35:35+08:00","version":"2.28","level":"INFO","message":"Starting semantic job search cycle"}
+{"timestamp":"2026-09-08T22:35:52+08:00","version":"2.28","level":"INFO","message":"No new jobs found"}
+{"timestamp":"2026-09-08T22:35:52+08:00","version":"2.28","level":"INFO","message":"Cycle complete"}
+{"timestamp":"2026-09-08T22:35:52+08:00","version":"2.28","level":"INFO","message":"Sleeping for 71 minutes (jittered 55-75 min)"}
