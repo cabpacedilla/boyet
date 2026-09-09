@@ -1,29 +1,26 @@
 #!/usr/bin/env bash
-set -Eeuo pipefail
-
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 # ============================================================
-# VALIDATE HOME
+# ENVIRONMENT SETUP
 # ============================================================
-if [ -z "${HOME:-}" ] || [ ! -d "$HOME" ]; then
-    echo "ERROR: HOME is not set or is not a valid directory" >&2
-    exit 1
-fi
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 # ============================================================
-# CONFIGURATION - MUST BE DEFINED BEFORE ANY LOGGING
+# CONFIGURATION
 # ============================================================
-HISTORY_SIZE=50000
+HISTORY_SIZE=2140000
 SEARCH_LIMIT=100
+SLEEP_INTERVAL=60
 MAX_ATTEMPTS=100
 DEVIOUSQ_TIMEOUT=30
 WGET_TIMEOUT=15
 WGET_TOTAL_TIMEOUT=30
+MAX_RETRIES=3
+LOG_MAX_SIZE=10485760
 
-MIN_INTERVAL=45
-MAX_INTERVAL=180
-
+# Source weights
 DEVIANTART_WEIGHT=60
 VARIETY_WEIGHT=40
 MAX_SAME_SOURCE=3
@@ -31,828 +28,554 @@ MAX_SAME_SOURCE=3
 # ============================================================
 # PATHS & SETUP
 # ============================================================
-# Create directories BEFORE touching files
-if ! mkdir -p "$HOME/scriptlogs" 2>/dev/null; then
-    echo "ERROR: Failed to create required directories" >&2
-    exit 1
-fi
-
-# Secure scriptlogs directory - enforce 700
-if ! chmod 700 "$HOME/scriptlogs" 2>/dev/null; then
-    echo "ERROR: Failed to secure scriptlogs permissions" >&2
-    exit 1
-fi
-
-LOGFILE="$HOME/scriptlogs/wallpaper.log"
 HISTORY_FILE="$HOME/scriptlogs/wallpaper_history.txt"
-DB_FILE="$HOME/scriptlogs/wallpaper_history.db"
+LOGFILE="$HOME/scriptlogs/wallpaper.log"
+LOCK_FILE="$HOME/.cache/random_wallpaper.lock"
 
-# Create private temporary directory
-TEMP_DIR=""
-TEMP_DIR=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/random-wallpaper.XXXXXX" 2>/dev/null)
-if [ -z "$TEMP_DIR" ] || [ ! -d "$TEMP_DIR" ]; then
-    echo "ERROR: Failed to create private temporary directory" >&2
-    exit 1
-fi
+mkdir -p "$HOME/scriptlogs" "$(dirname "$LOCK_FILE")"
 
-# Secure temporary directory - enforce 700
-if ! chmod 700 "$TEMP_DIR" 2>/dev/null; then
-    echo "ERROR: Failed to secure temporary directory" >&2
-    exit 1
-fi
+# ============================================================
+# LOG ROTATION
+# ============================================================
+rotate_log() {
+    if [ -f "$LOGFILE" ]; then
+        local size
+        if command -v stat >/dev/null 2>&1; then
+            size=$(stat -c%s "$LOGFILE" 2>/dev/null || stat -f%z "$LOGFILE" 2>/dev/null)
+        else
+            size=$(wc -c < "$LOGFILE" 2>/dev/null || echo 0)
+        fi
+        if [ "${size:-0}" -gt "$LOG_MAX_SIZE" ]; then
+            mv "$LOGFILE" "$LOGFILE.$(date +%Y%m%d_%H%M%S)"
+            echo "$(date) - Log rotated (was ${size} bytes)" > "$LOGFILE"
+        fi
+    fi
+}
+rotate_log
 
 # ============================================================
 # SINGLE-INSTANCE LOCK
 # ============================================================
-LOCK_FILE="$HOME/.cache/random_wallpaper.lock"
-if ! mkdir -p "$(dirname "$LOCK_FILE")" 2>/dev/null; then
-    echo "ERROR: Failed to create lock directory" >&2
+#~ exec 9>"$LOCK_FILE"
+#~ if ! flock -n 9; then
+    #~ echo "$(date) - Another instance is already running. Exiting."
+    #~ exit 1
+#~ fi
+#~ trap 'flock -u 9; exec 9>&-' EXIT
+
+echo "$(date) - Random Wallpaper Script Started" >> "$LOGFILE"
+echo "$(date) - DA Weight: $DEVIANTART_WEIGHT, Variety Weight: $VARIETY_WEIGHT" >> "$LOGFILE"
+
+# ============================================================
+# DEPENDENCY CHECK
+# ============================================================
+if ! command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
+    echo "$(date) - ERROR: plasma-apply-wallpaperimage not found" >> "$LOGFILE"
+    echo "ERROR: plasma-apply-wallpaperimage not found" >&2
     exit 1
 fi
 
-exec 9>"$LOCK_FILE"
-if ! flock -n 9; then
-    echo "$(date) - Another instance is already running. Exiting."
+if ! command -v deviousq >/dev/null 2>&1; then
+    echo "$(date) - ERROR: deviousq not found" >> "$LOGFILE"
+    echo "ERROR: deviousq not found" >&2
     exit 1
 fi
 
 # ============================================================
-# CLEANUP FUNCTION
+# INTERNET CHECK
 # ============================================================
-cleanup() {
-    local exit_code=$?
+check_internet() {
+    local endpoints=(
+        "https://www.google.com"
+        "https://www.cloudflare.com"
+        "https://www.microsoft.com"
+        "https://mirrors.fedoraproject.org"
+    )
     
-    if [ -n "${LOGFILE:-}" ]; then
-        echo "$(date) - Cleaning up (exit code: $exit_code)" >> "$LOGFILE" 2>/dev/null || true
-    fi
-    
-    # Remove temporary directory
-    if [ -n "${TEMP_DIR:-}" ] && [ -d "$TEMP_DIR" ]; then
-        rm -rf "$TEMP_DIR" 2>/dev/null || true
-    fi
-    
-    # Release lock
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
-    
-    exit $exit_code
+    for endpoint in "${endpoints[@]}"; do
+        if curl -fsI --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
 }
 
-trap cleanup EXIT
-trap 'exit 130' INT
-trap 'exit 143' TERM
-trap 'exit 129' HUP
+# ============================================================
+# VARIETY MANAGEMENT (WITH PROCESS CONTROL)
+# ============================================================
 
-# ============================================================
-# NOW LOGGING IS SAFE - All variables are defined
-# ============================================================
-echo "$(date) - Weighted Random Wallpaper Script Started" >> "$LOGFILE"
-echo "$(date) - History size: $HISTORY_SIZE, Interval: $MIN_INTERVAL-$MAX_INTERVAL sec" >> "$LOGFILE"
-echo "$(date) - DA Weight: $DEVIANTART_WEIGHT, Variety Weight: $VARIETY_WEIGHT, Max Streak: $MAX_SAME_SOURCE" >> "$LOGFILE"
-echo "$(date) - Temporary directory: $TEMP_DIR" >> "$LOGFILE"
+# Check if Variety is running
+is_variety_running() {
+    pgrep -f "variety" >/dev/null 2>&1
+}
 
-# ============================================================
-# DEPENDENCY VALIDATION
-# ============================================================
-REQUIRED_COMMANDS=(
-    curl
-    file
-    flock
-    mktemp
-    shuf
-    timeout
-    wget
-    deviousq
-    plasma-apply-wallpaperimage
-    sha256sum
-    awk
-)
-
-for cmd in "${REQUIRED_COMMANDS[@]}"; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "ERROR: Required command not found: $cmd" >&2
-        exit 1
+# Stop Variety completely (prevents conflicts)
+stop_variety() {
+    if is_variety_running; then
+        pkill -f "variety" 2>/dev/null
+        echo "$(date) - Stopped Variety process" >> "$LOGFILE"
+        sleep 1  # Give it time to clean up
+        return 0
     fi
-done
+    return 1
+}
 
-if ! command -v variety >/dev/null 2>&1; then
-    echo "$(date) - WARNING: Variety is not installed; Variety operations will fail" >> "$LOGFILE"
-fi
+# Start Variety (if it was stopped)
+start_variety() {
+    if ! is_variety_running; then
+        variety >/dev/null 2>&1 &
+        echo "$(date) - Started Variety process" >> "$LOGFILE"
+        sleep 1  # Give it time to initialize
+        return 0
+    fi
+    return 1
+}
 
-# ============================================================
-# CONFIGURATION VALIDATION
-# ============================================================
-if (( MIN_INTERVAL > MAX_INTERVAL )); then
-    echo "ERROR: MIN_INTERVAL ($MIN_INTERVAL) cannot exceed MAX_INTERVAL ($MAX_INTERVAL)" >&2
-    exit 1
-fi
-
-if (( MIN_INTERVAL < 1 )); then
-    echo "ERROR: MIN_INTERVAL ($MIN_INTERVAL) must be at least 1" >&2
-    exit 1
-fi
-
-if (( DEVIANTART_WEIGHT < 0 || VARIETY_WEIGHT < 0 )); then
-    echo "ERROR: Source weights cannot be negative" >&2
-    exit 1
-fi
-
-if (( DEVIANTART_WEIGHT + VARIETY_WEIGHT == 0 )); then
-    echo "ERROR: At least one source weight must be > 0" >&2
-    exit 1
-fi
-
-if (( MAX_SAME_SOURCE < 1 )); then
-    echo "ERROR: MAX_SAME_SOURCE ($MAX_SAME_SOURCE) must be at least 1" >&2
-    exit 1
-fi
-
-if (( SEARCH_LIMIT < 1 )); then
-    echo "ERROR: SEARCH_LIMIT ($SEARCH_LIMIT) must be at least 1" >&2
-    exit 1
-fi
-
-if (( MAX_ATTEMPTS < 1 )); then
-    echo "ERROR: MAX_ATTEMPTS ($MAX_ATTEMPTS) must be at least 1" >&2
-    exit 1
-fi
-
-if (( DEVIOUSQ_TIMEOUT < 1 )); then
-    echo "ERROR: DEVIOUSQ_TIMEOUT ($DEVIOUSQ_TIMEOUT) must be at least 1" >&2
-    exit 1
-fi
-
-if (( WGET_TIMEOUT < 1 )); then
-    echo "ERROR: WGET_TIMEOUT ($WGET_TIMEOUT) must be at least 1" >&2
-    exit 1
-fi
-
-if (( WGET_TOTAL_TIMEOUT < 1 )); then
-    echo "ERROR: WGET_TOTAL_TIMEOUT ($WGET_TOTAL_TIMEOUT) must be at least 1" >&2
-    exit 1
-fi
-
-if (( HISTORY_SIZE < 1 )); then
-    echo "ERROR: HISTORY_SIZE ($HISTORY_SIZE) must be at least 1" >&2
-    exit 1
-fi
+# Use Variety (with process management)
+use_variety() {
+    if ! command -v variety >/dev/null 2>&1; then
+        echo "$(date) - Variety not installed" >> "$LOGFILE"
+        return 1
+    fi
+    
+    # Make sure Variety is running
+    if ! is_variety_running; then
+        start_variety
+    fi
+    
+    # Rotate wallpaper
+    if variety --next >/dev/null 2>&1; then
+        echo "$(date) - Variety wallpaper rotated" >> "$LOGFILE"
+        return 0
+    else
+        echo "$(date) - Variety rotation failed" >> "$LOGFILE"
+        return 1
+    fi
+}
 
 # ============================================================
-# CATEGORIES
+# ALL DEVIANTART CATEGORIES
 # ============================================================
 CATEGORIES=(
-    "3d art" "cgi" "blender" "maya"
-    "abstract" "geometric" "minimalist"
-    "animation" "gif" "motion graphics"
-    "animals" "fantasy" "graffiti" "illustration"
-    "landscapes" "scenery" "nature"
-    "portraits" "political"
-    "pop art" "sci-fi" "space art"
-    "still life" "surreal"
-    "fractal" "mandelbrot"
-    "mixed media" "digital collage"
-    "photomanipulation" "photo manipulation"
-    "pixel art" "8-bit" "16-bit"
-    "vector" "vector art" "flat design"
-    "body art" "face painting"
-    "collage" "paper art"
-    "pencil drawing" "charcoal" "ink sketch"
-    "printmaking" "linocut" "etching"
-    "architecture" "cityscape" "urban"
-    "conceptual" "dark" "emotional"
-    "seascape" "ocean" "beach"
-    "macro" "monochrome" "black and white"
-    "street photography"
-    "anime" "manga" "fanart anime" "kawaii"
-    "cartoon" "comic" "webcomic"
+    "3d art" "cgi" "blender" "maya" "cinema 4d" "zbrush"
+    "abstract" "geometric" "minimalist" "modern art" "contemporary art"
+    "animation" "gif" "motion graphics" "animated" "cartoon animation"
+    "animals" "wildlife" "birds" "cats" "dogs" "horses" "wolves" "foxes"
+    "fantasy creatures" "mythical animals" "dragons" "unicorns" "griffins"
+    "fantasy" "creatures" "monsters" "beasts"
+    "graffiti" "street art" "mural" "tagging" "spray paint"
+    "illustration" "digital painting" "concept art" "character design"
+    "pop art" "surreal" "surrealism" "magical realism"
+    "fractal" "mandelbrot" "generative art" "algorithmic"
+    "mixed media" "digital collage" "photomanipulation" "photo manipulation"
+    "pixel art" "8-bit" "16-bit" "retro gaming"
+    "vector" "vector art" "flat design" "minimal vector"
+    "body art" "face painting" "makeup art" "cosplay"
+    "collage" "paper art" "origami" "papercut"
+    "pencil drawing" "charcoal" "ink sketch" "sketch" "doodle"
+    "printmaking" "linocut" "etching" "woodcut"
+    "landscapes" "scenery" "nature" "natural" "wilderness"
+    "forest" "mountain" "mountains" "valley" "canyon"
+    "sunset" "sunrise" "golden hour" "dusk" "dawn"
+    "seascape" "ocean" "beach" "coast" "waves" "water"
+    "cityscape" "urban" "city" "skyline" "metropolis"
+    "architecture" "buildings" "structures" "monuments"
+    "countryside" "rural" "farm" "pastoral"
+    "desert" "arid" "sand dunes" "oasis"
+    "tropical" "jungle" "rainforest" "exotic"
+    "arctic" "snow" "ice" "winter landscape"
+    "autumn" "fall" "autumn leaves" "harvest"
+    "winter" "snow" "ice" "frost" "christmas"
+    "spring" "bloom" "cherry blossom" "flowers"
+    "summer" "beach" "sun" "vacation"
+    "rain" "storm" "lightning" "thunder" "clouds" "fog" "mist"
+    "sci-fi" "science fiction" "space art" "space" "cosmos"
+    "nebula" "galaxy" "aurora" "stars" "planets" "constellations"
+    "cyberpunk" "synthwave" "vaporwave" "retrowave" "outrun"
+    "space opera" "interstellar" "astronaut" "alien" "ufo"
+    "dragon" "castle" "mythical" "magical" "enchanting"
+    "wizard" "sorcerer" "mage" "spell" "magic"
+    "knight" "warrior" "battle" "medieval" "fantasy art"
+    "fairy" "elf" "dwarf" "orc" "goblin" "troll"
+    "goddess" "god" "deity" "mythology" "norse" "greek"
+    "demon" "angel" "heaven" "hell" "divine"
+    "portraits" "portrait" "face" "expressions"
+    "people" "human" "person" "figure"
+    "political" "politics" "activism" "social"
+    "conceptual" "concept" "ideas" "philosophical"
+    "emotional" "feelings" "mood" "atmosphere"
+    "dark" "gothic" "macabre" "dark art" "creepy"
+    "vintage" "retro" "old school" "classic"
+    "photography" "photographer" "lens" "capture"
+    "street photography" "candid" "urban life"
+    "macro" "close up" "detail" "texture"
+    "monochrome" "black and white" "grayscale" "sepia"
+    "long exposure" "night photography" "light trails"
+    "anime" "manga" "fanart anime" "kawaii" "chibi"
+    "japanese" "japan" "samurai" "ninja" "geisha"
+    "studio ghibli" "hayao miyazaki" "anime landscape"
+    "manga style" "comic style" "webcomic"
+    "cartoon" "comic" "webcomic" "comic strip"
+    "marvel" "dc comics" "superhero" "villain"
     "fan art" "marvel fanart" "star wars fanart" "harry potter fanart"
-    "jewelry" "woodwork" "sculpture" "glass art"
-    "cyberpunk" "synthwave" "vaporwave"
-    "nebula" "galaxy" "aurora"
-    "dragon" "castle" "mythical" "magical"
-    "forest" "mountain" "sunset" "sunrise"
-    "cherry blossom" "autumn" "winter"
+    "disney" "pixar" "dreamworks" "animation studio"
+    "jewelry" "woodwork" "sculpture" "glass art" "ceramics"
+    "pottery" "clay" "stone" "metal" "welding"
+    "fiber art" "textile" "weaving" "embroidery"
+    "calligraphy" "lettering" "typography"
+    "glitch art" "glitch" "corruption" "digital distortion"
+    "double exposure" "multiple exposure" "layered"
+    "light painting" "light art" "neon" "glow"
+    "holographic" "iridescent" "prismatic"
+    "dreamy" "dream" "nightmare" "subconscious"
+    "peaceful" "serene" "calm" "tranquil"
+    "mysterious" "mystery" "unknown" "occult"
+    "romantic" "love" "passion" "tenderness"
+    "nostalgic" "memory" "past" "reminisce"
 )
 
 # ============================================================
 # CATEGORY CYCLING
 # ============================================================
 shuffle_categories() {
-    mapfile -t SHUFFLED_CATEGORIES < <(
-        printf '%s\n' "${CATEGORIES[@]}" | shuf
-    )
+    SHUFFLED_CATEGORIES=($(printf '%s\n' "${CATEGORIES[@]}" | shuf))
     CAT_INDEX=0
 }
-
 shuffle_categories
-
-# ============================================================
-# INTERNET CHECK
-# ============================================================
-check_internet() {
-    if curl -f -s --connect-timeout 2 --max-time 3 -o /dev/null "https://www.google.com" 2>/dev/null; then
-        return 0
-    fi
-    return 1
-}
-
-# ============================================================
-# URL VALIDATION & HASHING
-# ============================================================
-validate_url() {
-    local url="$1"
-    [[ "$url" =~ ^https?://[^/]+ ]]
-}
-
-hash_url() {
-    local url="$1"
-    printf '%s' "$url" | sha256sum | awk '{print $1}'
-}
-
-# ============================================================
-# SECURE FILE PERMISSIONS
-# ============================================================
-secure_file() {
-    local file="$1"
-    if [ -f "$file" ]; then
-        if ! chmod 600 "$file" 2>/dev/null; then
-            echo "ERROR: Failed to secure permissions on $file" >&2
-            return 1
-        fi
-    fi
-    return 0
-}
 
 # ============================================================
 # HISTORY MANAGEMENT
 # ============================================================
-USE_SQLITE=false
+touch "$HISTORY_FILE"
 
-if command -v sqlite3 >/dev/null 2>&1; then
-    USE_SQLITE=true
-    echo "$(date) - Using SQLite history database with SHA-256 hashes" >> "$LOGFILE"
-    
-    if [ ! -f "$DB_FILE" ]; then
-        echo "$(date) - Creating SQLite database..." >> "$LOGFILE"
-        if ! sqlite3 "$DB_FILE" "CREATE TABLE history (hash TEXT PRIMARY KEY, timestamp INTEGER);" 2>/dev/null; then
-            echo "ERROR: Failed to initialize SQLite database" >&2
-            exit 1
-        fi
-        
-        if ! chmod 600 "$DB_FILE" 2>/dev/null; then
-            echo "ERROR: Failed to secure SQLite database permissions" >&2
-            exit 1
-        fi
-        
-        # Migrate existing history file if it exists
-        if [ -f "$HISTORY_FILE" ] && [ -s "$HISTORY_FILE" ]; then
-            echo "$(date) - Migrating existing history file to SQLite..." >> "$LOGFILE"
-            migrated_count=0
-            migration_timestamp=$(date +%s)
-            
-            sql_statements="BEGIN IMMEDIATE;"
-            while IFS= read -r url; do
-                if [ -n "$url" ] && validate_url "$url"; then
-                    url_hash=$(hash_url "$url")
-                    timestamp=$((migration_timestamp + migrated_count))
-                    sql_statements="${sql_statements}INSERT OR REPLACE INTO history (hash, timestamp) VALUES ('$url_hash', $timestamp);"
-                    migrated_count=$((migrated_count + 1))
-                fi
-            done < "$HISTORY_FILE"
-            
-            sql_statements="${sql_statements}DELETE FROM history WHERE hash IN (SELECT hash FROM history ORDER BY timestamp DESC LIMIT -1 OFFSET $HISTORY_SIZE);"
-            sql_statements="${sql_statements}COMMIT;"
-            
-            if echo "$sql_statements" | sqlite3 "$DB_FILE" 2>/dev/null; then
-                echo "$(date) - Migrated $migrated_count entries to SQLite" >> "$LOGFILE"
-                mv "$HISTORY_FILE" "${HISTORY_FILE}.migrated.$(date +%s)" 2>/dev/null || true
-            else
-                echo "$(date) - ERROR: Migration failed" >> "$LOGFILE"
-                exit 1
-            fi
-        fi
-    else
-        if ! secure_file "$DB_FILE"; then
-            echo "ERROR: Failed to secure existing SQLite database" >&2
-            exit 1
-        fi
-    fi
-    
-    add_to_history() {
-        local url="$1"
-        if [ -z "$url" ] || ! validate_url "$url"; then
-            echo "$(date) - WARNING: Invalid URL for history: $url" >> "$LOGFILE"
-            return 1
-        fi
-        
-        url_hash=$(hash_url "$url")
-        timestamp=$(date +%s)
-        
-        if sqlite3 "$DB_FILE" <<SQL 2>/dev/null
-BEGIN IMMEDIATE;
-INSERT OR REPLACE INTO history (hash, timestamp) VALUES ('$url_hash', $timestamp);
-DELETE FROM history WHERE hash IN (SELECT hash FROM history ORDER BY timestamp DESC LIMIT -1 OFFSET $HISTORY_SIZE);
-COMMIT;
-SQL
-        then
-            return 0
-        else
-            echo "$(date) - ERROR: SQLite transaction failed" >> "$LOGFILE"
-            return 1
-        fi
-    }
-    
-    is_in_history() {
-        local url="$1"
-        if [ -z "$url" ]; then
-            return 2
-        fi
-        
-        url_hash=$(hash_url "$url")
-        count=""
-        if ! count=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM history WHERE hash='$url_hash';" 2>/dev/null); then
-            echo "$(date) - ERROR: SQLite history query failed" >> "$LOGFILE"
-            return 2
-        fi
-        
-        if [[ ! "$count" =~ ^[0-9]+$ ]]; then
-            echo "$(date) - ERROR: Invalid SQLite count output: '$count'" >> "$LOGFILE"
-            return 2
-        fi
-        
-        if [ "$count" -gt 0 ]; then
-            return 0
-        else
-            return 1
-        fi
-    }
-    
-    load_history() {
-        count=""
-        if ! count=$(sqlite3 "$DB_FILE" "SELECT COUNT(*) FROM history;" 2>/dev/null); then
-            echo "$(date) - ERROR: SQLite history count query failed" >> "$LOGFILE"
-            return 1
-        fi
-        
-        if [[ ! "$count" =~ ^[0-9]+$ ]]; then
-            echo "$(date) - ERROR: Invalid SQLite count output: '$count'" >> "$LOGFILE"
-            return 1
-        fi
-        
-        echo "$(date) - SQLite history contains $count entries" >> "$LOGFILE"
-        return 0
-    }
-    load_history
-    
-else
-    USE_SQLITE=false
-    echo "$(date) - WARNING: sqlite3 not found, using file-based history" >> "$LOGFILE"
-    
-    if ! touch "$HISTORY_FILE" 2>/dev/null; then
-        echo "ERROR: Failed to create history file at $HISTORY_FILE" >&2
-        exit 1
-    fi
-    
-    if ! secure_file "$HISTORY_FILE"; then
-        echo "ERROR: Failed to secure history file" >&2
-        exit 1
-    fi
-    
-    declare -A HISTORY_CACHE
-    
-    load_history() {
-        if [ -f "$HISTORY_FILE" ]; then
-            HISTORY_CACHE=()
-            count=0
-            while IFS= read -r url; do
-                if [ -n "$url" ] && validate_url "$url"; then
-                    HISTORY_CACHE["$url"]=1
-                    count=$((count + 1))
-                fi
-            done < "$HISTORY_FILE"
-            echo "$(date) - Loaded $count valid history entries into cache" >> "$LOGFILE"
-        fi
-    }
-    
-    add_to_history() {
-        local url="$1"
-        if [ -z "$url" ] || ! validate_url "$url"; then
-            echo "$(date) - WARNING: Invalid URL for history: $url" >> "$LOGFILE"
-            return 1
-        fi
-        
-        HISTORY_CACHE["$url"]=1
-        echo "$url" >> "$HISTORY_FILE"
-        
-        line_count=$(wc -l < "$HISTORY_FILE" 2>/dev/null || echo 0)
-        if [ "$line_count" -gt "$((HISTORY_SIZE * 2))" ]; then
-            temp_file=""
-            temp_file=$(mktemp "${HISTORY_FILE}.tmp.XXXXXX" 2>/dev/null)
-            if [ -z "$temp_file" ]; then
-                echo "$(date) - ERROR: Failed to create temporary file for history" >> "$LOGFILE"
-                return 1
-            fi
-            tail -n "$HISTORY_SIZE" "$HISTORY_FILE" > "$temp_file"
-            if ! mv -- "$temp_file" "$HISTORY_FILE"; then
-                echo "$(date) - ERROR: Failed to replace history file" >> "$LOGFILE"
-                rm -f -- "$temp_file"
-                return 1
-            fi
-            if ! secure_file "$HISTORY_FILE"; then
-                echo "$(date) - ERROR: Failed to secure trimmed history file" >> "$LOGFILE"
-                return 1
-            fi
-            echo "$(date) - Trimmed history to $HISTORY_SIZE entries" >> "$LOGFILE"
-            load_history
-        fi
-        return 0
-    }
-    
-    is_in_history() {
-        local url="$1"
-        if [ -z "$url" ]; then
-            return 2
-        fi
-        if [[ ${HISTORY_CACHE["$url"]+_} ]]; then
-            return 0
-        else
-            return 1
-        fi
-    }
-    
-    load_history
-fi
+declare -A HISTORY_CACHE
 
-# Secure log file
-if ! secure_file "$LOGFILE"; then
-    echo "ERROR: Failed to secure log file permissions" >&2
-    exit 1
-fi
+load_history() {
+    HISTORY_CACHE=()
+    local count=0
+    if [ -f "$HISTORY_FILE" ]; then
+        while IFS= read -r url; do
+            if [[ "$url" =~ ^https?:// ]]; then
+                HISTORY_CACHE["$url"]=1
+                ((count++))
+            fi
+        done < "$HISTORY_FILE"
+    fi
+    echo "$(date) - Loaded $count history entries into cache" >> "$LOGFILE"
+}
+load_history
 
-# ============================================================
-# VARIETY MANAGEMENT
-# ============================================================
-use_variety() {
-    if ! command -v variety >/dev/null 2>&1; then
-        echo "$(date) - WARNING: Variety is not installed" >> "$LOGFILE"
+add_to_history() {
+    local url="$1"
+    if [ -z "$url" ]; then
         return 1
     fi
     
-    variety --next >/dev/null 2>&1
-    local result=$?
+    HISTORY_CACHE["$url"]=1
+    echo "$url" >> "$HISTORY_FILE"
     
-    if [ $result -eq 0 ]; then
-        echo "$(date) - [Variety] Wallpaper rotation command accepted" >> "$LOGFILE"
+    local line_count
+    line_count=$(wc -l < "$HISTORY_FILE" 2>/dev/null || echo 0)
+    if [ "$line_count" -gt "$((HISTORY_SIZE * 2))" ]; then
+        {
+            tail -n "$HISTORY_SIZE" "$HISTORY_FILE"
+        } > "$HISTORY_FILE.tmp" && mv "$HISTORY_FILE.tmp" "$HISTORY_FILE"
+        echo "$(date) - Trimmed history to $HISTORY_SIZE entries" >> "$LOGFILE"
+        load_history
+    fi
+    
+    return 0
+}
+
+is_in_history() {
+    local url="$1"
+    if [ -z "$url" ]; then
+        return 2
+    fi
+    if [[ ${HISTORY_CACHE["$url"]+_} ]]; then
         return 0
     else
-        echo "$(date) - [Variety] Failed to rotate wallpaper (exit: $result)" >> "$LOGFILE"
         return 1
     fi
 }
 
 # ============================================================
-# DEVIANTART WALLPAPER FETCHER
+# URL VALIDATION
 # ============================================================
-fetch_deviantart_wallpaper() {
-    current_category="${SHUFFLED_CATEGORIES[$CAT_INDEX]}"
+is_valid_image_url() {
+    local url="$1"
+    [[ "$url" =~ ^https?://[^/]+/.+\.(jpg|jpeg|png|gif|webp|bmp|svg) ]]
+}
+
+# ============================================================
+# DEVIANTART FETCHER (WITH VARIETY MANAGEMENT)
+# ============================================================
+fetch_deviantart() {
+    # IMPORTANT: Stop Variety before using DeviantArt to prevent conflicts
+    local variety_was_running=false
+    
+    if is_variety_running; then
+        variety_was_running=true
+        stop_variety
+        echo "$(date) - [DeviantArt] Paused Variety for DeviantArt" >> "$LOGFILE"
+    fi
+    
+    local current_category="${SHUFFLED_CATEGORIES[$CAT_INDEX]}"
     
     echo "$(date) - [DeviantArt] Searching: '$current_category'" >> "$LOGFILE"
     
     URL_LIST=""
-    URL_LIST=$(timeout "${DEVIOUSQ_TIMEOUT}s" deviousq \
-        --medium image \
-        --rating nonadult \
-        --return-field content_url \
-        --limit "$SEARCH_LIMIT" \
-        "$current_category" \
-        2>/dev/null)
+    RETRY_COUNT=0
     
+    while [ -z "$URL_LIST" ] && [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
+        if [ "$RETRY_COUNT" -gt 0 ]; then
+            echo "$(date) - [DeviantArt] Retry $RETRY_COUNT/$MAX_RETRIES" >> "$LOGFILE"
+            sleep 5
+        fi
+        
+        URL_LIST=$(timeout "${DEVIOUSQ_TIMEOUT}s" deviousq \
+            --medium image \
+            --rating nonadult \
+            --return-field content_url \
+            --limit "$SEARCH_LIMIT" \
+            "$current_category" \
+            2>/dev/null)
+        
+        local exit_code=$?
+        if [ $exit_code -eq 124 ]; then
+            echo "$(date) - [DeviantArt] ERROR: deviousq timed out" >> "$LOGFILE"
+            URL_LIST=""
+        fi
+        
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+    done
+
     if [ -z "$URL_LIST" ]; then
-        echo "$(date) - [DeviantArt] No results or timeout for '$current_category'" >> "$LOGFILE"
+        echo "$(date) - [DeviantArt] No results after $MAX_RETRIES attempts" >> "$LOGFILE"
+        
+        # Restore Variety if it was running
+        if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
+            start_variety
+            echo "$(date) - [DeviantArt] Restarted Variety" >> "$LOGFILE"
+        fi
         return 1
     fi
     
-    mapfile -t URL_ARRAY <<< "$URL_LIST"
+    VALID_URLS=$(printf '%s\n' "$URL_LIST" | grep -E '^https?://' | grep -E '\.(jpg|jpeg|png|gif|webp|bmp|svg)' | head -100)
     
-    if [ "${#URL_ARRAY[@]}" -eq 0 ]; then
-        echo "$(date) - [DeviantArt] ERROR: Empty URL array" >> "$LOGFILE"
+    if [ -z "$VALID_URLS" ]; then
+        echo "$(date) - [DeviantArt] No valid image URLs found" >> "$LOGFILE"
+        if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
+            start_variety
+            echo "$(date) - [DeviantArt] Restarted Variety" >> "$LOGFILE"
+        fi
         return 1
     fi
     
+    URL_COUNT=$(printf '%s\n' "$VALID_URLS" | wc -l)
+    echo "$(date) - [DeviantArt] Found $URL_COUNT valid image URLs" >> "$LOGFILE"
+
     RANDOM_URL=""
+    SHUFFLED_URLS=($(printf '%s\n' "$VALID_URLS" | shuf))
     
-    for ((attempt = 1; attempt <= MAX_ATTEMPTS; attempt++)); do
-        CANDIDATE=""
-        CANDIDATE="${URL_ARRAY[$((RANDOM % ${#URL_ARRAY[@]}))]}"
-        if [ -n "$CANDIDATE" ] && validate_url "$CANDIDATE"; then
-            if is_in_history "$CANDIDATE"; then
-                history_status=0
-            else
-                history_status=$?
-            fi
-            
-            case "$history_status" in
-                0) continue ;;
-                1)
-                    RANDOM_URL="$CANDIDATE"
-                    echo "$(date) - [DeviantArt] Found unseen URL (attempt $attempt)" >> "$LOGFILE"
-                    break
-                    ;;
-                2)
-                    echo "$(date) - [DeviantArt] WARNING: History check failed for URL" >> "$LOGFILE"
-                    continue
-                    ;;
-                *)
-                    continue
-                    ;;
-            esac
+    for url in "${SHUFFLED_URLS[@]}"; do
+        if ! is_in_history "$url"; then
+            RANDOM_URL="$url"
+            echo "$(date) - [DeviantArt] Found unseen URL" >> "$LOGFILE"
+            break
         fi
     done
-    
+
     if [ -z "$RANDOM_URL" ]; then
-        for candidate in "${URL_ARRAY[@]}"; do
-            if validate_url "$candidate"; then
-                if is_in_history "$candidate"; then
-                    history_status=0
-                else
-                    history_status=$?
-                fi
-                
-                case "$history_status" in
-                    0) continue ;;
-                    1)
-                        RANDOM_URL="$candidate"
-                        echo "$(date) - [DeviantArt] Fallback: found unseen URL" >> "$LOGFILE"
-                        break
-                        ;;
-                    2)
-                        echo "$(date) - [DeviantArt] WARNING: History check failed for URL" >> "$LOGFILE"
-                        continue
-                        ;;
-                    *) continue ;;
-                esac
-            fi
-        done
-    fi
-    
-    if [ -z "$RANDOM_URL" ]; then
-        RANDOM_URL="${URL_ARRAY[$((RANDOM % ${#URL_ARRAY[@]}))]}"
+        RANDOM_URL="${SHUFFLED_URLS[$((RANDOM % ${#SHUFFLED_URLS[@]}))]}"
         echo "$(date) - [DeviantArt] WARNING: Using random repeat" >> "$LOGFILE"
     fi
-    
-    if ! validate_url "$RANDOM_URL"; then
-        echo "$(date) - [DeviantArt] ERROR: Invalid URL: $RANDOM_URL" >> "$LOGFILE"
-        return 1
+
+    TIMESTAMP=$(date +%s)
+    WALLPAPER_FILE="/tmp/wallpaper_${TIMESTAMP}.jpg"
+
+    echo "$(date) - [DeviantArt] Downloading..." >> "$LOGFILE"
+
+    AVAILABLE=$(df -k /tmp 2>/dev/null | awk 'NR==2 {print $4}')
+    if [ -n "$AVAILABLE" ] && [ "$AVAILABLE" -lt 10240 ]; then
+        echo "$(date) - WARNING: Low disk space in /tmp" >> "$LOGFILE"
+        find /tmp -name "wallpaper_*.jpg" -mmin +5 -delete 2>/dev/null
     fi
+
+    local success=false
     
-    TEMP_FILE=""
-    TEMP_FILE=$(mktemp "$TEMP_DIR/wallpaper_XXXXXX.jpg" 2>/dev/null)
-    
-    if [ -z "$TEMP_FILE" ]; then
-        echo "$(date) - [DeviantArt] ERROR: mktemp failed" >> "$LOGFILE"
-        return 1
-    fi
-    
-    wget_exit=0
-    timeout "${WGET_TOTAL_TIMEOUT}s" wget -q --timeout="${WGET_TIMEOUT}" --tries=1 -O "$TEMP_FILE" -- "$RANDOM_URL" 2>/dev/null || wget_exit=$?
-    
-    if [ $wget_exit -eq 0 ]; then
-        MIME_TYPE=""
-        MIME_TYPE=$(file -b --mime-type "$TEMP_FILE" 2>/dev/null)
+    if timeout "${WGET_TOTAL_TIMEOUT}s" wget -q --timeout="${WGET_TIMEOUT}" \
+        -O "$WALLPAPER_FILE" "$RANDOM_URL" 2>/dev/null; then
         
-        if [[ "$MIME_TYPE" == image/* ]]; then
-            if plasma-apply-wallpaperimage "$TEMP_FILE" >/dev/null 2>&1; then
-                if ! add_to_history "$RANDOM_URL"; then
-                    echo "$(date) - [DeviantArt] WARNING: Wallpaper applied but history update failed" >> "$LOGFILE"
-                fi
-                
+        if file "$WALLPAPER_FILE" 2>/dev/null | grep -qiE 'image|jpeg|jpg|png|gif|webp|bmp'; then
+            if plasma-apply-wallpaperimage "$WALLPAPER_FILE" >/dev/null 2>&1; then
+                add_to_history "$RANDOM_URL"
                 echo "$(date) - [DeviantArt] Wallpaper set from '$current_category'" >> "$LOGFILE"
-                rm -f "$TEMP_FILE"
+                success=true
                 
+                # Advance category
                 CAT_INDEX=$((CAT_INDEX + 1))
                 if [ "$CAT_INDEX" -ge "${#SHUFFLED_CATEGORIES[@]}" ]; then
-                    echo "$(date) - [DeviantArt] Finished full category cycle. Reshuffling..." >> "$LOGFILE"
+                    echo "$(date) - [DeviantArt] Finished category cycle. Reshuffling..." >> "$LOGFILE"
                     shuffle_categories
                 fi
-                
-                return 0
             else
-                echo "$(date) - [DeviantArt] ERROR: Failed to apply wallpaper" >> "$LOGFILE"
+                echo "$(date) - [DeviantArt] ERROR: KDE rejected image" >> "$LOGFILE"
             fi
         else
-            echo "$(date) - [DeviantArt] ERROR: Not an image (MIME: $MIME_TYPE)" >> "$LOGFILE"
+            echo "$(date) - [DeviantArt] ERROR: Not a valid image" >> "$LOGFILE"
         fi
-        rm -f "$TEMP_FILE"
-        return 1
+        rm -f "$WALLPAPER_FILE"
     else
-        if [ $wget_exit -eq 124 ]; then
-            echo "$(date) - [DeviantArt] ERROR: Download timed out (${WGET_TOTAL_TIMEOUT}s total)" >> "$LOGFILE"
-        else
-            echo "$(date) - [DeviantArt] ERROR: Download failed (wget exit: $wget_exit)" >> "$LOGFILE"
-        fi
-        rm -f "$TEMP_FILE"
-        return 1
+        echo "$(date) - [DeviantArt] ERROR: Download failed" >> "$LOGFILE"
     fi
+    
+    # Restore Variety if it was running AND we're not going to use it immediately
+    # (and if Variety weight > 0)
+    if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
+        # Only restart if DeviantArt succeeded, or if we want Variety as fallback
+        if [ "$success" = true ]; then
+            # Don't restart immediately - let the main loop handle it
+            echo "$(date) - [DeviantArt] Variety will be restarted when needed" >> "$LOGFILE"
+        else
+            # Restart Variety since DeviantArt failed
+            start_variety
+            echo "$(date) - [DeviantArt] Restarted Variety after failure" >> "$LOGFILE"
+        fi
+    fi
+    
+    return 0
 }
 
 # ============================================================
 # SOURCE SELECTION
 # ============================================================
+CURRENT_SOURCE=""
+SAME_SOURCE_COUNT=0
+
 select_source() {
-    if [ "$DEVIANTART_WEIGHT" -eq 0 ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
-        printf '%s\n' "variety"
-        return 0
-    fi
+    local total_weight=$((DEVIANTART_WEIGHT + VARIETY_WEIGHT))
+    local rand=$((RANDOM % total_weight))
     
-    if [ "$VARIETY_WEIGHT" -eq 0 ] && [ "$DEVIANTART_WEIGHT" -gt 0 ]; then
-        printf '%s\n' "deviantart"
-        return 0
-    fi
-    
-    total_weight=$((DEVIANTART_WEIGHT + VARIETY_WEIGHT))
-    rand=$((RANDOM % total_weight))
-    
-    if [ $rand -lt $DEVIANTART_WEIGHT ]; then
-        printf '%s\n' "deviantart"
+    if [ $rand -lt "$DEVIANTART_WEIGHT" ]; then
+        echo "deviantart"
     else
-        printf '%s\n' "variety"
+        echo "variety"
     fi
 }
 
 get_opposite_source() {
-    local source="$1"
-    
-    if [ "$source" = "deviantart" ]; then
-        if [ "$VARIETY_WEIGHT" -gt 0 ]; then
-            printf '%s\n' "variety"
-        else
-            printf '%s\n' "deviantart"
-        fi
+    if [ "$1" = "deviantart" ]; then
+        echo "variety"
     else
-        if [ "$DEVIANTART_WEIGHT" -gt 0 ]; then
-            printf '%s\n' "deviantart"
-        else
-            printf '%s\n' "variety"
-        fi
+        echo "deviantart"
     fi
 }
 
-# ============================================================
-# STATE MANAGEMENT
-# ============================================================
 update_source_state() {
-    local source="$1"
-    
-    if [ "$source" = "$CURRENT_SOURCE" ]; then
+    if [ "$1" = "$CURRENT_SOURCE" ]; then
         SAME_SOURCE_COUNT=$((SAME_SOURCE_COUNT + 1))
     else
-        CURRENT_SOURCE="$source"
+        CURRENT_SOURCE="$1"
         SAME_SOURCE_COUNT=1
     fi
 }
 
 # ============================================================
-# FALLBACK HANDLER
-# ============================================================
-attempt_source_with_fallback() {
-    local primary_source="$1"
-    local fallback_source
-
-    if [ "$primary_source" = "deviantart" ]; then
-        fallback_source="variety"
-
-        if fetch_deviantart_wallpaper; then
-            printf '%s\n' "deviantart"
-            return 0
-        fi
-
-        echo "$(date) - [DeviantArt] Failed - considering Variety fallback" >> "$LOGFILE"
-    else
-        fallback_source="deviantart"
-
-        if use_variety; then
-            printf '%s\n' "variety"
-            return 0
-        fi
-
-        echo "$(date) - [Variety] Failed - considering DeviantArt fallback" >> "$LOGFILE"
-    fi
-
-    if [ "$fallback_source" = "variety" ] && [ "$VARIETY_WEIGHT" -eq 0 ]; then
-        echo "$(date) - Fallback to Variety disabled (weight=0)" >> "$LOGFILE"
-        return 1
-    fi
-    
-    if [ "$fallback_source" = "deviantart" ] && [ "$DEVIANTART_WEIGHT" -eq 0 ]; then
-        echo "$(date) - Fallback to DeviantArt disabled (weight=0)" >> "$LOGFILE"
-        return 1
-    fi
-
-    if [ "$CURRENT_SOURCE" = "$fallback_source" ] &&
-       [ "$SAME_SOURCE_COUNT" -ge "$MAX_SAME_SOURCE" ]; then
-        echo "$(date) - Fallback to $fallback_source would exceed streak limit ($MAX_SAME_SOURCE) - skipping" >> "$LOGFILE"
-        return 1
-    fi
-
-    if [ "$fallback_source" = "variety" ]; then
-        if use_variety; then
-            printf '%s\n' "variety"
-            return 0
-        fi
-    else
-        if fetch_deviantart_wallpaper; then
-            printf '%s\n' "deviantart"
-            return 0
-        fi
-    fi
-
-    echo "$(date) - [$fallback_source] Fallback also failed" >> "$LOGFILE"
-    return 1
-}
-
-# ============================================================
-# RANDOM DELAY
-# ============================================================
-random_delay() {
-    delay=$((MIN_INTERVAL + RANDOM % (MAX_INTERVAL - MIN_INTERVAL + 1)))
-    echo "$(date) - Sleeping for $delay seconds" >> "$LOGFILE"
-    sleep "$delay"
-}
-
-# ============================================================
-# STATE VARIABLES
-# ============================================================
-IS_ONLINE=false
-CURRENT_SOURCE=""
-SAME_SOURCE_COUNT=0
-
-# ============================================================
 # MAIN LOOP
 # ============================================================
-while true; do
-    find "$TEMP_DIR" -type f -name 'wallpaper_*.jpg' -mtime +1 -delete 2>/dev/null
-    
-    if check_internet; then
-        if [ "$IS_ONLINE" = false ]; then
-            echo "$(date) - ONLINE: Internet detected" >> "$LOGFILE"
-            IS_ONLINE=true
-            CURRENT_SOURCE=""
-            SAME_SOURCE_COUNT=0
-        fi
-        
-        SELECTED_SOURCE=""
-        
-        if [ "$SAME_SOURCE_COUNT" -ge "$MAX_SAME_SOURCE" ] && [ -n "$CURRENT_SOURCE" ]; then
-            OPPOSITE_SOURCE=$(get_opposite_source "$CURRENT_SOURCE")
-            
-            if [ "$OPPOSITE_SOURCE" != "$CURRENT_SOURCE" ]; then
-                SELECTED_SOURCE="$OPPOSITE_SOURCE"
-                echo "$(date) - Max streak ($MAX_SAME_SOURCE) reached for $CURRENT_SOURCE - forcing $SELECTED_SOURCE" >> "$LOGFILE"
-            else
-                SELECTED_SOURCE="$CURRENT_SOURCE"
-                echo "$(date) - Max streak ($MAX_SAME_SOURCE) reached, but no alternate source is enabled - continuing with $SELECTED_SOURCE" >> "$LOGFILE"
-            fi
-        else
-            SELECTED_SOURCE=$(select_source)
-        fi
-        
-        echo "$(date) - [Online] Selected $SELECTED_SOURCE (current streak: $SAME_SOURCE_COUNT/$MAX_SAME_SOURCE)" >> "$LOGFILE"
-        
-        success=false
-        ACTUAL_SOURCE=""
+IS_ONLINE=false
 
-        if ACTUAL_SOURCE=$(attempt_source_with_fallback "$SELECTED_SOURCE"); then
-            success=true
-            update_source_state "$ACTUAL_SOURCE"
-            echo "$(date) - [Success] Source: $ACTUAL_SOURCE (streak: $SAME_SOURCE_COUNT/$MAX_SAME_SOURCE)" >> "$LOGFILE"
-        fi
-        
-        if [ "$success" = true ]; then
-            random_delay
-        else
-            echo "$(date) - Both modes failed or fallback was blocked, waiting 30 seconds" >> "$LOGFILE"
-            sleep 30
-        fi
-        
-    else
+while true; do
+    rotate_log
+
+    # --------------------------------------------------------
+    # CHECK INTERNET
+    # --------------------------------------------------------
+    if ! check_internet; then
         if [ "$IS_ONLINE" = true ]; then
-            echo "$(date) - OFFLINE: Internet lost - switching to Variety-only" >> "$LOGFILE"
+            echo "$(date) - Internet lost - switching to Variety only" >> "$LOGFILE"
             IS_ONLINE=false
         fi
         
         echo "$(date) - [Offline] Using Variety" >> "$LOGFILE"
-        
         if use_variety; then
-            if [ "$CURRENT_SOURCE" = "variety" ]; then
-                SAME_SOURCE_COUNT=$((SAME_SOURCE_COUNT + 1))
-            else
-                CURRENT_SOURCE="variety"
-                SAME_SOURCE_COUNT=1
-            fi
-            random_delay
+            update_source_state "variety"
+            sleep "$SLEEP_INTERVAL"
         else
-            echo "$(date) - [Offline] Variety failed, waiting 60 seconds" >> "$LOGFILE"
+            echo "$(date) - Offline: Variety failed, waiting 60s" >> "$LOGFILE"
             sleep 60
         fi
+        continue
     fi
+
+    if [ "$IS_ONLINE" = false ]; then
+        echo "$(date) - Internet restored" >> "$LOGFILE"
+        IS_ONLINE=true
+        CURRENT_SOURCE=""
+        SAME_SOURCE_COUNT=0
+    fi
+
+    # --------------------------------------------------------
+    # SELECT SOURCE
+    # --------------------------------------------------------
+    if [ "$SAME_SOURCE_COUNT" -ge "$MAX_SAME_SOURCE" ] && [ -n "$CURRENT_SOURCE" ]; then
+        SELECTED_SOURCE=$(get_opposite_source "$CURRENT_SOURCE")
+        echo "$(date) - Max streak ($MAX_SAME_SOURCE) reached for $CURRENT_SOURCE - forcing $SELECTED_SOURCE" >> "$LOGFILE"
+    else
+        SELECTED_SOURCE=$(select_source)
+    fi
+    
+    echo "$(date) - Selected $SELECTED_SOURCE (streak: $SAME_SOURCE_COUNT/$MAX_SAME_SOURCE)" >> "$LOGFILE"
+
+    # --------------------------------------------------------
+    # EXECUTE SELECTED SOURCE
+    # --------------------------------------------------------
+    SUCCESS=false
+
+    if [ "$SELECTED_SOURCE" = "deviantart" ]; then
+        if fetch_deviantart; then
+            update_source_state "deviantart"
+            SUCCESS=true
+        else
+            echo "$(date) - DeviantArt failed - trying Variety fallback" >> "$LOGFILE"
+            if use_variety; then
+                update_source_state "variety"
+                SUCCESS=true
+            fi
+        fi
+    else
+        if use_variety; then
+            update_source_state "variety"
+            SUCCESS=true
+        else
+            echo "$(date) - Variety failed - trying DeviantArt fallback" >> "$LOGFILE"
+            if fetch_deviantart; then
+                update_source_state "deviantart"
+                SUCCESS=true
+            fi
+        fi
+    fi
+
+    # --------------------------------------------------------
+    # HANDLE SUCCESS/FAILURE
+    # --------------------------------------------------------
+    if [ "$SUCCESS" = true ]; then
+        echo "$(date) - [Success] Source: $CURRENT_SOURCE (streak: $SAME_SOURCE_COUNT/$MAX_SAME_SOURCE)" >> "$LOGFILE"
+        sleep "$SLEEP_INTERVAL"
+    else
+        echo "$(date) - Both sources failed, waiting 30s" >> "$LOGFILE"
+        sleep 30
+    fi
+
+    # --------------------------------------------------------
+    # PERIODIC TASKS
+    # --------------------------------------------------------
+    find /tmp -name "wallpaper_*.jpg" -mtime +1 -delete 2>/dev/null
+    
+    if [ $((RANDOM % 50)) -eq 0 ]; then
+        load_history
+        echo "$(date) - Periodic history cache reloaded" >> "$LOGFILE"
+    fi
+
 done
