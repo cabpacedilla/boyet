@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # login_monitor.sh
 # Real-time login alerts for SSH, sudo, su attempts (success & failure)
 # Logs to ~/scriptlogs/login-monitor.log and sends desktop notifications

@@ -42,7 +42,7 @@
 set -o nounset
 set -o pipefail
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 readonly SCRIPT_NAME="security_check"
 readonly SCRIPT_VERSION="2.1"

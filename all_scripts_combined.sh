@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 LOCK_FILE="/tmp/autosync_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
@@ -38,7 +38,7 @@ while inotifywait -r -e modify,create /home/claiveapa/Documents/; do
     fi
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # ============================================================
 # Auto Brightness (Event-Driven)
 # ============================================================
@@ -106,7 +106,7 @@ inotifywait -m -e modify "$BRIGHTNESS_FILE" 2>/dev/null | while read -r; do
     check_and_correct
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 LOCK_FILE="/tmp/backlisten_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
@@ -161,7 +161,7 @@ while true; do
     sleep "$COOLDOWN"
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # This script alerts when battery level is low or high and adjusts brightness for battery optimization.
 # Written by Claive Alvin P. Acedilla. Modified for dynamic brightnessctl use.
 
@@ -256,7 +256,7 @@ while true; do
     sleep 5
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # Btrfs Balance Script – Twice-a-year, SSD/NVMe friendly (2026 edition)
 # Gentle data-only balance, metadata avoided unless really needed
 
@@ -400,7 +400,7 @@ while true; do
     sleep "$SLEEP_DURATION"
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # Monthly Btrfs Scrub Script – Refined 2026 Edition (Final Stable)
 # SSD/NVMe friendly with idle I/O priority and resume support.
 set -euo pipefail
@@ -528,7 +528,7 @@ while true; do
     sleep $((SLEEP_HOURS * 3600))
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 LOCK_FILE="/tmp/fortune4you_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
@@ -563,7 +563,7 @@ sleep "$(shuf -i1200-1500 -n1)"
 
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # This script will notify when Caps Lock or Num Lock are on using the xset q command.
 # This script was assembled and written by Claive Alvin P. Acedilla. It can be copied, modified and redistributed.
 # October 2020
@@ -658,7 +658,7 @@ done
 # Then apply with: sudo systemctl restart systemd-logind
 # ============================================================
 
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 set -o pipefail
 
 # ---------- Initialisation ----------
@@ -768,7 +768,7 @@ BUSCTL_PID=$!
 # ---------- Wait for background processes ----------
 wait
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # login_monitor.sh
 # Real-time login alerts for SSH, sudo, su attempts (success & failure)
 # Logs to ~/scriptlogs/login-monitor.log and sends desktop notifications
@@ -1072,7 +1072,7 @@ while true; do
     sleep 2
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 LOCK_FILE="/tmp/low_disk_space_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
@@ -1189,7 +1189,7 @@ while true; do
     sleep $INTERVAL
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # Low Memory Alert Script (Robust + Diagnostic)
 # Works on any Linux distro, detects swapping, tracks per-process memory growth
 
@@ -1318,7 +1318,7 @@ $TOP_PROCESSES"
     sleep "$CHECK_INTERVAL"
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # -------------------------------------------------------------------------
 # power_usage.sh — Enhanced GUI Battery & Process Monitor (kdialog Version)
 # -------------------------------------------------------------------------
@@ -1505,7 +1505,7 @@ $top_p
 
 main
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # ============================================================================
 # Screensaver Manager for Wayland using swayidle
 # ============================================================================
@@ -1664,7 +1664,7 @@ while true; do
     sleep 10
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 # fedora-proactive-sec.sh
 # Version 1.3 - Added Gmail Alerts via msmtp
@@ -1802,7 +1802,7 @@ monitor_logins &
 log_success "All security engines active."
 wait
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # ============================================================================
 # Nobara Linux Auto-Update Daemon
 # ============================================================================
@@ -2786,7 +2786,7 @@ main() {
 
 main "$@"
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # =============================================================================
 # CAREER INTELLIGENCE ENGINE v12.8 – PIPE‑DELIMITED ACQUISITION
 # Architecture: Acquire → Normalize → Observe → Resolve → Infer → Query → Notify
@@ -3747,7 +3747,7 @@ else
     done
 fi
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # monitor_system_failures.sh
 # Monitors critical and serious system failures across popular Linux distros.
 
@@ -3943,7 +3943,7 @@ read -p 'Press Enter to close...'" &
 open_terminal_with_logs
 wait
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 # ============================================================
 # RANDOM WALLPAPER SCRIPT
@@ -4231,7 +4231,7 @@ while true; do
 
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 LOCK_FILE="/tmp/rss_news_filter_$(whoami).lock"
 exec 9>"${LOCK_FILE}"
@@ -4358,7 +4358,7 @@ while true; do
     sleep 1800 
 done
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # ============================================================
 # Himalayas Job Search - Senior QA/SDET Roles (Semantic Mode)
 # VERSION: 2.28 - Production final (frozen)

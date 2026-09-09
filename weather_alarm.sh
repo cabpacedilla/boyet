@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # Weather Alarm Script (enhanced multi‑day peaks) - COMPLETE FIXED VERSION
 # Dependencies: curl, jq, bc, notify-send, kdialog
 # Setup: export WEATHER_API_KEY="your_key" in ~/.bashrc
