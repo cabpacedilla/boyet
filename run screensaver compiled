@@ -1,14 +1,43 @@
-run screensaver main script
-============================
-
+run_screensavers.sh main script
+===============================
 #!/usr/bin/env bash
-# This script detects system idleness in Wayland using swayidle and runs randomly selected screensaver programs in /usr/bin starting with "screensaver-" during idle time.
-# In KDE 6.3, run one screensaver application in your screensavers folder then right click on the title bar 
-# then cick configure special application settings in More Actions with the following settings
-# 1. Window class (applicatoin) field = substring match for the start of the filenames of the screensavers "screensaver-"
-# 2. Match whole window clas field = Yes
-# 3. Window type field = All selected
-# 4. Fullscreen Size & Position property = Force; Yes
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+# ============================================================================
+# Screensaver Manager for Wayland using swayidle
+# ============================================================================
+# This script detects system idleness in Wayland using swayidle and runs
+# randomly selected screensaver programs during idle time.
+#
+# In KDE 6.3, run one screensaver application in your screensavers folder then
+# right click on the title bar then click configure special application settings
+# in More Actions with the following settings:
+#   1. Window class (application) field = substring match for "screensaver-"
+#   2. Match whole window class field = Yes
+#   3. Window type field = All selected
+#   4. Fullscreen Size & Position property = Force; Yes
+# ============================================================================
+
+# --- Process Lock (Prevent multiple instances) ---
+LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 0  # Already running, exit silently
+fi
+
+# Store our PID
+echo $$ > "$LOCK_FILE"
+
+# Enhanced cleanup that only removes our PID file
+cleanup() {
+    # Only remove if it's our PID (prevents removing another process's lock)
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
+
+trap cleanup EXIT
 
 # --- Environment Setup ---
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -19,110 +48,123 @@ export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
 MAX_LOG_SIZE=$((50 * 1024 * 1024))  # 50MB
 MAX_OLD_LOGS=3
-IDLE_TIMEOUT=1                      # Minutes until idle
-SCREENSAVER_SCRIPT="$HOME/Documents/bin/randscreensavers.sh"
+IDLE_TIMEOUT=1                       # Minutes until idle
+SCREENSAVER_SCRIPT="$HOME/Documents/bin/random_screensaver.sh"
 RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume_handler.sh"
 IDLE_STATUS_FILE="/tmp/sway_idle_status"
 
 # Ensure log directory exists and state is clean
 mkdir -p "$(dirname "$LOGFILE")"
-echo "active" > "$IDLE_STATUS_FILE"
 
-# --- Helper: Log Rotation ---
+# --- Helper functions ---
 rotate_log() {
-    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
+    if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_SIZE" ]; then
         mv "$LOGFILE" "${LOGFILE}.$(date '+%Y%m%d_%H%M%S').old"
-        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
+        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$((MAX_OLD_LOGS + 1)) | xargs rm -f -- 2>/dev/null || true
     fi
 }
-# --- Helper functions ---
 
 # Initialize idle state as active (avoid stale "idle" leftover)
 echo "active" > "$IDLE_STATUS_FILE"
 
-# --- Helper functions ---
-# --- Log rotation function ---
-rotate_log() {
-    if [ -f "$LOGFILE" ] && [ $(stat -c%s "$LOGFILE" 2>/dev/null || echo 0) -gt $MAX_LOG_SIZE ]; then
-        TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
-        BACKUP_FILE="${LOGFILE}.${TIMESTAMP}.old"
-        mv "$LOGFILE" "$BACKUP_FILE"
-        echo "$(date) - LOG ROTATED: Previous log moved to $(basename "$BACKUP_FILE")" >> "$LOGFILE"
-
-        # Clean up old logs (keep only MAX_OLD_LOGS)
-        ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$(($MAX_OLD_LOGS + 1)) | xargs rm -f --
-    fi
+log_status() {
+    rotate_log
+    echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
-# --- Helper functions ---
-log_status() {
-    rotate_log  # Check log rotation before writing
-    echo "$(date) - Checking idle status" >> "$LOGFILE"
+is_video_playing() {
+    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
+    BEGIN { found = 0 }
+    /Sink Input/ {next}
+    {
+        if (match($0, /application.name = "([^"]+)"/, arr)) {
+            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
+                found = 1
+            }
+        }
+    }
+    END {
+        if (found)
+            print "playing"
+        else
+            print "not playing"
+        exit found ? 0 : 1
+    }
+    '
+    return $?
 }
 
 # --- Core Logic: Idle Management ---
 check_idle_status() {
     if [[ -f "$IDLE_STATUS_FILE" ]]; then
+        local idle_status
         idle_status=$(<"$IDLE_STATUS_FILE")
 
         if [[ "$idle_status" == "idle" ]]; then
-            # 1. Start the NEXT screensaver in the background
-            # This allows it to load while the current one is still visible
-            "$SCREENSAVER_SCRIPT" &
-            
-            # 2. Transition Window: Wait for the new screensaver to initialize
-            # This prevents the "black flash" between programs.
-            #sleep 2
-            
-            # 3. Handle the Overlap:
-            # pgrep -c counts how many screensavers are currently running.
-            current_count=$(pgrep -c -f "screensaver-")
-            
+            # Start screensaver in background
+            if [[ -f "$SCREENSAVER_SCRIPT" ]]; then
+                "$SCREENSAVER_SCRIPT" &
+            else
+                echo "$(date) - ERROR: Screensaver script not found: $SCREENSAVER_SCRIPT" >> "$LOGFILE"
+            fi
+
+            # Handle overlapping screensavers
+            local current_count
+            current_count=$(pgrep -c -f "screensaver-" 2>/dev/null || echo 0)
+
             if [ "$current_count" -gt 1 ]; then
-                # If more than one is running, kill the OLDEST instance only (-o)
                 pkill -o -f "screensaver-" 2>/dev/null
                 echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
-            else
-                # On the very first run, we don't kill anything.
+            elif [ "$current_count" -eq 1 ]; then
                 echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
             fi
         else
-            # System is ACTIVE: Stop all screensaver processes immediately
-            pkill -f "screensaver-" 2>/dev/null
+            # System is ACTIVE: Stop all screensaver processes
+            pkill -9 -f "random_screensaver.sh" 2>/dev/null
+            pkill -9 -f "screensaver-" 2>/dev/null
             echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
         fi
     fi
 }
 
-# --- Background Task: Swayidle ---
-start_swayidle() {
-    # Clean up any existing swayidle instances first
-    pkill -f "swayidle" 2>/dev/null
-    
-    echo "$(date) - Starting swayidle (Timeout: $((IDLE_TIMEOUT * 60))s)" >> "$LOGFILE"
-    swayidle -w \
-        timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
-        resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
-}
+# --- Background Task: Swayidle (no longer called at startup; managed in loop) ---
+# (start_swayidle function removed; swayidle is started/killed inside main loop)
 
 # --- Execution ---
-rotate_log
-start_swayidle 
-
-# Main loop to continuously check idle status
+# Main loop: check video status at the start of every iteration
 while true; do
     log_status
-    #pkill -9 -f "$SCREENSAVER_SCRIPT"  # Force kill the screensaver loop if already running
-    #pkill -9 -f "screensaver-"             # Force kill any running screensaver
-    check_idle_status
-    sleep 10 # Check every 15 seconds for idle status (you can adjust this duration)
+
+    # Re-check video playing status each loop
+    video_status=$(is_video_playing)
+
+    if [[ "$video_status" == "playing" ]]; then
+        # Video is playing → disable idle detection
+        pkill -f "swayidle" 2>/dev/null
+        pkill -9 -f "random_screensaver.sh" 2>/dev/null
+        pkill -9 -f "screensaver-" 2>/dev/null
+        echo "active" > "$IDLE_STATUS_FILE"
+        echo "$(date) - Video playing, idle detection disabled" >> "$LOGFILE"
+    else
+        # No video playing → ensure swayidle is running
+        if ! pgrep -f "swayidle" > /dev/null; then
+            swayidle -w \
+                timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+                resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+            echo "$(date) - swayidle started (video stopped)" >> "$LOGFILE"
+        fi
+        # Check idle status to start/stop screensavers
+        check_idle_status
+    fi
+
+    sleep 10
 done
 
 
-random screensaver play
+random_screensaver.sh play
 ========================
-
-#!/usr/bin/bash
+#!/usr/bin/env bash
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # This script runs randomly selected screensaver- programs every 15 seconds.
 
 LOGFILE="$HOME/scriptlogs/idle_log.txt"
@@ -143,13 +185,6 @@ SCREENSAVER_DIR="$HOME/Documents/screensavers"
 # Ensure scriptlogs directory exists
 mkdir -p "$HOME/scriptlogs"
 
-# Function: check if a media player is running
-is_media_playing() {
-    # We search for any sink-input where 'Corked: no' is present.
-    # We exclude 'speech-dispatcher' if you don't want system beeps to block your screensaver.
-    pactl list sink-inputs | awk -v RS="" '/Corked: no/ && /media.class = "Stream\/Output\/Audio"/ && !/elisa/ && /media.name/'
-}
-
 # Function: initialize screensaver lists
 initialize_screensaver_lists() {
     if [ ! -f "$UNPLAYED_LIST" ] || [ ! -s "$UNPLAYED_LIST" ] || [ ! -f "$PLAYED_LIST" ]; then
@@ -162,89 +197,74 @@ initialize_screensaver_lists() {
 # Main logic
 initialize_screensaver_lists
 
-MEDIA_STATUS=$(is_media_playing)
-if [[ -z "$MEDIA_STATUS" ]]; then
-    pkill -9 -f screensaver-
-    
-    # Load screensavers into an array
-    mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
-    NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
+# Load screensavers into an array
+mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
+NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
 
-    if [ "$NUM_UNPLAYED" -eq 0 ]; then
-        echo "$(date '+%Y-%m-%d %H:%M:%S') - All screensavers played. Resetting list." >> "$LOGFILE"
-        shuf "$PLAYED_LIST" > "$UNPLAYED_LIST"
-        echo "" > "$PLAYED_LIST"
-        mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
-        NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
-        if [ "$NUM_UNPLAYED" -eq 0 ]; then
-            echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: No screensavers found in $SCREENSAVER_DIR" >> "$LOGFILE"
-            exit 1
-        fi
-    fi
+if [ "$NUM_UNPLAYED" -eq 0 ]; then
+	echo "$(date '+%Y-%m-%d %H:%M:%S') - All screensavers played. Resetting list." >> "$LOGFILE"
+	shuf "$PLAYED_LIST" > "$UNPLAYED_LIST"
+	echo "" > "$PLAYED_LIST"
+	mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
+	NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
+	if [ "$NUM_UNPLAYED" -eq 0 ]; then
+		echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: No screensavers found in $SCREENSAVER_DIR" >> "$LOGFILE"
+		exit 1
+	fi
+fi
 
-    # Select random screensaver
-    RANDOM_INDEX=$(( RANDOM % NUM_UNPLAYED ))
-    SELECTED_BASENAME="${UNPLAYED_SCREENSAVERS[RANDOM_INDEX]}"
-    RANDOM_SCREENSAVER="$SCREENSAVER_DIR/$SELECTED_BASENAME"
+# Select random screensaver
+RANDOM_INDEX=$(( RANDOM % NUM_UNPLAYED ))
+SELECTED_BASENAME="${UNPLAYED_SCREENSAVERS[RANDOM_INDEX]}"
+RANDOM_SCREENSAVER="$SCREENSAVER_DIR/$SELECTED_BASENAME"
 
-    # Update lists
-    sed -i "$((RANDOM_INDEX + 1))d" "$UNPLAYED_LIST"
-    echo "$SELECTED_BASENAME" >> "$PLAYED_LIST"
+# Update lists
+sed -i "$((RANDOM_INDEX + 1))d" "$UNPLAYED_LIST"
+echo "$SELECTED_BASENAME" >> "$PLAYED_LIST"
 
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_SCREENSAVER (Remaining: $((NUM_UNPLAYED - 1)))" >> "$LOGFILE"
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_SCREENSAVER (Remaining: $((NUM_UNPLAYED - 1)))" >> "$LOGFILE"
 
-    "$RANDOM_SCREENSAVER" 
+"$RANDOM_SCREENSAVER"
+
+ # 3. Handle the Overlap:
+# pgrep -c counts how many screensavers are currently running.
+current_count=$(pgrep -c -f "screensaver-")
+
+if [ "$current_count" -gt 1 ]; then
+	# If more than one is running, kill the OLDEST instance only (-o)
+	pkill -o -f "screensaver-" 2>/dev/null
+	echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
 else
-    echo "$(date '+%Y-%m-%d %H:%M:%S') - Media playing, skipping screensaver" >> "$LOGFILE"
+	# On the very first run, we don't kill anything.
+	echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
 fi
 
 
-resume handler
-===============
 
+resume_handler.sh
+===============
 #!/usr/bin/env bash
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 
 LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
 LID_PATH="/proc/acpi/button/lid/LID0/state"
 
-# Auto-detect AMD GPU brightness device (amdgpu_bl0, bl1, etc.)
+# Auto-detect AMD GPU brightness device
 BRIGHT_DEVICE=$(brightnessctl -l | grep -o "amdgpu_bl[0-9]" | head -n1)
 
 echo "$(date +%Y-%m-%d\ %H:%M:%S) - System is active again" >> "$LOGFILE"
 
-# Function to get the lid state
-get_lid_state() {
-    if [ -f "$LID_PATH" ]; then
-        awk '{print $2}' < "$LID_PATH"
-    fi
-}
+# Kill screensavers (always do this)
+pkill -9 -f "/home/claiveapa/Documents/bin/random_screensaver.sh" 2>/dev/null
+pkill -9 -f "screensaver-" 2>/dev/null
 
-# Function to detect media playback
-is_media_playing() {
-    # We search for any sink-input where 'Corked: no' is present.
-    # We exclude 'speech-dispatcher' if you don't want system beeps to block your screensaver.
-    pactl list sink-inputs | awk -v RS="" '/Corked: no/ && /media.class = "Stream\/Output\/Audio"/ && !/elisa/ && /media.name/'
-}
-
-# Main condition
-MEDIA_STATUS=$(is_media_playing)
-HDMI_DISPLAY=$(xrandr | grep ' connected' | grep 'HDMI' | awk '{print $1}')
-
-if [[ ( -n "$MEDIA_STATUS" && "$(get_lid_state)" == "open" ) || \
-	( -n "$HDMI_DISPLAY" && "$(get_lid_state)" == "closed" ) ]]; then
-
-    # Kill screensavers and lock screen
-    pkill -9 -f "/home/claiveapa/Documents/bin/rand_screensavers.sh"
-    pkill -9 -f screensaver-
-
-    # Restore brightness if device is found
-    if [ -n "$BRIGHT_DEVICE" ]; then
-        brightnessctl --device="$BRIGHT_DEVICE" set 90%
-    else
-        echo "$(date +%Y-%m-%d\ %H:%M:%S) - No amdgpu_bl* device found, skipping brightness restore." >> "$LOGFILE"
-    fi
-    
+# Restore brightness if device found
+if [ -n "$BRIGHT_DEVICE" ]; then
+    brightnessctl --device="$BRIGHT_DEVICE" set 90%
 else
-	loginctl lock-session
-	echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session lock signal sent." >> "$LOGFILE"
+    echo "$(date +%Y-%m-%d\ %H:%M:%S) - No amdgpu_bl* device found, skipping brightness restore." >> "$LOGFILE"
 fi
+
+# 🔒 LOCK THE SESSION on resume
+loginctl lock-session
+echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session locked on resume." >> "$LOGFILE"

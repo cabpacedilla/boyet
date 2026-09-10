@@ -56,12 +56,12 @@ rotate_log
 # ============================================================
 # SINGLE-INSTANCE LOCK
 # ============================================================
-#~ exec 9>"$LOCK_FILE"
-#~ if ! flock -n 9; then
-    #~ echo "$(date) - Another instance is already running. Exiting."
-    #~ exit 1
-#~ fi
-#~ trap 'flock -u 9; exec 9>&-' EXIT
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "$(date) - Another instance is already running. Exiting."
+    exit 1
+fi
+trap 'flock -u 9; exec 9>&-' EXIT
 
 echo "$(date) - Random Wallpaper Script Started" >> "$LOGFILE"
 echo "$(date) - DA Weight: $DEVIANTART_WEIGHT, Variety Weight: $VARIETY_WEIGHT" >> "$LOGFILE"
@@ -84,20 +84,90 @@ fi
 # ============================================================
 # INTERNET CHECK
 # ============================================================
+# ============================================================
+# INTERNET CHECK (OPTIMIZED)
+# ============================================================
+# Caches the result for INTERNET_CACHE_TTL seconds to avoid
+# hammering the network every loop iteration.
+# ============================================================
+INTERNET_CACHE_TTL=30          # Seconds to trust a positive result
+INTERNET_CHECK_TIMEOUT=4       # Per-endpoint timeout (was 10)
+INTERNET_DNS_TIMEOUT=2         # DNS resolution timeout
+
+_internet_last_check=0
+_internet_last_result=1        # 1 = offline, 0 = online (start pessimistic)
+
 check_internet() {
-    local endpoints=(
-        "https://www.google.com"
-        "https://www.cloudflare.com"
-        "https://www.microsoft.com"
-        "https://mirrors.fedoraproject.org"
-    )
+    local now
+    now=$(date +%s)
     
-    for endpoint in "${endpoints[@]}"; do
-        if curl -fsI --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+    # --- Cache: if we checked recently and were online, trust it ---
+    if [ "$_internet_last_result" -eq 0 ]; then
+        local age=$((now - _internet_last_check))
+        if [ "$age" -lt "$INTERNET_CACHE_TTL" ]; then
             return 0
         fi
+    fi
+    
+    # --- Fast DNS check first (cheap, catches most failures) ---
+    if ! timeout "$INTERNET_DNS_TIMEOUT" getent hosts one.one.one.one >/dev/null 2>&1; then
+        # DNS failed — but try a hardcoded IP to distinguish DNS vs. no route
+        if ! timeout "$INTERNET_DNS_TIMEOUT" curl -fsI \
+                --connect-timeout 2 --max-time 3 \
+                "https://1.1.1.1" >/dev/null 2>&1; then
+            _internet_last_check=$now
+            _internet_last_result=1
+            return 1
+        fi
+    fi
+    
+    # --- Parallel endpoint checks ---
+    local endpoints=(
+        "https://1.1.1.1"                    # Cloudflare DNS (IP, no DNS needed)
+        "https://www.google.com/generate_204" # Google 204 (tiny response)
+        "https://www.cloudflare.com/cdn-cgi/trace"
+    )
+    
+    local pids=()
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    
+    local i=0
+    for endpoint in "${endpoints[@]}"; do
+        (
+            if curl -fsI \
+                --connect-timeout 2 \
+                --max-time "$INTERNET_CHECK_TIMEOUT" \
+                --no-keepalive \
+                -H "User-Agent: Mozilla/5.0" \
+                "$endpoint" >/dev/null 2>&1; then
+                echo "ok" > "$tmpdir/result_$i"
+            fi
+        ) &
+        pids+=($!)
+        i=$((i + 1))
     done
-    return 1
+    
+    # Wait for any to succeed
+    local success=1
+    for _ in $(seq 1 "$INTERNET_CHECK_TIMEOUT"); do
+        for f in "$tmpdir"/result_*; do
+            if [ -f "$f" ] && [ "$(cat "$f")" = "ok" ]; then
+                success=0
+                break 2
+            fi
+        done
+        sleep 0.5
+    done
+    
+    # Clean up
+    kill "${pids[@]}" 2>/dev/null
+    wait "${pids[@]}" 2>/dev/null
+    rm -rf "$tmpdir"
+    
+    _internet_last_check=$now
+    _internet_last_result=$success
+    return $success
 }
 
 # ============================================================
@@ -310,6 +380,9 @@ is_valid_image_url() {
 # ============================================================
 # DEVIANTART FETCHER (WITH VARIETY MANAGEMENT)
 # ============================================================
+# ============================================================
+# DEVIANTART FETCHER (WITH VARIETY MANAGEMENT)
+# ============================================================
 fetch_deviantart() {
     # IMPORTANT: Stop Variety before using DeviantArt to prevent conflicts
     local variety_was_running=false
@@ -321,11 +394,10 @@ fetch_deviantart() {
     fi
     
     local current_category="${SHUFFLED_CATEGORIES[$CAT_INDEX]}"
-    
     echo "$(date) - [DeviantArt] Searching: '$current_category'" >> "$LOGFILE"
     
-    URL_LIST=""
-    RETRY_COUNT=0
+    local URL_LIST=""
+    local RETRY_COUNT=0
     
     while [ -z "$URL_LIST" ] && [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
         if [ "$RETRY_COUNT" -gt 0 ]; then
@@ -352,8 +424,6 @@ fetch_deviantart() {
 
     if [ -z "$URL_LIST" ]; then
         echo "$(date) - [DeviantArt] No results after $MAX_RETRIES attempts" >> "$LOGFILE"
-        
-        # Restore Variety if it was running
         if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
             start_variety
             echo "$(date) - [DeviantArt] Restarted Variety" >> "$LOGFILE"
@@ -361,6 +431,7 @@ fetch_deviantart() {
         return 1
     fi
     
+    local VALID_URLS=""
     VALID_URLS=$(printf '%s\n' "$URL_LIST" | grep -E '^https?://' | grep -E '\.(jpg|jpeg|png|gif|webp|bmp|svg)' | head -100)
     
     if [ -z "$VALID_URLS" ]; then
@@ -372,10 +443,12 @@ fetch_deviantart() {
         return 1
     fi
     
+    local URL_COUNT
     URL_COUNT=$(printf '%s\n' "$VALID_URLS" | wc -l)
     echo "$(date) - [DeviantArt] Found $URL_COUNT valid image URLs" >> "$LOGFILE"
 
-    RANDOM_URL=""
+    local RANDOM_URL=""
+    local SHUFFLED_URLS
     SHUFFLED_URLS=($(printf '%s\n' "$VALID_URLS" | shuf))
     
     for url in "${SHUFFLED_URLS[@]}"; do
@@ -391,11 +464,13 @@ fetch_deviantart() {
         echo "$(date) - [DeviantArt] WARNING: Using random repeat" >> "$LOGFILE"
     fi
 
+    local TIMESTAMP
     TIMESTAMP=$(date +%s)
-    WALLPAPER_FILE="/tmp/wallpaper_${TIMESTAMP}.jpg"
+    local WALLPAPER_FILE="/tmp/wallpaper_${TIMESTAMP}.jpg"
 
     echo "$(date) - [DeviantArt] Downloading..." >> "$LOGFILE"
 
+    local AVAILABLE
     AVAILABLE=$(df -k /tmp 2>/dev/null | awk 'NR==2 {print $4}')
     if [ -n "$AVAILABLE" ] && [ "$AVAILABLE" -lt 10240 ]; then
         echo "$(date) - WARNING: Low disk space in /tmp" >> "$LOGFILE"
@@ -407,13 +482,49 @@ fetch_deviantart() {
     if timeout "${WGET_TOTAL_TIMEOUT}s" wget -q --timeout="${WGET_TIMEOUT}" \
         -O "$WALLPAPER_FILE" "$RANDOM_URL" 2>/dev/null; then
         
-        if file "$WALLPAPER_FILE" 2>/dev/null | grep -qiE 'image|jpeg|jpg|png|gif|webp|bmp'; then
+        # ----------------------------------------------------
+        # STRONGER VALIDATION
+        # ----------------------------------------------------
+        local file_type=""
+        local file_size=0
+        local validation_ok=false
+        
+        # 1. Detect actual file type via magic bytes (brief mode)
+        file_type=$(file -b "$WALLPAPER_FILE" 2>/dev/null)
+        
+        # 2. Get file size (GNU stat, then BSD stat, then wc fallback)
+        file_size=$(stat -c%s "$WALLPAPER_FILE" 2>/dev/null \
+            || stat -f%z "$WALLPAPER_FILE" 2>/dev/null \
+            || wc -c < "$WALLPAPER_FILE" 2>/dev/null \
+            || echo 0)
+        file_size=${file_size:-0}
+        
+        # 3. Validate: must be a real image type AND large enough
+        if printf '%s' "$file_type" | grep -qiE '^(JPEG|PNG|GIF|Web/P|WebP|BMP|TIFF) image'; then
+            if [ "$file_size" -gt 1024 ]; then
+                validation_ok=true
+            else
+                echo "$(date) - [DeviantArt] ERROR: File too small (${file_size} bytes)" >> "$LOGFILE"
+            fi
+        else
+            echo "$(date) - [DeviantArt] ERROR: Not a valid image (detected: ${file_type:-unknown})" >> "$LOGFILE"
+        fi
+        
+        # 4. Optional: verify image is decodable (requires ImageMagick)
+        if [ "$validation_ok" = true ] && command -v identify >/dev/null 2>&1; then
+            if ! identify "$WALLPAPER_FILE" >/dev/null 2>&1; then
+                echo "$(date) - [DeviantArt] ERROR: Image failed decoder check" >> "$LOGFILE"
+                validation_ok=false
+            fi
+        fi
+        
+        # 5. Apply if valid
+        if [ "$validation_ok" = true ]; then
             if plasma-apply-wallpaperimage "$WALLPAPER_FILE" >/dev/null 2>&1; then
                 add_to_history "$RANDOM_URL"
-                echo "$(date) - [DeviantArt] Wallpaper set from '$current_category'" >> "$LOGFILE"
+                echo "$(date) - [DeviantArt] Wallpaper set from '$current_category' (${file_type}, ${file_size} bytes)" >> "$LOGFILE"
                 success=true
                 
-                # Advance category
                 CAT_INDEX=$((CAT_INDEX + 1))
                 if [ "$CAT_INDEX" -ge "${#SHUFFLED_CATEGORIES[@]}" ]; then
                     echo "$(date) - [DeviantArt] Finished category cycle. Reshuffling..." >> "$LOGFILE"
@@ -422,29 +533,29 @@ fetch_deviantart() {
             else
                 echo "$(date) - [DeviantArt] ERROR: KDE rejected image" >> "$LOGFILE"
             fi
-        else
-            echo "$(date) - [DeviantArt] ERROR: Not a valid image" >> "$LOGFILE"
         fi
+        
         rm -f "$WALLPAPER_FILE"
     else
         echo "$(date) - [DeviantArt] ERROR: Download failed" >> "$LOGFILE"
     fi
     
-    # Restore Variety if it was running AND we're not going to use it immediately
-    # (and if Variety weight > 0)
+    # Restore Variety if it was running
     if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
-        # Only restart if DeviantArt succeeded, or if we want Variety as fallback
         if [ "$success" = true ]; then
-            # Don't restart immediately - let the main loop handle it
             echo "$(date) - [DeviantArt] Variety will be restarted when needed" >> "$LOGFILE"
         else
-            # Restart Variety since DeviantArt failed
             start_variety
             echo "$(date) - [DeviantArt] Restarted Variety after failure" >> "$LOGFILE"
         fi
     fi
     
-    return 0
+    # ← RETURN BASED ON SUCCESS FLAG
+    if [ "$success" = true ]; then
+        return 0  # SUCCESS
+    else
+        return 1  # FAILURE
+    fi
 }
 
 # ============================================================

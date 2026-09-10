@@ -38,6 +38,7 @@ SCRIPTS=(
     "low_disk_space"
     "lowMemAlert"
     "power_usage"
+    "random_wallpaper"
     "runscreensaver"
     "security_check"
 )
@@ -46,20 +47,90 @@ COOLDOWN=30   # seconds between checks
 MIN_INSTANCES=1
 
 # --- Function to check Internet connectivity ---
+# ============================================================
+# INTERNET CHECK (OPTIMIZED)
+# ============================================================
+# Caches the result for INTERNET_CACHE_TTL seconds to avoid
+# hammering the network every loop iteration.
+# ============================================================
+INTERNET_CACHE_TTL=30          # Seconds to trust a positive result
+INTERNET_CHECK_TIMEOUT=4       # Per-endpoint timeout (was 10)
+INTERNET_DNS_TIMEOUT=2         # DNS resolution timeout
+
+_internet_last_check=0
+_internet_last_result=1        # 1 = offline, 0 = online (start pessimistic)
+
 check_internet() {
-    local endpoints=(
-        "https://www.google.com"
-        "https://www.cloudflare.com"
-        "https://www.microsoft.com"
-        "https://mirrors.fedoraproject.org"
-    )
+    local now
+    now=$(date +%s)
     
-    for endpoint in "${endpoints[@]}"; do
-        if curl -fsI --connect-timeout 5 --max-time 10 "$endpoint" >/dev/null 2>&1; then
+    # --- Cache: if we checked recently and were online, trust it ---
+    if [ "$_internet_last_result" -eq 0 ]; then
+        local age=$((now - _internet_last_check))
+        if [ "$age" -lt "$INTERNET_CACHE_TTL" ]; then
             return 0
         fi
+    fi
+    
+    # --- Fast DNS check first (cheap, catches most failures) ---
+    if ! timeout "$INTERNET_DNS_TIMEOUT" getent hosts one.one.one.one >/dev/null 2>&1; then
+        # DNS failed — but try a hardcoded IP to distinguish DNS vs. no route
+        if ! timeout "$INTERNET_DNS_TIMEOUT" curl -fsI \
+                --connect-timeout 2 --max-time 3 \
+                "https://1.1.1.1" >/dev/null 2>&1; then
+            _internet_last_check=$now
+            _internet_last_result=1
+            return 1
+        fi
+    fi
+    
+    # --- Parallel endpoint checks ---
+    local endpoints=(
+        "https://1.1.1.1"                    # Cloudflare DNS (IP, no DNS needed)
+        "https://www.google.com/generate_204" # Google 204 (tiny response)
+        "https://www.cloudflare.com/cdn-cgi/trace"
+    )
+    
+    local pids=()
+    local tmpdir
+    tmpdir=$(mktemp -d)
+    
+    local i=0
+    for endpoint in "${endpoints[@]}"; do
+        (
+            if curl -fsI \
+                --connect-timeout 2 \
+                --max-time "$INTERNET_CHECK_TIMEOUT" \
+                --no-keepalive \
+                -H "User-Agent: Mozilla/5.0" \
+                "$endpoint" >/dev/null 2>&1; then
+                echo "ok" > "$tmpdir/result_$i"
+            fi
+        ) &
+        pids+=($!)
+        i=$((i + 1))
     done
-    return 1
+    
+    # Wait for any to succeed
+    local success=1
+    for _ in $(seq 1 "$INTERNET_CHECK_TIMEOUT"); do
+        for f in "$tmpdir"/result_*; do
+            if [ -f "$f" ] && [ "$(cat "$f")" = "ok" ]; then
+                success=0
+                break 2
+            fi
+        done
+        sleep 0.5
+    done
+    
+    # Clean up
+    kill "${pids[@]}" 2>/dev/null
+    wait "${pids[@]}" 2>/dev/null
+    rm -rf "$tmpdir"
+    
+    _internet_last_check=$now
+    _internet_last_result=$success
+    return $success
 }
 
 # --- Main loop ---
