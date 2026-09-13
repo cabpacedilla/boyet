@@ -1,0 +1,598 @@
+PTPA
+XScreenSaver doesn't play nicely with Wayland. This setup works around that with four small scripts and swayidle.
+
+What they do:
+--------------
+1. Watch how long you've been idle
+2. Pick a random screensaver from your list
+3. Force it fullscreen through a KDE window rule
+4. When you come back: restore brightness and lock the session
+
+What you can tweak:
+--------------------
+1. Idle timeout — change IDLE_TIMEOUT in run-screensaver.sh (minutes, default 1)
+2. Resume behavior — remove the loginctl lock-session line from resume-handler.sh if you don't want it to lock
+
+Dependencies:
+--------------
+Install the following
+1. xscreensaver
+2. swayidle
+3. pactl
+4. brightnessctl
+
+Setup to run screensavers in full screen in KDE 6.3:
+-----------------------------------------------------
+1. Run one screensaver application in your screensavers folder then
+right click on the title bar then click configure special application settings
+in More Actions with the following settings:
+2. Window class (application) field = substring match for "screensaver-"
+3. Match whole window class field = Yes
+4. Window type field = All selected
+5. Fullscreen Size & Position property = Force; Yes
+
+Final steps
+------------
+1. Save the four scripts in ~/Documents/bin:
+   a. build-screensaver-symlinks.sh
+   b. run-screensaver.sh
+   c. random-screensaver.sh
+   d. resume-handler.sh
+
+   Then make them executable:
+   chmod +x ~/Documents/bin/*.sh
+2. Run the build-screensaver-symlinks.sh script to create the symlinks in ~/Documents/screensaver/ that point to the real binaries in /usr/libexec/xscreensaver/
+3. Add the run-screensaver.sh script as a login script in Autostart KDE Settings
+
+
+build-screensaver-symlinks.sh
+-------------------------------
+#!/usr/bin/env bash
+# Build a symlink farm for the selected screensavers only.
+
+SCREENSAVER_DIR="$HOME/Documents/screensaver"
+SRC_DIR="/usr/libexec/xscreensaver"
+
+SELECTED=(
+    abstractile
+    anemone
+    anemotaxis
+    antinspect
+    antmaze
+    antspotlight
+    apollonian
+    apple2
+    atlantis
+    attraction
+    atunnel
+    barcode
+    beats
+    binaryhorizon
+    binaryring
+    blaster
+    blinkbox
+    blitspin
+    blocktube
+    boing
+    bouboule
+    bouncingcow
+    boxed
+    boxfit
+    braid
+    bsod
+    bubble3d
+    bumps
+    cage
+    carousel
+    ccurve
+    celtic
+    chompytower
+    circuit
+    cityflow
+    cloudlife
+    companioncube
+    compass
+    coral
+    covid19
+    crackberg
+    crumbler
+    crystal
+    cube21
+    cubenetic
+    cubestack
+    cubestorm
+    cubetwist
+    cubicgrid
+    cubocteversion
+    cwaves
+    cynosure
+    dangerball
+    decayscreen
+    deco
+    deepstars
+    deluxe
+    demon
+    discrete
+    discoball
+    distort
+    drift
+    droste
+    dumpsterfire
+    dymaxionmap
+    endgame
+    energystream
+    engine
+    epicycle
+    eruption
+    esper
+    etruscanvenus
+    euler2d
+    extrusion
+    fadeplot
+    fiberlamp
+    filmleader
+    fireworkx
+    flame
+    flipflop
+    flipscreen3d
+    fliptext
+    flow
+    fluidballs
+    flurry
+    flyingtoasters
+    fuzzyflakes
+    galaxy
+    gears
+    geodesic
+    geodesicgears
+    gflux
+    gibson
+    glblur
+    glcells
+    gleidescope
+    glhanoi
+    glknots
+    glmatrix
+    glplanet
+    glschool
+    glsnake
+    gltext
+    goop
+    grav
+    gravitywell
+    greynetic
+    halftone
+    handsy
+    headroom
+    helix
+    hexadrop
+    hexstrut
+    hextrail
+    highvoltage
+    hilbert
+    hopalong
+    hopffibration
+    hydrostat
+    hypertorus
+    hypnowheel
+    ifs
+    imsmap
+    interaggregate
+    interference
+    intermomentary
+    jigglypuff
+    jigsaw
+    juggler3d
+    julia
+    kaleidescope
+    kaleidocycle
+    kallisti
+    klein
+    klondike
+    kumppa
+    lament
+    lavalite
+    lockward
+    loop
+    m6502
+    mapscroller
+    marbling
+    maze
+    maze3d
+    memscroller
+    menger
+    metaballs
+    moebius
+    moebiusgears
+    moire
+    moire2
+    molecule
+    morph3d
+    mountain
+    munch
+    nakagin
+    nerverot
+    noof
+    pacman
+    papercube
+    pedal
+    peepers
+    penetrate
+    penrose
+    petri
+    photopile
+    piecewise
+    pinion
+    pipes
+    platonicfolding
+    pong
+    polyhedra
+    polyominoes
+    polytopes
+    popsquares
+    projectiveplane
+    providence
+    pulsar
+    pyro
+    qix
+    quasicrystal
+    queens
+    raverhoop
+    razzledazzle
+    rdbomb
+    ripples
+    rocks
+    romanboy
+    rorschach
+    rubik
+    rubikblocks
+    scooter
+    sierpinski
+    sierpinski3d
+    skulloop
+    skytentacles
+    slidescreen
+    slip
+    sonar
+    speedmine
+    sphereeversion
+    spheremonics
+    splitflap
+    splodesic
+    spotlight
+    sproingies
+    squiral
+    squirtorus
+    stairs
+    starfish
+    stonerview
+    strange
+    substrate
+    superquadrics
+    surfaces
+    swirl
+    tangram
+    tessellimage
+    timetunnel
+    topblock
+    triangle
+    tronbit
+    truchet
+    twang
+    unicrud
+    unknownpleasures
+    vermiculate
+    vfeedback
+    vigilance
+    voronoi
+    wander
+    whirlwindwarp
+    winduprobot
+    worldpieces
+    wormhole
+    xanalogtv
+    xflame
+    xjack
+    xlyap
+    xmatrix
+    xrayswarm
+    xspirograph
+)
+
+# --- Clear the new directory ---
+rm -f "$SCREENSAVER_DIR"/screensaver-*
+
+# --- Create symlinks for each selected name ---
+missing=0
+for name in "${SELECTED[@]}"; do
+    src="$SRC_DIR/$name"
+    if [ ! -x "$src" ]; then
+        echo "Missing binary: $src" >&2
+        missing=$((missing + 1))
+        continue
+    fi
+    ln -sf "$src" "$SCREENSAVER_DIR/screensaver-$name"
+done
+
+# --- Report ---
+created=$(find "$SCREENSAVER_DIR" -maxdepth 1 -type l -name "screensaver-*" | wc -l)
+echo
+echo "Symlinks created: $created"
+echo "Missing binaries: $missing"
+echo "Source:           $SRC_DIR"
+echo "Destination:      $SCREENSAVER_DIR"
+
+# --- Reset play lists so they rebuild from the new set ---
+rm -f "$HOME/scriptlogs/unplayed_screensavers.txt" \
+      "$HOME/scriptlogs/played_screensavers.txt"
+echo "Play lists reset."
+
+
+run-screensaver.sh main script
+===============================
+#!/usr/bin/env bash
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+# ============================================================================
+# Screensaver Manager for Wayland using swayidle
+# ============================================================================
+# Detects system idleness via swayidle and runs a random screensaver
+# from ~/Documents/screensaver/ during idle time.
+# ============================================================================
+
+# --- Process Lock (Prevent multiple instances) ---
+LOCK_FILE="/tmp/run-screensaver_$(whoami).lock"
+IDLE_STATUS_FILE="/tmp/sway_idle_status"
+
+exec 9>"${LOCK_FILE}"
+if ! flock -n 9; then
+    exit 0  # Already running, exit silently
+fi
+
+echo $$ > "$LOCK_FILE"
+
+# --- Cleanup on exit ---
+# Removes lock file, kills swayidle, removes idle status file
+cleanup() {
+    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        rm -f "$LOCK_FILE"
+    fi
+
+    # Item 7: kill any swayidle we started
+    pkill -f "swayidle" 2>/dev/null
+
+    # Item 8: remove the idle status file
+    rm -f "$IDLE_STATUS_FILE" 2>/dev/null
+
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# --- Environment Setup ---
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=$XDG_RUNTIME_DIR/bus"
+
+# --- Configuration ---
+LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
+MAX_LOG_SIZE=$((50 * 1024 * 1024))   # 50 MB
+MAX_OLD_LOGS=3
+IDLE_TIMEOUT=1                        # Minutes until idle
+SCREENSAVER_SCRIPT="$HOME/Documents/bin/random-screensaver.sh"
+RESUME_HANDLER_SCRIPT="$HOME/Documents/bin/resume-handler.sh"
+
+mkdir -p "$(dirname "$LOGFILE")"
+
+# --- Helpers ---
+rotate_log() {
+    if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_SIZE" ]; then
+        mv "$LOGFILE" "${LOGFILE}.$(date '+%Y%m%d_%H%M%S').old"
+        ls -t "${LOGFILE}".*.old 2>/dev/null \
+            | tail -n +$((MAX_OLD_LOGS + 1)) \
+            | xargs rm -f -- 2>/dev/null || true
+    fi
+}
+
+# Initialize idle state as active (avoid stale "idle" leftover)
+echo "active" > "$IDLE_STATUS_FILE"
+
+log_status() {
+    rotate_log
+    echo "$(date) - Checking idle status" >> "$LOGFILE"
+}
+
+is_video_playing() {
+    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
+    BEGIN { found = 0 }
+    /Sink Input/ {next}
+    {
+        if (match($0, /application.name = "([^"]+)"/, arr)) {
+            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
+                found = 1
+            }
+        }
+    }
+    END {
+        if (found) print "playing"
+        else       print "not playing"
+        exit found ? 0 : 1
+    }
+    '
+    return $?
+}
+
+# --- Core Logic: Idle Management ---
+check_idle_status() {
+    if [[ -f "$IDLE_STATUS_FILE" ]]; then
+        local idle_status
+        idle_status=$(<"$IDLE_STATUS_FILE")
+
+        if [[ "$idle_status" == "idle" ]]; then
+            # Start screensaver in background
+            if [[ -f "$SCREENSAVER_SCRIPT" ]]; then
+                "$SCREENSAVER_SCRIPT" &
+            else
+                echo "$(date) - ERROR: Screensaver script not found: $SCREENSAVER_SCRIPT" >> "$LOGFILE"
+            fi
+
+            # Handle overlapping screensavers
+            local current_count
+            current_count=$(pgrep -c -f "screensaver-" 2>/dev/null || echo 0)
+
+            if [ "$current_count" -gt 1 ]; then
+                pkill -o -f "screensaver-" 2>/dev/null
+                echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
+            elif [ "$current_count" -eq 1 ]; then
+                echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
+            fi
+        else
+            # System is ACTIVE: Stop all screensaver processes
+            pkill -9 -f "random-screensaver.sh" 2>/dev/null
+            pkill -9 -f "screensaver-" 2>/dev/null
+            echo "$(date) - System active: All screensavers stopped." >> "$LOGFILE"
+        fi
+    fi
+}
+
+# --- Main Loop ---
+while true; do
+    log_status
+
+    # Re-check video playing status each loop
+    video_status=$(is_video_playing)
+
+    if [[ "$video_status" == "playing" ]]; then
+        # Video is playing → disable idle detection
+        pkill -f "swayidle" 2>/dev/null
+        pkill -9 -f "random-screensaver.sh" 2>/dev/null
+        pkill -9 -f "screensaver-" 2>/dev/null
+        echo "active" > "$IDLE_STATUS_FILE"
+        echo "$(date) - Video playing, idle detection disabled" >> "$LOGFILE"
+    else
+        # No video playing → ensure swayidle is running
+        if ! pgrep -f "swayidle" > /dev/null; then
+            swayidle -w \
+                timeout $((IDLE_TIMEOUT * 60)) "echo idle > $IDLE_STATUS_FILE" \
+                resume "echo active > $IDLE_STATUS_FILE && $RESUME_HANDLER_SCRIPT" &
+            echo "$(date) - swayidle started (video stopped)" >> "$LOGFILE"
+        fi
+        # Check idle status to start/stop screensavers
+        check_idle_status
+    fi
+
+    sleep 10
+done
+
+
+random-screensaver.sh play
+===========================
+#!/usr/bin/env bash
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+# ============================================================================
+# Runs a randomly selected screensaver from ~/Documents/screensaver/
+# Tracks played/unplayed screensavers so each is used once per cycle.
+# ============================================================================
+
+LOGFILE="$HOME/scriptlogs/idle_log.txt"
+
+# --- Cleanup on signal ---
+cleanup_screensaver() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Signal received, stopping screensaver" >> "$LOGFILE"
+    pkill -f "screensaver-" 2>/dev/null
+    exit 0
+}
+trap cleanup_screensaver INT TERM
+
+# --- Paths ---
+UNPLAYED_LIST="$HOME/scriptlogs/unplayed_screensavers.txt"
+PLAYED_LIST="$HOME/scriptlogs/played_screensavers.txt"
+SCREENSAVER_DIR="$HOME/Documents/screensaver"
+
+mkdir -p "$HOME/scriptlogs"
+
+# --- Initialize play lists ---
+initialize_screensaver_lists() {
+    if [ ! -f "$UNPLAYED_LIST" ] || [ ! -s "$UNPLAYED_LIST" ] || [ ! -f "$PLAYED_LIST" ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - Initializing/Resetting screensaver play order." >> "$LOGFILE"
+        find "$SCREENSAVER_DIR" -maxdepth 1 \
+            \( -type f -o -type l \) \
+            -name "screensaver-*" -perm /u+x -print0 \
+            | shuf -z \
+            | xargs -0 -n 1 basename > "$UNPLAYED_LIST"
+        echo "" > "$PLAYED_LIST"
+    fi
+}
+
+initialize_screensaver_lists
+
+# --- Load unplayed screensavers ---
+mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
+NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
+
+if [ "$NUM_UNPLAYED" -eq 0 ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - All screensavers played. Resetting list." >> "$LOGFILE"
+    shuf "$PLAYED_LIST" > "$UNPLAYED_LIST"
+    echo "" > "$PLAYED_LIST"
+    mapfile -t UNPLAYED_SCREENSAVERS < "$UNPLAYED_LIST"
+    NUM_UNPLAYED=${#UNPLAYED_SCREENSAVERS[@]}
+    if [ "$NUM_UNPLAYED" -eq 0 ]; then
+        echo "$(date '+%Y-%m-%d %H:%M:%S') - ERROR: No screensavers found in $SCREENSAVER_DIR" >> "$LOGFILE"
+        exit 1
+    fi
+fi
+
+# --- Pick one at random ---
+RANDOM_INDEX=$(( RANDOM % NUM_UNPLAYED ))
+SELECTED_BASENAME="${UNPLAYED_SCREENSAVERS[RANDOM_INDEX]}"
+RANDOM_SCREENSAVER="$SCREENSAVER_DIR/$SELECTED_BASENAME"
+
+# --- Update lists ---
+sed -i "$((RANDOM_INDEX + 1))d" "$UNPLAYED_LIST"
+echo "$SELECTED_BASENAME" >> "$PLAYED_LIST"
+
+echo "$(date '+%Y-%m-%d %H:%M:%S') - Running $RANDOM_SCREENSAVER (Remaining: $((NUM_UNPLAYED - 1)))" >> "$LOGFILE"
+
+"$RANDOM_SCREENSAVER"
+
+# --- Overlap handling ---
+current_count=$(pgrep -c -f "screensaver-")
+
+if [ "$current_count" -gt 1 ]; then
+    pkill -o -f "screensaver-" 2>/dev/null
+    echo "$(date) - Transition complete: New screensaver active, old one killed." >> "$LOGFILE"
+else
+    echo "$(date) - First run: Initial screensaver started." >> "$LOGFILE"
+fi
+
+
+resume-handler.sh
+===============
+#!/usr/bin/env bash
+export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
+# ============================================================================
+# Called by swayidle on resume. Kills screensavers, restores brightness,
+# and locks the session.
+# ============================================================================
+
+LOGFILE="$HOME/scriptlogs/screensaver_log.txt"
+
+echo "$(date '+%Y-%m-%d %H:%M:%S') - System is active again" >> "$LOGFILE"
+
+# --- Kill screensavers ---
+pkill -9 -f "$HOME/Documents/bin/random-screensaver.sh" 2>/dev/null
+pkill -9 -f "screensaver-" 2>/dev/null
+
+# --- Restore brightness (AMD GPU auto-detect) ---
+BRIGHT_DEVICE=$(brightnessctl -l 2>/dev/null | grep -o "amdgpu_bl[0-9]" | head -n1)
+
+if [ -n "$BRIGHT_DEVICE" ]; then
+    brightnessctl --device="$BRIGHT_DEVICE" set 90%
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Brightness restored on $BRIGHT_DEVICE" >> "$LOGFILE"
+else
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - No amdgpu_bl* device found, skipping brightness restore." >> "$LOGFILE"
+fi
+
+# --- Lock the session ---
+loginctl lock-session
+echo "$(date '+%Y-%m-%d %H:%M:%S') - [SECURITY] Session locked on resume." >> "$LOGFILE"
+

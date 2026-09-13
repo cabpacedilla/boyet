@@ -15,7 +15,7 @@ pkill -9 -f "screensaver-" 2>/dev/null
 
 # Restore brightness if device found
 if [ -n "$BRIGHT_DEVICE" ]; then
-    brightnessctl --device="$BRIGHT_DEVICE" set 90%
+    brightnessctl --device="$BRIGHT_DEVICE" set 100%
 else
     echo "$(date +%Y-%m-%d\ %H:%M:%S) - No amdgpu_bl* device found, skipping brightness restore." >> "$LOGFILE"
 fi

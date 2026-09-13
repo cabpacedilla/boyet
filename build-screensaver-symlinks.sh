@@ -1,0 +1,279 @@
+#!/usr/bin/env bash
+# Build a symlink farm for the selected screensavers only.
+
+SCREENSAVER_DIR="$HOME/Documents/screensaver"
+SRC_DIR="/usr/libexec/xscreensaver"
+
+SELECTED=(
+    abstractile
+    anemone
+    anemotaxis
+    antinspect
+    antmaze
+    antspotlight
+    apollonian
+    apple2
+    atlantis
+    attraction
+    atunnel
+    barcode
+    beats
+    binaryhorizon
+    binaryring
+    blaster
+    blinkbox
+    blitspin
+    blocktube
+    boing
+    bouboule
+    bouncingcow
+    boxed
+    boxfit
+    braid
+    bsod
+    bubble3d
+    bumps
+    cage
+    carousel
+    ccurve
+    celtic
+    chompytower
+    circuit
+    cityflow
+    cloudlife
+    companioncube
+    compass
+    coral
+    covid19
+    crackberg
+    crumbler
+    crystal
+    cube21
+    cubenetic
+    cubestack
+    cubestorm
+    cubetwist
+    cubicgrid
+    cubocteversion
+    cwaves
+    cynosure
+    dangerball
+    decayscreen
+    deco
+    deepstars
+    deluxe
+    demon
+    discrete
+    discoball
+    distort
+    drift
+    droste
+    dumpsterfire
+    dymaxionmap
+    endgame
+    energystream
+    engine
+    epicycle
+    eruption
+    esper
+    etruscanvenus
+    euler2d
+    extrusion
+    fadeplot
+    fiberlamp
+    filmleader
+    fireworkx
+    flame
+    flipflop
+    flipscreen3d
+    fliptext
+    flow
+    fluidballs
+    flurry
+    flyingtoasters
+    fuzzyflakes
+    galaxy
+    gears
+    geodesic
+    geodesicgears
+    gflux
+    gibson
+    glblur
+    glcells
+    gleidescope
+    glhanoi
+    glknots
+    glmatrix
+    glplanet
+    glschool
+    glsnake
+    gltext
+    goop
+    grav
+    gravitywell
+    greynetic
+    halftone
+    handsy
+    headroom
+    helix
+    hexadrop
+    hexstrut
+    hextrail
+    highvoltage
+    hilbert
+    hopalong
+    hopffibration
+    hydrostat
+    hypertorus
+    hypnowheel
+    ifs
+    imsmap
+    interaggregate
+    interference
+    intermomentary
+    jigglypuff
+    jigsaw
+    juggler3d
+    julia
+    kaleidescope
+    kaleidocycle
+    kallisti
+    klein
+    klondike
+    kumppa
+    lament
+    lavalite
+    lockward
+    loop
+    m6502
+    mapscroller
+    marbling
+    maze
+    maze3d
+    memscroller
+    menger
+    metaballs
+    moebius
+    moebiusgears
+    moire
+    moire2
+    molecule
+    morph3d
+    mountain
+    munch
+    nakagin
+    nerverot
+    noof
+    pacman
+    papercube
+    pedal
+    peepers
+    penetrate
+    penrose
+    petri
+    photopile
+    piecewise
+    pinion
+    pipes
+    platonicfolding
+    pong
+    polyhedra
+    polyominoes
+    polytopes
+    popsquares
+    projectiveplane
+    providence
+    pulsar
+    pyro
+    qix
+    quasicrystal
+    queens
+    raverhoop
+    razzledazzle
+    rdbomb
+    ripples
+    rocks
+    romanboy
+    rorschach
+    rubik
+    rubikblocks
+    scooter
+    sierpinski
+    sierpinski3d
+    skulloop
+    skytentacles
+    slidescreen
+    slip
+    sonar
+    speedmine
+    sphereeversion
+    spheremonics
+    splitflap
+    splodesic
+    spotlight
+    sproingies
+    squiral
+    squirtorus
+    stairs
+    starfish
+    stonerview
+    strange
+    substrate
+    superquadrics
+    surfaces
+    swirl
+    tangram
+    tessellimage
+    timetunnel
+    topblock
+    triangle
+    tronbit
+    truchet
+    twang
+    unicrud
+    unknownpleasures
+    vermiculate
+    vfeedback
+    vigilance
+    voronoi
+    wander
+    whirlwindwarp
+    winduprobot
+    worldpieces
+    wormhole
+    xanalogtv
+    xflame
+    xjack
+    xlyap
+    xmatrix
+    xrayswarm
+    xspirograph
+)
+
+# --- Clear the new directory ---
+rm -f "$SCREENSAVER_DIR"/screensaver-*
+
+# --- Create symlinks for each selected name ---
+missing=0
+for name in "${SELECTED[@]}"; do
+    src="$SRC_DIR/$name"
+    if [ ! -x "$src" ]; then
+        echo "Missing binary: $src" >&2
+        missing=$((missing + 1))
+        continue
+    fi
+    ln -sf "$src" "$SCREENSAVER_DIR/screensaver-$name"
+done
+
+# --- Report ---
+created=$(find "$SCREENSAVER_DIR" -maxdepth 1 -type l -name "screensaver-*" | wc -l)
+echo
+echo "Symlinks created: $created"
+echo "Missing binaries: $missing"
+echo "Source:           $SRC_DIR"
+echo "Destination:      $SCREENSAVER_DIR"
+
+# --- Reset play lists so they rebuild from the new set ---
+rm -f "$HOME/scriptlogs/unplayed_screensavers.txt" \
+      "$HOME/scriptlogs/played_screensavers.txt"
+echo "Play lists reset."
