@@ -10,7 +10,7 @@ export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:
 # ============================================================
 # CONFIGURATION
 # ============================================================
-HISTORY_SIZE=2140000
+HISTORY_SIZE=500000
 SEARCH_LIMIT=100
 SLEEP_INTERVAL=60
 MAX_ATTEMPTS=100
@@ -58,10 +58,10 @@ rotate_log
 # ============================================================
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
-    echo "$(date) - Another instance is already running. Exiting."
+    echo "$(date) - Another instance is already running. Exiting." >> "$LOGFILE"
     exit 1
 fi
-trap 'flock -u 9; exec 9>&-' EXIT
+trap 'ec=$?; echo "$(date) - SCRIPT EXITING (code=$ec)" >> "$LOGFILE"; flock -u 9; exec 9>&-' EXIT
 
 echo "$(date) - Random Wallpaper Script Started" >> "$LOGFILE"
 echo "$(date) - DA Weight: $DEVIANTART_WEIGHT, Variety Weight: $VARIETY_WEIGHT" >> "$LOGFILE"
@@ -82,13 +82,14 @@ if ! command -v deviousq >/dev/null 2>&1; then
 fi
 
 # ============================================================
-# INTERNET CHECK
-# ============================================================
-# ============================================================
 # INTERNET CHECK (OPTIMIZED)
 # ============================================================
 # Caches the result for INTERNET_CACHE_TTL seconds to avoid
 # hammering the network every loop iteration.
+#
+# v2.x: DNS-failure fallback uses a raw TCP connect to 1.1.1.1:443
+# instead of an HTTPS request. This tests "can I reach the internet"
+# without depending on TLS hostname/IP-SAN validation.
 # ============================================================
 INTERNET_CACHE_TTL=30          # Seconds to trust a positive result
 INTERNET_CHECK_TIMEOUT=4       # Per-endpoint timeout (was 10)
@@ -100,7 +101,7 @@ _internet_last_result=1        # 1 = offline, 0 = online (start pessimistic)
 check_internet() {
     local now
     now=$(date +%s)
-    
+
     # --- Cache: if we checked recently and were online, trust it ---
     if [ "$_internet_last_result" -eq 0 ]; then
         local age=$((now - _internet_last_check))
@@ -108,30 +109,30 @@ check_internet() {
             return 0
         fi
     fi
-    
+
     # --- Fast DNS check first (cheap, catches most failures) ---
     if ! timeout "$INTERNET_DNS_TIMEOUT" getent hosts one.one.one.one >/dev/null 2>&1; then
-        # DNS failed — but try a hardcoded IP to distinguish DNS vs. no route
-        if ! timeout "$INTERNET_DNS_TIMEOUT" curl -fsI \
-                --connect-timeout 2 --max-time 3 \
-                "https://1.1.1.1" >/dev/null 2>&1; then
+        # DNS failed — but try a raw TCP connection to distinguish
+        # "DNS broken" from "no route at all". Raw TCP avoids any
+        # dependency on TLS certificate validation or HTTP responses.
+        if ! timeout "$INTERNET_DNS_TIMEOUT" bash -c 'exec 3<>/dev/tcp/1.1.1.1/443' 2>/dev/null; then
             _internet_last_check=$now
             _internet_last_result=1
             return 1
         fi
     fi
-    
+
     # --- Parallel endpoint checks ---
     local endpoints=(
         "https://1.1.1.1"                    # Cloudflare DNS (IP, no DNS needed)
         "https://www.google.com/generate_204" # Google 204 (tiny response)
         "https://www.cloudflare.com/cdn-cgi/trace"
     )
-    
+
     local pids=()
     local tmpdir
     tmpdir=$(mktemp -d)
-    
+
     local i=0
     for endpoint in "${endpoints[@]}"; do
         (
@@ -147,7 +148,7 @@ check_internet() {
         pids+=($!)
         i=$((i + 1))
     done
-    
+
     # Wait for any to succeed
     local success=1
     for _ in $(seq 1 "$INTERNET_CHECK_TIMEOUT"); do
@@ -159,12 +160,12 @@ check_internet() {
         done
         sleep 0.5
     done
-    
+
     # Clean up
     kill "${pids[@]}" 2>/dev/null
     wait "${pids[@]}" 2>/dev/null
     rm -rf "$tmpdir"
-    
+
     _internet_last_check=$now
     _internet_last_result=$success
     return $success
@@ -173,16 +174,21 @@ check_internet() {
 # ============================================================
 # VARIETY MANAGEMENT (WITH PROCESS CONTROL)
 # ============================================================
+# v2.x: pgrep/pkill patterns are anchored so "variety" must appear
+# as a proper path token (start-of-line or after /, followed by
+# whitespace or end-of-line). This prevents matching unrelated
+# processes whose command line merely contains the substring.
+# ============================================================
 
 # Check if Variety is running
 is_variety_running() {
-    pgrep -f "variety" >/dev/null 2>&1
+    pgrep -f '(^|/)variety( |$)' >/dev/null 2>&1
 }
 
 # Stop Variety completely (prevents conflicts)
 stop_variety() {
     if is_variety_running; then
-        pkill -f "variety" 2>/dev/null
+        pkill -f '(^|/)variety( |$)' 2>/dev/null
         echo "$(date) - Stopped Variety process" >> "$LOGFILE"
         sleep 1  # Give it time to clean up
         return 0
@@ -207,12 +213,12 @@ use_variety() {
         echo "$(date) - Variety not installed" >> "$LOGFILE"
         return 1
     fi
-    
+
     # Make sure Variety is running
     if ! is_variety_running; then
         start_variety
     fi
-    
+
     # Rotate wallpaper
     if variety --next >/dev/null 2>&1; then
         echo "$(date) - Variety wallpaper rotated" >> "$LOGFILE"
@@ -340,10 +346,10 @@ add_to_history() {
     if [ -z "$url" ]; then
         return 1
     fi
-    
+
     HISTORY_CACHE["$url"]=1
     echo "$url" >> "$HISTORY_FILE"
-    
+
     local line_count
     line_count=$(wc -l < "$HISTORY_FILE" 2>/dev/null || echo 0)
     if [ "$line_count" -gt "$((HISTORY_SIZE * 2))" ]; then
@@ -353,7 +359,7 @@ add_to_history() {
         echo "$(date) - Trimmed history to $HISTORY_SIZE entries" >> "$LOGFILE"
         load_history
     fi
-    
+
     return 0
 }
 
@@ -380,45 +386,44 @@ is_valid_image_url() {
 # ============================================================
 # DEVIANTART FETCHER (WITH VARIETY MANAGEMENT)
 # ============================================================
-# ============================================================
-# DEVIANTART FETCHER (WITH VARIETY MANAGEMENT)
-# ============================================================
 fetch_deviantart() {
     # IMPORTANT: Stop Variety before using DeviantArt to prevent conflicts
     local variety_was_running=false
-    
+
     if is_variety_running; then
         variety_was_running=true
         stop_variety
         echo "$(date) - [DeviantArt] Paused Variety for DeviantArt" >> "$LOGFILE"
     fi
-    
+
     local current_category="${SHUFFLED_CATEGORIES[$CAT_INDEX]}"
     echo "$(date) - [DeviantArt] Searching: '$current_category'" >> "$LOGFILE"
-    
+
     local URL_LIST=""
     local RETRY_COUNT=0
-    
+
     while [ -z "$URL_LIST" ] && [ "$RETRY_COUNT" -lt "$MAX_RETRIES" ]; do
         if [ "$RETRY_COUNT" -gt 0 ]; then
             echo "$(date) - [DeviantArt] Retry $RETRY_COUNT/$MAX_RETRIES" >> "$LOGFILE"
             sleep 5
         fi
-        
-        URL_LIST=$(timeout "${DEVIOUSQ_TIMEOUT}s" deviousq \
+
+        # v2.x: --kill-after ensures any surviving children of deviousq
+        # are reaped even if SIGTERM is ignored.
+        URL_LIST=$(timeout --kill-after=5s "${DEVIOUSQ_TIMEOUT}s" deviousq \
             --medium image \
             --rating nonadult \
             --return-field content_url \
             --limit "$SEARCH_LIMIT" \
             "$current_category" \
             2>/dev/null)
-        
+
         local exit_code=$?
         if [ $exit_code -eq 124 ]; then
             echo "$(date) - [DeviantArt] ERROR: deviousq timed out" >> "$LOGFILE"
             URL_LIST=""
         fi
-        
+
         RETRY_COUNT=$((RETRY_COUNT + 1))
     done
 
@@ -430,10 +435,10 @@ fetch_deviantart() {
         fi
         return 1
     fi
-    
+
     local VALID_URLS=""
     VALID_URLS=$(printf '%s\n' "$URL_LIST" | grep -E '^https?://' | grep -E '\.(jpg|jpeg|png|gif|webp|bmp|svg)' | head -100)
-    
+
     if [ -z "$VALID_URLS" ]; then
         echo "$(date) - [DeviantArt] No valid image URLs found" >> "$LOGFILE"
         if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
@@ -442,15 +447,19 @@ fetch_deviantart() {
         fi
         return 1
     fi
-    
+
     local URL_COUNT
     URL_COUNT=$(printf '%s\n' "$VALID_URLS" | wc -l)
     echo "$(date) - [DeviantArt] Found $URL_COUNT valid image URLs" >> "$LOGFILE"
 
     local RANDOM_URL=""
     local SHUFFLED_URLS
-    SHUFFLED_URLS=($(printf '%s\n' "$VALID_URLS" | shuf))
-    
+
+    # v2.x: mapfile -t reads one URL per array element, avoiding word
+    # splitting and pathname expansion on URLs that might contain spaces
+    # or shell metacharacters.
+    mapfile -t SHUFFLED_URLS < <(printf '%s\n' "$VALID_URLS" | shuf)
+
     for url in "${SHUFFLED_URLS[@]}"; do
         if ! is_in_history "$url"; then
             RANDOM_URL="$url"
@@ -464,9 +473,11 @@ fetch_deviantart() {
         echo "$(date) - [DeviantArt] WARNING: Using random repeat" >> "$LOGFILE"
     fi
 
-    local TIMESTAMP
-    TIMESTAMP=$(date +%s)
-    local WALLPAPER_FILE="/tmp/wallpaper_${TIMESTAMP}.jpg"
+    # v2.x: mktemp gives us a guaranteed-unique path, eliminating the
+    # (admittedly unlikely) collision when two invocations share a
+    # second-level timestamp.
+    local WALLPAPER_FILE
+    WALLPAPER_FILE=$(mktemp /tmp/wallpaper_XXXXXX.jpg)
 
     echo "$(date) - [DeviantArt] Downloading..." >> "$LOGFILE"
 
@@ -478,27 +489,27 @@ fetch_deviantart() {
     fi
 
     local success=false
-    
+
     if timeout "${WGET_TOTAL_TIMEOUT}s" wget -q --timeout="${WGET_TIMEOUT}" \
         -O "$WALLPAPER_FILE" "$RANDOM_URL" 2>/dev/null; then
-        
+
         # ----------------------------------------------------
         # STRONGER VALIDATION
         # ----------------------------------------------------
         local file_type=""
         local file_size=0
         local validation_ok=false
-        
+
         # 1. Detect actual file type via magic bytes (brief mode)
         file_type=$(file -b "$WALLPAPER_FILE" 2>/dev/null)
-        
+
         # 2. Get file size (GNU stat, then BSD stat, then wc fallback)
         file_size=$(stat -c%s "$WALLPAPER_FILE" 2>/dev/null \
             || stat -f%z "$WALLPAPER_FILE" 2>/dev/null \
             || wc -c < "$WALLPAPER_FILE" 2>/dev/null \
             || echo 0)
         file_size=${file_size:-0}
-        
+
         # 3. Validate: must be a real image type AND large enough
         if printf '%s' "$file_type" | grep -qiE '^(JPEG|PNG|GIF|Web/P|WebP|BMP|TIFF) image'; then
             if [ "$file_size" -gt 1024 ]; then
@@ -509,7 +520,7 @@ fetch_deviantart() {
         else
             echo "$(date) - [DeviantArt] ERROR: Not a valid image (detected: ${file_type:-unknown})" >> "$LOGFILE"
         fi
-        
+
         # 4. Optional: verify image is decodable (requires ImageMagick)
         if [ "$validation_ok" = true ] && command -v identify >/dev/null 2>&1; then
             if ! identify "$WALLPAPER_FILE" >/dev/null 2>&1; then
@@ -517,14 +528,14 @@ fetch_deviantart() {
                 validation_ok=false
             fi
         fi
-        
+
         # 5. Apply if valid
         if [ "$validation_ok" = true ]; then
             if plasma-apply-wallpaperimage "$WALLPAPER_FILE" >/dev/null 2>&1; then
                 add_to_history "$RANDOM_URL"
                 echo "$(date) - [DeviantArt] Wallpaper set from '$current_category' (${file_type}, ${file_size} bytes)" >> "$LOGFILE"
                 success=true
-                
+
                 CAT_INDEX=$((CAT_INDEX + 1))
                 if [ "$CAT_INDEX" -ge "${#SHUFFLED_CATEGORIES[@]}" ]; then
                     echo "$(date) - [DeviantArt] Finished category cycle. Reshuffling..." >> "$LOGFILE"
@@ -534,12 +545,13 @@ fetch_deviantart() {
                 echo "$(date) - [DeviantArt] ERROR: KDE rejected image" >> "$LOGFILE"
             fi
         fi
-        
+
         rm -f "$WALLPAPER_FILE"
     else
         echo "$(date) - [DeviantArt] ERROR: Download failed" >> "$LOGFILE"
+        rm -f "$WALLPAPER_FILE"
     fi
-    
+
     # Restore Variety if it was running
     if [ "$variety_was_running" = true ] && [ "$VARIETY_WEIGHT" -gt 0 ]; then
         if [ "$success" = true ]; then
@@ -549,8 +561,7 @@ fetch_deviantart() {
             echo "$(date) - [DeviantArt] Restarted Variety after failure" >> "$LOGFILE"
         fi
     fi
-    
-    # ← RETURN BASED ON SUCCESS FLAG
+
     if [ "$success" = true ]; then
         return 0  # SUCCESS
     else
@@ -567,7 +578,7 @@ SAME_SOURCE_COUNT=0
 select_source() {
     local total_weight=$((DEVIANTART_WEIGHT + VARIETY_WEIGHT))
     local rand=$((RANDOM % total_weight))
-    
+
     if [ $rand -lt "$DEVIANTART_WEIGHT" ]; then
         echo "deviantart"
     else
@@ -598,6 +609,7 @@ update_source_state() {
 IS_ONLINE=false
 
 while true; do
+    echo "$(date) - heartbeat (pid=$$)" >> "$LOGFILE"
     rotate_log
 
     # --------------------------------------------------------
@@ -608,7 +620,7 @@ while true; do
             echo "$(date) - Internet lost - switching to Variety only" >> "$LOGFILE"
             IS_ONLINE=false
         fi
-        
+
         echo "$(date) - [Offline] Using Variety" >> "$LOGFILE"
         if use_variety; then
             update_source_state "variety"
@@ -636,7 +648,7 @@ while true; do
     else
         SELECTED_SOURCE=$(select_source)
     fi
-    
+
     echo "$(date) - Selected $SELECTED_SOURCE (streak: $SAME_SOURCE_COUNT/$MAX_SAME_SOURCE)" >> "$LOGFILE"
 
     # --------------------------------------------------------
@@ -683,7 +695,7 @@ while true; do
     # PERIODIC TASKS
     # --------------------------------------------------------
     find /tmp -name "wallpaper_*.jpg" -mtime +1 -delete 2>/dev/null
-    
+
     if [ $((RANDOM % 50)) -eq 0 ]; then
         load_history
         echo "$(date) - Periodic history cache reloaded" >> "$LOGFILE"
