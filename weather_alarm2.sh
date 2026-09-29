@@ -62,30 +62,30 @@ fi
 # ============================================================
 # SINGLE-INSTANCE LOCK
 # ============================================================
-LOCK_FILE="$LOCK_DIR/weather_alarm.lock"
-exec 9>"${LOCK_FILE}"
-if ! flock -n 9; then
-    echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Another instance is already running. Exiting." >> "$LOG_FILE"
-    exit 1
-fi
+#~ LOCK_FILE="$LOCK_DIR/weather_alarm.lock"
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] Another instance is already running. Exiting." >> "$LOG_FILE"
+    #~ exit 1
+#~ fi
 
-echo $$ > "$LOCK_FILE"
+#~ echo $$ > "$LOCK_FILE"
 
-cleanup() {
-    local ec=$?
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-    flock -u 9
-    exec 9>&-
-    if declare -f log_info >/dev/null 2>&1; then
-        log_info "SCRIPT EXITING (code=$ec)"
-    else
-        echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] SCRIPT EXITING (code=$ec)" >> "$LOG_FILE"
-    fi
-}
+#~ cleanup() {
+    #~ local ec=$?
+    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        #~ rm -f "$LOCK_FILE"
+    #~ fi
+    #~ flock -u 9
+    #~ exec 9>&-
+    #~ if declare -f log_info >/dev/null 2>&1; then
+        #~ log_info "SCRIPT EXITING (code=$ec)"
+    #~ else
+        #~ echo "$(date '+%Y-%m-%d %H:%M:%S') [INFO] SCRIPT EXITING (code=$ec)" >> "$LOG_FILE"
+    #~ fi
+#~ }
 
-trap cleanup EXIT
+#~ trap cleanup EXIT
 
 # ============================================================
 # STATE AND EMAIL PATHS
@@ -1756,3 +1756,4 @@ case "${1:-}" in
         exit 2
         ;;
 esac
+Library - Grok

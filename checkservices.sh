@@ -39,7 +39,6 @@ SCRIPTS=(
     "lowMemAlert"
     "power_usage"
     "run-screensaver"
-    "random_wallpaper"
     "security_check"
 )
 
