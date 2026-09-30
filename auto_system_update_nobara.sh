@@ -172,7 +172,7 @@ check_internet() {
         fi
     done
     
-    # Use sudo -n to avoid hanging; removed unsupported --timer
+    # Use sudo -n to avoid hanging
     sudo -n dnf makecache -q 2>/dev/null && return 0
     return 1
 }
@@ -211,6 +211,10 @@ check_package_lock() {
     # Use ps to detect processes across all users
     if ps -C dnf --no-headers >/dev/null 2>&1; then
         log "DNF already running, skipping..."
+        return 1
+    fi
+    if ps -C dnf5 --no-headers >/dev/null 2>&1; then
+        log "DNF5 already running, skipping..."
         return 1
     fi
     if ps -C rpm --no-headers >/dev/null 2>&1; then
@@ -312,7 +316,14 @@ track_pre_update_state() {
     echo "$current_kernel" > "$PRE_UPDATE_KERNEL_FILE"
     log "📝 Pre-update kernel saved for reference: $current_kernel"
     
-    local trans_id=$(dnf history list 2>/dev/null | grep -v "^ID" | head -1 | awk '{print $1}')
+    # Fedora 44 / Nobara uses dnf5; parse history robustly
+    local trans_id
+    trans_id=$(dnf5 history list 2>/dev/null | awk 'NR>1 && $1 ~ /^[0-9]+$/ {print $1; exit}')
+    if [[ -z "$trans_id" ]]; then
+        # Fallback to legacy dnf if dnf5 didn't work
+        trans_id=$(dnf history list 2>/dev/null | awk 'NR>1 && $1 ~ /^[0-9]+$/ {print $1; exit}')
+    fi
+    
     if [[ -n "$trans_id" && "$trans_id" =~ ^[0-9]+$ ]]; then
         echo "$trans_id" > "$PRE_UPDATE_TRANSACTION_FILE"
         log "📝 Pre-update transaction ID saved: $trans_id"
@@ -434,7 +445,7 @@ verify_system_health() {
 post_update_security_check() {
     log "Running post-update security checks..."
 
-    # --- AppArmor check (commented out) ---
+    # --- AppArmor check ---
     if command -v aa-status >/dev/null 2>&1; then
         aa-status >> "$LOGFILE" 2>&1 || log "AppArmor check failed"
     fi
@@ -458,17 +469,6 @@ post_update_security_check() {
             log_raw "  $line"
         done
     fi
-
-    # --- SSH authentication failure check (commented out) ---
-    # local auth_failures
-    # auth_failures=$(journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep -c "Failed password")
-    # [[ -z "$auth_failures" ]] && auth_failures=0
-    # if [[ $auth_failures -gt 0 ]]; then
-    #     log "⚠️ $auth_failures authentication failures detected in last hour"
-    #     journalctl -u sshd --since "1 hour ago" 2>/dev/null | grep "Failed password" | tail -10 >> "$LOGFILE"
-    # else
-    #     log "✅ No authentication failures in last hour"
-    # fi
 
     log "Recent kernel errors (last 50 lines):"
     journalctl -b -p 3 --no-pager 2>/dev/null | tail -50 | while read -r line; do
@@ -585,7 +585,6 @@ fetch_pending_updates() {
     tmp=$(mktemp_safe) || return 1
     
     {
-        # Removed unsupported --timer; use -q only
         sudo -n dnf makecache -q >> "$LOGFILE" 2>&1 || true
         
         local dnf_rc=0
@@ -702,18 +701,16 @@ notify_complete() {
     > "$STATE_DIR/flatpak_list" 2>/dev/null || true
 }
 
-# ================= LOG UPDATED PACKAGES (as extra lines) =================
+# ================= LOG UPDATED PACKAGES =================
 log_updated_packages() {
     local date_str=$(date '+%Y-%m-%d')
     
-    # Log DNF packages (non-CSV, just appended)
     if [[ -s "$STATE_DIR/dnf_list" ]]; then
         while IFS= read -r line; do
             printf '%s DNF %s\n' "$date_str" "$line" >> "$HISTORY_LOG"
         done < "$STATE_DIR/dnf_list"
     fi
     
-    # Log Flatpak packages (non-CSV)
     if [[ -s "$STATE_DIR/flatpak_list" ]]; then
         while IFS= read -r line; do
             printf '%s Flatpak %s\n' "$date_str" "$line" >> "$HISTORY_LOG"
@@ -744,8 +741,9 @@ run_updates() {
     local TEMP_SYNC_LOG
     TEMP_SYNC_LOG=$(mktemp_safe) || return 1
 
+    # Verify sudo works non-interactively; if not, we can't proceed
     sudo -n true 2>/dev/null || {
-        log "ERROR: Cannot obtain sudo privileges"
+        log "ERROR: Cannot obtain sudo privileges non-interactively"
         LAST_DNF_EXIT="no-sudo"
         LAST_FLATPAK_EXIT="no-sudo"
         rm -f "$TEMP_SYNC_LOG"
@@ -754,6 +752,7 @@ run_updates() {
 
     track_pre_update_state
 
+    # Keep-alive: refresh sudo timestamp every 60s during long updates
     (
         while kill -0 "$PPID" 2>/dev/null; do
             sudo -n true 2>/dev/null
@@ -766,9 +765,13 @@ run_updates() {
     log_raw "Starting Nobara System Update"
     log_raw "=============================="
     
-    # Use --preserve-status to get the real exit code of nobara-sync
-    # Pipe yes to automatically answer the interactive prompt
-    timeout --preserve-status "$TIMEOUT_SECONDS" bash -c "yes | sudo nobara-sync all" 2>&1 | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
+    # nobara-sync runs via sudo -n (NOPASSWD rule allows this to run
+    # silently without a TTY). The official nobara-updater log goes
+    # to /root/.local/share/nobara-updater/, but we capture all output
+    # into $LOGFILE via tee anyway.
+    timeout --preserve-status "$TIMEOUT_SECONDS" \
+        sudo -n /usr/bin/nobara-sync cli 2>&1 \
+        | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
     DNF_EXIT=${PIPESTATUS[0]}
     log_raw "Nobara-sync exit code: $DNF_EXIT"
     
@@ -826,7 +829,6 @@ run_updates() {
     if [[ $UPDATE_SUCCESS -eq 0 ]]; then
         uname -r > "$POST_UPDATE_KERNEL_FILE" 2>/dev/null || true
         
-        # Log individual packages (non-CSV, appended)
         log_updated_packages
         
         notify_complete
@@ -956,21 +958,16 @@ main() {
         fetch_pending_updates
 
         if updates_available; then
-            # Get counts BEFORE update
             local dnf_count=0
             local flatpak_count=0
             [[ -s "$STATE_DIR/dnf_list" ]] && dnf_count=$(wc -l < "$STATE_DIR/dnf_list")
             [[ -s "$STATE_DIR/flatpak_list" ]] && flatpak_count=$(wc -l < "$STATE_DIR/flatpak_list")
             
-            # Log the pending summary (CSV format: DATE,STATUS,DNF_COUNT,FLATPAK_COUNT)
             printf '%s,OK,%d,%d\n' "$(date '+%F')" "$dnf_count" "$flatpak_count" >> "$HISTORY_LOG"
             
             notify_pending
             
             if run_updates; then
-                # Individual packages are logged inside run_updates() by log_updated_packages()
-                
-                # Log final state after updates (CSV)
                 printf '%s,OK,0,0\n' "$(date '+%F')" >> "$HISTORY_LOG"
                 
                 log "Update cycle completed successfully"
@@ -978,12 +975,10 @@ main() {
                 system_up_to_date
                 quick_verify
             else
-                # Log failure (CSV) – note that DNF_COUNT and FLATPAK_COUNT are not applicable, but we can put exit codes or unknown
                 printf '%s,FAIL,%s,%s\n' "$(date '+%F')" "${LAST_DNF_EXIT:-unknown}" "${LAST_FLATPAK_EXIT:-unknown}" >> "$HISTORY_LOG"
                 log "Update cycle failed"
             fi
         else
-            # No updates available – log OK with 0 counts
             printf '%s,OK,0,0\n' "$(date '+%F')" >> "$HISTORY_LOG"
             system_up_to_date
             quick_verify
