@@ -2,38 +2,64 @@
 export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 set -euo pipefail
 
-# Get all grubby info once
+# ================= CONFIG =================
+# Only consider kernels whose path matches this pattern.
+# Currently: legacy vmlinuz layout  -> /boot/vmlinuz-<version>
+VMLINUZ_GLOB='*/vmlinuz-*'
+
+# ================= FETCH GRUBBY INFO =================
 grubby_info=$(sudo grubby --info=ALL)
 
-# Extract all CachyOS kernel paths
-cachyos_kernels=$(echo "$grubby_info" | grep -oP '(?<=kernel=")[^"]*cachyos[^"]*' || true)
+# ================= EXTRACT VMLINUZ CACHYOS KERNELS =================
+# Collect every kernel path that:
+#   - ends with a vmlinuz-* basename
+#   - contains "cachyos" in its version
+# Emit "version<TAB>path" lines so we can sort by version, not by path.
+mapfile -t entries < <(
+    echo "$grubby_info" \
+        | grep -oP '(?<=kernel=")[^"]*' \
+        | while read -r path; do
+              case "$path" in
+                  $VMLINUZ_GLOB) ;;
+                  *) continue ;;
+              esac
+              ver="${path##*/vmlinuz-}"
+              [[ "$ver" == *cachyos* ]] || continue
+              printf '%s\t%s\n' "$ver" "$path"
+          done \
+        | sort -V -k1,1 -u
+)
 
-# Count how many CachyOS kernels we have
-kernel_count=$(echo "$cachyos_kernels" | grep -c . || true)
-
-if [[ "$kernel_count" -lt 3 ]]; then
-    echo "Error: Less than 3 CachyOS kernels found. Cannot select the 3rd newest."
+count=${#entries[@]}
+if (( count == 0 )); then
+    echo "Error: No CachyOS vmlinuz kernels found."
     exit 1
 fi
 
-# Sort by version and grab the 3rd newest (two versions before the latest)
-# tail -3 gets the last 3 items, head -1 gets the oldest of those three (the 3rd newest overall)
-bls_kernel=$(echo "$cachyos_kernels" | sort -V | tail -3 | head -1)
+# Newest = last entry after ascending sort
+latest_entry="${entries[$(( count - 1 ))]}"
+latest_version="${latest_entry%%$'\t'*}"
+latest_path="${latest_entry#*$'\t'}"
 
-# Find the index associated with this kernel path
-target_index=$(echo "$grubby_info" | awk -v k="$bls_kernel" '
+# ================= FIND GRUBBY INDEX =================
+target_index=$(echo "$grubby_info" | awk -v k="$latest_path" '
     /^index=/ { sub(/^index=/, ""); current_idx=$0 }
-    $0 ~ "kernel=\""k"\"" { print current_idx; exit }
+    index($0, "kernel=\"" k "\"") { print current_idx; exit }
 ')
 
 if [[ -z "$target_index" ]]; then
-    echo "Error: Could not find grubby index for $bls_kernel"
+    echo "Error: Could not find grubby index for $latest_path"
     exit 1
 fi
 
-echo "Setting default to the stable (N-2) CachyOS kernel:"
-echo "Index: $target_index"
-echo "Kernel: $bls_kernel"
+# ================= APPLY =================
+echo "Setting default to the latest CachyOS vmlinuz kernel:"
+echo "Version: $latest_version"
+echo "Index:   $target_index"
+echo "Kernel:  $latest_path"
+echo
+
 sudo grubby --set-default-index="$target_index"
 
 echo "New default kernel index: $(sudo grubby --default-index)"
+echo "New default kernel:       $(sudo grubby --default-kernel)"
