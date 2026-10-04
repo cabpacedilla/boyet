@@ -8,7 +8,7 @@
 # Selection policy:
 #   - Filter grubby entries down to CachyOS kernels that pass structural
 #     checks (kernel file, initrd, modules tree, RPM record, subvolume
-#     existence, non-snapshot).
+#     existence).
 #   - Sort the survivors by version (ascending).
 #   - Target slot = count - 1 - STABLE_OFFSET.
 #   - Within slots <= target, prefer a kernel that has previously been
@@ -16,30 +16,31 @@
 #     If none qualifies, use the target slot itself.
 #
 # Fallback: if fewer than STABLE_OFFSET+1 valid candidates exist, use the
-# newest valid candidate. This avoids leaving an old default in place just
-# because the requested offset is unavailable.
+# newest valid candidate.
+#
+# Notes on the subvolume check:
+#   During the offline-update window, every BLS CachyOS entry carries
+#   rootflags=subvol=.nobara-updater/<uuid>/root. That subvolume exists and
+#   the entry is bootable. Rejecting based on the subvol *name* would filter
+#   out every freshly prepared kernel, which is exactly what the previous
+#   revision did. The only correct test is: does the referenced subvolume
+#   exist right now? Existence check below does exactly that.
 #
 # Environment:
 #   DEBUG=true    -> print per-candidate rejection reasons on stderr
 #   DRY_RUN=true  -> report decision, do not invoke grubby --set-default
 # ============================================================================
 
-# Root-safe PATH: do NOT inherit the caller's $PATH.
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 set -euo pipefail
 
 # ================= CONFIG =================
-STABLE_OFFSET=2
+STABLE_OFFSET=1
 INCLUDE_LEGACY=true
 MIN_KERNEL_SIZE=$((2 * 1024 * 1024))
 MIN_INITRD_SIZE=$((4 * 1024 * 1024))
 MAX_BOOTS_TO_SCAN=20
-
-# Reject any kernel whose rootflags reference this path component anywhere.
-# Component-aware matching is used, so '@/.nobara-updater/foo' and nested
-# forms are caught as well as the top-level '.nobara-updater/foo'.
-POISON_SUBVOL_COMPONENT=".nobara-updater"
 
 DEBUG="${DEBUG:-false}"
 DRY_RUN="${DRY_RUN:-false}"
@@ -82,7 +83,7 @@ fi
 [[ -n "$grubby_info" ]] || die "grubby returned no entries"
 
 # ================= BTRFS STATE =================
-# Explicitly distinguish three states:
+# Distinguish three states:
 #   on_btrfs=0              -> / is not btrfs, subvol checks skipped
 #   on_btrfs=1, list_ok=1   -> subvol list retrieved, use for existence checks
 #   on_btrfs=1, list_ok=0   -> list query FAILED; treat as verification failure
@@ -99,9 +100,6 @@ fi
 
 # ================= BOOT HISTORY =================
 # Set of kernel versions that journald has observed booting on this machine.
-# Evidence: a Linux version string present in kernel-journal messages from a
-# prior boot. This means the kernel reached userspace; it does not by itself
-# prove the graphical session, all modules, or long-term stability.
 declare -A BOOTED_OK=()
 if [[ -d /var/log/journal ]]; then
     while read -r bid; do
@@ -115,8 +113,6 @@ fi
 
 # ================= CANDIDATE FILTERING =================
 # Output: version <TAB> kernel_path <TAB> proof_flag(0|1)
-# When the same version appears in multiple layouts, the first entry in
-# grubby output order is kept.
 mapfile -t candidates < <(
     echo "$grubby_info" | awk '
         /^kernel="/ { sub(/^kernel="/,""); sub(/"$/,""); kpath=$0 }
@@ -172,30 +168,21 @@ mapfile -t candidates < <(
             continue
         fi
 
-        # --- Extract subvolume from args, if any ---
+        # --- Subvolume existence check ---
+        # Extract rootflags=subvol=... if present. If the entry references a
+        # subvolume, verify it still exists. That is the only correct test:
+        # a snapshot subvol that exists is bootable, and one that has been
+        # merged away is not.
         subvol=$(grep -oP 'rootflags=subvol=\K\S+' <<<"$args" || true)
 
-        if [[ -n "$subvol" ]]; then
-            # Component-aware snapshot check: catches '@/.nobara-updater/x',
-            # '.nobara-updater/x', 'foo/.nobara-updater/bar', etc., without
-            # matching a similarly-named path like 'my.nobara-updater-backup'.
-            if [[ "/$subvol/" == *"/$POISON_SUBVOL_COMPONENT/"* ]]; then
-                reject "$ver: snapshot subvol '$subvol'"
+        if [[ -n "$subvol" ]] && (( on_btrfs )); then
+            if (( ! btrfs_list_ok )); then
+                reject "$ver: btrfs enumeration failed, cannot verify subvol '$subvol'"
                 continue
             fi
-
-            # Existence check: only run when btrfs enumeration succeeded.
-            # If enumeration FAILED (list_ok=0), verification is inconclusive
-            # and we reject the candidate (fail-closed).
-            if (( on_btrfs )); then
-                if (( ! btrfs_list_ok )); then
-                    reject "$ver: btrfs enumeration failed, cannot verify subvol '$subvol'"
-                    continue
-                fi
-                if ! grep -Fxq "$subvol" <<<"$snap_list"; then
-                    reject "$ver: subvol '$subvol' not present"
-                    continue
-                fi
+            if ! grep -Fxq "$subvol" <<<"$snap_list"; then
+                reject "$ver: subvol '$subvol' not present"
+                continue
             fi
         fi
 

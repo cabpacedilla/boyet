@@ -1,4 +1,3 @@
-PTPA
 XScreenSaver doesn't play nicely with Wayland. This setup works around that with four small scripts and swayidle.
 
 What they do:

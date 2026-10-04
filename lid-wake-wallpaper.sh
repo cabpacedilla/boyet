@@ -2,7 +2,7 @@
 # ============================================================
 # lid-wake-wallpaper.sh  (v3)
 #
-# Supervisor for random_wallpaper.sh:
+# Supervisor for random-live-wallpaper.sh:
 #   - Single-instance guarded (flock)
 #   - Serialized restarts (flock)
 #   - Waits for the old wallpaper script to die before relaunch
@@ -22,7 +22,7 @@ set -uo pipefail
 # ------------------------------------------------------------
 # CONFIG
 # ------------------------------------------------------------
-WALLPAPER_SCRIPT="$HOME/Documents/bin/random_wallpaper.sh"
+WALLPAPER_SCRIPT="$HOME/Documents/bin/random-live-wallpaper.sh"
 WALLPAPER_LOG="$HOME/scriptlogs/wallpaper.log"
 WALLPAPER_STDOUT="$HOME/scriptlogs/wallpaper-stdout.log"
 
@@ -123,7 +123,7 @@ write_state() {
 # ------------------------------------------------------------
 # PROCESS HELPERS
 # ------------------------------------------------------------
-# Match "bash /path/random_wallpaper.sh" or "/path/random_wallpaper.sh",
+# Match "bash /path/random-live-wallpaper.sh" or "/path/random-live-wallpaper.sh",
 # but not other processes that merely mention the path in their cmdline
 # (e.g. an editor, grep, this supervisor itself).
 WALLPAPER_PGREP_PATTERN="^(bash|sh|/bin/bash|/usr/bin/bash)?[[:space:]]*${WALLPAPER_SCRIPT}(\$|[[:space:]])"
@@ -198,7 +198,7 @@ restart_wallpaper() {
         fi
         log "Wallpaper script is down"
     else
-        log "No running random_wallpaper.sh instance found"
+        log "No running random-live-wallpaper.sh instance found"
     fi
 
     # ---- Kill orphan helpers -------------------------------
@@ -240,13 +240,13 @@ restart_wallpaper() {
     fi
     local new_pid=$!
     disown 2>/dev/null || true
-    log "Relaunched random_wallpaper.sh (PID $new_pid)"
+    log "Relaunched random-live-wallpaper.sh (PID $new_pid)"
 
     sleep "$RELAUNCH_VERIFY_SLEEP"
     if wallpaper_running; then
-        log "Verified: random_wallpaper.sh is running"
+        log "Verified: random-live-wallpaper.sh is running"
     else
-        log "WARNING: random_wallpaper.sh not detected after relaunch"
+        log "WARNING: random-live-wallpaper.sh not detected after relaunch"
     fi
 
     flock -u 8
@@ -281,7 +281,7 @@ watchdog_loop() {
 
         # ---- Trigger 2: process missing --------------------
         if ! wallpaper_running; then
-            log "WATCHDOG: random_wallpaper.sh is not running"
+            log "WATCHDOG: random-live-wallpaper.sh is not running"
             restart_wallpaper "watchdog-not-running"
             last_size=""
             last_mtime=""
