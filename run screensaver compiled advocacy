@@ -1,4 +1,4 @@
-XScreenSaver doesn't play nicely with Wayland. This setup works around that with four small scripts and swayidle.
+XScreenSaver doesn't play nicely with Wayland. This setup works around that with four small scripts and swayidle. Don't just rely the lock on resume in the resume handler script. Use the KDE’s built-in idle lock if you want an auto-lock on idle. Set the KDE idle lock longer than the IDLE_TIMEOUT variable.
 
 What they do:
 --------------

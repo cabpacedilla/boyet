@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$HOME/.local/bin:$HOME/bin"
 # -------------------------------------------------------------------------
-# power_usage.sh — Enhanced GUI Battery & Process Monitor (kdialog Version)
+# power_usage.sh â€” Enhanced GUI Battery & Process Monitor (kdialog Version)
 # -------------------------------------------------------------------------
 
 LOCK_FILE="/tmp/power_usage_$(whoami).lock"
@@ -127,12 +127,19 @@ get_process_power_consumption() {
 }
 
 get_top_processes() {
-    # Using Tabs (\t) for flexible alignment in kdialog variable-width fonts
-    echo -e "PID\tCOMMAND\t%CPU\t%MEM"
+    # Changed %8s to %-8s to left-align the CPU and MEM columns, preventing them from 
+    # being pushed to the far right edge of the dialog box.
+    printf "%-8s %-18s %-8s %-8s\n" "PID" "COMMAND" "%CPU" "%MEM"
+    
     ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 6 | tail -n +2 | while read -r p c cpu mem; do
-        # Truncate command to 15 chars to keep tabs predictable
-        local short_c="${c:0:15}"
-        echo -e "$p\t$short_c\t$cpu\t$mem"
+        # Truncate command to 15 chars and add ellipsis '...' if it's longer
+        local short_c="$c"
+        if [ ${#c} -gt 15 ]; then
+            short_c="${c:0:12}..."
+        fi
+        
+        # Print with exactly aligned columns (left-aligned)
+        printf "%-8s %-18s %-8s %-8s\n" "$p" "$short_c" "$cpu" "$mem"
     done
 }
 
@@ -153,17 +160,17 @@ main() {
         IFS='|' read -r cpu mem pwr_w int_kwh cum_kwh <<< "$power_data"
         top_p=$(get_top_processes)
 
-        # 3. Format Summary
+        # 3. Format Summary (Replaced broken emojis with plain text labels)
         summary="==============================
-  🔋 POWER STATUS: $(date '+%H:%M:%S')
+  [POWER] STATUS: $(date '+%H:%M:%S')
 ==============================
 $bat_out
 
-💻 LOAD: CPU: $cpu% | MEM: $mem%
+[LOAD] CPU: $cpu% | MEM: $mem%
 Est. Load Power: ${pwr_w}W
 Interval Energy: ${int_kwh}kWh
 
-🔝 TOP PROCESSES:
+[TOP PROCESSES]:
 $top_p
 =============================="
 
