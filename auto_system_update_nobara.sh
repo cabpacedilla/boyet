@@ -344,8 +344,11 @@ verify_system_health() {
     log "Running post-update system verification..."
     
     local failed_services
-    failed_services=$(systemctl --failed --no-legend 2>/dev/null | grep -v "drkonqi-coredump-processor" | awk '{print $1}' || true)
-    
+	failed_services=$(systemctl --failed --no-legend --plain --no-pager 2>/dev/null \
+    | awk '{print $1}' \
+    | grep -v '^$' \
+    | grep -v 'drkonqi-coredump-processor' || true)
+	
     if [[ -n "$failed_services" ]]; then
         log "WARNING: Failed services detected:"
         while IFS= read -r service; do
@@ -476,7 +479,10 @@ post_update_security_check() {
     done
 
     local failed_units
-    failed_units=$(systemctl --failed --no-legend 2>/dev/null | grep -v "drkonqi-coredump-processor" | awk '{print $1}' || true)
+    failed_units=$(systemctl --failed --no-legend --plain --no-pager 2>/dev/null \
+		| awk '{print $1}' \
+		| grep -v '^$' \
+		| grep -v 'drkonqi-coredump-processor' || true)
     if [[ -n "$failed_units" ]]; then
         log "⚠️ Failed systemd units detected:"
         while IFS= read -r unit; do
@@ -541,7 +547,11 @@ quick_verify() {
     
     clear_reboot_notification_if_not_needed
     
-    if systemctl --failed --no-legend 2>/dev/null | grep -v "drkonqi-coredump-processor" | grep -q "."; then
+    if systemctl --failed --no-legend --plain --no-pager 2>/dev/null \
+    | awk '{print $1}' \
+    | grep -v '^$' \
+    | grep -v 'drkonqi-coredump-processor' \
+    | grep -q .; then
         log "Quick check: Failed services detected"
         notify "System degraded - check 'systemctl --failed'" critical
         issues_found=1
