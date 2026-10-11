@@ -65,6 +65,40 @@ PIXABAY_QUERIES=(
 )
 
 # ============================================================
+# FORTUNE OVERLAY (DeviantArt + Pixabay only; never Variety)
+# ============================================================
+# The overlay is applied to the persistent copy just before it is
+# handed to KDE, and only after validation has confirmed the image
+# is displayable. Variety rotations are never overlaid.
+FORTUNE_OVERLAY_ENABLED=true
+
+# Variety-style text
+FORTUNE_FONT="DejaVu Serif"
+FORTUNE_FONT_SIZE=16
+FORTUNE_TEXT_COLOR="#ffffff"
+FORTUNE_MARGIN=40
+FORTUNE_MAX_BYTES=1024
+
+# Text shadow — off, since the dark backdrop provides contrast
+FORTUNE_TEXT_SHADOW_ENABLED=false
+FORTUNE_TEXT_SHADOW_COLOR="#000000"
+FORTUNE_TEXT_SHADOW_OPACITY=65      # 0–100 (only used if shadow enabled)
+
+# Variety-style dark translucent backdrop
+FORTUNE_GLASS_BLUR=20              # blur radius: 8 = flat, 40 = heavy frost
+FORTUNE_GLASS_BRIGHTNESS=60        # 100 = unchanged, 60 = darker
+FORTUNE_GLASS_SATURATION=10        # near-zero removes color cast
+FORTUNE_GLASS_TINT="#222222"       # dark gray tint
+FORTUNE_GLASS_TINT_STRENGTH=60     # stronger dark wash
+FORTUNE_GLASS_ALPHA=25%            # very transparent plate
+
+# Block width: Variety "Wide" setting
+FORTUNE_BLOCK_WIDTH_PCT=50         # percentage of image width
+
+# Placement: "top" or "middle"
+FORTUNE_VERTICAL_POSITION="middle"
+
+# ============================================================
 # PATHS & SETUP
 # ============================================================
 HISTORY_FILE="$HOME/scriptlogs/wallpaper_history.txt"
@@ -72,9 +106,6 @@ RECENT_HISTORY_FILE="$HOME/scriptlogs/wallpaper_recent.txt"
 LOGFILE="$HOME/scriptlogs/wallpaper.log"
 LOCK_FILE="$HOME/.cache/random_wallpaper.lock"
 
-# Persistent wallpaper location. KDE will keep pointing at this file
-# across script restarts and temp-dir cleanups, so the wallpaper will
-# not silently revert to the Plasma default.
 WALLPAPER_CACHE_DIR="$HOME/.cache/random-wallpaper"
 WALLPAPER_CURRENT="$WALLPAPER_CACHE_DIR/current.jpg"
 
@@ -112,28 +143,28 @@ _VARIETY_PAUSED_BY_SCRIPT=false
 _RECENT_TMP=""
 _HISTORY_TMP=""
 
-cleanup_probes() {
-    local pid
-    if [ "${#_PROBE_PIDS[@]}" -gt 0 ]; then
-        for pid in "${_PROBE_PIDS[@]}"; do
-            kill -TERM -"$pid" 2>/dev/null || true
-            kill -TERM  "$pid" 2>/dev/null || true
-        done
-        sleep 0.2
-        for pid in "${_PROBE_PIDS[@]}"; do
-            kill -KILL -"$pid" 2>/dev/null || true
-            kill -KILL  "$pid" 2>/dev/null || true
-        done
-        for pid in "${_PROBE_PIDS[@]}"; do
-            wait "$pid" 2>/dev/null || true
-        done
-        _PROBE_PIDS=()
-    fi
-    if [ -n "$_PROBE_TMPDIR" ] && [ -d "$_PROBE_TMPDIR" ]; then
-        rm -rf -- "$_PROBE_TMPDIR" 2>/dev/null || true
-    fi
-    _PROBE_TMPDIR=""
-}
+#~ cleanup_probes() {
+    #~ local pid
+    #~ if [ "${#_PROBE_PIDS[@]}" -gt 0 ]; then
+        #~ for pid in "${_PROBE_PIDS[@]}"; do
+            #~ kill -TERM -"$pid" 2>/dev/null || true
+            #~ kill -TERM  "$pid" 2>/dev/null || true
+        #~ done
+        #~ sleep 0.2
+        #~ for pid in "${_PROBE_PIDS[@]}"; do
+            #~ kill -KILL -"$pid" 2>/dev/null || true
+            #~ kill -KILL  "$pid" 2>/dev/null || true
+        #~ done
+        #~ for pid in "${_PROBE_PIDS[@]}"; do
+            #~ wait "$pid" 2>/dev/null || true
+        #~ done
+        #~ _PROBE_PIDS=()
+    #~ fi
+    #~ if [ -n "$_PROBE_TMPDIR" ] && [ -d "$_PROBE_TMPDIR" ]; then
+        #~ rm -rf -- "$_PROBE_TMPDIR" 2>/dev/null || true
+    #~ fi
+    #~ _PROBE_TMPDIR=""
+#~ }
 
 _restore_variety_verified() {
     local attempts=6 interval_s=0.4 i
@@ -148,34 +179,34 @@ _restore_variety_verified() {
     return 1
 }
 
-cleanup_on_exit() {
-    local ec=$?
-    cleanup_probes
-    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
-        rm -rf -- "$TMP_DIR" 2>/dev/null || true
-    fi
-    [ -n "$_RECENT_TMP" ] && rm -f "$_RECENT_TMP" 2>/dev/null || true
-    [ -n "$_HISTORY_TMP" ] && rm -f "$_HISTORY_TMP" 2>/dev/null || true
-    if [ "$_VARIETY_PAUSED_BY_SCRIPT" = true ] && [ -z "$(variety_pids)" ]; then
-        if _restore_variety_verified; then
-            echo "$(date) - Restored Variety on exit" >> "$LOGFILE"
-        else
-            echo "$(date) - WARNING: Variety not running after exit restore" >> "$LOGFILE"
-        fi
-    fi
-    echo "$(date) - SCRIPT EXITING (code=$ec)" >> "$LOGFILE"
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
-}
+#~ cleanup_on_exit() {
+    #~ local ec=$?
+    #~ cleanup_probes
+    #~ if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+        #~ rm -rf -- "$TMP_DIR" 2>/dev/null || true
+    #~ fi
+    #~ [ -n "$_RECENT_TMP" ] && rm -f "$_RECENT_TMP" 2>/dev/null || true
+    #~ [ -n "$_HISTORY_TMP" ] && rm -f "$_HISTORY_TMP" 2>/dev/null || true
+    #~ if [ "$_VARIETY_PAUSED_BY_SCRIPT" = true ] && [ -z "$(variety_pids)" ]; then
+        #~ if _restore_variety_verified; then
+            #~ echo "$(date) - Restored Variety on exit" >> "$LOGFILE"
+        #~ else
+            #~ echo "$(date) - WARNING: Variety not running after exit restore" >> "$LOGFILE"
+        #~ fi
+    #~ fi
+    #~ echo "$(date) - SCRIPT EXITING (code=$ec)" >> "$LOGFILE"
+    #~ flock -u 9 2>/dev/null || true
+    #~ exec 9>&- 2>/dev/null || true
+#~ }
 
-exec 9>"$LOCK_FILE"
-if ! flock -n 9; then
-    echo "$(date) - Another instance is already running. Exiting." >> "$LOGFILE"
-    exit 0
-fi
-trap cleanup_on_exit EXIT
-trap 'exit 0' INT
-trap 'exit 0' TERM
+#~ exec 9>"$LOCK_FILE"
+#~ if ! flock -n 9; then
+    #~ echo "$(date) - Another instance is already running. Exiting." >> "$LOGFILE"
+    #~ exit 0
+#~ fi
+#~ trap cleanup_on_exit EXIT
+#~ trap 'exit 0' INT
+#~ trap 'exit 0' TERM
 
 rotate_log
 
@@ -196,12 +227,187 @@ echo "$(date) - Random Wallpaper Script Started (stable Variety policy)" >> "$LO
 echo "$(date) - Weights: DA=$DEVIANTART_WEIGHT Variety=$VARIETY_WEIGHT Pixabay=$PIXABAY_WEIGHT" >> "$LOGFILE"
 echo "$(date) - Image bounds: DA ${DEVIANTART_IMAGE_MIN_WIDTH}x${DEVIANTART_IMAGE_MIN_HEIGHT}, Pixabay ${PIXABAY_IMAGE_MIN_WIDTH}x${PIXABAY_IMAGE_MIN_HEIGHT}" >> "$LOGFILE"
 echo "$(date) - Persistent wallpaper path: $WALLPAPER_CURRENT" >> "$LOGFILE"
+echo "$(date) - Fortune overlay: enabled=$FORTUNE_OVERLAY_ENABLED (DA/Pixabay only)" >> "$LOGFILE"
 
 # ============================================================
 # HELPERS
 # ============================================================
 _curl_config_escape() {
     printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+# ------------------------------------------------------------
+# FORTUNE OVERLAY
+# ------------------------------------------------------------
+_magick_driver() {
+    if command -v magick >/dev/null 2>&1; then
+        printf '%s' "magick"
+        return 0
+    fi
+    if command -v convert >/dev/null 2>&1; then
+        printf '%s' "convert"
+        return 0
+    fi
+    return 1
+}
+
+apply_fortune_overlay() {
+    local image="$1"
+    [ "$FORTUNE_OVERLAY_ENABLED" = true ] || return 0
+    [ -s "$image" ] || return 1
+
+    command -v fortune >/dev/null 2>&1 || {
+        echo "$(date) - [Overlay] fortune not installed — skipping overlay" >> "$LOGFILE"
+        return 1
+    }
+    local magick
+    magick=$(_magick_driver) || {
+        echo "$(date) - [Overlay] ImageMagick not installed — skipping overlay" >> "$LOGFILE"
+        return 1
+    }
+
+    local quote
+    quote=$(fortune 2>/dev/null | head -c "$FORTUNE_MAX_BYTES")
+    [ -n "$quote" ] || {
+        echo "$(date) - [Overlay] empty fortune output — skipping overlay" >> "$LOGFILE"
+        return 1
+    }
+
+    local img_w img_h block_w pad=24
+    img_w=$(identify -format '%w' "$image[0]" 2>/dev/null) || img_w=1920
+    img_h=$(identify -format '%h' "$image[0]" 2>/dev/null) || img_h=1080
+
+    # Wider block for the Variety-style "Wide" layout.
+    block_w=$(( img_w * FORTUNE_BLOCK_WIDTH_PCT / 100 ))
+    [ "$block_w" -lt 400 ] && block_w=400
+    [ "$block_w" -gt 1200 ] && block_w=1200
+
+    # Font size scales with image height so visual size stays
+    # consistent regardless of source resolution. FORTUNE_FONT_SIZE
+    # is now the "reference" size applied to a 1080p image.
+    local font_size
+    font_size=$(( FORTUNE_FONT_SIZE * img_h / 1080 ))
+    [ "$font_size" -lt 14 ] && font_size=14
+    [ "$font_size" -gt 96 ] && font_size=96
+
+    # Temp files MUST end in a known image extension (.png/.jpg), because
+    # ImageMagick decides output format from the filename extension.
+    local tmp_txt="${image}.txt.$$"
+    local tmp_text_png="${image}.txt.$$.png"
+    local tmp_shadow_png="${image}.shadow.$$.png"
+    local tmp_glass="${image}.glass.$$.png"
+    local tmp_glass_masked="${image}.glassmasked.$$.png"
+    local tmp_mask="${image}.mask.$$.png"
+    local tmp_out="${image}.out.$$.jpg"
+    rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_glass_masked" "$tmp_mask" "$tmp_out" 2>/dev/null || true
+
+    # Escape for Pango markup.
+    printf '%s' "$quote" \
+        | sed -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' > "$tmp_txt" \
+        || { rm -f "$tmp_txt"; return 1; }
+
+    # 1) Render text on a fully transparent background.
+    if ! "$magick" -background none \
+                   -fill "$FORTUNE_TEXT_COLOR" \
+                   -font "$FORTUNE_FONT" \
+                   -pointsize "$font_size" \
+                   -size "${block_w}x" \
+                   pango:@"$tmp_txt" \
+                   -bordercolor none -border "${pad}x${pad}" \
+                   "$tmp_text_png" 2>/dev/null; then
+        echo "$(date) - [Overlay] pango text render failed" >> "$LOGFILE"
+        rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" 2>/dev/null || true
+        return 1
+    fi
+    [ -s "$tmp_text_png" ] || { rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png"; return 1; }
+
+    # 1b) Render the shadow version (only if enabled).
+    if [ "$FORTUNE_TEXT_SHADOW_ENABLED" = true ]; then
+        local shadow_alpha
+        shadow_alpha=$(awk -v o="$FORTUNE_TEXT_SHADOW_OPACITY" 'BEGIN{printf "%.2f", o/100}')
+        if ! "$magick" "$tmp_text_png" \
+                -fill "$FORTUNE_TEXT_SHADOW_COLOR" \
+                -colorize 100 \
+                -channel A -evaluate multiply "${shadow_alpha}" +channel \
+                "$tmp_shadow_png" 2>/dev/null; then
+            echo "$(date) - [Overlay] shadow render failed (continuing without shadow)" >> "$LOGFILE"
+            rm -f "$tmp_shadow_png" 2>/dev/null || true
+        fi
+    else
+        rm -f "$tmp_shadow_png" 2>/dev/null || true
+    fi
+
+    local blk_w blk_h pos_x pos_y
+    blk_w=$(identify -format '%w' "$tmp_text_png" 2>/dev/null)
+    blk_h=$(identify -format '%h' "$tmp_text_png" 2>/dev/null)
+    [ -n "$blk_w" ] && [ -n "$blk_h" ] || { rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png"; return 1; }
+
+    pos_x=$(( img_w - blk_w - FORTUNE_MARGIN ))
+    case "$FORTUNE_VERTICAL_POSITION" in
+        top)    pos_y=$FORTUNE_MARGIN ;;
+        *)      pos_y=$(( (img_h - blk_h) / 2 )) ;;
+    esac
+    [ "$pos_x" -lt 0 ] && pos_x=0
+    [ "$pos_y" -lt 0 ] && pos_y=0
+
+    # 2) Crop the same region from the wallpaper, blur and tint it.
+    if ! "$magick" "$image" \
+        -crop "${blk_w}x${blk_h}+${pos_x}+${pos_y}" +repage \
+        -blur 0x"$FORTUNE_GLASS_BLUR" \
+        -modulate "${FORTUNE_GLASS_BRIGHTNESS},${FORTUNE_GLASS_SATURATION},100" \
+        -fill "$FORTUNE_GLASS_TINT" -colorize "$FORTUNE_GLASS_TINT_STRENGTH" \
+        "$tmp_glass" 2>/dev/null; then
+        echo "$(date) - [Overlay] glass crop failed" >> "$LOGFILE"
+        rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" 2>/dev/null || true
+        return 1
+    fi
+    [ -s "$tmp_glass" ] || { rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass"; return 1; }
+
+    # 3) Build a rectangular alpha mask.
+    "$magick" -size "${blk_w}x${blk_h}" xc:white \
+        -alpha set -channel A -evaluate set "$FORTUNE_GLASS_ALPHA" +channel \
+        "$tmp_mask" 2>/dev/null \
+        || { echo "$(date) - [Overlay] mask render failed" >> "$LOGFILE"; \
+             rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_mask"; return 1; }
+
+    # 4) Apply the rectangle alpha to the blurred crop.
+    "$magick" "$tmp_glass" "$tmp_mask" \
+        -compose CopyOpacity -composite \
+        "$tmp_glass_masked" 2>/dev/null \
+        || { echo "$(date) - [Overlay] mask apply failed" >> "$LOGFILE"; \
+             rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_mask" "$tmp_glass_masked"; return 1; }
+    [ -s "$tmp_glass_masked" ] \
+        || { rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_mask" "$tmp_glass_masked"; return 1; }
+
+    # 5) Composite: glass plate, optional shadow, then text.
+    local shadow_x=$(( pos_x + 1 ))
+    local shadow_y=$(( pos_y + 1 ))
+
+    if [ -s "$tmp_shadow_png" ]; then
+        if "$magick" "$image" \
+            "$tmp_glass_masked" -geometry "+${pos_x}+${pos_y}" -composite \
+            "$tmp_shadow_png"   -geometry "+${shadow_x}+${shadow_y}" -composite \
+            "$tmp_text_png"     -geometry "+${pos_x}+${pos_y}" -composite \
+            "$tmp_out" 2>/dev/null; then
+            if [ -s "$tmp_out" ] && mv -f "$tmp_out" "$image"; then
+                rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_mask" "$tmp_glass_masked" 2>/dev/null || true
+                return 0
+            fi
+        fi
+    else
+        if "$magick" "$image" \
+            "$tmp_glass_masked" -geometry "+${pos_x}+${pos_y}" -composite \
+            "$tmp_text_png"     -geometry "+${pos_x}+${pos_y}" -composite \
+            "$tmp_out" 2>/dev/null; then
+            if [ -s "$tmp_out" ] && mv -f "$tmp_out" "$image"; then
+                rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_mask" "$tmp_glass_masked" 2>/dev/null || true
+                return 0
+            fi
+        fi
+    fi
+    echo "$(date) - [Overlay] final composite failed" >> "$LOGFILE"
+    rm -f "$tmp_txt" "$tmp_text_png" "$tmp_shadow_png" "$tmp_glass" "$tmp_mask" "$tmp_glass_masked" "$tmp_out" 2>/dev/null || true
+    return 1
 }
 
 _decode_da_token() {
@@ -394,7 +600,7 @@ is_landscape_hd_image() {
 # ============================================================
 for cmd in flock timeout curl file stat awk grep head tail shuf \
            mktemp df pgrep find date wc cat sed seq setsid \
-           sha256sum base64 cut cp; do
+           sha256sum base64 cut cp mv; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         echo "$(date) - ERROR: required command not found: $cmd" >> "$LOGFILE"
         exit 1
@@ -432,6 +638,21 @@ fi
 if [ "$DEVIANTART_WEIGHT" -eq 0 ] && [ "$PIXABAY_WEIGHT" -eq 0 ] && [ "$VARIETY_WEIGHT" -eq 0 ]; then
     echo "$(date) - ERROR: no enabled sources" >> "$LOGFILE"
     exit 1
+fi
+
+# Optional overlay dependencies — warn only, never fail.
+if [ "$FORTUNE_OVERLAY_ENABLED" = true ]; then
+    command -v fortune >/dev/null 2>&1 || \
+        echo "$(date) - WARNING: fortune not found — overlay will be skipped" >> "$LOGFILE"
+    if ! _magick_driver >/dev/null 2>&1; then
+        echo "$(date) - WARNING: ImageMagick (magick/convert) not found — overlay will be skipped" >> "$LOGFILE"
+    else
+        _im=$(_magick_driver)
+        if ! "$_im" -list format 2>/dev/null | grep -qi pango; then
+            echo "$(date) - WARNING: $_im lacks pango support — overlay will be skipped" >> "$LOGFILE"
+        fi
+        unset _im
+    fi
 fi
 
 # ============================================================
@@ -1069,14 +1290,21 @@ fetch_deviantart() {
         fi
 
         if [ "$validation_ok" = true ]; then
-            # Persist a copy so KDE keeps a valid path across temp-dir cleanup.
-            if cp -f -- "$WALLPAPER_FILE" "$WALLPAPER_CURRENT" 2>/dev/null \
-               && plasma-apply-wallpaperimage "$WALLPAPER_CURRENT" >/dev/null 2>&1; then
-                add_to_history "$SOURCE_ID" || true
-                add_to_recent "$SOURCE_ID" "$file_hash" || true
-                echo "$(date) - [DeviantArt] Wallpaper set from '$current_category' (${file_size} bytes)" >> "$LOGFILE"
-                success=true
-                advance_category
+            if cp -f -- "$WALLPAPER_FILE" "$WALLPAPER_CURRENT" 2>/dev/null; then
+                if apply_fortune_overlay "$WALLPAPER_CURRENT"; then
+                    echo "$(date) - [DeviantArt] Fortune overlay applied" >> "$LOGFILE"
+                else
+                    echo "$(date) - [DeviantArt] Fortune overlay skipped (using plain image)" >> "$LOGFILE"
+                fi
+                if plasma-apply-wallpaperimage "$WALLPAPER_CURRENT" >/dev/null 2>&1; then
+                    add_to_history "$SOURCE_ID" || true
+                    add_to_recent "$SOURCE_ID" "$file_hash" || true
+                    echo "$(date) - [DeviantArt] Wallpaper set from '$current_category' (${file_size} bytes)" >> "$LOGFILE"
+                    success=true
+                    advance_category
+                else
+                    advance_category
+                fi
             else
                 advance_category
             fi
@@ -1090,7 +1318,6 @@ fetch_deviantart() {
         advance_category
     fi
 
-    # === STABLE POLICY: restart Variety ONLY on failure ===
     if [ "$variety_was_running" = true ] && [ "$success" != true ]; then
         _ensure_variety_running "DeviantArt"
         echo "$(date) - [DeviantArt] Restarted Variety after failure" >> "$LOGFILE"
@@ -1251,14 +1478,21 @@ fetch_pixabay() {
         fi
 
         if [ "$validation_ok" = true ]; then
-            # Persist a copy so KDE keeps a valid path across temp-dir cleanup.
-            if cp -f -- "$WALLPAPER_FILE" "$WALLPAPER_CURRENT" 2>/dev/null \
-               && plasma-apply-wallpaperimage "$WALLPAPER_CURRENT" >/dev/null 2>&1; then
-                add_to_history "pixabay://${chosen_id}" || true
-                add_to_recent "pixabay://${chosen_id}" "$file_hash" || true
-                echo "$(date) - [Pixabay] Wallpaper set from '$query' (id=$chosen_id)" >> "$LOGFILE"
-                success=true
-                advance_pixabay_query
+            if cp -f -- "$WALLPAPER_FILE" "$WALLPAPER_CURRENT" 2>/dev/null; then
+                if apply_fortune_overlay "$WALLPAPER_CURRENT"; then
+                    echo "$(date) - [Pixabay] Fortune overlay applied" >> "$LOGFILE"
+                else
+                    echo "$(date) - [Pixabay] Fortune overlay skipped (using plain image)" >> "$LOGFILE"
+                fi
+                if plasma-apply-wallpaperimage "$WALLPAPER_CURRENT" >/dev/null 2>&1; then
+                    add_to_history "pixabay://${chosen_id}" || true
+                    add_to_recent "pixabay://${chosen_id}" "$file_hash" || true
+                    echo "$(date) - [Pixabay] Wallpaper set from '$query' (id=$chosen_id)" >> "$LOGFILE"
+                    success=true
+                    advance_pixabay_query
+                else
+                    advance_pixabay_query
+                fi
             else
                 advance_pixabay_query
             fi
@@ -1272,7 +1506,6 @@ fetch_pixabay() {
         advance_pixabay_query
     fi
 
-    # === STABLE POLICY: restart Variety ONLY on failure ===
     if [ "$variety_was_running" = true ] && [ "$success" != true ]; then
         _ensure_variety_running "Pixabay"
         echo "$(date) - [Pixabay] Restarted Variety after failure" >> "$LOGFILE"
