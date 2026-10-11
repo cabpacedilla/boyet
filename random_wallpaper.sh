@@ -26,9 +26,8 @@ PIXABAY_WEIGHT=40
 MAX_SAME_SOURCE=3
 
 PIXABAY_API_KEY="${PIXABAY_API_KEY:-}"
-PIXABAY_IMAGE_MIN_WIDTH=1920
-PIXABAY_IMAGE_MIN_HEIGHT=1080
-PIXABAY_PER_PAGE=50
+PIXABAY_IMAGE_MIN_WIDTH=1280
+PIXABAY_IMAGE_MIN_HEIGHT=700
 PIXABAY_API_TIMEOUT=15
 PIXABAY_DL_TIMEOUT=20
 PIXABAY_DL_TOTAL_TIMEOUT=45
@@ -279,7 +278,7 @@ stop_variety() {
 
 start_variety() {
     if ! is_variety_running; then
-        variety >/dev/null 2>&1 &
+        variety --next >/dev/null 2>&1 &
         echo "$(date) - Started Variety process" >> "$LOGFILE"
         sleep 2
         return 0
@@ -687,6 +686,7 @@ fetch_pixabay() {
         | select(.largeImageURL != null)
         | select(.imageWidth  >= '"$PIXABAY_IMAGE_MIN_WIDTH"')
         | select(.imageHeight >= '"$PIXABAY_IMAGE_MIN_HEIGHT"')
+        | select(.imageWidth > .imageHeight)
         | select(.isLowQuality == false)
         | "\(.id)\t\(.largeImageURL)"
     ')

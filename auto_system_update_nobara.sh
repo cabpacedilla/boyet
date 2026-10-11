@@ -154,7 +154,7 @@ system_up_to_date() {
         log "System is up to date."
         safe_write_timestamp "$SYSTEM_UPTODATE_LOG_FILE"
     fi
-    notify "System is up to date." normal 3000
+    notify "System is up to date." critical
 }
 
 # ================= INTERNET =================
@@ -679,7 +679,7 @@ notify_pending() {
     total_count=$(cat "$STATE_DIR/update_count" 2>/dev/null || echo 0)
     
     if [[ -n "$update_list" ]]; then
-        notify_with_list "📦 Updates Detected" "Installing $total_count updates...\n\n$update_list" "normal" 0
+        notify_with_list "📦 Updates Detected" "Installing $total_count updates...\n\n$update_list" "critical" 0
     else
         notify "Found updates: $total_count items" normal
     fi

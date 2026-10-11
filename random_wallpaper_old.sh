@@ -199,7 +199,7 @@ stop_variety() {
 # Start Variety (if it was stopped)
 start_variety() {
     if ! is_variety_running; then
-        variety >/dev/null 2>&1 &
+        variety --next >/dev/null 2>&1 &
         echo "$(date) - Started Variety process" >> "$LOGFILE"
         sleep 1  # Give it time to initialize
         return 0
