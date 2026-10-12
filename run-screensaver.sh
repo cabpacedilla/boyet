@@ -8,33 +8,33 @@ export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:
 # ============================================================================
 
 # --- Process Lock (Prevent multiple instances) ---
-LOCK_FILE="/tmp/run-screensaver_$(whoami).lock"
-IDLE_STATUS_FILE="/tmp/sway_idle_status"
+#~ LOCK_FILE="/tmp/run-screensaver_$(whoami).lock"
+#~ IDLE_STATUS_FILE="/tmp/sway_idle_status"
 
-exec 9>"${LOCK_FILE}"
-if ! flock -n 9; then
-    exit 0  # Already running, exit silently
-fi
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ exit 0  # Already running, exit silently
+#~ fi
 
-echo $$ > "$LOCK_FILE"
+#~ echo $$ > "$LOCK_FILE"
 
-# --- Cleanup on exit ---
-# Removes lock file, kills swayidle, removes idle status file
-cleanup() {
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
+#~ # --- Cleanup on exit ---
+#~ # Removes lock file, kills swayidle, removes idle status file
+#~ cleanup() {
+    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        #~ rm -f "$LOCK_FILE"
+    #~ fi
 
-    # Item 7: kill any swayidle we started
-    pkill -f "swayidle" 2>/dev/null
+    #~ # Item 7: kill any swayidle we started
+    #~ pkill -f "swayidle" 2>/dev/null
 
-    # Item 8: remove the idle status file
-    rm -f "$IDLE_STATUS_FILE" 2>/dev/null
+    #~ # Item 8: remove the idle status file
+    #~ rm -f "$IDLE_STATUS_FILE" 2>/dev/null
 
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
-}
-trap cleanup EXIT
+    #~ flock -u 9 2>/dev/null || true
+    #~ exec 9>&- 2>/dev/null || true
+#~ }
+#~ trap cleanup EXIT
 
 # --- Environment Setup ---
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -70,24 +70,8 @@ log_status() {
     echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
-is_video_playing() {
-    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
-    BEGIN { found = 0 }
-    /Sink Input/ {next}
-    {
-        if (match($0, /application.name = "([^"]+)"/, arr)) {
-            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
-                found = 1
-            }
-        }
-    }
-    END {
-        if (found) print "playing"
-        else       print "not playing"
-        exit found ? 0 : 1
-    }
-    '
-    return $?
+is_video_playing(){
+    pactl list sink-inputs 2>/dev/null | awk '/Sink Input #/{is_playing=0}/Corked: no/{is_playing=1} END{if(is_playing){print "playing"; exit 0}else{print "not playing"; exit 1}}'
 }
 
 # --- Core Logic: Idle Management ---

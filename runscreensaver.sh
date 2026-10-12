@@ -16,26 +16,26 @@ export PATH="$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:
 # ============================================================================
 
 # --- Process Lock (Prevent multiple instances) ---
-LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
-exec 9>"${LOCK_FILE}"
-if ! flock -n 9; then
-    exit 0  # Already running, exit silently
-fi
+#~ LOCK_FILE="/tmp/runscreensaver_$(whoami).lock"
+#~ exec 9>"${LOCK_FILE}"
+#~ if ! flock -n 9; then
+    #~ exit 0  # Already running, exit silently
+#~ fi
 
-# Store our PID
-echo $$ > "$LOCK_FILE"
+#~ # Store our PID
+#~ echo $$ > "$LOCK_FILE"
 
-# Enhanced cleanup that only removes our PID file
-cleanup() {
-    # Only remove if it's our PID (prevents removing another process's lock)
-    if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
-        rm -f "$LOCK_FILE"
-    fi
-    flock -u 9 2>/dev/null || true
-    exec 9>&- 2>/dev/null || true
-}
+#~ # Enhanced cleanup that only removes our PID file
+#~ cleanup() {
+    #~ # Only remove if it's our PID (prevents removing another process's lock)
+    #~ if [[ -f "$LOCK_FILE" ]] && [[ "$(cat "$LOCK_FILE" 2>/dev/null)" == "$$" ]]; then
+        #~ rm -f "$LOCK_FILE"
+    #~ fi
+    #~ flock -u 9 2>/dev/null || true
+    #~ exec 9>&- 2>/dev/null || true
+#~ }
 
-trap cleanup EXIT
+#~ trap cleanup EXIT
 
 # --- Environment Setup ---
 export XDG_RUNTIME_DIR="/run/user/$(id -u)"
@@ -57,7 +57,7 @@ mkdir -p "$(dirname "$LOGFILE")"
 # --- Helper functions ---
 rotate_log() {
     if [ -f "$LOGFILE" ] && [ "$(stat -c%s "$LOGFILE" 2>/dev/null || echo 0)" -gt "$MAX_LOG_SIZE" ]; then
-        mv "$LOGFILE" "${LOGFILE}.$(date '+%Y%m%d_%H%M%S').old"
+        mv "$LOGFILE" "${LOGFILE}.$(date +%Y%m%d_%H%M%S).old"
         ls -t "${LOGFILE}".*.old 2>/dev/null | tail -n +$((MAX_OLD_LOGS + 1)) | xargs rm -f -- 2>/dev/null || true
     fi
 }
@@ -70,26 +70,8 @@ log_status() {
     echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
-is_video_playing() {
-    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
-    BEGIN { found = 0 }
-    /Sink Input/ {next}
-    {
-        if (match($0, /application.name = "([^"]+)"/, arr)) {
-            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
-                found = 1
-            }
-        }
-    }
-    END {
-        if (found)
-            print "playing"
-        else
-            print "not playing"
-        exit found ? 0 : 1
-    }
-    '
-    return $?
+is_video_playing(){
+    pactl list sink-inputs 2>/dev/null | awk '/Sink Input #/{is_playing=0}/Corked: no/{is_playing=1} END{if(is_playing){print "playing"; exit 0}else{print "not playing"; exit 1}}'
 }
 
 # --- Core Logic: Idle Management ---

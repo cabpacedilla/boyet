@@ -402,24 +402,8 @@ log_status() {
     echo "$(date) - Checking idle status" >> "$LOGFILE"
 }
 
-is_video_playing() {
-    pactl list sink-inputs 2>/dev/null | awk -v RS="Sink Input #" '
-    BEGIN { found = 0 }
-    /Sink Input/ {next}
-    {
-        if (match($0, /application.name = "([^"]+)"/, arr)) {
-            if (!/Corked: yes/ && !/pulse.corked = "true"/) {
-                found = 1
-            }
-        }
-    }
-    END {
-        if (found) print "playing"
-        else       print "not playing"
-        exit found ? 0 : 1
-    }
-    '
-    return $?
+is_video_playing(){
+    pactl list sink-inputs 2>/dev/null | awk '/Sink Input #/{is_playing=0}/Corked: no/{is_playing=1} END{if(is_playing){print "playing"; exit 0}else{print "not playing"; exit 1}}'
 }
 
 # --- Core Logic: Idle Management ---
