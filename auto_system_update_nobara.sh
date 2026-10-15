@@ -591,38 +591,52 @@ quick_verify() {
 
 # ================= FETCH UPDATES =================
 fetch_pending_updates() {
-    local tmp
+    local tmp err dnf_rc=0 rc=0 fp_raw
     tmp=$(mktemp_safe) || return 1
-    
-    {
-        sudo -n dnf makecache -q >> "$LOGFILE" 2>&1 || true
-        
-        local dnf_rc=0
-        sudo -n dnf check-update > "$tmp" 2>/dev/null || dnf_rc=$?
-        
-        if [[ $dnf_rc -eq 1 ]]; then
-            log "DNF check-update encountered an error"
-        elif [[ $dnf_rc -eq 100 ]]; then
-            log "DNF updates available"
+    err=$(mktemp_safe) || { rm -f "$tmp"; return 1; }
+
+    # --refresh already expires and re-downloads metadata.
+    sudo -n dnf check-update --refresh >"$tmp" 2>"$err" || dnf_rc=$?
+
+    case $dnf_rc in
+        0)   ;;
+        100) log "DNF updates available" ;;
+        *)   log "DNF check-update failed (rc=$dnf_rc): $(head -c 300 "$err" | tr '\n' ' ')"
+             rc=1 ;;
+    esac
+
+    # Only replace the list on a successful check; keep the previous list on failure.
+    if (( dnf_rc == 0 || dnf_rc == 100 )); then
+        awk 'NF >= 3 && $1 ~ /\.(x86_64|noarch|i686|aarch64)$/ {
+                 print $1 " (" $2 ")"
+             }' "$tmp" >"$STATE_DIR/dnf_list.new" \
+            && mv -f "$STATE_DIR/dnf_list.new" "$STATE_DIR/dnf_list"
+        # If awk or mv fails the previous list is left untouched (intentional).
+    fi
+
+    # ---------- Flatpak ----------
+    if command -v flatpak >/dev/null 2>&1; then
+        flatpak update --appstream --noninteractive >>"$LOGFILE" 2>&1 || true
+
+        fp_raw=$(mktemp_safe) || fp_raw=""
+        if [[ -n $fp_raw ]]; then
+            if flatpak remote-ls --updates --columns=application,version >"$fp_raw" 2>"$err"; then
+                awk '{ if (NF >= 2) print $1 " (" $2 ")"; else if (NF == 1) print $1 }' "$fp_raw" \
+                    >"$STATE_DIR/flatpak_list.new" \
+                    && mv -f "$STATE_DIR/flatpak_list.new" "$STATE_DIR/flatpak_list"
+                # If awk or mv fails the previous list is left untouched (intentional).
+            else
+                log "Flatpak remote-ls failed: $(head -c 200 "$err" | tr '\n' ' ')"
+                # previous list kept
+            fi
+            rm -f "$fp_raw"
         fi
-        
-        grep -E '\.(x86_64|noarch|i686|aarch64)' "$tmp" 2>/dev/null \
-            | awk '{print $1 " (" $2 ")"}' > "$STATE_DIR/dnf_list" || true
-        
-        if command -v flatpak >/dev/null 2>&1; then
-            flatpak update --appstream --noninteractive >> "$LOGFILE" 2>&1 || true
-            flatpak remote-ls --updates --columns=application,version 2>/dev/null \
-                | tail -n +2 | awk '{if(NF>=2) print $1 " (" $2 ")"; else print $1}' \
-                > "$STATE_DIR/flatpak_list" 2>/dev/null || true
-        else
-            > "$STATE_DIR/flatpak_list"
-        fi
-        
-        rm -f "$tmp"
-    } || {
-        rm -f "$tmp"
-        return 1
-    }
+    else
+        : >"$STATE_DIR/flatpak_list"
+    fi
+
+    rm -f "$tmp" "$err"
+    return $rc
 }
 
 updates_available() {
