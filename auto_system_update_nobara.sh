@@ -762,6 +762,7 @@ run_updates() {
 
     local DNF_EXIT=1 FLATPAK_EXIT=1
     local UPDATE_SUCCESS=1
+    local DNF_FALLBACK_USED=false
     local TEMP_SYNC_LOG
     TEMP_SYNC_LOG=$(mktemp_safe) || return 1
 
@@ -789,10 +790,9 @@ run_updates() {
     log_raw "Starting Nobara System Update"
     log_raw "=============================="
     
-    # nobara-sync runs via sudo -n (NOPASSWD rule allows this to run
-    # silently without a TTY). The official nobara-updater log goes
-    # to /root/.local/share/nobara-updater/, but we capture all output
-    # into $LOGFILE via tee anyway.
+    # Primary path: official nobara-sync
+    # (includes rpm --verifydb pre-check and the early-upgrade pin for
+    #  nobara-updater / drm-awaiter, which prevents accidental downgrades)
     timeout --preserve-status "$TIMEOUT_SECONDS" \
         sudo -n /usr/bin/nobara-sync cli 2>&1 \
         | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
@@ -801,6 +801,38 @@ run_updates() {
     
     [[ $DNF_EXIT -eq 124 ]] && log_raw "WARNING: nobara-sync timed out"
     [[ $DNF_EXIT -eq 137 ]] && log_raw "WARNING: nobara-sync was killed"
+
+    # ---------- FALLBACK: package-conflict retry via distro-sync ----------
+    # nobara-sync's solver aborts the entire transaction when a single package
+    # has an unsatisfiable dependency (e.g. pipewire-codec-aptx from
+    # nobara-pikaos-additional requiring a newer pipewire than the mirrors
+    # currently provide). dnf distro-sync treats broken packages as
+    # "skip and continue", so the rest of the system still updates, and the
+    # skipped package installs automatically on a later cycle once its
+    # dependency propagates to the mirrors.
+    #
+    # --exclude preserves the early-upgrade pin that nobara-sync enforces,
+    # so distro-sync can never downgrade nobara-updater or drm-awaiter to a
+    # temporarily-older repo build.
+    #
+    # Timeout/kill exits are intentionally NOT retried — a fallback with the
+    # same 1-hour timeout would just fail the same way.
+    if [[ $DNF_EXIT -ne 0 && $DNF_EXIT -ne 124 && $DNF_EXIT -ne 137 ]] \
+       && grep -qiE 'package conflicts prevent|nothing provides' "$TEMP_SYNC_LOG"; then
+        log "nobara-sync hit a package conflict; retrying via distro-sync fallback"
+        DNF_FALLBACK_USED=true
+
+        timeout --preserve-status "$TIMEOUT_SECONDS" \
+            sudo -n dnf distro-sync --refresh -y \
+                --exclude=nobara-updater \
+                --exclude=drm-awaiter 2>&1 \
+            | tee -a "$LOGFILE" > "$TEMP_SYNC_LOG"
+        DNF_EXIT=${PIPESTATUS[0]}
+        log_raw "dnf distro-sync fallback exit code: $DNF_EXIT"
+
+        [[ $DNF_EXIT -eq 124 ]] && log_raw "WARNING: distro-sync fallback timed out"
+        [[ $DNF_EXIT -eq 137 ]] && log_raw "WARNING: distro-sync fallback was killed"
+    fi
 
     log_blank
     log_raw "=============================="
@@ -832,6 +864,10 @@ run_updates() {
     log_raw "=============================="
     log_raw "Update Summary"
     log_raw "=============================="
+
+    if [[ "$DNF_FALLBACK_USED" == "true" ]]; then
+        log_raw "NOTE: nobara-sync failed with a package conflict; distro-sync fallback was used"
+    fi
     
     if [[ $DNF_EXIT -eq 0 && $FLATPAK_EXIT -eq 0 ]]; then
         UPDATE_SUCCESS=0
