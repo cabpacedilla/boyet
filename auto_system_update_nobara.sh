@@ -109,7 +109,7 @@ FALLBACK_CMD=(/usr/bin/dnf distro-sync --refresh -y)
 CURRENT_FLATPAK_FRESHNESS="unknown"
 
 HOST_ARCH=$(uname -m 2>/dev/null || echo "x86_64")
-BASE_ARCHS="x86_64|i686|i386|aarch64|armv7hl|armv7|ppc64le|s390x"
+BASE_ARCHS="x86_64|i686|i386|aarch64|armv7hl|armv7|ppc64le|s390x|noarch"
 if [[ ! "$HOST_ARCH" =~ ^($BASE_ARCHS)$ ]]; then
     ALLOWED_ARCHS="${BASE_ARCHS}|${HOST_ARCH}"
 else
