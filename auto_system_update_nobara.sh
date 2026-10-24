@@ -68,6 +68,14 @@
 #             with no version) are accepted as "name (no version)"; only
 #             NF>2 and malformed IDs are rejected. Previously the strict
 #             NF==2 check aborted the entire fetch on any runtime update.
+#   [FIX 148] nobara-sync stages updates for the next boot (JSON result has
+#             "reboot_required": true) instead of installing them, so neither
+#             the kernel comparison nor the offline-directory probes saw a
+#             pending reboot. run_updates() now records a boot-ID-keyed marker
+#             ($STATE_DIR/reboot_staged); detect_offline_update_pending()
+#             honours it (=> RESTART REQUIRED notification); main() skips
+#             fetch/update while the marker is valid for the current boot, so
+#             the same transaction is no longer re-staged every hour.
 # ============================================================================
 
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${HOME}/.local/bin"
@@ -184,6 +192,11 @@ POST_UPDATE_KERNEL_FILE="$STATE_DIR/post_update_kernel"
 FLATPAK_FRESHNESS_FILE="$STATE_DIR/flatpak_freshness"
 NOBARA_SYNC_SUCCESS_FILE="$STATE_DIR/last_nobara_sync_success"
 TRANSACTION_SUCCESS_FILE="$STATE_DIR/last_transaction_success"
+# [FIX 148] Marker for "nobara-sync staged an update for the next boot".
+# Content is the boot ID of the boot in which staging happened, so the marker
+# goes stale by itself after a reboot. BOOT_ID_FILE is overridable for testing.
+REBOOT_STAGED_FILE="$STATE_DIR/reboot_staged"
+BOOT_ID_FILE="${BOOT_ID_FILE:-/proc/sys/kernel/random/boot_id}"
 
 UPDATE_START_TS=""
 MUTATING_IN_PROGRESS=false
@@ -687,8 +700,26 @@ detect_installed_kernel() {
     printf '%s\n' "$newest"
 }
 
+# [FIX 148] Staged-update marker helpers.
+current_boot_id() { tr -d '[:space:]' < "$BOOT_ID_FILE" 2>/dev/null; }
+
+# True (0) when nobara-sync staged an update during the CURRENT boot.
+update_already_staged() {
+    local bid marker
+    bid=$(current_boot_id)
+    [[ -n "$bid" && -s "$REBOOT_STAGED_FILE" ]] || return 1
+    marker=$(tr -d '[:space:]' < "$REBOOT_STAGED_FILE" 2>/dev/null)
+    [[ "$marker" == "$bid" ]]
+}
+
 detect_offline_update_pending() {
     [[ -e /system-update || -L /system-update ]] && return 0
+    # [FIX 148] nobara-sync stages updates under /var/lib/nobara-updater/jobs/,
+    # which the directory probes below do not cover; use the marker instead.
+    update_already_staged && return 0
+    if [[ -e "$REBOOT_STAGED_FILE" && "$DRY_RUN" != "true" ]]; then
+        rm -f "$REBOOT_STAGED_FILE"   # marker belongs to a previous boot
+    fi
     local unknown=0 d contents rc parent
     for d in /usr/lib/sysimage/dnf/offline /var/lib/dnf/offline \
              /var/lib/nobara-updater/offline /var/lib/nobara-updater/staged; do
@@ -1069,6 +1100,25 @@ run_updates() {
         [[ $DNF_EXIT -eq 137 ]] && log_raw "WARNING: fallback exit 137 (consistent with SIGKILL)"
     fi
 
+    # [FIX 148] nobara-sync stages the transaction for the next restart and says
+    # so in its result. Must stay after the fallback block (which overwrites
+    # $TSYNC). A failed run (DNF_EXIT != 0) never creates the marker.
+    if [[ $DNF_EXIT -eq 0 ]] \
+       && grep -qE '"reboot_required": *true|Installation requires a restart' "$TSYNC" 2>/dev/null; then
+        local boot_id was_staged=false
+        boot_id=$(current_boot_id)
+        update_already_staged && was_staged=true
+        if [[ -z "$boot_id" ]]; then
+            log "WARNING: boot ID unreadable; cannot record staged update"
+        elif safe_write_content "$REBOOT_STAGED_FILE" "$boot_id"; then
+            log "nobara-sync staged an update; reboot required to apply"
+            # A fresh staging deserves a fresh notification.
+            [[ "$was_staged" == "false" ]] && { set_reboot_notified "false" || true; }
+        else
+            log "WARNING: could not persist reboot_staged marker"
+        fi
+    fi
+
     log_blank; log_raw "=============================="; log_raw "Starting Flatpak Updates"; log_raw "=============================="
 
     local FP_OUT; FP_OUT=$(mktemp_safe) || FP_OUT=""
@@ -1265,7 +1315,11 @@ main() {
         fi
         rd=60
 
-        if ! fetch_pending_updates; then
+        if [[ "$DRY_RUN" != "true" ]] && update_already_staged; then
+            # [FIX 148] Already staged this boot: re-running nobara-sync would
+            # only re-stage the same transaction every cycle.
+            log "Update already staged; waiting for reboot (skipping fetch/update)"
+        elif ! fetch_pending_updates; then
             log "Fetch failed; skipping cycle"
             write_history_row "SKIP" "NOT-RUN" "SKIP" "no" 0 0
         elif updates_available; then

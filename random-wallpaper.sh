@@ -70,10 +70,15 @@ PIXABAY_QUERIES=(
 # The overlay is applied to the persistent copy just before it is
 # handed to KDE, and only after validation has confirmed the image
 # is displayable. Variety rotations are never overlaid.
+#
+# The overlay is drawn on the original image canvas. The wallpaper's
+# pixel dimensions and composition are preserved; no resize or crop is
+# performed before adding the text. Overlay sizing is based on the image.
 FORTUNE_OVERLAY_ENABLED=true
 
 # Variety-style text
 FORTUNE_FONT="DejaVu Serif"
+# Reference font size for a 1080-pixel-tall image; scales with source image height.
 FORTUNE_FONT_SIZE=16
 FORTUNE_TEXT_COLOR="#ffffff"
 FORTUNE_MARGIN=40
@@ -93,7 +98,7 @@ FORTUNE_GLASS_TINT_STRENGTH=60     # stronger dark wash
 FORTUNE_GLASS_ALPHA=25%            # very transparent plate
 
 # Block width: Variety "Wide" setting
-FORTUNE_BLOCK_WIDTH_PCT=50         # percentage of image width
+FORTUNE_BLOCK_WIDTH_PCT=50         # percentage of source image width (clamped below)
 
 # Placement: "top" or "middle"
 FORTUNE_VERTICAL_POSITION="middle"
@@ -273,18 +278,22 @@ apply_fortune_overlay() {
         return 1
     }
 
+    # Read the original canvas dimensions. Do not resize, extent, or crop
+    # the wallpaper before drawing the overlay.
     local img_w img_h block_w pad=24
-    img_w=$(identify -format '%w' "$image[0]" 2>/dev/null) || img_w=1920
-    img_h=$(identify -format '%h' "$image[0]" 2>/dev/null) || img_h=1080
+    img_w=$(identify -format '%w' "${image}[0]" 2>/dev/null) || img_w=""
+    img_h=$(identify -format '%h' "${image}[0]" 2>/dev/null) || img_h=""
+    if ! [[ "$img_w" =~ ^[1-9][0-9]*$ && "$img_h" =~ ^[1-9][0-9]*$ ]]; then
+        echo "$(date) - [Overlay] cannot read valid image dimensions — skipping overlay" >> "$LOGFILE"
+        return 1
+    fi
 
-    # Wider block for the Variety-style "Wide" layout.
     block_w=$(( img_w * FORTUNE_BLOCK_WIDTH_PCT / 100 ))
     [ "$block_w" -lt 400 ] && block_w=400
     [ "$block_w" -gt 1200 ] && block_w=1200
+    [ "$block_w" -gt "$img_w" ] && block_w=$img_w
 
-    # Font size scales with image height so visual size stays
-    # consistent regardless of source resolution. FORTUNE_FONT_SIZE
-    # is now the "reference" size applied to a 1080p image.
+    # Scale font relative to the original image height (24px at 1080p).
     local font_size
     font_size=$(( FORTUNE_FONT_SIZE * img_h / 1080 ))
     [ "$font_size" -lt 14 ] && font_size=14
