@@ -173,7 +173,7 @@ _HISTORY_TMP=""
 
 _restore_variety_verified() {
     local attempts=6 interval_s=0.4 i
-    variety >/dev/null 2>&1 &
+    variety --next >/dev/null 2>&1 &
     for ((i = 0; i < attempts; i++)); do
         sleep "$interval_s"
         if [ -n "$(variety_pids)" ]; then

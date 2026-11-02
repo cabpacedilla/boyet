@@ -292,7 +292,7 @@ system_up_to_date() {
     }
     if [[ $((now - last_log)) -ge 86400 ]]; then
         log "System is up to date."
-        notify "System is up to date." normal
+        notify "System is up to date." critical
         if [[ "$DRY_RUN" != "true" ]]; then
             safe_write_timestamp "$SYSTEM_UPTODATE_LOG_FILE" || \
                 log "WARNING: could not persist up-to-date timestamp"
@@ -305,7 +305,9 @@ check_internet() {
     local e
     for e in "https://www.google.com" "https://www.cloudflare.com" \
              "https://www.microsoft.com" "https://mirrors.fedoraproject.org"; do
-        curl -fsI --connect-timeout 5 --max-time 10 "$e" >/dev/null 2>&1 && return 0
+        if curl -fsI --connect-timeout 5 --max-time 10 "$e" &>/dev/null; then
+			return 0
+		fi
     done
     return 1
 }
@@ -463,7 +465,11 @@ can_notify_warning() {
     local f="$STATE_DIR/last_warning_notify"
     [[ ! -f "$f" ]] && return 0
     local t=$(<"$f"); [[ ! "$t" =~ ^[0-9]+$ ]] && t=0
-    [[ $(( $(date +%s) - t )) -gt 86400 ]]
+    if [[ $(( $(date +%s) - t )) -gt 86400 ]]; then
+		return 0
+	else 
+		return 1
+	fi
 }
 can_notify_restored() {
     local f="$STATE_DIR/last_restored_notify"
@@ -808,14 +814,14 @@ quick_verify() {
     fo=$(systemctl --failed --no-legend --plain --no-pager 2>/dev/null) || sctl_rc=$?
     if [[ $sctl_rc -ne 0 ]]; then
         log "Quick check: systemctl failed (rc=$sctl_rc)"
-        can_notify_warning && { notify "System UNKNOWN - systemctl failed" normal; update_warning_timestamp; } \
+        can_notify_warning && { notify "System UNKNOWN - systemctl failed" critical; update_warning_timestamp; } \
                             || log "Quick check: alert suppressed (cooldown)"
         issues=1
     else
         if printf '%s\n' "$fo" | awk '{print $1}' | grep -v '^$' \
             | grep -v 'drkonqi-coredump-processor' | grep -q .; then
             log "Quick check: Failed services"
-            can_notify_warning && { notify "System degraded" normal; update_warning_timestamp; } \
+            can_notify_warning && { notify "System degraded" critical; update_warning_timestamp; } \
                                 || log "Quick check: alert suppressed"
             issues=1
         fi
@@ -993,7 +999,7 @@ notify_pending() {
     total=$((dc+fc))
     [[ "$CURRENT_FLATPAK_FRESHNESS" == "stale" ]] && suffix=" (Flatpak metadata may be stale)"
     if [[ -n "$ul" ]]; then
-        notify_with_list "📦 Updates Detected" "Detected $total updates${suffix}.${NL}${NL}${ul}" "normal" 10000
+        notify_with_list "📦 Updates Detected" "Detected $total updates${suffix}.${NL}${NL}${ul}" "critical" 10000
     else
         notify "Found updates: $total items" normal
     fi
@@ -1007,7 +1013,7 @@ notify_complete() {
     [[ -s "$LISTS_DIR/dnf_list" ]] && dc=$(wc -l < "$LISTS_DIR/dnf_list")
     [[ -s "$LISTS_DIR/flatpak_list" ]] && fc=$(wc -l < "$LISTS_DIR/flatpak_list")
     total=$((dc+fc))
-    [[ -n "$ul" ]] && notify_with_list "✅ Update Commands Completed" "Processed $total detected updates.${NL}${NL}${ul}" "normal" 10000 \
+    [[ -n "$ul" ]] && notify_with_list "✅ Update Commands Completed" "Processed $total detected updates.${NL}${NL}${ul}" "critical" 10000 \
                    || notify "Update commands completed" normal
 }
 
@@ -1291,26 +1297,28 @@ main() {
         if ! check_internet; then
             local os=$(date +%s) st=60 ms=3600 n=false
             log "🌐 No internet"
-            can_notify_warning && { notify "🌐 No internet - postponing" normal 5000; update_warning_timestamp; }
+            can_notify_warning && { notify "🌐 No internet - postponing" critical 5000; update_warning_timestamp; }
             while ! check_internet; do
                 local om=$(( ($(date +%s) - os) / 60 ))
                 log "Still offline after ${om} min"
                 if (( om >= 30 )) && [[ "$n" == "false" ]]; then
-                    can_notify_warning && { notify "Still offline (30m)" normal 5000; update_warning_timestamp; n=true; }
+                    can_notify_warning && { notify "Still offline (30m)" critical 5000; update_warning_timestamp; n=true; }
                 fi
                 smart_sleep "$st"
                 st=$(( st * 2 > ms ? ms : st * 2 ))
             done
             log "🌐 Internet restored"
-            can_notify_restored && { notify "Internet restored" normal 5000; update_restored_timestamp; }
+            can_notify_restored && { notify "Internet restored" critical 5000; update_restored_timestamp; }
         fi
 
         if ! check_disk; then
             log "Disk check failed, retry ${rd}s"; smart_sleep "$rd"
+            alert_failure "Low disk space! Auto-update retrying in ${rd}s..."
             rd=$(( rd * 2 > md ? md : rd * 2 )); continue
         fi
         if ! check_battery; then
             log "Battery check failed, retry ${rd}s"; smart_sleep "$rd"
+            alert_failure "Battery check failed! Auto-update retrying in ${rd}s..."
             rd=$(( rd * 2 > md ? md : rd * 2 )); continue
         fi
         rd=60
