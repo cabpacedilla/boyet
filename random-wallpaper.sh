@@ -79,7 +79,7 @@ FORTUNE_OVERLAY_ENABLED=true
 # Variety-style text
 FORTUNE_FONT="DejaVu Serif"
 # Reference font size for a 1080-pixel-tall image; scales with source image height.
-FORTUNE_FONT_SIZE=16
+FORTUNE_FONT_SIZE=22
 FORTUNE_TEXT_COLOR="#ffffff"
 FORTUNE_MARGIN=40
 FORTUNE_MAX_BYTES=1024
@@ -148,28 +148,28 @@ _VARIETY_PAUSED_BY_SCRIPT=false
 _RECENT_TMP=""
 _HISTORY_TMP=""
 
-#~ cleanup_probes() {
-    #~ local pid
-    #~ if [ "${#_PROBE_PIDS[@]}" -gt 0 ]; then
-        #~ for pid in "${_PROBE_PIDS[@]}"; do
-            #~ kill -TERM -"$pid" 2>/dev/null || true
-            #~ kill -TERM  "$pid" 2>/dev/null || true
-        #~ done
-        #~ sleep 0.2
-        #~ for pid in "${_PROBE_PIDS[@]}"; do
-            #~ kill -KILL -"$pid" 2>/dev/null || true
-            #~ kill -KILL  "$pid" 2>/dev/null || true
-        #~ done
-        #~ for pid in "${_PROBE_PIDS[@]}"; do
-            #~ wait "$pid" 2>/dev/null || true
-        #~ done
-        #~ _PROBE_PIDS=()
-    #~ fi
-    #~ if [ -n "$_PROBE_TMPDIR" ] && [ -d "$_PROBE_TMPDIR" ]; then
-        #~ rm -rf -- "$_PROBE_TMPDIR" 2>/dev/null || true
-    #~ fi
-    #~ _PROBE_TMPDIR=""
-#~ }
+cleanup_probes() {
+    local pid
+    if [ "${#_PROBE_PIDS[@]}" -gt 0 ]; then
+        for pid in "${_PROBE_PIDS[@]}"; do
+            kill -TERM -"$pid" 2>/dev/null || true
+            kill -TERM  "$pid" 2>/dev/null || true
+        done
+        sleep 0.2
+        for pid in "${_PROBE_PIDS[@]}"; do
+            kill -KILL -"$pid" 2>/dev/null || true
+            kill -KILL  "$pid" 2>/dev/null || true
+        done
+        for pid in "${_PROBE_PIDS[@]}"; do
+            wait "$pid" 2>/dev/null || true
+        done
+        _PROBE_PIDS=()
+    fi
+    if [ -n "$_PROBE_TMPDIR" ] && [ -d "$_PROBE_TMPDIR" ]; then
+        rm -rf -- "$_PROBE_TMPDIR" 2>/dev/null || true
+    fi
+    _PROBE_TMPDIR=""
+}
 
 _restore_variety_verified() {
     local attempts=6 interval_s=0.4 i
@@ -184,34 +184,34 @@ _restore_variety_verified() {
     return 1
 }
 
-#~ cleanup_on_exit() {
-    #~ local ec=$?
-    #~ cleanup_probes
-    #~ if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
-        #~ rm -rf -- "$TMP_DIR" 2>/dev/null || true
-    #~ fi
-    #~ [ -n "$_RECENT_TMP" ] && rm -f "$_RECENT_TMP" 2>/dev/null || true
-    #~ [ -n "$_HISTORY_TMP" ] && rm -f "$_HISTORY_TMP" 2>/dev/null || true
-    #~ if [ "$_VARIETY_PAUSED_BY_SCRIPT" = true ] && [ -z "$(variety_pids)" ]; then
-        #~ if _restore_variety_verified; then
-            #~ echo "$(date) - Restored Variety on exit" >> "$LOGFILE"
-        #~ else
-            #~ echo "$(date) - WARNING: Variety not running after exit restore" >> "$LOGFILE"
-        #~ fi
-    #~ fi
-    #~ echo "$(date) - SCRIPT EXITING (code=$ec)" >> "$LOGFILE"
-    #~ flock -u 9 2>/dev/null || true
-    #~ exec 9>&- 2>/dev/null || true
-#~ }
+cleanup_on_exit() {
+    local ec=$?
+    cleanup_probes
+    if [ -n "$TMP_DIR" ] && [ -d "$TMP_DIR" ]; then
+        rm -rf -- "$TMP_DIR" 2>/dev/null || true
+    fi
+    [ -n "$_RECENT_TMP" ] && rm -f "$_RECENT_TMP" 2>/dev/null || true
+    [ -n "$_HISTORY_TMP" ] && rm -f "$_HISTORY_TMP" 2>/dev/null || true
+    if [ "$_VARIETY_PAUSED_BY_SCRIPT" = true ] && [ -z "$(variety_pids)" ]; then
+        if _restore_variety_verified; then
+            echo "$(date) - Restored Variety on exit" >> "$LOGFILE"
+        else
+            echo "$(date) - WARNING: Variety not running after exit restore" >> "$LOGFILE"
+        fi
+    fi
+    echo "$(date) - SCRIPT EXITING (code=$ec)" >> "$LOGFILE"
+    flock -u 9 2>/dev/null || true
+    exec 9>&- 2>/dev/null || true
+}
 
-#~ exec 9>"$LOCK_FILE"
-#~ if ! flock -n 9; then
-    #~ echo "$(date) - Another instance is already running. Exiting." >> "$LOGFILE"
-    #~ exit 0
-#~ fi
-#~ trap cleanup_on_exit EXIT
-#~ trap 'exit 0' INT
-#~ trap 'exit 0' TERM
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "$(date) - Another instance is already running. Exiting." >> "$LOGFILE"
+    exit 0
+fi
+trap cleanup_on_exit EXIT
+trap 'exit 0' INT
+trap 'exit 0' TERM
 
 rotate_log
 

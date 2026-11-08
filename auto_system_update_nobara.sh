@@ -660,7 +660,7 @@ verify_system_health() {
             notify_with_list "⚠️ CRITICAL ISSUES" \
                 "Critical services failed:${NL}${NL}${new_failures}${NL}Log: $vlog" "critical" 0
         else
-            notify "Post-update issues detected - check log" normal
+            notify "Post-update issues detected - check log" critical
         fi
     elif [[ $diag_failed -eq 1 ]]; then
         log "Post-update verification: DEGRADED"
